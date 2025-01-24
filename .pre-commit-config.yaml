@@ -1,20 +1,58 @@
+# To use this pre-commit hooks, install pre-commit with pip and activate it.
+# In the terminal, write:
+# $ pip install pre-commit
+# $ pre-commit install
+# Pre-commit will then run the following checks every time a commit is attemped.
+# More documentation can be found in the "Pre-commit for Python Code Organization and Cleanup" Notion page.
+
+ci:
+  autofix_prs: true  # Automatically fixes issues in PRs for smoother CI workflows
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0  # Version of the pre-commit-hooks repository
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
--   repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+      - id: trailing-whitespace  # Removes trailing whitespace
+      - id: end-of-file-fixer  # Ensures files end with a newline
+      - id: check-yaml  # Validates YAML syntax
+      - id: debug-statements  # Detects and removes debug print statements
+
+  - repo: https://github.com/psf/black
+    rev: 24.8.0  # Version of Black, a code formatter
     hooks:
-    -   id: codespell
-        additional_dependencies:
-        - tomli
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.4.4
-  hooks:
-    # Run the linter.
-    - id: ruff
-      args: [ --fix ]
-    # Run the formatter.
-    - id: ruff-format
+      - id: black  # Enforces consistent code formatting following Black's guidelines
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2  # Version of isort for import sorting
+    hooks:
+      - id: isort  # Automatically sorts imports
+        args: ["--profile", "black"]  # Configures isort to be compatible with Black's formatting rules
+
+  - repo: https://github.com/hadialqattan/pycln
+    rev: v2.4.0
+    hooks:
+      - id: pycln # Automatically remove unused imports
+        args:
+          - --config=pyproject.toml
+          - --all
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.17.0  # Version of pyupgrade for Python syntax upgrades
+    hooks:
+      - id: pyupgrade  # Automatically upgrades code syntax to the latest Python standards
+
+  # - repo: https://github.com/pycqa/pydocstyle
+  #   rev: 6.3.0  # pick a git hash / tag to point to
+  #   hooks:
+  #     - id: pydocstyle
+  # - repo: https://github.com/nbQA-dev/nbQA
+  #   rev: 1.7.1
+  #   hooks:
+  #    - id: nbqa-black
+  #    - id: nbqa-pyupgrade
+  #      additional_dependencies: [pyupgrade==2.7.3]
+  #    - id: nbqa-isort
+  #      additional_dependencies: [isort==5.6.4]
+  # - repo: https://github.com/kynan/nbstripout
+  #   rev: 0.7.1
+  #   hooks:
+  #     - id: nbstripout

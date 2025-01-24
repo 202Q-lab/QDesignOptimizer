@@ -1,9 +1,9 @@
-
 from enum import Enum
 from typing import Callable, List, Literal, Optional, Union
 
 from qiskit_metal.designs.design_base import QDesign
 from qiskit_metal.qt.simulation.sim_capacitance_matrix import CapacitanceMatrixStudy
+
 
 class TargetType(Enum):
     FREQUENCY = "FREQUENCY"
@@ -19,6 +19,7 @@ class TargetType(Enum):
     LINEAR = "LINEAR"
     THREE_HALVES = "THREE_HALVES"
     SQUARED = "SQUARED"
+
 
 def convert_target_type_to_power(target_type: TargetType) -> float:
     """Convert TargetType to power p for the dependency of the target value on the design variable."""
@@ -42,75 +43,80 @@ def convert_target_type_to_power(target_type: TargetType) -> float:
         raise ValueError(f"{target_type} cannot be identified")
     return p
 
-class SideEffectCompensation():
-    """ Data structure for compensating side effects in optimization.
+
+class SideEffectCompensation:
+    r"""Data structure for compensating side effects in optimization.
     This is useful when varying one design variable has side effects on other quantity.
     The SideEffectCompensation design_var will be varied to compensate the side effect
-    according to the target_type dependency. 
+    according to the target_type dependency.
 
-    Note, no constraints are defined for the SideEffectCompensation design_var, 
-    it is therefore recommended to always have another OptTarget for design_var_compensation, which constrains it if needed. 
-    
+    Note, no constraints are defined for the SideEffectCompensation design_var,
+    it is therefore recommended to always have another OptTarget for design_var_compensation, which constrains it if needed.
+
     Args:
         affected_quantity (str): name of the affected quantity as documentation for the user but not used in the code
         design_var_compensation (str): design variable to be varied to compensate the side effect
         target_type_side_effect (TargetType): relation between the design_var used for compensation and the (side) affected quantity.
-            * TargetType: represents direct proportionality. For same example: The SideEffectCompensation design_var is qubit inductance Lj, 
+            * TargetType: represents direct proportionality. For same example: The SideEffectCompensation design_var is qubit inductance Lj,
                 qubit_freq \propto 1/sqrt(Lj), hence the target_type_compensation is INVERSE_SQRT
 
                 quantity_new / quantity_old = (design_var_new / design_var_old)^target_type_side_effect * (design_var_compensation_new / design_var_compensation_old)^target_type_compensation = 1,
                 where design_var is used from the corresponding OptTarget
-            
-            * Callable: represents any function func(system_param, **kwargs) which is proportional to the affected quantity. 
+
+            * Callable: represents any function func(system_param, **kwargs) which is proportional to the affected quantity.
                 The expression is used to eliminate the side effect by solving
                 quantity_new / quantity_old = func(system_param_new) / func(system_param_old) * (design_var_compensation_new / design_var_compensation_old)^target_type_compensation = 1
                 See example in qiskit_metal.qt.simulation.utils.utils_optimization_targets.utils_side_effect
 
         target_type_side_effect_kwargs (dict): Optional kwargs for the target_type_compensation Callable
         target_type_compensation (TargetType): relation between the design_var used for compensation and the (side) affected quantity.
-            * TargetType: represents direct proportionality. For same example: The SideEffectCompensation design_var is qubit inductance Lj, 
+            * TargetType: represents direct proportionality. For same example: The SideEffectCompensation design_var is qubit inductance Lj,
                 qubit_freq \propto 1/sqrt(Lj), hence the target_type_compensation is INVERSE_SQRT
     """
+
     def __init__(
-            self, 
-            affected_quantity: str,
-            design_var_compensation: str,
-            target_type_side_effect: Union[TargetType, Callable],
-            target_type_compensation: TargetType,
-            target_type_side_effect_kwargs: Optional[dict] = None
-        ):
+        self,
+        affected_quantity: str,
+        design_var_compensation: str,
+        target_type_side_effect: Union[TargetType, Callable],
+        target_type_compensation: TargetType,
+        target_type_side_effect_kwargs: Optional[dict] = None,
+    ):
         self.affected_quantity = affected_quantity
         self.design_var_compensation = design_var_compensation
         self.target_type_side_effect = target_type_side_effect
         self.target_type_compensation = target_type_compensation
         self.target_type_side_effect_kwargs = target_type_side_effect_kwargs
 
-class OptTarget():
+
+class OptTarget:
 
     def __init__(
-            self, 
-            system_target_param: Union[tuple, Literal["CROSS_BRANCH_NONLIN", "CAPACITANCE_MATRIX_ELEMENTS"]],
-            involved_mode_freqs: List[Union[tuple, str]],
-            design_var: str,
-            design_var_constraint: object,
-            target_type: TargetType,
-            side_effect_compensations: List[SideEffectCompensation] = None
-        ):
-        """ Class for optimization target.
-        
+        self,
+        system_target_param: Union[
+            tuple, Literal["CROSS_BRANCH_NONLIN", "CAPACITANCE_MATRIX_ELEMENTS"]
+        ],
+        involved_mode_freqs: List[Union[tuple, str]],
+        design_var: str,
+        design_var_constraint: object,
+        target_type: TargetType,
+        side_effect_compensations: List[SideEffectCompensation] = None,
+    ):
+        """Class for optimization target.
+
         Args:
-            system_target_param: system target parameter to be optimized, 
+            system_target_param: system target parameter to be optimized,
                 (str, str) example ('branch1', qubit_freq')
                 (str) CROSS_BRANCH_NONLIN is used when defining non-linear cross branch coupling
                 (str) CAPACITANCE_MATRIX_ELEMENTS is used when defining capacitance matrix elements
-            involved_mode_freqs (list): mode freqs involved in target, 
+            involved_mode_freqs (list): mode freqs involved in target,
                 Example [('BRANCH_1, 'res_freq'), ('BRANCH_1, 'qubit_freq')]
-                If system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_mode_freqs should be 
+                If system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_mode_freqs should be
                 the names of the TWO capacitive islands as optained from capacitance matrix simulation.
-                Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.  
-                Example: ['capacitance_name_1', 'capacitance_name_2'] 
+                Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.
+                Example: ['capacitance_name_1', 'capacitance_name_2']
             design_var (str): design variable to be varied
-            design_var_constraint (object): design variable constraint, example {'larger_than': '10 um', 'smaller_than': '100 um'}   
+            design_var_constraint (object): design variable constraint, example {'larger_than': '10 um', 'smaller_than': '100 um'}
             target_type (str): type of target value
             side_effect_compensations (list): list of SideEffectCompensation
         """
@@ -121,15 +127,16 @@ class OptTarget():
         self.target_type = target_type
         self.side_effect_compensations = side_effect_compensations
 
-class ScatteringStudy():
+
+class ScatteringStudy:
     def __init__(
-            self, 
-            mode_freqs: list,
-            nbr_passes: int = 18,
-            max_delta_s: float=0.005,
-            basis_order = -1, # Mixed order
-            ):
-        """ Scattering study for DesignAnalysis.
+        self,
+        mode_freqs: list,
+        nbr_passes: int = 18,
+        max_delta_s: float = 0.005,
+        basis_order=-1,  # Mixed order
+    ):
+        """Scattering study for DesignAnalysis.
 
         Args:
             mode_freqs (list): list of (branch, freq_name) of modes in component_names, simulated nbr of modes = len(mode_freqs), example: [('BRANCH_1, 'qubit_freq')]
@@ -143,30 +150,31 @@ class ScatteringStudy():
         self.max_delta_s = max_delta_s
         self.basis_order = basis_order
 
-class MiniStudy():
+
+class MiniStudy:
     def __init__(
-            self, 
-            component_names: list, 
-            port_list: list, 
-            open_pins: list, 
-            mode_freqs: List[tuple], 
-            nbr_passes: int=10, 
-            delta_f: float=0.1,
-            jj_var: object={}, 
-            jj_setup: object={},
-            design_name: str="mini_study",
-            project_name: str="dummy_project",
-            x_buffer_width_mm = 0.5,
-            y_buffer_width_mm = 0.5,
-            max_mesh_length_port = '3um',
-            max_mesh_length_lines_to_ports = '5um',
-            allow_crude_decay_estimates = True,
-            adjustment_rate: float = 1.0,
-            render_qiskit_metal_eigenmode_kw_args: dict = {},       
-            scattering_studies: List[ScatteringStudy] = [],
-            capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],
-        ):
-        """ Mini_study for eigenmode simulation and energy participation (EPR) analysis in DesignAnalysis. 
+        self,
+        component_names: list,
+        port_list: list,
+        open_pins: list,
+        mode_freqs: List[tuple],
+        nbr_passes: int = 10,
+        delta_f: float = 0.1,
+        jj_var: object = {},
+        jj_setup: object = {},
+        design_name: str = "mini_study",
+        project_name: str = "dummy_project",
+        x_buffer_width_mm=0.5,
+        y_buffer_width_mm=0.5,
+        max_mesh_length_port="3um",
+        max_mesh_length_lines_to_ports="5um",
+        allow_crude_decay_estimates=True,
+        adjustment_rate: float = 1.0,
+        render_qiskit_metal_eigenmode_kw_args: dict = {},
+        scattering_studies: List[ScatteringStudy] = [],
+        capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],
+    ):
+        """Mini_study for eigenmode simulation and energy participation (EPR) analysis in DesignAnalysis.
 
         Args:
             component_names (list(str)): List of names
@@ -187,7 +195,7 @@ class MiniStudy():
             max_mesh_length_lines_to_ports (str): max mesh length of lines to ports to enhance accuracy of decay estiamtes
             allow_crude_decay_estimates (bool): if True: use default mesh to ports which gives unreliable decay estimates in Eigenmode sim
             adjustment_rate (float): rate of adjustment of design variable, example 0.7 is slower but more robust
-            render_qiskit_metal_eigenmode_kw_args (dict): kw_args for render_qiskit_metal used during eigenmode and EPR analysis, 
+            render_qiskit_metal_eigenmode_kw_args (dict): kw_args for render_qiskit_metal used during eigenmode and EPR analysis,
                                                           Example: {'include_charge_line': True}
             scattering_studies (List[ScatteringStudy]): list of ScatteringStudy objects
             capacitance_matrix_studies (List[CapacitanceMatrixStudy]): list of CapacitanceMatrixStudy objects
@@ -208,35 +216,39 @@ class MiniStudy():
         self.max_mesh_length_lines_to_ports = max_mesh_length_lines_to_ports
         self.allow_crude_decay_estimates = allow_crude_decay_estimates
         self.adjustment_rate = adjustment_rate
-        self.render_qiskit_metal_eigenmode_kw_args = render_qiskit_metal_eigenmode_kw_args
+        self.render_qiskit_metal_eigenmode_kw_args = (
+            render_qiskit_metal_eigenmode_kw_args
+        )
         self.scattering_studies = scattering_studies
         self.capacitance_matrix_studies = capacitance_matrix_studies
 
         self._validate_scattering_studies()
-    
+
     def _validate_scattering_studies(self):
         """Validate scattering_studies."""
         if self.scattering_studies is None:
             return
         for scatteringStudy in self.scattering_studies:
             for scat_mode_freq in scatteringStudy.mode_freqs:
-                assert scat_mode_freq in self.mode_freqs, \
-                    f"ScatteringStudy mode {scat_mode_freq} not found in MiniStudy mode_freqs {self.mode_freqs}"
+                assert (
+                    scat_mode_freq in self.mode_freqs
+                ), f"ScatteringStudy mode {scat_mode_freq} not found in MiniStudy mode_freqs {self.mode_freqs}"
 
-class DesignAnalysisState():
+
+class DesignAnalysisState:
     def __init__(
-            self, 
-            design: QDesign,
-            render_qiskit_metal: Callable,
-            system_target_params: dict,
-            system_optimized_params: dict = None          
-            ):
+        self,
+        design: QDesign,
+        render_qiskit_metal: Callable,
+        system_target_params: dict,
+        system_optimized_params: dict = None,
+    ):
         """Class for DesignAnalysis.
 
         Args:
             design (QDesign): QDesign object
-            render_qiskit_metal (Callable): function which will be run to update design parameters, 
-                                            Format: render_qiskit_metal(design, **kw_args) 
+            render_qiskit_metal (Callable): function which will be run to update design parameters,
+                                            Format: render_qiskit_metal(design, **kw_args)
             system_target_params (dict): system target parameters in Hz, example: {'branch_1': {'qubit_freq': 5e9}}
             system_optimized_params (dict): system optimized parameters in Hz, example: {'branch_1': {{'qubit_freq': 5e9}}
 
@@ -245,4 +257,3 @@ class DesignAnalysisState():
         self.render_qiskit_metal = render_qiskit_metal
         self.system_target_params = system_target_params
         self.system_optimized_params = system_optimized_params
-        
