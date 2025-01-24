@@ -35,7 +35,7 @@ You can also create it using venv:
     # On Linux/MacOS:
     source qdesign-env/bin/activate
     # On Windows:
-    qdesign-env\Scripts\activate
+    qdesign-env\\Scripts\\activate
 
     # Verify Python version
     python --version

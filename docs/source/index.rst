@@ -10,6 +10,8 @@ Welcome to qdesignoptimizer's documentation!
    :caption: Contents:
 
    installation
+   authors
+   contributing
 
 .. toctree::
     :maxdepth: 2

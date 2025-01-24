@@ -24,10 +24,11 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
-    "recommonmark",
+    #  "recommonmark",
     "sphinx_copybutton",
     "sphinx.ext.viewcode",
     "sphinx_last_updated_by_git",
+    "sphinx_mdinclude",
 ]
 
 templates_path = ["_templates"]
@@ -67,11 +68,27 @@ html_theme_options = {
     ],
 }
 # html_static_path = ["_static"]
+html_show_sourcelink = False
 
 # -- Intersphinx  -------------------------------------------------------------
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 autodoc_member_order = "bysource"
+
+
+github_doc_root = "https://github.com/rtfd/recommonmark/tree/master/doc/"
+
+
+def setup(app):
+    app.add_config_value(
+        "recommonmark_config",
+        {
+            "url_resolver": lambda url: github_doc_root + url,
+            "auto_toc_tree_section": "Contents",
+        },
+        True,
+    )
+    app.add_transform(AutoStructify)
 
 
 def run_apidoc(_):
@@ -80,14 +97,3 @@ def run_apidoc(_):
     docs_dest = source / "api-reference"
     package = source.parents[1] / "src" / "qdesignoptimizer"
     apidoc.main(["--no-toc", "--module-first", "-o", str(docs_dest), str(package)])
-
-
-def setup(app):
-    app.add_config_value("recommonmark_config", {"enable_eval_rst": True}, True)
-    app.add_transform(AutoStructify)
-    app.add_css_file("css/style.css")
-
-    app.connect("builder-inited", run_apidoc)
-
-
-html_show_sourcelink = False
