@@ -1,16 +1,12 @@
 from qiskit_metal.designs.design_planar import DesignPlanar
 from qiskit_metal import MetalGUI
-
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
-from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
+from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
+from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
 
-from designlib_temp.qt_route_coupler import QTRouteCoupler
-from designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
-from designlib_temp.qt_launchpad import QTLaunchpadWirebond
 import src.utils.utils_design_variables as u
-
 import design_variables as dv
 
 def add_branch(design: DesignPlanar, 
@@ -61,7 +57,7 @@ def make_transmon_plus_resonator(design:DesignPlanar,
                     fillet = dv.BEND_RADIUS,
                     coupling_length=dv.design_var_res_coupl_length(branch) )    
      
-    cltee = QTCoupledLineTee(design, u.name_tee(branch), options=cltee_options)
+    cltee = CoupledLineTee(design, u.name_tee(branch), options=cltee_options)
 
     # make resonator 
     resonator_options = dict(
@@ -109,12 +105,12 @@ def add_launch_pads(design: DesignPlanar, gui: MetalGUI):
     launch_options['pos_x']='0mm'
     launch_options['pos_y']='4.9mm'
     launch_options['orientation']='270'
-    QTLaunchpadWirebond(design, u.name_lp(0),   options = launch_options)
+    LaunchpadWirebond(design, u.name_lp(0),   options = launch_options)
 
     launch_options['pos_x']='0mm'
     launch_options['pos_y']='-4.9mm'
     launch_options['orientation']='90'
-    QTLaunchpadWirebond(design, u.name_lp(1),   options = launch_options)
+    LaunchpadWirebond(design, u.name_lp(1),   options = launch_options)
 
     pins_top = dict( 
                     start_pin=dict(component=u.name_lp(0), pin='tie'),

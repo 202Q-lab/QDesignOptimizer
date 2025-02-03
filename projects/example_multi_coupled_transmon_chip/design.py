@@ -2,11 +2,8 @@ from qiskit_metal.designs.design_planar import DesignPlanar
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
-
-from designlib_temp.transmon_simple_tee_202Q import TransmonTeemon202Q
-from designlib_temp.qt_route_coupler import QTRouteCoupler
-from designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
-from designlib_temp.qt_launchpad import QTLaunchpadWirebond
+from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
+from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
 
 import design_variables as dv
 
@@ -22,7 +19,7 @@ def make_transmon_plus_resonator(design:DesignPlanar,
     # make transmon
     transmon_options = dict(
         pos_x = ['-1.75mm','+1.75mm','-1.75mm','+1.75mm'][branch],
-        pos_y = ['-2.1mm','-1mm','0.5mm','2mm'][branch],
+        pos_y = ['-1.5mm','-1mm','1.5mm','2mm'][branch],
         orientation = ['180','180','0','0'][branch],
         pad_gap = '100um',
         inductor_width = '30um',
@@ -51,7 +48,7 @@ def make_transmon_plus_resonator(design:DesignPlanar,
 
     # make open end of resonator
     cltee_options = dict(pos_x='0mm',  
-                    pos_y=['-3.5mm','-2.2mm','1.5mm','3mm'][branch], 
+                    pos_y=['-2.5mm','-2.5mm','2.5mm','3mm'][branch], 
                     orientation=['-90','+90','-90','+90','-90'][branch],
                     second_width=dv.RESONATOR_WIDTH,
                     second_gap=dv.RESONATOR_GAP,
@@ -61,7 +58,7 @@ def make_transmon_plus_resonator(design:DesignPlanar,
                     fillet = dv.BEND_RADIUS,
                     coupling_length=dv.design_var_res_coupl_length(branch) )    
      
-    cltee = QTCoupledLineTee(design, dv.name_tee(branch), options=cltee_options)
+    cltee = CoupledLineTee(design, dv.name_tee(branch), options=cltee_options)
 
     # make resonator 
     resonator_options = dict(
@@ -81,22 +78,31 @@ def make_transmon_plus_resonator(design:DesignPlanar,
     RouteMeander(design, dv.name_res(branch), options= resonator_options)
 
 def add_route_interconnects(design: DesignPlanar, 
-                            branch: int):
-    if branch%2 ==0: 
+                            branch_start: int, 
+                            branch_end: int, 
+                            type: str):
+    if type== 'start_start': 
         pins = dict( 
-                    start_pin=dict(component=dv.name_tee(branch), pin='prime_start'),
-                    end_pin=dict(  component=dv.name_tee(branch+1), pin='prime_start') )
-    else:
+                    start_pin=dict(component=dv.name_tee(branch_start), pin='prime_start'),
+                    end_pin=dict(  component=dv.name_tee(branch_end), pin='prime_start') )
+    elif type== 'end_end': 
         pins = dict( 
-                    start_pin=dict(component=dv.name_tee(branch), pin='prime_end'),
-                    end_pin=dict(  component=dv.name_tee(branch+1), pin='prime_end') )
+                    start_pin=dict(component=dv.name_tee(branch_start), pin='prime_end'),
+                    end_pin=dict(  component=dv.name_tee(branch_end), pin='prime_end') )
+    elif type== 'start_end': 
+        pins = dict( 
+                    start_pin=dict(component=dv.name_tee(branch_start), pin='prime_start'),
+                    end_pin=dict(  component=dv.name_tee(branch_end), pin='prime_end') )
+    else: 
+        ValueError('This type has not been implemented.')
+        
     options_rpf = dict(
                 fillet='49um', 
                 hfss_wire_bonds = False,
                 trace_width = dv.LINE_50_OHM_WIDTH,
                 trace_gap = dv.LINE_50_OHM_GAP,
                 pin_inputs = pins)
-    RoutePathfinder(design, dv.name_tee_to_tee(branch, branch+1), options = options_rpf)
+    RoutePathfinder(design, dv.name_tee_to_tee(branch_start, branch_end), options = options_rpf)
 
 
 def add_launch_pads(design: DesignPlanar):
@@ -111,16 +117,16 @@ def add_launch_pads(design: DesignPlanar):
     launch_options['pos_x']='0mm'
     launch_options['pos_y']='4.5mm'
     launch_options['orientation']='270'
-    QTLaunchpadWirebond(design, dv.name_lp(0),   options = launch_options)
+    LaunchpadWirebond(design, dv.name_lp(0),   options = launch_options)
 
     launch_options['pos_x']='0mm'
     launch_options['pos_y']='-4.5mm'
     launch_options['orientation']='90'
-    QTLaunchpadWirebond(design, dv.name_lp(1),   options = launch_options)
+    LaunchpadWirebond(design, dv.name_lp(1),   options = launch_options)
 
     pins_top = dict( 
                     start_pin=dict(component=dv.name_lp(0), pin='tie'),
-                    end_pin=dict(  component=dv.name_tee(3), pin='prime_end') )
+                    end_pin=dict(  component=dv.name_tee(2), pin='prime_start') )
     
     options_top = dict(
                 fillet='49um', 
@@ -161,53 +167,6 @@ def add_resonator_coupler(design: DesignPlanar,
     
     RouteMeander(design, dv.name_res(branch), options= resonator_options)
 
-    
-
-def add_qubit_coupler(design: DesignPlanar, 
-                      branch: int, 
-                      branch_start: int, 
-                      branch_end: int):
-
-    qubit_coupler_options = dict(
-        pos_x='1.75mm',
-        pos_y='0.5mm',
-        orientation = '90',
-        tee_width=dv.RESONATOR_WIDTH,
-        tee_length='200um',
-        tee_arm_length="100um",
-        tee_gap=dv.design_var_qb_coupl_gap(branch),
-        junction_length='20um',
-        chip='main',
-        make_pin=True,
-        connection_pins = dict( 
-            coupler_west = dict(connector_location='0'), 
-            coupler_east = dict(connector_location='180')),
-        )
-
-    TransmonTeemon202Q(design, dv.name_coupler(branch), options=qubit_coupler_options)
-
-    pins_top = dict( 
-                    start_pin=dict(component=dv.name_qb(branch_start), pin='coupler'),
-                    end_pin=dict(  component=dv.name_coupler(branch), pin='coupler_west') )
-    
-    options_top = dict(
-                fillet='49um', hfss_wire_bonds = False,
-                trace_width = dv.RESONATOR_WIDTH,
-                trace_gap = dv.design_var_qb_coupl_gap(branch),
-                pin_inputs = pins_top)
-    
-    pins_bottom = dict( 
-                    start_pin=dict(component=dv.name_qb(branch_end), pin='coupler'),
-                    end_pin=dict(  component=dv.name_coupler(branch), pin='coupler_east') )
-    
-    options_bottom = dict(
-                fillet='49um', hfss_wire_bonds = False,
-                trace_width = dv.RESONATOR_WIDTH,
-                trace_gap = dv.design_var_qb_coupl_gap(branch),
-                pin_inputs = pins_bottom)
-    RoutePathfinder(design, dv.name_lp_to_tee(branch,branch_start), options = options_top)
-    RoutePathfinder(design, dv.name_lp_to_tee(branch, branch_end), options = options_bottom)
-
 
 def add_chargeline(design: DesignPlanar, 
                    branch: int):
@@ -223,7 +182,7 @@ def add_chargeline(design: DesignPlanar,
     launch_options['pos_y']=['-2mm','-2mm','2mm','2mm'][branch]
     launch_options['orientation']=['0','180','0','180'][branch]
 
-    QTLaunchpadWirebond(design, dv.name_lp_chargeline(branch),   options = launch_options)
+    LaunchpadWirebond(design, dv.name_lp_chargeline(branch),   options = launch_options)
 
     pins_top = dict( 
                     start_pin=dict(component=dv.name_lp_chargeline(branch), pin='tie'),
