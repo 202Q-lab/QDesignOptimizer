@@ -1,9 +1,11 @@
 from typing import List
-from qiskit_metal.qt.simulation.design_analysis_types import OptTarget, TargetType
-from qiskit_metal.qt.utils.utils_design_variables import design_var_lj
-import design_variables as dv
-import qiskit_metal.qt.database.constants as dc
 import numpy as np
+
+import src.utils.constants as dc
+from src.qdesignoptimizer.design_analysis_types import OptTarget, TargetType
+from src.utils.utils_design_variables import design_var_lj
+
+import design_variables as dv
 
 def get_opt_target_qubit_freq_via_lj(
         branch: int,

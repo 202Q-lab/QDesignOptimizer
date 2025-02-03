@@ -1,8 +1,8 @@
-from qiskit_metal.qt.simulation.design_analysis_types import MiniStudy
-from qiskit_metal.qt.utils.utils_design_variables import junction_setup
-import qiskit_metal.qt.simulation.utils.utils_design_variables as u
+from src.qdesignoptimizer.design_analysis_types import MiniStudy
+from src.utils.utils_design_variables import junction_setup
+import src.utils.utils_design_variables as u
 import design_variables as dv 
-import qiskit_metal.qt.database.constants as dc
+import src.utils.constants as dc
 
 CONVERGENCE = dict(nbr_passes = 7, delta_f = 0.03)
 

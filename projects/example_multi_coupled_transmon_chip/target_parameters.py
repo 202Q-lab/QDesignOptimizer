@@ -1,4 +1,4 @@
-import qiskit_metal.qt.database.constants as dc
+import src.utils.constants as dc
 
 TARGET_PARAMS = {
     "0": {

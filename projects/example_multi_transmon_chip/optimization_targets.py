@@ -1,10 +1,12 @@
 from typing import List
-from qiskit_metal.qt.simulation.design_analysis_types import OptTarget, TargetType
-import qiskit_metal.qt.simulation.utils.utils_design_variables as u
-from qiskit_metal.qt.utils.utils_design_variables import design_var_lj
-import design_variables as dv
-import qiskit_metal.qt.database.constants as dc
 import numpy as np
+
+from src.qdesignoptimizer.design_analysis_types import OptTarget, TargetType
+import src.utils.constants as dc
+import src.utils.utils_design_variables as u
+import design_variables as dv
+
+
 
 def get_opt_target_qubit_freq_via_lj(
         branch: int,
@@ -13,9 +15,9 @@ def get_opt_target_qubit_freq_via_lj(
     return OptTarget(
         system_target_param=(str(branch), dc.QUBIT_FREQ),
         involved_mode_freqs= [(str(branch), dc.QUBIT_FREQ)],
-        design_var= design_var_lj(u.name_qb(branch)),
+        design_var= u.design_var_lj(u.name_qb(branch)),
         design_var_constraint = {'larger_than': '0.1nH', 'smaller_than': '400nH'},
-        prop_to =lambda p, v: 1 / np.sqrt( v[design_var_lj(u.name_qb(branch))] * v[dv.design_var_qb_pad_width(branch)] ),
+        prop_to =lambda p, v: 1 / np.sqrt( v[u.design_var_lj(u.name_qb(branch))] * v[dv.design_var_qb_pad_width(branch)] ),
         independent_target=True,
     )
 

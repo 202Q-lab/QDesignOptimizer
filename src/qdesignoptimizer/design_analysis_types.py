@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from qiskit_metal.designs.design_base import QDesign
-from qiskit_metal.qt.simulation.sim_capacitance_matrix import CapacitanceMatrixStudy
+from src.qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 
 class TargetType(Enum):
     FREQUENCY = "FREQUENCY"

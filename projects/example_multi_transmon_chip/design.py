@@ -6,10 +6,10 @@ from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
-from qiskit_metal.qt.couplers.qt_route_coupler import QTRouteCoupler
-from qiskit_metal.qt.couplers.qt_coupled_line_tee import QTCoupledLineTee
-from qiskit_metal.qt.qt_launchpad import QTLaunchpadWirebond
-import qiskit_metal.qt.simulation.utils.utils_design_variables as u
+from designlib_temp.qt_route_coupler import QTRouteCoupler
+from designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
+from designlib_temp.qt_launchpad import QTLaunchpadWirebond
+import src.utils.utils_design_variables as u
 
 import design_variables as dv
 

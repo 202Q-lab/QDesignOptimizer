@@ -1,5 +1,5 @@
-from qiskit_metal.qt.utils.utils_design_variables import design_var_lj, design_var_cj
-import qiskit_metal.qt.simulation.utils.utils_design_variables as u
+from src.utils.utils_design_variables import design_var_lj, design_var_cj
+import src.utils.utils_design_variables as u
 
 # Fixed design constants
 LINE_50_OHM_WIDTH = '16.51um'

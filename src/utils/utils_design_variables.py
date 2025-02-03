@@ -21,7 +21,7 @@ def design_var_cj(component_name: str):
     assert component_name.startswith('NAME_')
     return f'design_var_cj_{component_name}'
 
-def jj_setup(component_name: Union[str, int], type: Literal[None, 'linear']=None):
+def junction_setup(component_name: Union[str, int], type: Literal[None, 'linear']=None):
     """Generate jj setup for 
     
     Args:

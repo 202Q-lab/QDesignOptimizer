@@ -6,29 +6,26 @@ from typing import Callable, List, Optional
 import numpy as np
 import scipy
 from scipy.optimize import curve_fit
-
 import pandas as pd
 import scipy.optimize
+from pyaedt import Hfss
+import pyEPR as epr
 
 from qiskit_metal import Dict
 from qiskit_metal.analyses.simulation import ScatteringImpedanceSim
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.designs.design_base import QDesign
-from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
-from qiskit_metal.qt.couplers.qt_coupled_line_tee import QTCoupledLineTee
-from qiskit_metal.qt.drive_lines.qt_charge_line_open_to_ground import QTChargeLineOpenToGround
-from qiskit_metal.qt.drive_lines.qt_flux_line_double import QTFluxLineDouble
-from qiskit_metal.qt.qt_meandered import QTRouteMeander
-from qiskit_metal.qt.simulation.design_analysis_types import DesignAnalysisState, MiniStudy, OptTarget, ScatteringStudy, TargetType, convert_target_type_to_power
 
-from qiskit_metal.qt.simulation.optimize.sim_plot_progress import plot_progress
-from qiskit_metal.qt.utils.find_points import get_value_and_unit
+from src.qdesignoptimizer.design_analysis_types import DesignAnalysisState, MiniStudy, OptTarget, ScatteringStudy, TargetType, convert_target_type_to_power
+from src.utils.sim_plot_progress import plot_progress
+from src.utils.utils import get_value_and_unit
+import src.utils.constants as dc
 
-from pyaedt import Hfss
-
-import qiskit_metal.qt.database.constants as dc
-import pyEPR as epr
+# design objects should be moved out 
+from designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
+from designlib_temp.qt_charge_line_open_to_ground import QTChargeLineOpenToGround
+from designlib_temp.qt_flux_line_double import QTFluxLineDouble
 
 class DesignAnalysis():
     def __init__(
@@ -212,23 +209,23 @@ class DesignAnalysis():
             port_list=self.mini_study.port_list, 
             open_pins=self.mini_study.open_pins)
         
-        for component_name in self.mini_study.component_names:
-            if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
-                for coord in self.design.components[component_name].get_air_bridge_coordinates():
-                    hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
-                                                 bond_type=0, name="mybox1", matname="aluminum")
+        # for component_name in self.mini_study.component_names:
+        #     if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
+        #         for coord in self.design.components[component_name].get_air_bridge_coordinates():
+        #             hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
+        #                                          bond_type=0, name="mybox1", matname="aluminum")
             
-        restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
-        if restrict_mesh:
+        # restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
+        # if restrict_mesh:
             
-            self.renderer.modeler.mesh_length(
-                'cpw_to_port_mesh',
-                [
-                    *self.get_cpw_to_port_names(), 
-                    *self.get_flux_double_names(),
-                    *self.get_port_gap_names(),
-                    ],
-                MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
+        #     self.renderer.modeler.mesh_length(
+        #         'cpw_to_port_mesh',
+        #         [
+        #             *self.get_cpw_to_port_names(), 
+        #             *self.get_flux_double_names(),
+        #             *self.get_port_gap_names(),
+        #             ],
+        #         MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
         
         self.setup.analyze()  
         eig_results = self.eig_solver.get_frequencies()

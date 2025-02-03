@@ -1,5 +1,5 @@
-from qiskit_metal.qt.simulation.optimize.sim_plot_progress import OptPltSet
-import qiskit_metal.qt.database.constants as dc
+from src.utils.sim_plot_progress import OptPltSet
+import src.utils.constants as dc
 
 PLOT_SETTINGS = { 
     "RES": [

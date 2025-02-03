@@ -1,17 +1,12 @@
 from qiskit_metal.designs.design_planar import DesignPlanar
-from qiskit_metal import MetalGUI
-
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
-from qiskit_metal.qlibrary.qubits.transmon_cross_fl import TransmonCrossFL
-from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
-from qiskit_metal.qt.qubits.transmon_simple_tee_202Q import TransmonTeemon202Q
-from qiskit_metal.qt.couplers.qt_route_coupler import QTRouteCoupler
-from qiskit_metal.qt.couplers.qt_coupled_line_tee import QTCoupledLineTee
-from qiskit_metal.qt.qt_launchpad import QTLaunchpadWirebond
-#import qiskit_metal.qt.simulation.utils.utils_design_variables as u
+from designlib_temp.transmon_simple_tee_202Q import TransmonTeemon202Q
+from designlib_temp.qt_route_coupler import QTRouteCoupler
+from designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
+from designlib_temp.qt_launchpad import QTLaunchpadWirebond
 
 import design_variables as dv
 
@@ -74,7 +69,7 @@ def make_transmon_plus_resonator(design:DesignPlanar,
             start_pin=dict(component=qub.name, pin='readout'),
             end_pin=dict(component=cltee.name, pin='second_end')),
         fillet=dv.BEND_RADIUS,
-        hfss_wire_bonds = True,
+        hfss_wire_bonds = False,
         wb_size = 2,
         total_length = dv.design_var_res_length(branch),
         lead = dict(start_straight = '600um', end_straight='100um'),
