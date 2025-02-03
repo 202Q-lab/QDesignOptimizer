@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Callable, List, Optional, Union
 import pandas as pd
 from qiskit_metal.analyses.quantization import LOManalysis
@@ -42,7 +43,7 @@ class CapacitanceMatrixStudy():
             y_buffer_width_mm: float=2,
 
             render_qiskit_metal: Optional[Callable]=None,
-            render_qiskit_metal_kwargs: Optional[dict]=None,
+            render_qiskit_metal_kwargs: Optional[dict]=defaultdict(),
 
             percent_error: Optional[float]=0.5,
             nbr_passes: Optional[int]=10,
