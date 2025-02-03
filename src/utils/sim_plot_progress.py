@@ -1,11 +1,10 @@
 from itertools import cycle
 import os
-import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
 
-from qiskit_metal.qt.utils.find_points import get_value_and_unit
-import qiskit_metal.qt.database.constants as dc
+from src.utils.utils import get_value_and_unit
+import src.utils.constants as dc
 
 DEFAULT_PLT_SET = {
     dc.RES_FREQ: {"label": "Res freq (Hz)"},
@@ -91,16 +90,23 @@ def plot_progress(opt_results: dict, system_target_params: dict, plot_settings: 
         """
         data_plotted = False
         for idx, panel in enumerate(panels):
+                
+                if len(panels) == 1:
+                    axes = axs 
+                else: 
+                    axes = axs[idx]
+
                 color = next(colors) 
                 x_data_opt = [get_data_from_parameter(panel.x, result, branch, ii) for ii, result in enumerate(opt_results)]
                 y_data_opt = [get_data_from_parameter(panel.y, result, branch, ii) for ii, result in enumerate(opt_results)]
                 if all(element is not None for element in y_data_opt):
                     data_plotted = True
-                axs[idx].plot(x_data_opt, y_data_opt, 'o-', label=f"optimized", color=color)
+                print(idx, panel, x_data_opt, y_data_opt)
+                axes.plot(x_data_opt, y_data_opt, 'o-', label=f"optimized", color=color)
 
                 if panel.y in system_target_params[branch] and (not None in x_data_opt) and (not None in y_data_opt):
                     y_data_target = system_target_params[branch][panel.y]
-                    axs[idx].plot(
+                    axes.plot(
                         [min(x_data_opt), max(x_data_opt)], 
                         [y_data_target, y_data_target], 
                         '--' if len(x_data_opt) and len(x_data_opt) > 1 else '*',
@@ -108,14 +114,14 @@ def plot_progress(opt_results: dict, system_target_params: dict, plot_settings: 
                         label=f"target"
                         )
 
-                axs[idx].legend()
-                axs[idx].set_xlabel(panel.x_label)
-                axs[idx].set_ylabel(panel.y_label)
+                axes.legend()
+                axes.set_xlabel(panel.x_label)
+                axes.set_ylabel(panel.y_label)
                 if plot_option == 'log':
-                    axs[idx].set_yscale('log')
+                    axes.set_yscale('log')
                 if plot_option == 'loglog':
-                    axs[idx].set_xscale('log')
-                    axs[idx].set_yscale('log')
+                    axes.set_xscale('log')
+                    axes.set_yscale('log')
         return data_plotted
 
     plt.close('all')
@@ -128,7 +134,6 @@ def plot_progress(opt_results: dict, system_target_params: dict, plot_settings: 
         for branch in opt_results[0]['system_optimized_params'].keys():
             if plot_branches_separately:
                 fig, axs = plt.subplots(len(panels))
-            
             data_plotted = plot_figure(opt_results, system_target_params, panels, axs, branch, colors, plot_option)
             data_plotted_in_any_branch = data_plotted_in_any_branch or data_plotted
             fig.suptitle(plot_name)

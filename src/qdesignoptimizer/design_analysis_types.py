@@ -1,9 +1,9 @@
 
 from enum import Enum
-from typing import Callable, List, Literal, Optional, Union
+from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from qiskit_metal.designs.design_base import QDesign
-from qiskit_metal.qt.simulation.sim_capacitance_matrix import CapacitanceMatrixStudy
+from src.qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 
 class TargetType(Enum):
     FREQUENCY = "FREQUENCY"
@@ -42,59 +42,21 @@ def convert_target_type_to_power(target_type: TargetType) -> float:
         raise ValueError(f"{target_type} cannot be identified")
     return p
 
-class SideEffectCompensation():
-    """ Data structure for compensating side effects in optimization.
-    This is useful when varying one design variable has side effects on other quantity.
-    The SideEffectCompensation design_var will be varied to compensate the side effect
-    according to the target_type dependency. 
 
-    Note, no constraints are defined for the SideEffectCompensation design_var, 
-    it is therefore recommended to always have another OptTarget for design_var_compensation, which constrains it if needed. 
-    
-    Args:
-        affected_quantity (str): name of the affected quantity as documentation for the user but not used in the code
-        design_var_compensation (str): design variable to be varied to compensate the side effect
-        target_type_side_effect (TargetType): relation between the design_var used for compensation and the (side) affected quantity.
-            * TargetType: represents direct proportionality. For same example: The SideEffectCompensation design_var is qubit inductance Lj, 
-                qubit_freq \propto 1/sqrt(Lj), hence the target_type_compensation is INVERSE_SQRT
-
-                quantity_new / quantity_old = (design_var_new / design_var_old)^target_type_side_effect * (design_var_compensation_new / design_var_compensation_old)^target_type_compensation = 1,
-                where design_var is used from the corresponding OptTarget
-            
-            * Callable: represents any function func(system_param, **kwargs) which is proportional to the affected quantity. 
-                The expression is used to eliminate the side effect by solving
-                quantity_new / quantity_old = func(system_param_new) / func(system_param_old) * (design_var_compensation_new / design_var_compensation_old)^target_type_compensation = 1
-                See example in qiskit_metal.qt.simulation.utils.utils_optimization_targets.utils_side_effect
-
-        target_type_side_effect_kwargs (dict): Optional kwargs for the target_type_compensation Callable
-        target_type_compensation (TargetType): relation between the design_var used for compensation and the (side) affected quantity.
-            * TargetType: represents direct proportionality. For same example: The SideEffectCompensation design_var is qubit inductance Lj, 
-                qubit_freq \propto 1/sqrt(Lj), hence the target_type_compensation is INVERSE_SQRT
-    """
-    def __init__(
-            self, 
-            affected_quantity: str,
-            design_var_compensation: str,
-            target_type_side_effect: Union[TargetType, Callable],
-            target_type_compensation: TargetType,
-            target_type_side_effect_kwargs: Optional[dict] = None
-        ):
-        self.affected_quantity = affected_quantity
-        self.design_var_compensation = design_var_compensation
-        self.target_type_side_effect = target_type_side_effect
-        self.target_type_compensation = target_type_compensation
-        self.target_type_side_effect_kwargs = target_type_side_effect_kwargs
+BRANCH_PARAMETER = Tuple[str, str]
+"""Example ("branch1", "qubit_freq")"""
 
 class OptTarget():
 
     def __init__(
             self, 
-            system_target_param: Union[tuple, Literal["CROSS_BRANCH_NONLIN", "CAPACITANCE_MATRIX_ELEMENTS"]],
+            system_target_param: Union[BRANCH_PARAMETER, Literal["CROSS_BRANCH_NONLIN", "CAPACITANCE_MATRIX_ELEMENTS"]],
             involved_mode_freqs: List[Union[tuple, str]],
             design_var: str,
             design_var_constraint: object,
-            target_type: TargetType,
-            side_effect_compensations: List[SideEffectCompensation] = None
+            prop_to:  Callable[[Dict[str, Union[float, int]], Dict[str, Union[float, int]]], None] = None,
+            independent_target: bool = False,
+            
         ):
         """ Class for optimization target.
         
@@ -110,16 +72,18 @@ class OptTarget():
                 Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.  
                 Example: ['capacitance_name_1', 'capacitance_name_2'] 
             design_var (str): design variable to be varied
-            design_var_constraint (object): design variable constraint, example {'larger_than': '10 um', 'smaller_than': '100 um'}   
-            target_type (str): type of target value
-            side_effect_compensations (list): list of SideEffectCompensation
+            design_var_constraint (object): design variable constraint, example {'larger_than': '10 um', 'smaller_than': '100 um'}. The constraints are checked and enforced in each iteration of the optimization after all design variables have been updated by the algorithm.   
+            prop_to (Callable): Callable which should accept the system_params (s) and the design_variables (v) dicts and return the proportionality factor.
+                IMPORTANT!!! The units of the design variables MUST be consistent if the prop_to expression cannot be factorized into a chain of functions only depending on a single design variable each, such as func1(v[PARAM_X])*func2(PARAM_Y)... For example: (v[PARAM_X] - v[PARAM_Y]) requires PARAM_X and PARAM_Y to have the same units.
+                Example: prop_to=lambda s, v: s[ac.QUBIT_FREQ] / np.sqrt(v[dv.DESIGN_VAR_LJ_ATS])
+            independent_target: Mark independent_target=True if the target only depends on a single design variable and not on any system parameter. This allows the optimizer to solve this OptTarget independently, making it faster and more robust.
         """
         self.system_target_param = system_target_param
         self.involved_mode_freqs = involved_mode_freqs
         self.design_var = design_var
         self.design_var_constraint = design_var_constraint
-        self.target_type = target_type
-        self.side_effect_compensations = side_effect_compensations
+        self.prop_to = prop_to
+        self.independent_target = independent_target
 
 class ScatteringStudy():
     def __init__(
@@ -186,7 +150,7 @@ class MiniStudy():
             max_mesh_length_port (str): max mesh length of port
             max_mesh_length_lines_to_ports (str): max mesh length of lines to ports to enhance accuracy of decay estiamtes
             allow_crude_decay_estimates (bool): if True: use default mesh to ports which gives unreliable decay estimates in Eigenmode sim
-            adjustment_rate (float): rate of adjustment of design variable, example 0.7 is slower but more robust
+            adjustment_rate (float): rate of adjustment of design variable w.r.t. to calculated optimal values. Example 0.7 is slower but might be more robust.
             render_qiskit_metal_eigenmode_kw_args (dict): kw_args for render_qiskit_metal used during eigenmode and EPR analysis, 
                                                           Example: {'include_charge_line': True}
             scattering_studies (List[ScatteringStudy]): list of ScatteringStudy objects

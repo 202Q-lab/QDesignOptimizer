@@ -2,31 +2,30 @@ from asyncio import sleep
 from copy import deepcopy
 from enum import Enum
 from pprint import pprint
-from typing import Callable, List
+from typing import Callable, List, Optional
 import numpy as np
+import scipy
 from scipy.optimize import curve_fit
-
-from pandas import DataFrame
+import pandas as pd
+import scipy.optimize
+from pyaedt import Hfss
+import pyEPR as epr
 
 from qiskit_metal import Dict
 from qiskit_metal.analyses.simulation import ScatteringImpedanceSim
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.designs.design_base import QDesign
-from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
-from qiskit_metal.qt.couplers.qt_coupled_line_tee import QTCoupledLineTee
-from qiskit_metal.qt.drive_lines.qt_charge_line_open_to_ground import QTChargeLineOpenToGround
-from qiskit_metal.qt.drive_lines.qt_flux_line_double import QTFluxLineDouble
-from qiskit_metal.qt.qt_meandered import QTRouteMeander
-from qiskit_metal.qt.simulation.design_analysis_types import DesignAnalysisState, MiniStudy, OptTarget, ScatteringStudy, TargetType, convert_target_type_to_power
 
-from qiskit_metal.qt.simulation.optimize.sim_plot_progress import plot_progress
-from qiskit_metal.qt.utils.find_points import get_value_and_unit
+from src.qdesignoptimizer.design_analysis_types import DesignAnalysisState, MiniStudy, OptTarget, ScatteringStudy, TargetType, convert_target_type_to_power
+from src.utils.sim_plot_progress import plot_progress
+from src.utils.utils import get_value_and_unit
+import src.utils.constants as dc
 
-from pyaedt import Hfss
-
-import qiskit_metal.qt.database.constants as dc
-import pyEPR as epr
+# design objects should be moved out 
+from designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
+from designlib_temp.qt_charge_line_open_to_ground import QTChargeLineOpenToGround
+from designlib_temp.qt_flux_line_double import QTFluxLineDouble
 
 class DesignAnalysis():
     def __init__(
@@ -66,10 +65,14 @@ class DesignAnalysis():
         self.renderer = self.eig_solver.sim.renderer
         self.mini_study = mini_study
         self.opt_targets = opt_targets
+        self.all_design_vars = [target.design_var for target in opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
+
+        self.is_system_optimized_params_initialized = False
         if state.system_optimized_params is not None:
               sys_opt_param = state.system_optimized_params
+              self.is_system_optimized_params_initialized = True
         else:
             def fill_leaves_with_none(nested_dict):
                 for key, value in nested_dict.items():
@@ -103,15 +106,7 @@ class DesignAnalysis():
 
         self._validate_opt_targets()
         assert not self.system_target_params is self.system_optimized_params, "system_target_params and system_optimized_params may not be references to the same object"
-
-        # assert relation between system_target_params and system_optimized_params?
-
-        self.eig_solver.sim.setup.vars = self.mini_study.jj_var
-        self.eig_solver.setup.junctions = self.mini_study.jj_setup
         
-        # print("DesignAnalysis initialized")
-        # print("renderer.sim.setup.vars", self.eig_solver.sim.setup.vars)
-        # print("renderer.setup.junctions", self.eig_solver.setup.junctions)
     def update_nbr_passes(self, nbr_passes):
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
@@ -126,10 +121,8 @@ class DesignAnalysis():
         """
         if not self.opt_targets is None:
             for target in self.opt_targets:
-                assert target.design_var in self.design.variables, f"Design variable {side_effect.design_var_compensation} not found in design variables."
-                for side_effect in  target.side_effect_compensations if target.side_effect_compensations is not None else []:
-                    assert side_effect.design_var_compensation in self.design.variables, f"Side effect design variable {side_effect.design_var_compensation} not found in design variables."
-
+                assert target.design_var in self.design.variables, f"Design variable {target.design_var} not found in design variables."
+                
                 if target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
                     capacitance_1 = target.involved_mode_freqs[0]
                     capacitance_2 = target.involved_mode_freqs[1]
@@ -153,6 +146,9 @@ class DesignAnalysis():
                         assert (branch, freq_name) in self.mini_study.mode_freqs, f"Target mode {freq_name} in branch {branch} \
                             not found in modes which will be simulated. Type must be the same, {type(branch)}, {type(target.involved_mode_freqs[0])}?"
 
+            design_variables = [target.design_var for target in self.opt_targets]
+            assert len(design_variables) == len(set(design_variables)), "Design variables must be unique."
+            
     def update_var(self, updated_design_vars: dict, system_optimized_params: dict):
         """Update junction and design variables in mini_study, design, pinfo and.
         """
@@ -161,9 +157,9 @@ class DesignAnalysis():
             if key in self.mini_study.jj_var:
                 self.mini_study.jj_var[key] = val
             self.pinfo.design.set_variable(key, val)
-            self.design.variables[key] = val # are both needed?
+            self.design.variables[key] = val
 
-        self.eig_solver.sim.setup.vars = self.design.variables # self.mini_study.jj_var
+        self.eig_solver.sim.setup.vars = self.design.variables
         self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
         self.system_optimized_params = {**self.system_optimized_params, **system_optimized_params}   
@@ -213,23 +209,23 @@ class DesignAnalysis():
             port_list=self.mini_study.port_list, 
             open_pins=self.mini_study.open_pins)
         
-        for component_name in self.mini_study.component_names:
-            if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
-                for coord in self.design.components[component_name].get_air_bridge_coordinates():
-                    hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
-                                                 bond_type=0, name="mybox1", matname="aluminum")
+        # for component_name in self.mini_study.component_names:
+        #     if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
+        #         for coord in self.design.components[component_name].get_air_bridge_coordinates():
+        #             hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
+        #                                          bond_type=0, name="mybox1", matname="aluminum")
             
-        restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
-        if restrict_mesh:
+        # restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
+        # if restrict_mesh:
             
-            self.renderer.modeler.mesh_length(
-                'cpw_to_port_mesh',
-                [
-                    *self.get_cpw_to_port_names(), 
-                    *self.get_flux_double_names(),
-                    *self.get_port_gap_names(),
-                    ],
-                MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
+        #     self.renderer.modeler.mesh_length(
+        #         'cpw_to_port_mesh',
+        #         [
+        #             *self.get_cpw_to_port_names(), 
+        #             *self.get_flux_double_names(),
+        #             *self.get_port_gap_names(),
+        #             ],
+        #         MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
         
         self.setup.analyze()  
         eig_results = self.eig_solver.get_frequencies()
@@ -239,7 +235,9 @@ class DesignAnalysis():
 
         for target in self.opt_targets:
             if target.system_target_param is not dc.CAPACITANCE_MATRIX_ELEMENTS:
-                self._update_optimized_params_for_eigenmode_target(target, eig_results)  # TODO what is this? 
+                pass
+                # TODO map linear freq and kappa
+                # self._update_optimized_params_for_eigenmode_target(target, eig_results)  # TODO what is this? 
         self._update_optimized_params(eig_results)
 
         return eig_results
@@ -248,24 +246,19 @@ class DesignAnalysis():
         """Run EPR, requires design with junctions.
         """
         no_junctions = self.mini_study.jj_var is None or len(self.mini_study.jj_var) == 0
-        # wipe data from the previous run (if any)
-        def get_swp_jj_var():
-            key = list(self.mini_study.jj_setup.keys())[0] # TODO what about multi junction scenarios?
-            return self.mini_study.jj_setup[key]['Lj_variable']
 
-        all_jj_setup = deepcopy(self.mini_study.jj_setup)
-        epr_jjs = {}
+        jj_setups_to_include_in_epr = {}
         junction_found = False
         linear_element_found = False
         for key, val in self.mini_study.jj_setup.items():
             if 'type' in val and val['type'] == 'linear':
                 linear_element_found = True
-                continue # do not include Kerr-free junctions in EPR analysis
-            epr_jjs[key] = val
+                continue # do not include 'linear' junctions (e.g. ATS/SNAIL at Kerr-free point) in EPR analysis TODO does this work as intended?
+            jj_setups_to_include_in_epr[key] = val
             junction_found = True
         
         if junction_found:
-            self.eig_solver.setup.junctions = epr_jjs
+            self.eig_solver.setup.junctions = jj_setups_to_include_in_epr
 
             if not no_junctions:
                 try:
@@ -276,15 +269,14 @@ class DesignAnalysis():
                     self.eprd.do_EPR_analysis()
                     self.epra = epr.QuantumAnalysis(self.eprd.data_filename)
                     self.epra.analyze_all_variations(cos_trunc = 8, fock_trunc = 7)
-                    swp_variable = get_swp_jj_var() # suppose we swept an optimetric analysis vs. inductance Lj_alice
-                    self.epra.plot_hamiltonian_results(swp_variable=swp_variable)
+                    self.epra.plot_hamiltonian_results()
                     freqs = self.epra.get_frequencies(numeric=True)
                     chis = self.epra.get_chis(numeric=True)
                 except AttributeError:
                     self.logger.error(
                         "Please install a more recent version of pyEPR (>=0.8.5.3)")
                     
-            self.eig_solver.setup.junctions = all_jj_setup
+            self.eig_solver.setup.junctions = self.mini_study.jj_setup  # reset jj_setup for linear HFSS simulation
 
             self._update_optimized_params_epr(freqs, chis) 
             return chis
@@ -587,12 +579,12 @@ class DesignAnalysis():
 
         return all_mode_idx
     
-    def _update_optimized_params_for_eigenmode_target(self, target: OptTarget, eig_result: DataFrame):
+    def _update_optimized_params_for_eigenmode_target(self, target: OptTarget, eig_result: pd.DataFrame):
         """Update optimized parameters from eigenmode simulation.
         
         Args:
             target (OptTarget): optimization target
-            eig_result (DataFrame): eigenmode simulation results
+            eig_result (pd.DataFrame): eigenmode simulation results
 
         """
         all_mode_idx = self.get_mode_idx(target)
@@ -606,7 +598,7 @@ class DesignAnalysis():
         branch, param = target.system_target_param
         self.system_optimized_params[branch][param] = optimized_value
 
-    def _update_optimized_params(self, eig_result: DataFrame):
+    def _update_optimized_params(self, eig_result: pd.DataFrame):
 
         for idx, (branch, freq_name, value) in enumerate(self.get_simulated_modes_sorted()):
             # print(f"Mode {branch}, {freq_name}: {value}")
@@ -648,7 +640,7 @@ class DesignAnalysis():
                 print(f"Warning: unidentified mode {branch_i}, {freq_name_i} is skipped")
         return mode_idx
 
-    def _update_optimized_params_epr(self, freq_ND_results: DataFrame, epr_result: DataFrame):
+    def _update_optimized_params_epr(self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame):
         all_modes = self.get_simulated_modes_sorted()
         all_branches = set([branch for branch, _, _ in all_modes])
         
@@ -710,13 +702,14 @@ class DesignAnalysis():
                     self.system_optimized_params[dc.CROSS_BRANCH_NONLIN][(branch_i, freq_i, branch_j, freq_j)] = \
                         epr_result[mode_idx[branch_i][freq_i]].iloc[mode_idx[branch_j][freq_j]] * MHz
 
-    def _update_optimized_params_capacitance_simulation(self, capacitance_matrix: DataFrame):
-        for key_capacitances in self.system_target_params[dc.CAPACITANCE_MATRIX_ELEMENTS].keys():
-            try:
-                self.system_optimized_params[dc.CAPACITANCE_MATRIX_ELEMENTS][key_capacitances] = capacitance_matrix.loc[key_capacitances[0], key_capacitances[1]]
-            except KeyError:
-                print(f"Warning: capacitance {key_capacitances} not found in capacitance matrix")
-                pass # capacitance combination is not simulated in this capacitance matrix study
+    def _update_optimized_params_capacitance_simulation(self, capacitance_matrix: pd.DataFrame):
+        if dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
+            for key_capacitances in self.system_target_params[dc.CAPACITANCE_MATRIX_ELEMENTS].keys():
+                try:
+                    self.system_optimized_params[dc.CAPACITANCE_MATRIX_ELEMENTS][key_capacitances] = capacitance_matrix.loc[key_capacitances[0], key_capacitances[1]]
+                except KeyError:
+                    print(f"Warning: capacitance {key_capacitances} not found in capacitance matrix")
+                    pass # capacitance combination is not simulated in this capacitance matrix study
 
     @staticmethod
     def _apply_adjustment_rate(new_val, old_val, rate):
@@ -753,107 +746,130 @@ class DesignAnalysis():
         
         return f"{design_value} {d_unit}"
     
-    def _get_target_design_val_from_expression(
+    @staticmethod
+    def get_quantity_value(target: OptTarget, system_params: dict):
+        if target.design_var == dc.CROSS_BRANCH_NONLIN:
+            mode1, mode2 = target.involved_mode_freqs
+            branch1, param1 = mode1
+            branch2, param2 = mode2
+            current_value = system_params[dc.CROSS_BRANCH_NONLIN][(branch1, param1, branch2, param2)]
+        elif target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
+            [capacitance_name_1, capacitance_name_2] = target.involved_mode_freqs
+            current_value = system_params[dc.CAPACITANCE_MATRIX_ELEMENTS][(capacitance_name_1, capacitance_name_2)]
+        else:
+            branch, param = target.system_target_param
+            current_value = system_params[branch][param]
+        return current_value
+
+    def _minimize_for_design_vars(
             self,
-            design_var: str, 
-            design_var_value: str,
-            target_value: str, 
-            current_value: str,
-            target_type: TargetType,
-            ) -> str:
-        """Get the new design value for the target types not defined in the components. 
-        y_target / y_current propto (x_target / x_current)^p  =>  
-        x_target = x_current * (y_target / y_current)^(1/p) 
-        where y is the target variable, x is the design variable, and p is the power of the target type.
+            targets_to_minimize_for: List[OptTarget], 
+            all_design_var_current: dict, 
+            all_design_var_updated: dict,
+            all_quantities_current: dict, 
+            all_quantities_targets_met: dict
+        ):
+        """Minimize the cost function to find the optimal design variables to reach the target.
+        The all_design_var_updated variable is automatically updated with the optimal design variables during the minimization.
+        """            
+        ordered_design_var_names_to_minimize = [target.design_var for target in targets_to_minimize_for]
 
-        Args:
-            target_type (TargetType): The type of target
-            design_var (str): The design variable to be optimized
-            design_var_value (str): The value of the design variable
-            target_value (str): The target value for the target variable
-            current_value (str): The current value of the target variable
-        """
-        design_var_val, unit = get_value_and_unit(design_var_value)
+        def cost_function(ordered_design_var_vals_updated):
+            """Cost function to minimize.
 
-        try:
-            p = convert_target_type_to_power(target_type)
-        except ValueError:
-            print(f"Warning: design variable {design_var} is specified with unrecognized TargetType {target_type}.")
-        
-        design_var_val_new = design_var_val * np.power( target_value / current_value,  1 / p)
-        design_var_val_new_str = f"{design_var_val_new}" + unit
-        if np.isinf(design_var_val_new):
-            raise ValueError(f"Design variable {design_var} is infinite. Please check the target value {target_value} and current value {current_value}.")
-        return design_var_val_new_str
-    
-    def _calculate_target_design_var(self) -> dict:
-        """Calculate the new design value for the optimization targets."""
-        updated_design_vars = {}
+            Args:
+                ordered_design_var_vals_updated (List[float]): list of updated design variable values
+            """
+            for idx, name in enumerate(ordered_design_var_names_to_minimize):
+                all_design_var_updated[name] = ordered_design_var_vals_updated[idx]
+            cost = 0
+            
+            for target in targets_to_minimize_for: 
+                Q_k1_i = (
+                    self.get_quantity_value(target, all_quantities_current) 
+                    * target.prop_to(all_quantities_targets_met, all_design_var_updated)
+                    / target.prop_to(all_quantities_current, all_design_var_current)
+                )
+                cost += ((Q_k1_i / self.get_quantity_value(target, all_quantities_targets_met)) - 1) ** 2
+            return cost
+            
+        init_design_var = []
+        init_design_var = [all_design_var_current[name] for name in ordered_design_var_names_to_minimize]
+
+
+        scipy.optimize.minimize(cost_function, init_design_var)
+
+    def get_system_params_targets_met(self):
+        system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
-
-            if target.system_target_param == dc.CROSS_BRANCH_NONLIN:
+            if target.design_var == dc.CROSS_BRANCH_NONLIN:
                 mode1, mode2 = target.involved_mode_freqs
                 branch1, param1 = mode1
                 branch2, param2 = mode2
-                target_value = self.system_target_params[dc.CROSS_BRANCH_NONLIN][(branch1, param1, branch2, param2)]
-                current_value = self.system_optimized_params[dc.CROSS_BRANCH_NONLIN][(branch1, param1, branch2, param2)]
-                # update estimated new value for side effect compensation
+                system_params_targets_met[dc.CROSS_BRANCH_NONLIN][(branch1, param1, branch2, param2)] = self.get_quantity_value(target, self.system_target_params)
             elif target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
                 [capacitance_name_1, capacitance_name_2] = target.involved_mode_freqs
-                target_value =     self.system_target_params[dc.CAPACITANCE_MATRIX_ELEMENTS][(capacitance_name_1, capacitance_name_2)]
-                current_value = self.system_optimized_params[dc.CAPACITANCE_MATRIX_ELEMENTS][(capacitance_name_1, capacitance_name_2)]
+                system_params_targets_met[dc.CAPACITANCE_MATRIX_ELEMENTS][(capacitance_name_1, capacitance_name_2)] = self.get_quantity_value(target, self.system_target_params)
             else:
                 branch, param = target.system_target_param
-                target_value = self.system_target_params[branch][param]
-                current_value = self.system_optimized_params[branch][param]
+                system_params_targets_met[branch][param] = self.get_quantity_value(target, self.system_target_params)
+        return system_params_targets_met
+    
+    def _calculate_target_design_var(self) -> dict:
+        """Calculate the new design value for the optimization targets."""
 
-            design_var_value = updated_design_vars.get(target.design_var, self.design.variables[target.design_var])
+        system_params_current = deepcopy(self.system_optimized_params)
+        system_params_targets_met = self.get_system_params_targets_met() 
+        
+        design_vars_current_str = deepcopy(self.design.variables)
 
-            if current_value is None:
-                new_design_value = design_var_value
-            else:
-                new_design_value = self._get_target_design_val_from_expression(
-                    target.design_var, design_var_value, target_value, current_value, target.target_type)          
-                new_design_value = self._constrain_design_value(design_var_value, new_design_value, target.design_var_constraint)
-            
-            updated_design_vars[target.design_var] = new_design_value
+        if not self.is_system_optimized_params_initialized:
+            self.is_system_optimized_params_initialized = True
+            return design_vars_current_str
+        
 
-            if current_value is not None:
-                for side_effect in target.side_effect_compensations if target.side_effect_compensations is not None else []:
-                    """"Compensate for side effects.
-                    TargetType: quantity_new/quantity_old = 1 = (side_new/side_old)^pow_side * (comp_new*comp_old)^pow_comp
-                    Callable:   quantity_new/quantity_old = 1 = func(system_optimized_params_new) / func(system_optimized_params_old) * (comp_new*comp_old)^pow_comp
-                    """
-                    assert not target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS, "Side effect compensation is not supported for capacitance matrix elements"
-                    assert not target.system_target_param == dc.CROSS_BRANCH_NONLIN, "Side effect compensation is not supported for cross branch nonlinearities"
-                    design_var_compensation = side_effect.design_var_compensation
-                    design_var_compensation_value = updated_design_vars.get(design_var_compensation, self.design.variables[design_var_compensation])
-                    pow_compensation = convert_target_type_to_power(side_effect.target_type_compensation)
-                    design_var_val_new, _ = get_value_and_unit(new_design_value)
-                    design_var_val_old, _ = get_value_and_unit(design_var_value)
-                    design_var_val_comp, unit = get_value_and_unit(design_var_compensation_value)
-                    pow_direct_effect = convert_target_type_to_power(target.target_type)
-                    quantity_new = self.system_optimized_params[branch][param] * np.power(design_var_val_new/design_var_val_old, pow_direct_effect)
-                    if isinstance(side_effect.target_type_side_effect, TargetType):
-                        pow_side_effect = convert_target_type_to_power(side_effect.target_type_side_effect)
-                        side_effect_factor = np.power(design_var_val_new/design_var_val_old, pow_side_effect)
-                    elif isinstance(side_effect.target_type_side_effect, Callable):
-                        system_optimized_params_new = deepcopy(self.system_optimized_params)
-                        system_optimized_params_new[branch][param] = quantity_new
-                        try:
-                            side_effect_factor_new = side_effect.target_type_side_effect(system_optimized_params_new, **side_effect.target_type_side_effect_kwargs)
-                            side_effect_factor_old = side_effect.target_type_side_effect(self.system_optimized_params, **side_effect.target_type_side_effect_kwargs)
-                        except TypeError: # For example if function uses parameters which are not set in the system_optimized_params
-                            print(f"Warning: side effect compensation for {side_effect.affected_quantity} failed, probably due to missing parameters in the system_optimized_params.")
-                            continue
-                        side_effect_factor = side_effect_factor_new / side_effect_factor_old
-                    else:
-                        raise NotImplementedError(f"side_effect.target_type_side_effect must be either TargetType or Callable")
-                    new_design_var_compensation_value = design_var_val_comp * np.power(1 / side_effect_factor, 1 / pow_compensation)
+        # Fetch the numeric values of the design variables
+        design_vars_current = {}
+        design_vars_updated = {}
+        units = {}
+        for design_var, val_unit in design_vars_current_str.items():
+            val, unit = get_value_and_unit(val_unit)
+            design_vars_current[design_var] = val
+            design_vars_updated[design_var] = val  
+            units[design_var] = unit
 
-                    updated_design_vars[design_var_compensation] = f"{new_design_var_compensation_value}{unit}"
-                    # note: no constraint for the side effect compensation        
-        return updated_design_vars
+        independent_targets = [target for target in self.opt_targets if target.independent_target]
+        if independent_targets is not []:
+            for independent_target in independent_targets:
+                self._minimize_for_design_vars(
+                    [independent_target],
+                    design_vars_current, 
+                    design_vars_updated, 
+                    system_params_current, 
+                    system_params_targets_met
+                )
+
+        dependent_targets = [target for target in self.opt_targets if not target.independent_target]
+        if len(dependent_targets) != 0:
+            self._minimize_for_design_vars(
+                dependent_targets,
+                design_vars_current, 
+                design_vars_updated,  
+                system_params_current, 
+                system_params_targets_met
+            )
+      
+        # Stitch back the unit of the design variable values 
+        design_vars_updated_constrained_str = {}
+        for target in self.opt_targets:
+            design_var_name = target.design_var
+            design_vars_updated_val_and_unit = f"{design_vars_updated[design_var_name]} {units[design_var_name]}"
+            constrained_val_and_unit = self._constrain_design_value(
+                design_vars_current_str[design_var_name], design_vars_updated_val_and_unit, target.design_var_constraint)
+            design_vars_updated_constrained_str[design_var_name] = constrained_val_and_unit
+
+        # TODO document that the user must make sure that if they use e.g. sums or differences of design variables, they must make sure they are the same dimensions
+        return design_vars_updated_constrained_str
 
     
     def optimize_target(self, updated_design_vars_input: dict, system_optimized_params: dict):
@@ -866,6 +882,8 @@ class DesignAnalysis():
             updated_design_vars (dict): updated design variables
             system_optimized_params (dict): updated system optimized parameters
         """
+        if not system_optimized_params == {}:
+            self.is_system_optimized_params_initialized = True
         self.update_var(updated_design_vars_input, system_optimized_params)
 
         updated_design_vars = self._calculate_target_design_var()
@@ -929,3 +947,47 @@ class DesignAnalysis():
         #         self.run_decay(scattering_study)
         #     except:
         #         print("Scattering analysis failed")
+
+    
+            
+    def get_cross_kerr_matrix(self, iteration: int=-1) -> pd.DataFrame:
+        """Get cross kerr matrix from EPR analysis.
+        
+        Args:
+            iteration (int): simulation iteration number defaults to the most recent iteration
+            
+        Returns:
+            pd.DataFrame: cross kerr matrix
+        """
+        if "cross_kerrs" in self.optimization_results[iteration]:
+            return self.optimization_results[iteration]["cross_kerrs"]
+    
+    def get_eigenmode_results(self, iteration: int=-1) -> pd.DataFrame:
+        """Get eigenmode results.
+        
+        Args:
+            iteration (int): simulation iteration number defaults to the most recent iteration
+            
+        Returns:
+            pd.DataFrame: eigenmode results
+        """
+        if "eig_results" in self.optimization_results[iteration]:
+            return self.optimization_results[iteration]["eig_results"]
+    
+    def get_capacitance_matrix(self, capacitance_study_number: int, iteration: int=-1) -> Optional[pd.DataFrame]:
+        """Get capacitance matrix from stati simulation.
+        
+        Args:
+            capacitance_study_number (int): which of the capacitance studies in the MiniStudy to retrive the matrix from (1 being the first)
+            iteration (int): simulation iteration number defaults to the most recent iteration
+            
+        Returns:
+            List[pd.DataFrame]: capacitance matrix
+        """
+        if "capacitance_matrix" in self.optimization_results[iteration]:
+            capacitance_matrices = self.optimization_results[iteration]["capacitance_matrix"]
+        
+        if 0 <= capacitance_study_number - 1 < len(capacitance_matrices):
+            return capacitance_matrices[capacitance_study_number - 1]
+
+        return None

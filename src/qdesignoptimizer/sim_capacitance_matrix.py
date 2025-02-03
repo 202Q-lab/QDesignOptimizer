@@ -1,10 +1,14 @@
+from collections import defaultdict
 from typing import Callable, List, Optional, Union
 import pandas as pd
-from qiskit_metal.analyses.quantization import LOManalysis
-from qiskit_metal.designs.design_base import QDesign
-from qiskit_metal.qt.estimation.classical_model_decay_into_charge_line import calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline, calculate_t1_limit_floating_lumped_mode_decay_into_chargeline
 import numpy as np
 import warnings
+
+from qiskit_metal.analyses.quantization import LOManalysis
+from qiskit_metal.designs.design_base import QDesign
+
+from src.estimation.classical_model_decay_into_charge_line import calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline, calculate_t1_limit_floating_lumped_mode_decay_into_chargeline
+
       
 class CapacitanceMatrixStudy():
     """ Capacitance matrix study for DesignAnalysis.
@@ -42,7 +46,7 @@ class CapacitanceMatrixStudy():
             y_buffer_width_mm: float=2,
 
             render_qiskit_metal: Optional[Callable]=None,
-            render_qiskit_metal_kwargs: Optional[dict]=None,
+            render_qiskit_metal_kwargs: Optional[dict]=defaultdict(),
 
             percent_error: Optional[float]=0.5,
             nbr_passes: Optional[int]=10,
