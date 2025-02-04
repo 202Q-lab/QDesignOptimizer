@@ -25,6 +25,7 @@ from qdesignoptimizer.designlib_temp.qt_charge_line_open_to_ground import (
 # design objects should be moved out
 from qdesignoptimizer.designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
 from qdesignoptimizer.designlib_temp.qt_flux_line_double import QTFluxLineDouble
+from qdesignoptimizer.logging import log
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
@@ -118,8 +119,8 @@ class DesignAnalysis:
     def update_nbr_passes(self, nbr_passes):
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
-        print(
-            "WARNING, does not update passes in Scattering simulation not in Capacitance matrix simulation."
+        log.warning(
+            "Does not update passes in Scattering simulation not in Capacitance matrix simulation."
         )
 
     def update_delta_f(self, delta_f):
@@ -324,7 +325,7 @@ class DesignAnalysis:
                     freqs = self.epra.get_frequencies(numeric=True)
                     chis = self.epra.get_chis(numeric=True)
                 except AttributeError:
-                    self.logger.error(
+                    log.error(
                         "Please install a more recent version of pyEPR (>=0.8.5.3)"
                     )
 
@@ -335,9 +336,10 @@ class DesignAnalysis:
             self._update_optimized_params_epr(freqs, chis)
             return chis
         else:
-            print("Warning: no junctions found, skipping EPR analysis.")
+            add_msg = ""
             if linear_element_found:
-                print("However, a linear element was found.")
+                add_msg = " However, a linear element was found."
+            log.warning("No junctions found, skipping EPR analysis." + add_msg)
             return
 
     # def run_decay(self, scattering_study: ScatteringStudy):
@@ -694,7 +696,7 @@ class DesignAnalysis:
             elif freq_name_i == dc.COUPLER_FREQ:
                 mode_idx[branch_i][dc.COUPLER_FREQ] = idx_i
             else:
-                print(
+                log.warning(
                     f"Warning: unidentified mode {branch_i}, {freq_name_i} is skipped"
                 )
         return mode_idx
@@ -796,7 +798,7 @@ class DesignAnalysis:
                         key_capacitances
                     ] = capacitance_matrix.loc[key_capacitances[0], key_capacitances[1]]
                 except KeyError:
-                    print(
+                    log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
 
@@ -1018,7 +1020,7 @@ class DesignAnalysis:
         self.update_var(updated_design_vars_input, system_optimized_params)
 
         updated_design_vars = self._calculate_target_design_var()
-        print("updated_design_vars", updated_design_vars)
+        log.info("Updated_design_vars\n%s", updated_design_vars)
         self.update_var(updated_design_vars, {})
 
         iteration_result = {}
