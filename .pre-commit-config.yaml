@@ -31,6 +31,7 @@ repos:
     rev: v2.4.0
     hooks:
       - id: pycln # Automatically remove unused imports
+        files: ^src/qdesignoptimizer/
         args:
           - --config=pyproject.toml
           - --all
