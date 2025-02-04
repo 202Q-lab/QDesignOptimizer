@@ -1,5 +1,6 @@
 """Configuration file for sphinx documentation."""
 
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -95,5 +96,7 @@ def run_apidoc(_):
     """Extract autodoc directives from package structure."""
     source = Path(__file__).parent
     docs_dest = source / "api-reference"
+    if docs_dest.is_dir():
+        shutil.rmtree(docs_dest, ignore_errors=False, onerror=None)
     package = source.parents[1] / "src" / "qdesignoptimizer"
-    apidoc.main(["--no-toc", "--module-first", "-o", str(docs_dest), str(package)])
+    apidoc.main(["--module-first", "-o", str(docs_dest), str(package), "--separate"])

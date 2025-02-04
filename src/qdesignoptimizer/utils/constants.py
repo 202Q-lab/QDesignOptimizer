@@ -1,15 +1,15 @@
 CROSS_BRANCH_NONLIN = "CROSS_BRANCH_NONLIN"
 
 CAPACITANCE_MATRIX_ELEMENTS = "CAPACITANCE_MATRIX_ELEMENTS"
-"""dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.
-Capacitance matrix elements are in femto Farads (fF).
+""" dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.
+    Capacitance matrix elements are in femto Farads (fF).
 
-Format: (capacitance_name, capacitance_name): value
+    Format: (capacitance_name, capacitance_name): value
 
-Example: {
-    ('comb_NAME_QB1', 'comb_NAME_QB1'): 100,
-    ('comb_NAME_QB1', 'comb_NAME_QB2'): 5,
-}
+    Example: {
+        ('comb_NAME_QB1', 'comb_NAME_QB1'): 100,
+        ('comb_NAME_QB1', 'comb_NAME_QB2'): 5,
+        }
 """
 
 BRANCH_1 = "BRANCH_1"
@@ -23,11 +23,13 @@ BRANCH_8 = "BRANCH_8"
 BRANCH_9 = "BRANCH_9"
 BRANCH_10 = "BRANCH_10"
 
+
 def branch_str(branch):
     return f"BRANCH_{branch}"
 
+
 # Resonator
-RES_FREQ = "res_freq"  
+RES_FREQ = "res_freq"
 """omega/2pi (Hz)"""
 RES_KAPPA = "res_kappa"
 """kappa/2pi (Hz)"""
@@ -45,22 +47,22 @@ QUBIT_ANHARMONICITY = "qubit_anharmonicity"  # Hz
 QUBIT_T1 = "qubit_T1"  # s
 QUBIT_T2 = "qubit_T2"  # s
 
-# Cavity 
-CAVITY_FREQ = "cavity_freq"  # Hz - Best estimate for the cavity frequency 
+# Cavity
+CAVITY_FREQ = "cavity_freq"  # Hz - Best estimate for the cavity frequency
 CAVITY_KERR = "cavity_kerr"  # Hz
 CAVITY_PURCELL_DECAY = "cavity_purcell_decay"  # Hz
 CAVITY_RES_CROSS_KERR = "cavity_res_cross_kerr"  # Hz
-CAVITY_KAPPA = "cavity_kappa" #Hz
+CAVITY_KAPPA = "cavity_kappa"  # Hz
 CAVITY_CHARGE_LINE_LIMITED_T1 = "cavity_charge_line_limited_t1"  # Hz
 
-#Coupler
-COUPLER_FREQ = 'coupler_freq'
-COUPLER_KAPPA = 'coupler_kappa'
+# Coupler
+COUPLER_FREQ = "coupler_freq"
+COUPLER_KAPPA = "coupler_kappa"
 
 
-CAVITY_T1 = "cavity_T1" # Hz
+CAVITY_T1 = "cavity_T1"  # Hz
 
-#%%  Coupling
+# %%  Coupling
 # Resonator qubit interaction
 RES_QUBIT_CHI = "res_qubit_chi"  # Hz
 RES_QUBIT_CHI_PRIME = "res_qubit_chi_prime"  # Hz
@@ -70,8 +72,8 @@ QUBIT_CAVITY_G = "qubit_cavity_g"  # Hz
 CAVITY_QUBIT_CHI = "cavity_qubit_chi"  # Hz
 CAVITY_QUBIT_CHI_PRIME = "cavity_qubit_chi_prime"  # Hz
 
-#Cavity coupler interaction
-CAVITY_COUPLER_G = "cavity_coupler_g" #Hz
-CAVITY_COUPLER_CHI = "cavity_coupler_chi" #Hz
+# Cavity coupler interaction
+CAVITY_COUPLER_G = "cavity_coupler_g"  # Hz
+CAVITY_COUPLER_CHI = "cavity_coupler_chi"  # Hz
 
 ITERATION = "ITERATION"

@@ -1,17 +1,20 @@
+from collections import defaultdict
 from typing import Callable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from qiskit_metal.analyses.quantization import LOManalysis
 from qiskit_metal.designs.design_base import QDesign
-from qiskit_metal.qt.estimation.classical_model_decay_into_charge_line import (
+
+from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_floating_lumped_mode_decay_into_chargeline,
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
 
 
 class CapacitanceMatrixStudy:
-    """Capacitance matrix study for DesignAnalysis.
+    """
+    Capacitance matrix study for DesignAnalysis.
 
     When several components are rendered in the capacitance matrix analysis,
     the union of all connected components will be represented by a unique name,
@@ -31,7 +34,7 @@ class CapacitanceMatrixStudy:
         render_qiskit_metal (Callable): if provided, the design will be rerendered using this function before the capacitance simulation
                                         If a CapacitanceMatrixStudy is used in the DesignAnalysis optimization and self.render_qiskit_metal==None,
                                         render_qiskit_metal from DesignAnalysisState will be used instead (i.e. it doesn't need to be provided).
-                                        Format: render_qiskit_metal(design, **kw_args)
+                                        Format: render_qiskit_metal(design, `**kw_args`)
         render_qiskit_metal_kwargs (dict): kwargs for render_qiskit_metal
 
         percent_error (float):          percent error in capacitance simulation
@@ -46,7 +49,7 @@ class CapacitanceMatrixStudy:
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
         render_qiskit_metal: Optional[Callable] = None,
-        render_qiskit_metal_kwargs: Optional[dict] = None,
+        render_qiskit_metal_kwargs: Optional[dict] = defaultdict(),
         percent_error: Optional[float] = 0.5,
         nbr_passes: Optional[int] = 10,
     ):
@@ -71,10 +74,11 @@ class CapacitanceMatrixStudy:
         # Example: {('branch_name', 'freq_name'): 100}
 
     def set_render_qiskit_metal(self, render_qiskit_metal: Callable):
-        """Set the render_qiskit_metal function to be used before the capacitance simulation.
+        """
+        Set the render_qiskit_metal function to be used before the capacitance simulation.
 
         Args:
-            render_qiskit_metal (Callable): The render_qiskit_metal function. Format: render_qiskit_metal(design, **kw_args)
+            render_qiskit_metal (Callable): The render_qiskit_metal function. Format: render_qiskit_metal(design, `**kw_args`)
         """
         self.render_qiskit_metal = render_qiskit_metal
 

@@ -1,14 +1,16 @@
 import os
 
+
 def close_ansys():
     os.system("taskkill /f /im ansysedt.exe")
+
 
 def get_junction_position(design, qcomponent):
     """Calculates the position of the Josephson junction in the component where a flux line could be placed.
 
     Args:
         design (QDesign): The Qiskit metal design.
-        qcomponent (QComponent): The component to calculate the junction position for. 
+        qcomponent (QComponent): The component to calculate the junction position for.
 
     Returns:
         tuple: The x and y coordinates of the junction as strings ending with "mm", to be used as qcomponents options.
@@ -18,14 +20,16 @@ def get_junction_position(design, qcomponent):
         AssertionError: If the component has more than one junction.
     """
 
-    junction_table = design.qgeometry.tables['junction']
-    rect_jj_junction = junction_table.loc[ junction_table['component'] == qcomponent.id, 'geometry']
+    junction_table = design.qgeometry.tables["junction"]
+    rect_jj_junction = junction_table.loc[
+        junction_table["component"] == qcomponent.id, "geometry"
+    ]
     assert len(rect_jj_junction) == 1, "Only supports a single junction per component"
     coords = list(rect_jj_junction.iloc[0].coords)
     x, y = coords[1]
 
+    return f"{x}mm", f"{y}mm"
 
-    return f"{x}mm", f"{y}mm" 
 
 def get_middle_point(point1, point2):
     """Calculates the middle point between two points.
@@ -40,6 +44,7 @@ def get_middle_point(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
     return (x1 + x2) / 2, (y1 + y2) / 2
+
 
 def get_normalized_vector(point1, point2):
     """Calculates the normalized vector between two points.
@@ -76,8 +81,12 @@ def rotate_point(point, rotation_center, angle_rad):
     point_translated = point - rotation_center
 
     # Perform the rotation
-    rotation_matrix = np.array([[np.cos(angle_rad), -np.sin(angle_rad)],
-                                [np.sin(angle_rad),  np.cos(angle_rad)]])
+    rotation_matrix = np.array(
+        [
+            [np.cos(angle_rad), -np.sin(angle_rad)],
+            [np.sin(angle_rad), np.cos(angle_rad)],
+        ]
+    )
     rotated_point_translated = np.dot(rotation_matrix, point_translated)
 
     # Translate back
@@ -85,22 +94,24 @@ def rotate_point(point, rotation_center, angle_rad):
 
     return rotated_point
 
+
 def get_value_and_unit(val_unit: str) -> tuple:
-        """Get the value and unit from string."""
-        try:
-            if str.isalpha(val_unit[-1]):
-                idx = 1
-                while str.isalpha(val_unit[-idx-1]):
-                    idx += 1
-                
-                unit = val_unit[-idx:]
-                val = float(val_unit.replace(unit, ''))
-            else:
-                val = float(val_unit)
-                unit = ''
-            return val, unit
-        except:
-            raise ValueError(f"Could not parse value and unit from {val_unit}")
+    """Get the value and unit from string."""
+    try:
+        if str.isalpha(val_unit[-1]):
+            idx = 1
+            while str.isalpha(val_unit[-idx - 1]):
+                idx += 1
+
+            unit = val_unit[-idx:]
+            val = float(val_unit.replace(unit, ""))
+        else:
+            val = float(val_unit)
+            unit = ""
+        return val, unit
+    except:
+        raise ValueError(f"Could not parse value and unit from {val_unit}")
+
 
 def sum_expression(vals: list):
     """Sum a list of values and units.

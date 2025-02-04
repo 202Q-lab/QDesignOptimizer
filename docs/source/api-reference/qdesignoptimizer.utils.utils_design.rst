@@ -1,7 +1,7 @@
-qdesignoptimizer.sim\_plot\_progress module
+qdesignoptimizer.utils.utils\_design module
 ===========================================
 
-.. automodule:: qdesignoptimizer.sim_plot_progress
+.. automodule:: qdesignoptimizer.utils.utils_design
    :members:
    :undoc-members:
    :show-inheritance:

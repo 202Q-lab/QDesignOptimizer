@@ -4,8 +4,8 @@ from itertools import cycle
 import numpy as np
 from matplotlib import pyplot as plt
 
-import src.utils.constants as dc
-from src.utils.utils import get_value_and_unit
+import qdesignoptimizer.utils.constants as dc
+from qdesignoptimizer.utils.utils import get_value_and_unit
 
 DEFAULT_PLT_SET = {
     dc.RES_FREQ: {"label": "Res freq (Hz)"},

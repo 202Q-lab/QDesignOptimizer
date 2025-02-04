@@ -6,6 +6,15 @@ qdesignoptimizer package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   qdesignoptimizer.estimation
+   qdesignoptimizer.utils
+
 Submodules
 ----------
 
@@ -15,4 +24,4 @@ Submodules
    qdesignoptimizer.design_analysis
    qdesignoptimizer.design_analysis_types
    qdesignoptimizer.sim_capacitance_matrix
-   qdesignoptimizer.sim_plot_progress
+   qdesignoptimizer.test_integration_optimize
