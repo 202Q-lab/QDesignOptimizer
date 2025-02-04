@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 
 def close_ansys():
     os.system("taskkill /f /im ansysedt.exe")

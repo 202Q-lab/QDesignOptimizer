@@ -70,3 +70,9 @@ This will install:
 - Documentation tools
 - Analysis and testing tools
 - Pre-commit hooks for code quality
+
+
+Install Ansys
+-------------
+
+This version of qdesignoptimizer has been tested with Ansys Electronics Desktop 2021 R2.

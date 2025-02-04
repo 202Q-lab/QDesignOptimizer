@@ -14,7 +14,7 @@ import numpy as np
 from qiskit_metal import Dict, draw
 from qiskit_metal.qlibrary.core import QComponent
 
-from designlib_temp.qt_component import QTComponent
+from qdesignoptimizer.designlib_temp.qt_component import QTComponent
 from qdesignoptimizer.utils.utils import get_middle_point
 
 

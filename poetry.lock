@@ -1006,24 +1006,6 @@ unicode = ["unicodedata2 (>=15.1.0)"]
 woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
-name = "furo"
-version = "2023.9.10"
-description = "A clean customisable Sphinx documentation theme."
-optional = false
-python-versions = ">=3.8"
-groups = ["docs"]
-files = [
-    {file = "furo-2023.9.10-py3-none-any.whl", hash = "sha256:513092538537dc5c596691da06e3c370714ec99bc438680edc1debffb73e5bfc"},
-    {file = "furo-2023.9.10.tar.gz", hash = "sha256:5707530a476d2a63b8cad83b4f961f3739a69f4b058bcf38a03a39fa537195b2"},
-]
-
-[package.dependencies]
-beautifulsoup4 = "*"
-pygments = ">=2.7"
-sphinx = ">=6.0,<8.0"
-sphinx-basic-ng = "*"
-
-[[package]]
 name = "gdspy"
 version = "1.6.12"
 description = "Python module for creating/importing/merging GDSII files."
@@ -2401,14 +2383,14 @@ markers = {docs = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "pyepr-quantum"
-version = "0.8.5.7"
+version = "0.9.0"
 description = ""
 optional = false
 python-versions = ">=3.5, <4"
 groups = ["main"]
 files = [
-    {file = "pyEPR-quantum-0.8.5.7.tar.gz", hash = "sha256:77b26774bdaa572b05e479ada04f153fc4724c5e6aa7f872d32805974b67eb83"},
-    {file = "pyEPR_quantum-0.8.5.7-py3-none-any.whl", hash = "sha256:91ce4889df06ec84ae5826fa0ab28ef5332be44670bce3c211c0f78facc7e67d"},
+    {file = "pyEPR-quantum-0.9.0.tar.gz", hash = "sha256:a7326f97201335ed2edaee934027d2bcffc888a2051a2f10ba4e9b1208632578"},
+    {file = "pyEPR_quantum-0.9.0-py3-none-any.whl", hash = "sha256:f99c27499411737f9db12da9487e7672cfc21f32f23bd738936f32ceb79a5323"},
 ]
 
 [package.dependencies]
@@ -3364,24 +3346,6 @@ lint = ["docutils-stubs", "flake8 (>=3.5.0)", "flake8-simplify", "isort", "mypy 
 test = ["cython", "filelock", "html5lib", "pytest (>=4.6)"]
 
 [[package]]
-name = "sphinx-basic-ng"
-version = "1.0.0b2"
-description = "A modern skeleton for Sphinx themes."
-optional = false
-python-versions = ">=3.7"
-groups = ["docs"]
-files = [
-    {file = "sphinx_basic_ng-1.0.0b2-py3-none-any.whl", hash = "sha256:eb09aedbabfb650607e9b4b68c9d240b90b1e1be221d6ad71d61c52e29f7932b"},
-    {file = "sphinx_basic_ng-1.0.0b2.tar.gz", hash = "sha256:9ec55a47c90c8c002b5960c57492ec3021f5193cb26cebc2dc4ea226848651c9"},
-]
-
-[package.dependencies]
-sphinx = ">=4.0"
-
-[package.extras]
-docs = ["furo", "ipython", "myst-parser", "sphinx-copybutton", "sphinx-inline-tabs"]
-
-[[package]]
 name = "sphinx-copybutton"
 version = "0.5.2"
 description = "Add a copy button to each of your code cells."
@@ -3442,7 +3406,7 @@ version = "3.0.2"
 description = "Read the Docs theme for Sphinx"
 optional = false
 python-versions = ">=3.8"
-groups = ["main"]
+groups = ["main", "docs"]
 files = [
     {file = "sphinx_rtd_theme-3.0.2-py2.py3-none-any.whl", hash = "sha256:422ccc750c3a3a311de4ae327e82affdaf59eb695ba4936538552f3b00f4ee13"},
     {file = "sphinx_rtd_theme-3.0.2.tar.gz", hash = "sha256:b7457bc25dda723b20b086a670b9953c859eab60a2a03ee8eb2bb23e176e5f85"},
@@ -3531,7 +3495,7 @@ version = "4.1"
 description = "Extension to include jQuery on newer Sphinx releases"
 optional = false
 python-versions = ">=2.7"
-groups = ["main"]
+groups = ["main", "docs"]
 files = [
     {file = "sphinxcontrib-jquery-4.1.tar.gz", hash = "sha256:1620739f04e36a2c779f1a131a2dfd49b2fd07351bf1968ced074365933abc7a"},
     {file = "sphinxcontrib_jquery-4.1-py2.py3-none-any.whl", hash = "sha256:f936030d7d0147dd026a4f2b5a57343d233f1fc7b363f68b3d4f1cb0993878ae"},
@@ -3916,4 +3880,4 @@ viz = ["matplotlib", "nc-time-axis", "seaborn"]
 [metadata]
 lock-version = "2.1"
 python-versions = "==3.10"
-content-hash = "7b287f5973cf5ac8cb4f2a04de164bb2cf81448b2492ca9d9cbaa369032cbf75"
+content-hash = "e20c679cbe8d734723c5de8d5aeb033ce8d759c9e19408e06c4c243bce41489a"

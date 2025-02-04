@@ -48,7 +48,7 @@ def get_opt_target_res_kappa_via_coupl_length(
         system_target_param=(str(branch), dc.RES_KAPPA),
         involved_mode_freqs=[(str(branch), dc.RES_FREQ)],
         design_var=dv.design_var_res_coupl_length(branch),
-        design_var_constraint={"larger_than": "1mm", "smaller_than": "12mm"},
+        design_var_constraint={"larger_than": "1um", "smaller_than": "12000um"},
         prop_to=lambda p, v: v[dv.design_var_res_coupl_length(branch)] ** 2,
         independent_target=False,
     )
