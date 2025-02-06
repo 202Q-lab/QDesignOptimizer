@@ -1,49 +1,48 @@
-[tool.poetry]
+[project]
 name = "qdesignoptimizer"
 version = "0.0.1"
 description = "Optimizer for superconducting quantum chip designs"
-authors = ["202Q-lab", "Axel Eriksson", "Lukas Splitthoff"]
-license = "Apache License 2.0"
+authors = [{name="202Q-lab"}, {name="Axel Eriksson"}, {name="Lukas Splitthoff"}]
+license = {text = "Apache License 2.0" }
 readme = "README.md"
 repository = "https://github.com/202Q-lab/QDesignOptimizer"
 keywords = ["Quantum"]
-classifiers = [
-  "Programming Language :: Python :: 3",
-]
+classifiers = [  "Programming Language :: Python :: 3"]
 
-[tool.poetry.dependencies]
-python = "==3.10"
-addict="==2.4.0"
-descartes="==1.1.0"
-gdspy="==1.6.12"
-geopandas="==0.12.2"
-ipython="==8.10.0"
-matplotlib="==3.7.0"
-numpy=">1.24.2"
-pandas="==1.5.3"
-pint="==0.20.1"
-pyEPR-quantum="==0.9.*"
-pygments="==2.14.0"
-pyside2="==5.15.2.1"
-qdarkstyle="==3.1"
-qutip="==4.7.1"
-scipy="==1.10.0"
-shapely="==2.0.1"
-scqubits="==3.1.0"
-gmsh="==4.11.1"
-pyaedt="==0.6.46"
-pyyaml="==6.0"
-cython="<3.0.0"
+requires-python = ">=3.10,<3.11"
 
+dependencies = [
+  "addict==2.4.0",
+  "descartes==1.1.0",
+  "gdspy==1.6.12",
+  "geopandas==0.12.2",
+  "ipython==8.10.0",
+  "matplotlib==3.7.0",
+  "numpy>1.24.2",
+  "pandas==1.5.3",
+  "pint==0.20.1",
+  "pyEPR-quantum==0.9.*",
+  "pygments==2.14.0",
+  "pyside2==5.15.2.1",
+  "qdarkstyle==3.1",
+  "qutip==4.7.1",
+  "scipy==1.10.0",
+  "shapely==2.0.1",
+  "scqubits==3.1.0",
+  "gmsh==4.11.1",
+  "pyaedt==0.6.46",
+  "pyyaml==6.0",
+  "cython<3.0.0",
+  "ipykernel>0.*"]
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.group.analysis]
+[project.group.analysis]
 optional = true
 
-[tool.poetry.group.analysis.dependencies]
+[project.group.analysis.dependencies]
 pylint = ">=2.16.0"
 pylint-exit = "^1.2.0"
 pytest = ">=7.2.2"
@@ -52,10 +51,10 @@ mypy = "^1.7.1"
 pandas-stubs = "*"
 pre-commit = ">=4.0.1"
 
-[tool.poetry.group.docs]
+[project.group.docs]
 optional = true
 
-[tool.poetry.group.docs.dependencies]
+[project.group.docs.dependencies]
 sphinx = "*"
 nbsphinx = "*"
 sphinx-rtd-theme = "*"
