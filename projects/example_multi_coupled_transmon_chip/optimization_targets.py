@@ -1,6 +1,9 @@
 from typing import List
 
-import design_variables as dv
+import json
+with open('design_variables.json') as in_file:
+    dv = json.load(in_file)
+    import design_names as u
 import numpy as np
 
 import qdesignoptimizer.utils.constants as dc
@@ -15,11 +18,11 @@ def get_opt_target_qubit_freq_via_lj(
     return OptTarget(
         system_target_param=(str(branch), dc.QUBIT_FREQ),
         involved_mode_freqs=[(str(branch), dc.QUBIT_FREQ)],
-        design_var=design_var_lj(dv.name_qb(branch)),
+        design_var=design_var_lj(u.name_qb(branch)),
         design_var_constraint={"larger_than": "0.1nH", "smaller_than": "400nH"},
         prop_to=lambda p, v: 1
         / np.sqrt(
-            v[design_var_lj(dv.name_qb(branch))] * v[dv.design_var_qb_pad_width(branch)]
+            v[design_var_lj(u.name_qb(branch))] * v[u.design_var_qb_pad_width(branch)]
         ),
         independent_target=False,
     )
@@ -32,9 +35,9 @@ def get_opt_target_qubit_anharmonicity_via_pad_width(
     return OptTarget(
         system_target_param=(str(branch), dc.QUBIT_ANHARMONICITY),
         involved_mode_freqs=[(str(branch), dc.QUBIT_FREQ)],
-        design_var=dv.design_var_qb_pad_width(branch),
+        design_var=u.design_var_qb_pad_width(branch),
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
-        prop_to=lambda p, v: 1 / v[dv.design_var_qb_pad_width(branch)],
+        prop_to=lambda p, v: 1 / v[u.design_var_qb_pad_width(branch)],
         independent_target=True,
     )
 
@@ -46,9 +49,9 @@ def get_opt_target_res_freq_via_length(
     return OptTarget(
         system_target_param=(str(branch), dc.RES_FREQ),
         involved_mode_freqs=[(str(branch), dc.RES_FREQ)],
-        design_var=dv.design_var_res_length(branch),
+        design_var=u.design_var_res_length(branch),
         design_var_constraint={"larger_than": "1mm", "smaller_than": "12mm"},
-        prop_to=lambda p, v: 1 / v[dv.design_var_res_length(branch)],
+        prop_to=lambda p, v: 1 / v[u.design_var_res_length(branch)],
         independent_target=True,
     )
 
@@ -60,9 +63,9 @@ def get_opt_target_res_kappa_via_coupl_length(
     return OptTarget(
         system_target_param=(str(branch), dc.RES_KAPPA),
         involved_mode_freqs=[(str(branch), dc.RES_FREQ)],
-        design_var=dv.design_var_res_coupl_length(branch),
+        design_var=u.design_var_res_coupl_length(branch),
         design_var_constraint={"larger_than": "200um", "smaller_than": "1000um"},
-        prop_to=lambda p, v: v[dv.design_var_res_coupl_length(branch)] ** 2,
+        prop_to=lambda p, v: v[u.design_var_res_coupl_length(branch)] ** 2,
         independent_target=True,
     )
 
@@ -74,10 +77,10 @@ def get_opt_target_res_kappa_via_coupl_length(
 #     return OptTarget(
 #         system_target_param=(str(branch), dc.RES_QUBIT_CHI),
 #         involved_mode_freqs= [(str(branch), dc.RES_FREQ), (str(branch), dc.QUBIT_FREQ)],
-#         design_var= dv.design_var_qb_pad_width(branch),
+#         design_var= u.design_var_qb_pad_width(branch),
 #         design_var_constraint = {'larger_than': '5um', 'smaller_than': '1000um'} ,
 #         prop_to=lambda p, v: np.abs(
-#         v[dv.design_var_qb_pad_width(branch)]
+#         v[u.design_var_qb_pad_width(branch)]
 #         * p[f'{branch}'][dc.QUBIT_ANHARMONICITY]
 #         / ( p[f'{branch}'][dc.QUBIT_FREQ]
 #            - p[f'{branch}'][dc.RES_FREQ]
@@ -95,9 +98,9 @@ def get_opt_target_res_qub_chi_via_res_qub_coupl_length(
     return OptTarget(
         system_target_param=(str(branch), dc.RES_QUBIT_CHI),
         involved_mode_freqs=[(str(branch), dc.RES_FREQ), (str(branch), dc.QUBIT_FREQ)],
-        design_var=dv.design_var_res_qb_coupl_length(branch),
+        design_var=u.design_var_res_qb_coupl_length(branch),
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
-        prop_to=lambda p, v: v[dv.design_var_res_qb_coupl_length(branch)],
+        prop_to=lambda p, v: v[u.design_var_res_qb_coupl_length(branch)],
         independent_target=True,
     )
 
