@@ -14,6 +14,9 @@ def create_chip_base(
     design.overwrite_enabled = True
     design.render_mode = "simulate"
 
-    gui = MetalGUI(design) if open_gui else None
+    gui = None
+    if open_gui:
+        gui = MetalGUI(design)
+        gui.toggle_docks()
 
     return design, gui
