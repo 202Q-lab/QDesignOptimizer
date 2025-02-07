@@ -1,5 +1,5 @@
 # environment.yml
-name: qdesign-env
+name: qdesign_env
 channels:
   - conda-forge
   - defaults
