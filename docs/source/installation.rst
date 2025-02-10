@@ -22,14 +22,14 @@ It is strongly recommended that you install the project in a separate virtual en
 .. code-block:: bash
 
     conda env create -f environment.yml
-    conda activate qdesign-env
+    conda activate qdesign_env
 
 You can also create it using venv:
 
 .. code-block:: bash
 
     # Create new virtual environment
-    python3.10 -m venv qdesign-env
+    python3.10 -m venv qdesign_env
 
     # Activate the environment
     # On Linux/MacOS:
@@ -50,7 +50,7 @@ For regular users, install the project with its dependencies and Qiskit Metal:
 
 .. code-block:: bash
 
-    pip install .
+    poetry install
     pip install --no-deps qiskit-metal==0.1.5
 
 Developer Installation
@@ -60,9 +60,9 @@ For developers who want to contribute to the project, install with additional de
 
 .. code-block:: bash
 
-    poetry install --with docs,analysis
+    poetry install
     pip install --no-deps qiskit-metal==0.1.5
-    pre-commit install
+    # ignore pre-commit install
 
 This will install:
 

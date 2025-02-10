@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 from pprint import pprint
 from typing import List, Optional
@@ -38,6 +39,7 @@ class DesignAnalysis:
         opt_targets: List[OptTarget] = None,
         print_progress: bool = True,
         save_path: str = None,
+        update_parameters: bool = True,
         plot_settings: dict = None,
         plot_branches_separately=False,
     ):
@@ -91,6 +93,7 @@ class DesignAnalysis:
 
         self.print_progress = print_progress
         self.save_path = save_path
+        self.update_parameters = update_parameters
         self.plot_settings = plot_settings
         self.plot_branches_separately = plot_branches_separately
 
@@ -1073,6 +1076,13 @@ class DesignAnalysis:
         ]
         if self.save_path is not None:
             np.save(self.save_path, simulation, allow_pickle=True)
+
+            with open(self.save_path + "_design_variables.json", "w") as outfile:
+                json.dump(updated_design_vars, outfile, indent=4)
+
+        if self.update_parameters is True:
+            self.overwrite_parameters()
+
         if self.plot_settings is not None:
             plot_progress(
                 self.optimization_results,
@@ -1087,6 +1097,28 @@ class DesignAnalysis:
         #         self.run_decay(scattering_study)
         #     except:
         #         print("Scattering analysis failed")
+
+    def overwrite_parameters(self):
+        if self.save_path is None:
+            raise Exception("A path must be specified to fetch results.")
+
+        with open(self.save_path + "_design_variables.json") as in_file:
+            updated_design_vars = json.load(in_file)
+
+        with open("design_variables.json") as in_file:
+            rewrite_parameters = json.load(in_file)
+
+        for key, item in updated_design_vars.items():
+            if key in rewrite_parameters:
+                rewrite_parameters[key] = item
+
+        with open("design_variables.json", "w") as outfile:
+            json.dump(rewrite_parameters, outfile, indent=4)
+
+        print(
+            "####################### \nOverwritten parameters\n#######################"
+        )
+        pprint(updated_design_vars)
 
     def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
         """Get cross kerr matrix from EPR analysis.

@@ -6,12 +6,13 @@ Welcome to qdesignoptimizer's documentation!
 .. caution:: Please note that ``qdesignoptimizer`` is currently in a very early development stage. This means that the API is subject to significant changes.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
+   :maxdepth: 4
+   :caption: Content:
+   
    installation
-   authors
-   contributing
+   optimizer
+   userguide   
+   development
 
 .. toctree::
     :maxdepth: 2
