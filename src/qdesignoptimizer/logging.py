@@ -38,6 +38,7 @@ class CustomHandler(logging.StreamHandler):
 
 handlers = logging.getLogger().handlers
 
+handler_console = None
 for h in handlers:
     if isinstance(h, logging.StreamHandler):
         handler_console = h

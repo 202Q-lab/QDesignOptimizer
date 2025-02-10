@@ -36,7 +36,6 @@ class DesignAnalysis:
         state: DesignAnalysisState,
         mini_study: MiniStudy,
         opt_targets: List[OptTarget] = None,
-        print_progress: bool = True,
         save_path: str = None,
         update_parameters: bool = True,
         plot_settings: dict = None,
@@ -48,7 +47,6 @@ class DesignAnalysis:
             state (DesignAnalysisSetup): DesignAnalysisState object
             mini_study (MiniStudy): MiniStudy object
             opt_targets (List[OptTarget]): list of OptTarget objects
-            print_progress (bool): print progress of updated design variables and simualted results
             save_path (str): path to save results
             plot_settings (dict): plot settings for progress plots
             plot_branches_separately (bool): plot branches separately
@@ -91,7 +89,6 @@ class DesignAnalysis:
             sys_opt_param = fill_leaves_with_none(deepcopy(state.system_target_params))
         self.system_optimized_params = sys_opt_param
 
-        self.print_progress = print_progress
         self.save_path = save_path
         self.update_parameters = update_parameters
         self.plot_settings = plot_settings
