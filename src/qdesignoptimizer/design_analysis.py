@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 from pprint import pprint
 from typing import List, Optional
@@ -30,6 +31,19 @@ from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class DesignAnalysis:
+    """Class for DesignAnalysis.
+
+    Args:
+        state (DesignAnalysisSetup): DesignAnalysisState object
+        mini_study (MiniStudy): MiniStudy object
+        opt_targets (List[OptTarget]): list of OptTarget objects
+        print_progress (bool): print progress of updated design variables and simualted results
+        save_path (str): path to save results
+        plot_settings (dict): plot settings for progress plots
+        plot_branches_separately (bool): plot branches separately
+
+    """
+
     def __init__(
         self,
         state: DesignAnalysisState,
@@ -37,21 +51,10 @@ class DesignAnalysis:
         opt_targets: List[OptTarget] = None,
         print_progress: bool = True,
         save_path: str = None,
+        update_parameters: bool = True,
         plot_settings: dict = None,
         plot_branches_separately=False,
     ):
-        """Class for DesignAnalysis.
-
-        Args:
-            state (DesignAnalysisSetup): DesignAnalysisState object
-            mini_study (MiniStudy): MiniStudy object
-            opt_targets (List[OptTarget]): list of OptTarget objects
-            print_progress (bool): print progress of updated design variables and simualted results
-            save_path (str): path to save results
-            plot_settings (dict): plot settings for progress plots
-            plot_branches_separately (bool): plot branches separately
-
-        """
         self.design_analysis_version = "1.0.1"
         """To be updated each time we update the DesignAnalysis class.
         1.0.0 at 2024-08-13 Get freqs from quantum f_ND instead of linear
@@ -65,6 +68,7 @@ class DesignAnalysis:
         print(self.eig_solver.sim.setup)
         self.eig_solver.setup.sweep_variable = "dummy"
         self.renderer = self.eig_solver.sim.renderer
+
         self.mini_study = mini_study
         self.opt_targets = opt_targets
         self.all_design_vars = [target.design_var for target in opt_targets]
@@ -90,6 +94,7 @@ class DesignAnalysis:
 
         self.print_progress = print_progress
         self.save_path = save_path
+        self.update_parameters = update_parameters
         self.plot_settings = plot_settings
         self.plot_branches_separately = plot_branches_separately
 
@@ -1071,6 +1076,13 @@ class DesignAnalysis:
         ]
         if self.save_path is not None:
             np.save(self.save_path, simulation, allow_pickle=True)
+
+            with open(self.save_path + "_design_variables.json", "w") as outfile:
+                json.dump(updated_design_vars, outfile, indent=4)
+
+        if self.update_parameters is True:
+            self.overwrite_parameters()
+
         if self.plot_settings is not None:
             plot_progress(
                 self.optimization_results,
@@ -1085,6 +1097,35 @@ class DesignAnalysis:
         #         self.run_decay(scattering_study)
         #     except:
         #         print("Scattering analysis failed")
+
+    def overwrite_parameters(self):
+        if self.save_path is None:
+            raise Exception("A path must be specified to fetch results.")
+
+        with open(self.save_path + "_design_variables.json") as in_file:
+            updated_design_vars = json.load(in_file)
+
+        with open("design_variables.json") as in_file:
+            rewrite_parameters = json.load(in_file)
+
+        for key, item in updated_design_vars.items():
+            if key in rewrite_parameters:
+                rewrite_parameters[key] = item
+
+        with open("design_variables.json", "w") as outfile:
+            json.dump(rewrite_parameters, outfile, indent=4)
+
+        print(
+            "####################### \nOverwritten parameters\n#######################"
+        )
+        pprint(updated_design_vars)
+
+    def screenshot(self, gui, run=None):
+        if self.save_path is None:
+            raise Exception("A path must be specified to save screenshot.")
+        gui.autoscale()
+        name = self.save_path + f"_{run+1}" if run is not None else self.save_path
+        gui.screenshot(name=name, display=False)
 
     def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
         """Get cross kerr matrix from EPR analysis.

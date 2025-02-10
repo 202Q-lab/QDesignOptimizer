@@ -133,3 +133,31 @@ def name_tee_to_tee(
     tee_branch_number1: Union[str, int], tee_branch_number2: Union[str, int]
 ):
     return f"NAME_TEE{tee_branch_number1}_TO_TEE{tee_branch_number2}"
+
+# Extra design variables
+def design_var_cl_pos_x(branch: int):
+    return f"design_var_cl_pos_x{branch}"
+
+
+def design_var_cl_pos_y(branch: int):
+    return f"design_var_cl_pos_y{branch}"
+
+
+# Extra component names
+def name_lp_chargeline(branch_number: int):
+    return f"NAME_LP_chargeline{branch_number}"
+
+def design_var_res_length(branch: int):
+    return f"design_var_res_length_{branch}"
+
+
+def design_var_res_coupl_length(branch: int):
+    return f"design_var_res_coupl_length_{branch}"
+
+
+def design_var_qb_pad_width(branch: int):
+    return f"design_var_qb_pad_width_{branch}"
+
+
+def design_var_res_qb_coupl_length(branch: int):
+    return f"design_var_res_qb_coupl_length_{branch}"

@@ -1,4 +1,8 @@
-import design_variables as dv
+import json
+with open('design_variables.json') as in_file:
+    dv = json.load(in_file)
+import design_constants as c
+import design_variable_names as u
 from qiskit_metal import MetalGUI
 from qiskit_metal.designs.design_planar import DesignPlanar
 from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
@@ -7,7 +11,6 @@ from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
-import qdesignoptimizer.utils.utils_design_variables as u
 
 
 def add_branch(design: DesignPlanar, branch: int, gui: MetalGUI):
@@ -22,18 +25,18 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
 
     # make transmon
     transmon_options = dict(
-        pos_x=["-3mm", "+3mm", "-3mm", "+3mm", "-3mm"][branch],
+        pos_x=["-2mm", "+2mm", "-2mm", "+2mm", "-2mm"][branch],
         pos_y=["-4mm", "-2mm", "0mm", "2mm", "4mm"][branch],
         orientation=["-90", "+90", "-90", "+90", "-90"][branch],
         pad_gap="100um",
         inductor_width="30um",
-        pad_width=dv.DESIGN_VARS[dv.design_var_qb_pad_width(branch)],
+        pad_width=u.design_var_qb_pad_width(branch),
         pad_height="120um",
         pocket_width="1200um",
         pocket_height="1200um",
         coupled_pad_width="45um",
-        coupled_pad_height=dv.DESIGN_VARS[dv.design_var_res_qb_coupl_length(branch)],
-        coupled_pad_gap="200um",
+        coupled_pad_height=u.design_var_res_qb_coupl_length(branch),
+        coupled_pad_gap="100um",
         connection_pads=dict(
             readout=dict(
                 loc_W=0,
@@ -41,8 +44,8 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
                 pad_gap="100um",
                 pad_width="40um",
                 pad_height="170um",
-                cpw_width=dv.RESONATOR_WIDTH,
-                cpw_gap=dv.RESONATOR_GAP,
+                cpw_width=c.RESONATOR_WIDTH,
+                cpw_gap=c.RESONATOR_GAP,
                 cpw_extend="0.0um",
                 pocket_extent="5um",
             )
@@ -59,13 +62,13 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
         pos_x="0mm",
         pos_y=["-4mm", "-2mm", "0mm", "2mm", "4mm"][branch],
         orientation=["-90", "+90", "-90", "+90", "-90"][branch],
-        second_width=dv.RESONATOR_WIDTH,
-        second_gap=dv.RESONATOR_GAP,
-        prime_width=dv.LINE_50_OHM_WIDTH,
-        prime_gap=dv.LINE_50_OHM_GAP,
+        second_width=c.RESONATOR_WIDTH,
+        second_gap=c.RESONATOR_GAP,
+        prime_width=c.LINE_50_OHM_WIDTH,
+        prime_gap=c.LINE_50_OHM_GAP,
         coupling_space="10um",
-        fillet=dv.BEND_RADIUS,
-        coupling_length=dv.design_var_res_coupl_length(branch),
+        fillet=c.BEND_RADIUS,
+        coupling_length=u.design_var_res_coupl_length(branch),
     )
 
     cltee = CoupledLineTee(design, u.name_tee(branch), options=cltee_options)
@@ -76,11 +79,11 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
             start_pin=dict(component=qub.name, pin="readout"),
             end_pin=dict(component=cltee.name, pin="second_end"),
         ),
-        fillet=dv.BEND_RADIUS,
-        total_length=dv.design_var_res_length(branch),
+        fillet=c.BEND_RADIUS,
+        total_length=u.design_var_res_length(branch),
         lead=dict(start_straight="150um"),
-        trace_width=dv.RESONATOR_WIDTH,
-        trace_gap=dv.RESONATOR_GAP,
+        trace_width=c.RESONATOR_WIDTH,
+        trace_gap=c.RESONATOR_GAP,
         meander=dict(spacing="200um"),
     )
 
@@ -101,8 +104,8 @@ def add_route_interconnects(design: DesignPlanar, branch: int, gui: MetalGUI):
     options_rpf = dict(
         fillet="49um",
         hfss_wire_bonds=False,
-        trace_width=dv.LINE_50_OHM_WIDTH,
-        trace_gap=dv.LINE_50_OHM_GAP,
+        trace_width=c.LINE_50_OHM_WIDTH,
+        trace_gap=c.LINE_50_OHM_GAP,
         pin_inputs=pins,
     )
     RoutePathfinder(design, u.name_tee_to_tee(branch, branch + 1), options=options_rpf)
@@ -115,8 +118,8 @@ def add_launch_pads(design: DesignPlanar, gui: MetalGUI):
 
     launch_options = dict(
         chip="main",
-        trace_width=dv.LINE_50_OHM_WIDTH,
-        trace_gap=dv.LINE_50_OHM_GAP,
+        trace_width=c.LINE_50_OHM_WIDTH,
+        trace_gap=c.LINE_50_OHM_GAP,
         lead_length="30um",
         pad_gap="125um",
         pad_width="260um",
@@ -144,8 +147,8 @@ def add_launch_pads(design: DesignPlanar, gui: MetalGUI):
     options_top = dict(
         fillet="49um",
         hfss_wire_bonds=False,
-        trace_width=dv.LINE_50_OHM_WIDTH,
-        trace_gap=dv.LINE_50_OHM_GAP,
+        trace_width=c.LINE_50_OHM_WIDTH,
+        trace_gap=c.LINE_50_OHM_GAP,
         pin_inputs=pins_top,
     )
 
@@ -157,8 +160,8 @@ def add_launch_pads(design: DesignPlanar, gui: MetalGUI):
     options_bottom = dict(
         fillet="49um",
         hfss_wire_bonds=False,
-        trace_width=dv.LINE_50_OHM_WIDTH,
-        trace_gap=dv.LINE_50_OHM_GAP,
+        trace_width=c.LINE_50_OHM_WIDTH,
+        trace_gap=c.LINE_50_OHM_GAP,
         pin_inputs=pins_bottom,
     )
     RoutePathfinder(design, u.name_lp_to_tee(0, 4), options=options_top)

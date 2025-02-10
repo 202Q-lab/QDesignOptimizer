@@ -1,4 +1,6 @@
-import design_variables as dv
+import json
+with open('design_variables.json') as in_file:
+    dv = json.load(in_file)
 
 import qdesignoptimizer.utils.constants as dc
 import qdesignoptimizer.utils.utils_design_variables as u
@@ -20,7 +22,7 @@ def get_mini_study_qb_res(branch: int):
             (str(branch), dc.QUBIT_FREQ),
             (str(branch), dc.RES_FREQ),
         ],
-        jj_var=dv.JUNCTION_VARS,
+        jj_var=dv,
         jj_setup={**junction_setup(u.name_qb(branch))},
         design_name="get_mini_study_qb_res",
         adjustment_rate=0.8,
