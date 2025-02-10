@@ -3,7 +3,7 @@ from typing import List
 import json
 with open('design_variables.json') as in_file:
     dv = json.load(in_file)
-    import design_names as u
+    import design_variable_names as u
 import numpy as np
 
 import qdesignoptimizer.utils.constants as dc
