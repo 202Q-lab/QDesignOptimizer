@@ -30,12 +30,12 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
         orientation=["-90", "+90", "-90", "+90", "-90"][branch],
         pad_gap="100um",
         inductor_width="30um",
-        pad_width=dv[u.design_var_qb_pad_width(branch)],
+        pad_width=u.design_var_qb_pad_width(branch),
         pad_height="120um",
         pocket_width="1200um",
         pocket_height="1200um",
         coupled_pad_width="45um",
-        coupled_pad_height=dv[u.design_var_res_qb_coupl_length(branch)],
+        coupled_pad_height=u.design_var_res_qb_coupl_length(branch),
         coupled_pad_gap="200um",
         connection_pads=dict(
             readout=dict(
