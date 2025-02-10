@@ -71,6 +71,8 @@ This will install:
 - Analysis and testing tools
 - Pre-commit hooks for code quality
 
+In order to build the documentation yourself, you also need to install `pandoc <https://pandoc.org/>`_.
+
 
 Install Ansys
 -------------

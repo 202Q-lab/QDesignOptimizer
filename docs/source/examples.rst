@@ -6,5 +6,5 @@ Examples
 .. toctree::
    :maxdepth: 2
 
-   single_qubit
-   two_qubit
+   _projects/example_single_transmon_chip/main
+   _projects/example_coupled_transmon_chip/main
