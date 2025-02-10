@@ -1,6 +1,5 @@
 import json
 from copy import deepcopy
-from pprint import pprint
 from typing import List, Optional
 
 import numpy as np
@@ -26,6 +25,7 @@ from qdesignoptimizer.designlib_temp.qt_charge_line_open_to_ground import (
 # design objects should be moved out
 from qdesignoptimizer.designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
 from qdesignoptimizer.designlib_temp.qt_flux_line_double import QTFluxLineDouble
+from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
@@ -37,7 +37,6 @@ class DesignAnalysis:
         state (DesignAnalysisSetup): DesignAnalysisState object
         mini_study (MiniStudy): MiniStudy object
         opt_targets (List[OptTarget]): list of OptTarget objects
-        print_progress (bool): print progress of updated design variables and simualted results
         save_path (str): path to save results
         plot_settings (dict): plot settings for progress plots
         plot_branches_separately (bool): plot branches separately
@@ -49,7 +48,6 @@ class DesignAnalysis:
         state: DesignAnalysisState,
         mini_study: MiniStudy,
         opt_targets: List[OptTarget] = None,
-        print_progress: bool = True,
         save_path: str = None,
         update_parameters: bool = True,
         plot_settings: dict = None,
@@ -64,8 +62,9 @@ class DesignAnalysis:
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
         self.renderer = self.eig_solver.sim.renderer
-        print("self.eig_solver.sim.setup")
-        print(self.eig_solver.sim.setup)
+        log.info(
+            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
+        )
         self.eig_solver.setup.sweep_variable = "dummy"
         self.renderer = self.eig_solver.sim.renderer
 
@@ -92,7 +91,6 @@ class DesignAnalysis:
             sys_opt_param = fill_leaves_with_none(deepcopy(state.system_target_params))
         self.system_optimized_params = sys_opt_param
 
-        self.print_progress = print_progress
         self.save_path = save_path
         self.update_parameters = update_parameters
         self.plot_settings = plot_settings
@@ -123,8 +121,8 @@ class DesignAnalysis:
     def update_nbr_passes(self, nbr_passes):
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
-        print(
-            "WARNING, does not update passes in Scattering simulation not in Capacitance matrix simulation."
+        log.warning(
+            "Does not update passes in Scattering simulation not in Capacitance matrix simulation."
         )
 
     def update_delta_f(self, delta_f):
@@ -329,7 +327,7 @@ class DesignAnalysis:
                     freqs = self.epra.get_frequencies(numeric=True)
                     chis = self.epra.get_chis(numeric=True)
                 except AttributeError:
-                    self.logger.error(
+                    log.error(
                         "Please install a more recent version of pyEPR (>=0.8.5.3)"
                     )
 
@@ -340,9 +338,10 @@ class DesignAnalysis:
             self._update_optimized_params_epr(freqs, chis)
             return chis
         else:
-            print("Warning: no junctions found, skipping EPR analysis.")
+            add_msg = ""
             if linear_element_found:
-                print("However, a linear element was found.")
+                add_msg = " However, a linear element was found."
+            log.warning("No junctions found, skipping EPR analysis." + add_msg)
             return
 
     # def run_decay(self, scattering_study: ScatteringStudy):
@@ -699,7 +698,7 @@ class DesignAnalysis:
             elif freq_name_i == dc.COUPLER_FREQ:
                 mode_idx[branch_i][dc.COUPLER_FREQ] = idx_i
             else:
-                print(
+                log.warning(
                     f"Warning: unidentified mode {branch_i}, {freq_name_i} is skipped"
                 )
         return mode_idx
@@ -712,8 +711,7 @@ class DesignAnalysis:
 
         MHz = 1e6
         mode_idx = self._get_mode_idx_map()
-        print("freq_ND_results")
-        print(freq_ND_results)
+        log.info("freq_ND_results%s", dict_log_format(freq_ND_results.to_dict()))
         # Parameters within the same branch
         freq_column = 0
         for branch in all_branches:
@@ -801,7 +799,7 @@ class DesignAnalysis:
                         key_capacitances
                     ] = capacitance_matrix.loc[key_capacitances[0], key_capacitances[1]]
                 except KeyError:
-                    print(
+                    log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
 
@@ -1023,7 +1021,7 @@ class DesignAnalysis:
         self.update_var(updated_design_vars_input, system_optimized_params)
 
         updated_design_vars = self._calculate_target_design_var()
-        print("updated_design_vars", updated_design_vars)
+        log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
         iteration_result = {}
@@ -1051,14 +1049,12 @@ class DesignAnalysis:
                     deepcopy(capacitance_matrix)
                 )
 
-        if self.print_progress:
-            print("------------------ Design variables -----------------")
-            pprint(self.design.variables)
-            print("-------------- System optimized params --------------")
-            for branch, param_dict in self.system_optimized_params.items():
-                if not all(v is None for _, v in param_dict.items()):
-                    print(branch)
-                    pprint(self.system_optimized_params[branch])
+        log.info("Design variables%s", dict_log_format(self.design.variables))
+        log_optimized_dict = {}
+        for branch, param_dict in self.system_optimized_params.items():
+            if not all(v is None for _, v in param_dict.items()):
+                log_optimized_dict[branch] = self.system_optimized_params[branch]
+        log.info("System optimized parameters%s", dict_log_format(log_optimized_dict))
 
         iteration_result["design_variables"] = deepcopy(self.design.variables)
         iteration_result["system_optimized_params"] = deepcopy(
@@ -1115,17 +1111,7 @@ class DesignAnalysis:
         with open("design_variables.json", "w") as outfile:
             json.dump(rewrite_parameters, outfile, indent=4)
 
-        print(
-            "####################### \nOverwritten parameters\n#######################"
-        )
-        pprint(updated_design_vars)
-
-    def screenshot(self, gui, run=None):
-        if self.save_path is None:
-            raise Exception("A path must be specified to save screenshot.")
-        gui.autoscale()
-        name = self.save_path + f"_{run+1}" if run is not None else self.save_path
-        gui.screenshot(name=name, display=False)
+        log.info("Overwritten parameters%s", dict_log_format(updated_design_vars))
 
     def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
         """Get cross kerr matrix from EPR analysis.
@@ -1172,3 +1158,10 @@ class DesignAnalysis:
             return capacitance_matrices[capacitance_study_number - 1]
 
         return None
+
+    def screenshot(self, gui, run=None):
+        if self.save_path is None:
+            raise Exception("A path must be specified to save screenshot.")
+        gui.autoscale()
+        name = self.save_path + f"_{run+1}" if run is not None else self.save_path
+        gui.screenshot(name=name, display=False)
