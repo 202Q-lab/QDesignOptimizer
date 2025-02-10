@@ -22,27 +22,34 @@ class TargetType(Enum):
     SQUARED = "SQUARED"
 
 
-def convert_target_type_to_power(target_type: TargetType) -> float:
-    """Convert TargetType to power p for the dependency of the target value on the design variable."""
-    if target_type.value == TargetType.SQUARED.value:
-        p = 2
-    elif target_type.value == TargetType.THREE_HALVES.value:
-        p = 1.5
-    elif target_type.value == TargetType.LINEAR.value:
-        p = 1
-    elif target_type.value == TargetType.SQRT.value:
-        p = 0.5
-    elif target_type.value == TargetType.INVERSE_SQRT.value:
-        p = -0.5
-    elif target_type.value == TargetType.INVERSE.value:
-        p = -1
-    elif target_type.value == TargetType.INVERSE_THREE_HALVES.value:
-        p = -1.5
-    elif target_type.value == TargetType.INVERSE_SQUARED.value:
-        p = -2
-    else:
-        raise ValueError(f"{target_type} cannot be identified")
-    return p
+
+class MeshingMap():
+
+    def __init__(component_class, mesh_names):
+        component_class = component_class
+        mesh_names = mesh_names
+
+"""
+
+Example 
+
+from qdesignoptimizer.designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
+def QTCoupledLineTee_string_func(comp_names: List[str]) -> List[str]:
+    cpw_to_port_center = [f"prime_cpw_{comp}" for comp in comp_names]
+    cpw_to_port_gap = [f"prime_cpw_sub_{comp}" for comp in comp_names]
+    all_names_to_mesh = [*cpw_to_port_center, *cpw_to_port_gap]
+    return all_names_to_mesh
+
+
+meshing_map = []
+meshing_map.append(
+    MeshingMap(QTCoupledLineTee, QTCoupledLineTee_string_func)
+
+    )
+"""
+
+
+
 
 
 BRANCH_PARAMETER = Tuple[str, str]
