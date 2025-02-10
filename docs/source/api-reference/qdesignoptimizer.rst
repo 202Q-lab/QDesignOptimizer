@@ -23,4 +23,5 @@ Submodules
 
    qdesignoptimizer.design_analysis
    qdesignoptimizer.design_analysis_types
+   qdesignoptimizer.logging
    qdesignoptimizer.sim_capacitance_matrix

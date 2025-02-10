@@ -19,13 +19,6 @@ from qdesignoptimizer.design_analysis_types import (
     OptTarget,
     TargetType,
 )
-from qdesignoptimizer.designlib_temp.qt_charge_line_open_to_ground import (
-    QTChargeLineOpenToGround,
-)
-
-# design objects should be moved out
-from qdesignoptimizer.designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
-from qdesignoptimizer.designlib_temp.qt_flux_line_double import QTFluxLineDouble
 from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit

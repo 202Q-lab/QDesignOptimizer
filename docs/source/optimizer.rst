@@ -11,7 +11,7 @@ Tuning up a superconducting quantum chip often involves lenghty simulations wher
 
 QDO Concept
 -----------
-The workflow of the QDesignOptimizer is depicted in :numref:fig_flow, starting with the user setting up the problem formulation, including:
+The workflow of the QDesignOptimizer is depicted in the figure below, starting with the user setting up the problem formulation, including:
 
 1. Target quantities
 2. An initial guess for the design variables
