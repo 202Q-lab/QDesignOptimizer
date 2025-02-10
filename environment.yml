@@ -4,7 +4,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python==3.10.15
-  - pip
-  - pyaedt==0.6.46
+  - python 3.10.*
   - poetry
+  - pip

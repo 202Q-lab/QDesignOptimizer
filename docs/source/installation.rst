@@ -50,7 +50,7 @@ For regular users, install the project with its dependencies and Qiskit Metal:
 
 .. code-block:: bash
 
-    pip install .
+    poetry install
     pip install --no-deps qiskit-metal==0.1.5
 
 Developer Installation
