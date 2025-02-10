@@ -1,5 +1,6 @@
 """Loggers configuration."""
 
+import json
 import logging
 
 LOG_LEVEL = logging.INFO
@@ -50,3 +51,8 @@ if handler_console is not None:
     log = logging.getLogger(__name__)
     log.setLevel(LOG_LEVEL)
     log.addHandler(CustomHandler())
+
+
+def dict_log_format(data: dict) -> str:
+    """Return formatted dictionary for pretty printing inside log messages."""
+    return "\n" + json.dumps(data, indent=4)

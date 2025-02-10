@@ -1,6 +1,5 @@
 import json
 from copy import deepcopy
-from pprint import pprint
 from typing import List, Optional
 
 import numpy as np
@@ -26,7 +25,7 @@ from qdesignoptimizer.designlib_temp.qt_charge_line_open_to_ground import (
 # design objects should be moved out
 from qdesignoptimizer.designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
 from qdesignoptimizer.designlib_temp.qt_flux_line_double import QTFluxLineDouble
-from qdesignoptimizer.logging import log
+from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
@@ -64,8 +63,9 @@ class DesignAnalysis:
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
         self.renderer = self.eig_solver.sim.renderer
-        print("self.eig_solver.sim.setup")
-        print(self.eig_solver.sim.setup)
+        log.info(
+            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
+        )
         self.eig_solver.setup.sweep_variable = "dummy"
         self.renderer = self.eig_solver.sim.renderer
         self.mini_study = mini_study
@@ -712,8 +712,7 @@ class DesignAnalysis:
 
         MHz = 1e6
         mode_idx = self._get_mode_idx_map()
-        print("freq_ND_results")
-        print(freq_ND_results)
+        log.info("freq_ND_results%s", dict_log_format(freq_ND_results.to_dict()))
         # Parameters within the same branch
         freq_column = 0
         for branch in all_branches:
@@ -1023,7 +1022,7 @@ class DesignAnalysis:
         self.update_var(updated_design_vars_input, system_optimized_params)
 
         updated_design_vars = self._calculate_target_design_var()
-        log.info("Updated_design_vars\n%s", updated_design_vars)
+        log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
         iteration_result = {}
@@ -1051,14 +1050,12 @@ class DesignAnalysis:
                     deepcopy(capacitance_matrix)
                 )
 
-        if self.print_progress:
-            print("------------------ Design variables -----------------")
-            pprint(self.design.variables)
-            print("-------------- System optimized params --------------")
-            for branch, param_dict in self.system_optimized_params.items():
-                if not all(v is None for _, v in param_dict.items()):
-                    print(branch)
-                    pprint(self.system_optimized_params[branch])
+        log.info("Design variables%s", dict_log_format(self.design.variables))
+        log_optimized_dict = {}
+        for branch, param_dict in self.system_optimized_params.items():
+            if not all(v is None for _, v in param_dict.items()):
+                log_optimized_dict[branch] = self.system_optimized_params[branch]
+        log.info("System optimized parameters%s", dict_log_format(log_optimized_dict))
 
         iteration_result["design_variables"] = deepcopy(self.design.variables)
         iteration_result["system_optimized_params"] = deepcopy(
@@ -1115,10 +1112,7 @@ class DesignAnalysis:
         with open("design_variables.json", "w") as outfile:
             json.dump(rewrite_parameters, outfile, indent=4)
 
-        print(
-            "####################### \nOverwritten parameters\n#######################"
-        )
-        pprint(updated_design_vars)
+        log.info("Overwritten parameters%s", dict_log_format(updated_design_vars))
 
     def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
         """Get cross kerr matrix from EPR analysis.

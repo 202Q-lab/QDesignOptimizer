@@ -10,6 +10,7 @@ from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_floating_lumped_mode_decay_into_chargeline,
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
+from qdesignoptimizer.logging import dict_log_format, log
 
 
 class CapacitanceMatrixStudy:
@@ -253,7 +254,7 @@ def sim_capacitance_matrix(
     lom_analysis.sim.setup.percent_error = 0.1
     lom_analysis.sim.renderer.options["x_buffer_width_mm"] = 2
     lom_analysis.sim.renderer.options["y_buffer_width_mm"] = 2
-    print(lom_analysis.sim.setup)
+    log.info("lom_analysis.sim.setup %s", dict_log_format(lom_analysis.sim.setup))
 
     lom_analysis.sim.run(
         components=component_names, open_terminations=open_terminations
