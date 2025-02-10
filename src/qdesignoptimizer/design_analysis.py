@@ -31,6 +31,19 @@ from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class DesignAnalysis:
+    """Class for DesignAnalysis.
+
+    Args:
+        state (DesignAnalysisSetup): DesignAnalysisState object
+        mini_study (MiniStudy): MiniStudy object
+        opt_targets (List[OptTarget]): list of OptTarget objects
+        print_progress (bool): print progress of updated design variables and simualted results
+        save_path (str): path to save results
+        plot_settings (dict): plot settings for progress plots
+        plot_branches_separately (bool): plot branches separately
+
+    """
+
     def __init__(
         self,
         state: DesignAnalysisState,
@@ -42,18 +55,6 @@ class DesignAnalysis:
         plot_settings: dict = None,
         plot_branches_separately=False,
     ):
-        """Class for DesignAnalysis.
-
-        Args:
-            state (DesignAnalysisSetup): DesignAnalysisState object
-            mini_study (MiniStudy): MiniStudy object
-            opt_targets (List[OptTarget]): list of OptTarget objects
-            print_progress (bool): print progress of updated design variables and simualted results
-            save_path (str): path to save results
-            plot_settings (dict): plot settings for progress plots
-            plot_branches_separately (bool): plot branches separately
-
-        """
         self.design_analysis_version = "1.0.1"
         """To be updated each time we update the DesignAnalysis class.
         1.0.0 at 2024-08-13 Get freqs from quantum f_ND instead of linear
@@ -67,7 +68,7 @@ class DesignAnalysis:
         print(self.eig_solver.sim.setup)
         self.eig_solver.setup.sweep_variable = "dummy"
         self.renderer = self.eig_solver.sim.renderer
-        
+
         self.mini_study = mini_study
         self.opt_targets = opt_targets
         self.all_design_vars = [target.design_var for target in opt_targets]
@@ -1119,12 +1120,12 @@ class DesignAnalysis:
         )
         pprint(updated_design_vars)
 
-    def screenshot(self, gui, run = None):
+    def screenshot(self, gui, run=None):
         if self.save_path is None:
             raise Exception("A path must be specified to save screenshot.")
         gui.autoscale()
         name = self.save_path + f"_{run+1}" if run is not None else self.save_path
-        gui.screenshot(name = name  , display= False)
+        gui.screenshot(name=name, display=False)
 
     def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
         """Get cross kerr matrix from EPR analysis.

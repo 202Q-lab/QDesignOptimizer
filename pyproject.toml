@@ -19,7 +19,7 @@ dependencies = [
   "geopandas==0.12.2",
   "ipython==8.10.0",
   "matplotlib==3.7.0",
-  "numpy>1.24.1",
+  "numpy==1.24.1",
   "pandas==1.5.3",
   "pint==0.20.1",
   "pyEPR-quantum==0.9.*",

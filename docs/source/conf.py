@@ -5,7 +5,6 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from recommonmark.transform import AutoStructify
 from sphinx.ext import apidoc
 
 import qdesignoptimizer
@@ -26,7 +25,6 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
-    #  "recommonmark",
     "sphinx_copybutton",
     "sphinx.ext.viewcode",
     "sphinx_last_updated_by_git",
@@ -76,6 +74,7 @@ github_doc_root = "https://github.com/rtfd/recommonmark/tree/master/doc/"
 
 def setup(app):
     print("Copying example notebooks into docs/source/_projects")
+    run_apidoc(None)
     source = Path(__file__).parent
     project_root = source.parents[1]
 
@@ -95,15 +94,6 @@ def setup(app):
         ignore=all_but_ipynb,
     )
     app.add_css_file("my_theme.css")
-    app.add_config_value(
-        "recommonmark_config",
-        {
-            "url_resolver": lambda url: github_doc_root + url,
-            "auto_toc_tree_section": "Contents",
-        },
-        True,
-    )
-    app.add_transform(AutoStructify)
 
     def clean_examples_dir(_app, _exception):
         shutil.rmtree(
@@ -117,7 +107,7 @@ def run_apidoc(_):
     """Extract autodoc directives from package structure."""
     source = Path(__file__).parent
     docs_dest = os.path.join(source, "api-reference")
-    if docs_dest.is_dir():
+    if os.path.isdir(docs_dest):
         shutil.rmtree(docs_dest, ignore_errors=False, onerror=None)
     package = os.path.join(source.parents[1], "src", "qdesignoptimizer")
 

@@ -17,29 +17,29 @@ First, clone the repository and navigate to its directory:
 
 Create a Virtual Environment
 ----------------------------
-It is strongly recommended that you install the project in a separate virtual environment, which must use python3.10. If you use conda, you can create it from the provided environment.yml file
+It is strongly recommended that you install the project in a separate virtual environment, which must use python3.10. since this project is packaged with `poetry <https://python-poetry.org/>`_ you can use its environment manager capabilities. If you use conda instead, you can create it from the provided environment.yml file:
 
 .. code-block:: bash
 
     conda env create -f environment.yml
-    conda activate qdesign_env
+    conda activate qdesignenv
 
 You can also create it using venv:
 
 .. code-block:: bash
 
     # Create new virtual environment
-    python3.10 -m venv qdesign_env
+    python3.10 -m venv qdesignenv
 
     # Activate the environment
     # On Linux/MacOS:
-    source qdesign-env/bin/activate
+    source qdesignenv/bin/activate
     # On Windows:
     qdesign-env\\Scripts\\activate
 
     # Verify Python version
     python --version
-    # For developers: install poetry
+    # Install poetry if not already available
     pip install poetry
 
 
@@ -62,7 +62,7 @@ For developers who want to contribute to the project, install with additional de
 
     poetry install --with docs,analysis
     pip install --no-deps qiskit-metal==0.1.5
-    # ignore pre-commit install
+    pre-commit install
 
 This will install:
 
