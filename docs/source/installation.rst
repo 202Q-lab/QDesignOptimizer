@@ -60,7 +60,7 @@ For developers who want to contribute to the project, install with additional de
 
 .. code-block:: bash
 
-    poetry install
+    poetry install --with docs,analysis
     pip install --no-deps qiskit-metal==0.1.5
     # ignore pre-commit install
 

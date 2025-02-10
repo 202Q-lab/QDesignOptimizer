@@ -1,9 +1,9 @@
 # environment.yml
-name: qdesign_env
+name: qdesignenv
 channels:
   - conda-forge
   - defaults
 dependencies:
   - python 3.10.*
-  - poetry
+  - poetry 2.*
   - pip
