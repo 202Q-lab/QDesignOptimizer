@@ -71,7 +71,7 @@ This will install:
 - Analysis and testing tools
 - Pre-commit hooks for code quality
 
-In order to build the documentation yourself, you also need to install `pandoc <https://pandoc.org/>`_.
+In order to build the documentation yourself, you also need to install `pandoc <https://pandoc.org/>`_ (And probably need to restart your PC to set the path variables correctly). You can build the documentation by running ``poetry run sphinx-build -b html docs/source docs/_build/htm``.
 
 
 Install Ansys

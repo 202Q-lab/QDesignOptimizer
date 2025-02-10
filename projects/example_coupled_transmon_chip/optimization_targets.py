@@ -99,7 +99,7 @@ def get_opt_target_res_qub_chi_via_res_qub_coupl_length(
         system_target_param=(str(branch), dc.RES_QUBIT_CHI),
         involved_mode_freqs=[(str(branch), dc.RES_FREQ), (str(branch), dc.QUBIT_FREQ)],
         design_var=u.design_var_res_qb_coupl_length(branch),
-        design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
+        design_var_constraint={"larger_than": "5um", "smaller_than": "350um"},
         prop_to=lambda p, v: v[u.design_var_res_qb_coupl_length(branch)],
         independent_target=True,
     )

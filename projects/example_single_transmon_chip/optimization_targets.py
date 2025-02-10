@@ -27,6 +27,32 @@ def get_opt_target_qubit_freq_via_lj(
         independent_target=True,
     )
 
+def get_opt_target_qubit_anharmonicity_via_pad_width(
+    branch: int,
+) -> OptTarget:
+
+    return OptTarget(
+        system_target_param=(str(branch), dc.QUBIT_ANHARMONICITY),
+        involved_mode_freqs=[(str(branch), dc.QUBIT_FREQ)],
+        design_var=u.design_var_qb_pad_width(branch),
+        design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
+        prop_to=lambda p, v: 1 / v[u.design_var_qb_pad_width(branch)],
+        independent_target=True,
+    )
+
+def get_opt_target_res_qub_chi_via_res_qub_coupl_length(
+    branch: int,
+) -> OptTarget:
+
+    return OptTarget(
+        system_target_param=(str(branch), dc.RES_QUBIT_CHI),
+        involved_mode_freqs=[(str(branch), dc.RES_FREQ), (str(branch), dc.QUBIT_FREQ)],
+        design_var=u.design_var_res_qb_coupl_length(branch),
+        design_var_constraint={"larger_than": "5um", "smaller_than": "350um"},
+        prop_to=lambda p, v: v[u.design_var_res_qb_coupl_length(branch)],
+        independent_target=True,
+    )
+
 
 def get_opt_target_res_freq_via_length(
     branch: int,
@@ -59,6 +85,8 @@ def get_opt_target_res_kappa_via_coupl_length(
 def get_opt_targets_qb_res(
     branch: int,
     qb_freq=True,
+    qb_anharmonicity=True,
+    qb_res_chi=True,
     res_freq=True,
     res_kappa=True,
 ) -> List[OptTarget]:
@@ -69,4 +97,8 @@ def get_opt_targets_qb_res(
         opt_targets.append(get_opt_target_res_freq_via_length(branch))
     if res_kappa:
         opt_targets.append(get_opt_target_res_kappa_via_coupl_length(branch))
+    if qb_anharmonicity:
+        opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(branch))
+    if qb_res_chi:
+        opt_targets.append(get_opt_target_res_qub_chi_via_res_qub_coupl_length(branch))
     return opt_targets
