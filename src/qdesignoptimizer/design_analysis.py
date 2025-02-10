@@ -1118,6 +1118,13 @@ class DesignAnalysis:
         )
         pprint(updated_design_vars)
 
+    def screenshot(self, gui, run = None):
+        if self.save_path is None:
+            raise Exception("A path must be specified to save screenshot.")
+        gui.autoscale()
+        name = self.save_path + f"_{run+1}" if run is not None else self.save_path
+        gui.screenshot(name = name  , display= False)
+
     def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
         """Get cross kerr matrix from EPR analysis.
 
