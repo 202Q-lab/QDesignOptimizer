@@ -1,3 +1,5 @@
+from qdesignoptimizer.utils.constants import *
+
 # Fixed design constants
 LINE_50_OHM_WIDTH = "16.51um"
 LINE_50_OHM_GAP = "10um"

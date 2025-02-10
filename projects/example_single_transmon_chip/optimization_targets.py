@@ -5,8 +5,7 @@ with open('design_variables.json') as in_file:
     dv = json.load(in_file)
 import numpy as np
 
-import qdesignoptimizer.utils.constants as dc
-# import qdesignoptimizer.utils.utils_design_variables as u
+import design_constants as dc
 import design_names as u
 from qdesignoptimizer.design_analysis_types import OptTarget
 

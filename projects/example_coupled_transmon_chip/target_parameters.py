@@ -1,4 +1,4 @@
-import qdesignoptimizer.utils.constants as dc
+import design_constants as dc
 
 TARGET_PARAMS = {
     "0": {

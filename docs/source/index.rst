@@ -9,6 +9,7 @@ Welcome to qdesignoptimizer's documentation!
    :maxdepth: 4
    :caption: Content:
    
+   installation
    optimizer
    userguide   
    development
