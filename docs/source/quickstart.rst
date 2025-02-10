@@ -16,7 +16,7 @@ Every optimization project requires a set of files:
 
     project_root/
     ├── design_variables.json
-    ├── design_names.py
+    ├── design_variable_names.py
     ├── design_constants.py
     ├── design.py
     ├── main.ipynb
@@ -31,12 +31,12 @@ Branches
 --------
 The concept of branches is important for the efficient optimization of larger superconducting quantum circuits to break up the optimization problem into subsets of circuit designs, which can be first evaluated independently and then in conjunction with neighboring branches. In our definition a branch can be any set of circuit elements with corresponding eigenmode. Hence even a single element can be a branch. We typically like to think of a branch as a set of a resonator, a qubit, and a coupler, or instead a set of a resonator, a qubit, and a cavity with an additional branch for the coupler.
 
-For the component names we suggest a nameing convention of the form ``NAME_RES`` or ``NAME_QUB`` followed by the branch index. A collection of common component names can be directly called from ``utils.utils_design_variables``. User specific component names can be added in and called from ``design_names`` in the project folder. 
+For the component names we suggest a nameing convention of the form ``NAME_RES`` or ``NAME_QUB`` followed by the branch index. A collection of common component names can be directly called from ``utils.utils_design_variables``. User specific component names can be added in and called from ``design_variable_names`` in the project folder. 
 
 
 Design Variables and Parameter
 ------------------------------
-Design variables are variable design options specified in the qiskit-metal design, which are varied during the optimization. For the design variables we suggest a naming convention of the form ``design_var_res_length_`` followed by the branch index. A collection of common design variables can be directly called from ``utils.utils_design_variables``. User specific component names can be added in and called from ``design_names`` in the project folder. 
+Design variables are variable design options specified in the qiskit-metal design, which are varied during the optimization. For the design variables we suggest a naming convention of the form ``design_var_res_length_`` followed by the branch index. A collection of common design variables can be directly called from ``utils.utils_design_variables``. User specific component names can be added in and called from ``design_variable_names`` in the project folder. 
 
 During the rendering of the qiskit-metal design, the design will call the design parameters, which are associated with the design variables. The design parameters are specified in ``design_variables.json`` in the project folder. 
 
@@ -49,7 +49,7 @@ As a minimal example we can look at the definition of a ``RouteMeander`` resonat
 
 .. code-block:: python
 
-    import design_names as u
+    import design_variable_names as u
     from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 
     resonator_options = dict(
@@ -102,7 +102,7 @@ A minimal example for the resonator length look like this:
 
     from qdesignoptimizer.design_analysis_types import OptTarget
     import design_constants as dc
-    import design_names as u
+    import design_variable_names as u
 
     def get_opt_target_res_freq_via_length(branch):
         return OptTarget(

@@ -67,6 +67,7 @@ class DesignAnalysis:
         print(self.eig_solver.sim.setup)
         self.eig_solver.setup.sweep_variable = "dummy"
         self.renderer = self.eig_solver.sim.renderer
+        
         self.mini_study = mini_study
         self.opt_targets = opt_targets
         self.all_design_vars = [target.design_var for target in opt_targets]

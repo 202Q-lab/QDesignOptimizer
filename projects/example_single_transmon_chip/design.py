@@ -2,7 +2,7 @@ import json
 with open('design_variables.json') as in_file:
     dv = json.load(in_file)
 import design_constants as c
-import design_names as u
+import design_variable_names as u
 from qiskit_metal import MetalGUI
 from qiskit_metal.designs.design_planar import DesignPlanar
 from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
