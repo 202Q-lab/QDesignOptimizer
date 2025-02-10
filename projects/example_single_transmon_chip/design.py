@@ -25,7 +25,7 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
 
     # make transmon
     transmon_options = dict(
-        pos_x=["-3mm", "+3mm", "-3mm", "+3mm", "-3mm"][branch],
+        pos_x=["-2mm", "+2mm", "-2mm", "+2mm", "-2mm"][branch],
         pos_y=["-4mm", "-2mm", "0mm", "2mm", "4mm"][branch],
         orientation=["-90", "+90", "-90", "+90", "-90"][branch],
         pad_gap="100um",
@@ -36,7 +36,7 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
         pocket_height="1200um",
         coupled_pad_width="45um",
         coupled_pad_height=u.design_var_res_qb_coupl_length(branch),
-        coupled_pad_gap="200um",
+        coupled_pad_gap="100um",
         connection_pads=dict(
             readout=dict(
                 loc_W=0,
