@@ -2,6 +2,7 @@ import json
 from copy import deepcopy
 from pprint import pprint
 from typing import List, Optional
+from qdesignoptimizer.design_analysis_types import MeshingMap 
 
 import numpy as np
 import pandas as pd
@@ -41,6 +42,7 @@ class DesignAnalysis:
         update_parameters: bool = True,
         plot_settings: dict = None,
         plot_branches_separately=False,
+        meshing_map: List[MeshingMap] = None
     ):
         """Class for DesignAnalysis.
 
@@ -96,6 +98,7 @@ class DesignAnalysis:
         self.update_parameters = update_parameters
         self.plot_settings = plot_settings
         self.plot_branches_separately = plot_branches_separately
+        self.meshing_map = meshing_map
 
         self.optimization_results = []
 
@@ -200,47 +203,17 @@ class DesignAnalysis:
             **system_optimized_params,
         }
 
-    def get_cpw_to_port_names(self):
-        def _is_cpw_to_port(component: str):
-            return any(
-                [
-                    isinstance(self.design.components[component], meander_class)
-                    for meander_class in [QTCoupledLineTee, QTChargeLineOpenToGround]
-                ]
-            )
+    def get_meshing_names(self):
+        finer_mesh_names = []
+        for component in self.mini_study.component_names:
+            if hasattr(self.design.components[component],"get_meshing_names"):
+                finer_mesh_names+=(self.design.components[component].get_meshing_names())
+            else:
+                for map in self.meshing_map:
+                    if isinstance(self.design.components[component],map.component_class):
+                        finer_mesh_names+=(map.mesh_names(component))
+        return finer_mesh_names
 
-        cpw_to_port_components = [
-            component
-            for component in self.mini_study.component_names
-            if _is_cpw_to_port(component)
-        ]
-        cpw_to_port_center = [f"prime_cpw_{comp}" for comp in cpw_to_port_components]
-        cpw_to_port_gap = [f"prime_cpw_sub_{comp}" for comp in cpw_to_port_components]
-        return [*cpw_to_port_center, *cpw_to_port_gap]
-
-    def get_flux_double_names(self):
-        def _is_flux_line_double(component: str):
-            return any(
-                [
-                    isinstance(self.design.components[component], meander_class)
-                    for meander_class in [QTFluxLineDouble]
-                ]
-            )
-
-        flux_line_double_components = [
-            component
-            for component in self.mini_study.component_names
-            if _is_flux_line_double(component)
-        ]
-        left = [f"flux_line_left_{comp}" for comp in flux_line_double_components]
-        right = [f"flux_line_right_{comp}" for comp in flux_line_double_components]
-        left_pocket = [
-            f"flux_line_pocket_left_{comp}" for comp in flux_line_double_components
-        ]
-        right_pocket = [
-            f"flux_line_pocket_right_{comp}" for comp in flux_line_double_components
-        ]
-        return [*left, *right, *left_pocket, *right_pocket]
 
     def get_port_gap_names(self):
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
@@ -261,23 +234,21 @@ class DesignAnalysis:
             open_pins=self.mini_study.open_pins,
         )
 
-        # for component_name in self.mini_study.component_names:
-        #     if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
-        #         for coord in self.design.components[component_name].get_air_bridge_coordinates():
-        #             hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
-        #                                          bond_type=0, name="mybox1", matname="aluminum")
+        for component_name in self.mini_study.component_names:
+            if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
+                for coord in self.design.components[component_name].get_air_bridge_coordinates():
+                    hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
+                                                 bond_type=0, name="mybox1", matname="aluminum")
 
-        # restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
-        # if restrict_mesh:
+        restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
+        if restrict_mesh:
 
-        #     self.renderer.modeler.mesh_length(
-        #         'cpw_to_port_mesh',
-        #         [
-        #             *self.get_cpw_to_port_names(),
-        #             *self.get_flux_double_names(),
-        #             *self.get_port_gap_names(),
-        #             ],
-        #         MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
+            self.renderer.modeler.mesh_length(
+                'cpw_to_port_mesh',    
+                [
+                    *self.get_meshing_names()
+                    ],
+                MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
 
         self.setup.analyze()
         eig_results = self.eig_solver.get_frequencies()
