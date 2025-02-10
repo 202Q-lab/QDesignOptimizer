@@ -8,6 +8,7 @@ PLOT_SETTINGS = {
     ],
     "QUBIT": [
         OptPltSet(dc.ITERATION, dc.QUBIT_FREQ),
+        OptPltSet(dc.ITERATION, dc.QUBIT_ANHARMONICITY),
         OptPltSet(dc.ITERATION, dc.RES_QUBIT_CHI),
     ],
 }

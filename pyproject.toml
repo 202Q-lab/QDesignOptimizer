@@ -1,43 +1,44 @@
-[tool.poetry]
+[project]
 name = "qdesignoptimizer"
 version = "0.0.1"
 description = "Optimizer for superconducting quantum chip designs"
-authors = ["202Q-lab", "Axel Eriksson", "Lukas Splitthoff"]
+authors = [
+  { name = "202Q-lab" },
+  { name = "Axel Eriksson" },
+  { name = "Lukas Splitthoff" },
+]
 license = "Apache License 2.0"
 readme = "README.md"
-repository = "https://github.com/202Q-lab/QDesignOptimizer"
 keywords = ["Quantum"]
-classifiers = [
-  "Programming Language :: Python :: 3",
+classifiers = ["Programming Language :: Python :: 3"]
+requires-python = "3.10.*"
+dependencies = [
+  "addict==2.4.0",
+  "descartes==1.1.0",
+  "gdspy==1.6.12",
+  "geopandas==0.12.2",
+  "ipython==8.10.0",
+  "matplotlib==3.7.0",
+  "numpy==1.24.1",
+  "pandas==1.5.3",
+  "pint==0.20.1",
+  "pyEPR-quantum==0.9.*",
+  "pygments==2.14.0",
+  "pyside2==5.15.2.1",
+  "qdarkstyle==3.1",
+  "qutip==4.7.1",
+  "scipy==1.10.0",
+  "shapely==2.0.1",
+  "scqubits==3.1.0",
+  "gmsh==4.11.1",
+  "pyaedt==0.6.94",
+  "pyyaml==6.0",
+  "cython<3.0.0",
+  "ipykernel",
 ]
 
-[tool.poetry.dependencies]
-python = "3.10.*"
-addict="==2.4.0"
-descartes="==1.1.0"
-gdspy="==1.6.12"
-geopandas="==0.12.2"
-ipython="==8.10.0"
-matplotlib="==3.7.0"
-numpy=">1.24.1"
-pandas="==1.5.3"
-pint="==0.20.1"
-pyEPR-quantum="0.9.*"
-pygments="==2.14.0"
-pyside2="==5.15.2.1"
-qdarkstyle="==3.1"
-qutip="==4.7.1"
-scipy="==1.10.0"
-shapely="==2.0.1"
-scqubits="==3.1.0"
-gmsh="==4.11.1"
-pyaedt="==0.6.94"
-pyyaml="==6.0"
-cython="<3.0.0"
-ipykernel = "*"
-
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.analysis]
@@ -62,11 +63,11 @@ sphinx-rtd-theme = "*"
 sphinxcontrib-bibtex = "*"
 sphinx-copybutton = "*"
 sphinx-last-updated-by-git = "*"
-sphinx-mdinclude="*"
+sphinx-mdinclude = "*"
 
 [tool.pytest.ini_options]
 testpaths = ['tests/']
 
 [[tool.mypy.overrides]]
-module=["qiskit_metal.*", "matplotlib.*", "pyEPR.*", "pyaedt.*"]
+module = ["qiskit_metal.*", "matplotlib.*", "pyEPR.*", "pyaedt.*"]
 ignore_missing_imports = true

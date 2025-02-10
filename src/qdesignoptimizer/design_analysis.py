@@ -52,6 +52,18 @@ class DesignAnalysis:
             plot_branches_separately (bool): plot branches separately
 
         """
+
+    def __init__(
+        self,
+        state: DesignAnalysisState,
+        mini_study: MiniStudy,
+        opt_targets: List[OptTarget] = None,
+        print_progress: bool = True,
+        save_path: str = None,
+        update_parameters: bool = True,
+        plot_settings: dict = None,
+        plot_branches_separately=False,
+    ):
         self.design_analysis_version = "1.0.1"
         """To be updated each time we update the DesignAnalysis class.
         1.0.0 at 2024-08-13 Get freqs from quantum f_ND instead of linear
@@ -66,6 +78,7 @@ class DesignAnalysis:
         )
         self.eig_solver.setup.sweep_variable = "dummy"
         self.renderer = self.eig_solver.sim.renderer
+
         self.mini_study = mini_study
         self.opt_targets = opt_targets
         self.all_design_vars = [target.design_var for target in opt_targets]
@@ -1156,3 +1169,10 @@ class DesignAnalysis:
             return capacitance_matrices[capacitance_study_number - 1]
 
         return None
+
+    def screenshot(self, gui, run=None):
+        if self.save_path is None:
+            raise Exception("A path must be specified to save screenshot.")
+        gui.autoscale()
+        name = self.save_path + f"_{run+1}" if run is not None else self.save_path
+        gui.screenshot(name=name, display=False)
