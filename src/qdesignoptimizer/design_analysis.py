@@ -31,34 +31,23 @@ from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class DesignAnalysis:
-    def __init__(
-        self,
-        state: DesignAnalysisState,
-        mini_study: MiniStudy,
-        opt_targets: List[OptTarget] = None,
-        save_path: str = None,
-        update_parameters: bool = True,
-        plot_settings: dict = None,
-        plot_branches_separately=False,
-    ):
-        """Class for DesignAnalysis.
+    """Class for DesignAnalysis.
 
-        Args:
-            state (DesignAnalysisSetup): DesignAnalysisState object
-            mini_study (MiniStudy): MiniStudy object
-            opt_targets (List[OptTarget]): list of OptTarget objects
-            save_path (str): path to save results
-            plot_settings (dict): plot settings for progress plots
-            plot_branches_separately (bool): plot branches separately
+    Args:
+        state (DesignAnalysisSetup): DesignAnalysisState object
+        mini_study (MiniStudy): MiniStudy object
+        opt_targets (List[OptTarget]): list of OptTarget objects
+        save_path (str): path to save results
+        plot_settings (dict): plot settings for progress plots
+        plot_branches_separately (bool): plot branches separately
 
-        """
+    """
 
     def __init__(
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
         opt_targets: List[OptTarget] = None,
-        print_progress: bool = True,
         save_path: str = None,
         update_parameters: bool = True,
         plot_settings: dict = None,
