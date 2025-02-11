@@ -276,9 +276,11 @@ class DesignAnalysis:
         junction_found = False
         linear_element_found = False
         for key, val in self.mini_study.jj_setup.items():
+            # experimental implementation. to be generatized in the future to arbitrary junction potentials
+            # this is a simple way to implement a linear potential only
             if "type" in val and val["type"] == "linear":
                 linear_element_found = True
-                continue  # do not include 'linear' junctions (e.g. ATS/SNAIL at Kerr-free point) in EPR analysis TODO does this work as intended?
+                continue
             jj_setups_to_include_in_epr[key] = val
             junction_found = True
 
