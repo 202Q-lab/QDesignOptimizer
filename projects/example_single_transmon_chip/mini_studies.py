@@ -24,6 +24,9 @@ def get_mini_study_qb_res(branch: int):
         ],
         jj_var=dv,
         jj_setup={**junction_setup(u.name_qb(branch))},
+        hfss_wire_bond_size = 2, 
+        hfss_wire_bond_offset = '0um', 
+        hfss_wire_bond_threshold = '300um', 
         design_name="get_mini_study_qb_res",
         adjustment_rate=0.8,
         **CONVERGENCE

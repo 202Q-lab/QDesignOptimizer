@@ -220,15 +220,9 @@ class DesignAnalysis:
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
         )
         # set hfss wire bonds
-        for component_name in self.mini_study.component_names:  
-            # set hfss wire bond params from user design. only one setting for the entire simulation possible
-            if self.design.components[component_name].options['hfss_wire_bonds'] == True:
-                if self.design.components[component_name].options['wb_size']:
-                    self.renderer.options['wb_size'] = self.design.components[component_name].options['wb_size']
-                if self.design.components[component_name].options['wb_threshold']:
-                    self.renderer.options['wb_threshold'] = self.design.components[component_name].options['wb_threshold']
-                if self.design.components[component_name].options['wb_offset']:
-                    self.renderer.options['wb_offset'] = self.design.components[component_name].options['wb_offset']  
+        self.renderer.options['wb_size'] = self.mini_study.hfss_wire_bond_size
+        self.renderer.options['wb_threshold'] = self.mini_study.hfss_wire_bond_threshold
+        self.renderer.options['wb_offset'] = self.mini_study.hfss_wire_bond_offset
 
         self.renderer.render_design(
             selection=self.mini_study.component_names,

@@ -169,6 +169,9 @@ class MiniStudy:
         y_buffer_width_mm=0.5,
         max_mesh_length_port="3um",
         max_mesh_length_lines_to_ports="5um",
+        hfss_wire_bond_size = 4, 
+        hfss_wire_bond_offset = '0um', 
+        hfss_wire_bond_threshold = '300um', 
         allow_crude_decay_estimates=True,
         adjustment_rate: float = 1.0,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
@@ -189,6 +192,9 @@ class MiniStudy:
         self.y_buffer_width_mm = y_buffer_width_mm
         self.max_mesh_length_port = max_mesh_length_port
         self.max_mesh_length_lines_to_ports = max_mesh_length_lines_to_ports
+        self.hfss_wire_bond_size = hfss_wire_bond_size
+        self.hfss_wire_bond_offset = hfss_wire_bond_offset
+        self.hfss_wire_bond_threshold = hfss_wire_bond_threshold
         self.allow_crude_decay_estimates = allow_crude_decay_estimates
         self.adjustment_rate = adjustment_rate
         self.render_qiskit_metal_eigenmode_kw_args = (
