@@ -61,7 +61,6 @@ class DesignAnalysis:
             "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
         )
         self.eig_solver.setup.sweep_variable = "dummy"
-        self.renderer = self.eig_solver.sim.renderer
 
         self.mini_study = mini_study
         self.opt_targets = opt_targets
@@ -220,18 +219,32 @@ class DesignAnalysis:
         self.render_qiskit_metal(
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
         )
+        # set hfss wire bonds
+        for component_name in self.mini_study.component_names:  
+            # set hfss wire bond params from user design. only one setting for the entire simulation possible
+            if self.design.components[component_name].options['hfss_wire_bonds'] == True:
+                if self.design.components[component_name].options['wb_size']:
+                    self.renderer.options['wb_size'] = self.design.components[component_name].options['wb_size']
+                if self.design.components[component_name].options['wb_threshold']:
+                    self.renderer.options['wb_threshold'] = self.design.components[component_name].options['wb_threshold']
+                if self.design.components[component_name].options['wb_offset']:
+                    self.renderer.options['wb_offset'] = self.design.components[component_name].options['wb_offset']  
+
         self.renderer.render_design(
             selection=self.mini_study.component_names,
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
         )
 
+        # set air bridges
         for component_name in self.mini_study.component_names:
             if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
                 for coord in self.design.components[component_name].get_air_bridge_coordinates():
                     hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
                                                  bond_type=0, name="mybox1", matname="aluminum")
+            
 
+        # set meshing
         restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
         if restrict_mesh:
 
