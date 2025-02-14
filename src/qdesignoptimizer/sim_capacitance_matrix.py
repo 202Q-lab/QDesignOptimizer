@@ -25,7 +25,7 @@ class CapacitanceMatrixStudy:
 
     Args:
         component_names (list):         list of Qiskit component names to be included in the capacitance simulation
-        freq_GHz (float):               Sets the frequency in GHz of the capacitance matrix. Or (ot supported yet): If tuple, the simulation will use the frquency from corresponding mode in the EPR analysis.n
+        freq_GHz (float):               Sets the frequency in GHz of the capacitance matrix. Or (not supported yet): If tuple, the simulation will use the frequency from corresponding mode in the EPR analysis.n
                                         Example1: 5e9, Example2: ('BRANCH_1', 'qubit_freq')
         open_pins (list):               pins to be left open (called open_terminations in the capacitance matrix simulation),
                                         Example: [('comp_name', 'pin_name')]
@@ -161,7 +161,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         self.charge_line_capacitance_name = charge_line_capacitance_name
         self.charge_line_impedance_Ohm = charge_line_impedance_Ohm
 
-    def get_t1_limit_due_to_decay_into_charge_line(self):
+    def get_t1_limit_due_to_decay_into_charge_line(self) -> float:
         """Get the T1 limit due to decay into charge line decay
         and populates the t1_limit_due_to_decay_into_charge_line attribute.
 
@@ -197,7 +197,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
                     mode_capacitance_fF=Csum,
                     mode_capacitance_to_charge_line_fF=Ccoupling,
                     mode_freq_GHz=self.freq_GHz,
-                    charge_line_impedance=50.0,
+                    charge_line_impedance=self.charge_line_impedance_Ohm,
                 )
             )
 
@@ -222,13 +222,13 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
             self.t1_limit_due_to_decay_into_charge_line = (
                 calculate_t1_limit_floating_lumped_mode_decay_into_chargeline(
+                    mode_freq_GHz=self.freq_GHz,
                     cap_island_a_island_b_fF=CJ,
                     cap_island_a_ground_fF=Ca0,
                     cap_island_a_line_fF=Ca1,
                     cap_island_b_ground_fF=Cb0,
                     cap_island_b_line_fF=Cb1,
-                    mode_freq_GHz=self.freq_GHz,
-                    charge_line_impedance=50.0,
+                    charge_line_impedance=self.charge_line_impedance_Ohm,
                 )
             )
 
