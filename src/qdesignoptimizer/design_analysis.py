@@ -1,7 +1,6 @@
 import json
 from copy import deepcopy
 from typing import List, Optional
-from qdesignoptimizer.design_analysis_types import MeshingMap 
 
 import numpy as np
 import pandas as pd
@@ -15,11 +14,13 @@ from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRana
 import qdesignoptimizer.utils.constants as dc
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
+    MeshingMap,
     MiniStudy,
     OptTarget,
     TargetType,
 )
 from qdesignoptimizer.logging import dict_log_format, log
+from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
@@ -46,7 +47,7 @@ class DesignAnalysis:
         update_parameters: bool = True,
         plot_settings: dict = None,
         plot_branches_separately=False,
-        meshing_map: List[MeshingMap] = None
+        meshing_map: List[MeshingMap] = None,
     ):
         self.design_analysis_version = "1.0.1"
         """To be updated each time we update the DesignAnalysis class.
@@ -117,8 +118,14 @@ class DesignAnalysis:
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
         log.warning(
-            "Does not update passes in Scattering simulation not in Capacitance matrix simulation."
+            "Does not update passes in Scattering simulation nor in Capacitance matrix simulation."
         )
+
+    def update_nbr_passes_capacitance_ministudies(self, nbr_passes):
+        """Updates the number of passes for capacitance matrix studies."""
+        if self.mini_study.capacitance_matrix_studies:
+            for cap_study in self.mini_study.capacitance_matrix_studies:
+                cap_study.nbr_passes = nbr_passes
 
     def update_delta_f(self, delta_f):
         self.mini_study.delta_f = delta_f
@@ -197,14 +204,17 @@ class DesignAnalysis:
     def get_meshing_names(self):
         finer_mesh_names = []
         for component in self.mini_study.component_names:
-            if hasattr(self.design.components[component],"get_meshing_names"):
-                finer_mesh_names+=(self.design.components[component].get_meshing_names())
+            if hasattr(self.design.components[component], "get_meshing_names"):
+                finer_mesh_names += self.design.components[
+                    component
+                ].get_meshing_names()
             else:
                 for map in self.meshing_map:
-                    if isinstance(self.design.components[component],map.component_class):
-                        finer_mesh_names+=(map.mesh_names(component))
+                    if isinstance(
+                        self.design.components[component], map.component_class
+                    ):
+                        finer_mesh_names += map.mesh_names(component)
         return finer_mesh_names
-
 
     def get_port_gap_names(self):
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
@@ -220,9 +230,9 @@ class DesignAnalysis:
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
         )
         # set hfss wire bonds
-        self.renderer.options['wb_size'] = self.mini_study.hfss_wire_bond_size
-        self.renderer.options['wb_threshold'] = self.mini_study.hfss_wire_bond_threshold
-        self.renderer.options['wb_offset'] = self.mini_study.hfss_wire_bond_offset
+        self.renderer.options["wb_size"] = self.mini_study.hfss_wire_bond_size
+        self.renderer.options["wb_threshold"] = self.mini_study.hfss_wire_bond_threshold
+        self.renderer.options["wb_offset"] = self.mini_study.hfss_wire_bond_offset
 
         self.renderer.render_design(
             selection=self.mini_study.component_names,
@@ -232,22 +242,36 @@ class DesignAnalysis:
 
         # set air bridges
         for component_name in self.mini_study.component_names:
-            if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
-                for coord in self.design.components[component_name].get_air_bridge_coordinates():
-                    hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
-                                                 bond_type=0, name="mybox1", matname="aluminum")
-            
+            if hasattr(
+                self.design.components[component_name], "get_air_bridge_coordinates"
+            ):
+                for coord in self.design.components[
+                    component_name
+                ].get_air_bridge_coordinates():
+                    hfss.modeler.create_bondwire(
+                        coord[0],
+                        coord[1],
+                        h1=0.005,
+                        h2=0.000,
+                        alpha=90,
+                        beta=45,
+                        diameter=0.005,
+                        bond_type=0,
+                        name="mybox1",
+                        matname="aluminum",
+                    )
 
         # set meshing
-        restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
+        restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(
+            self.mini_study.port_list
+        ) > 0
         if restrict_mesh:
 
             self.renderer.modeler.mesh_length(
-                'cpw_to_port_mesh',    
-                [
-                    *self.get_meshing_names()
-                    ],
-                MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
+                "cpw_to_port_mesh",
+                [*self.get_meshing_names()],
+                MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
+            )
 
         self.setup.analyze()
         eig_results = self.eig_solver.get_frequencies()
@@ -761,7 +785,9 @@ class DesignAnalysis:
                     )
 
     def _update_optimized_params_capacitance_simulation(
-        self, capacitance_matrix: pd.DataFrame
+        self,
+        capacitance_matrix: pd.DataFrame,
+        capacitance_study: CapacitanceMatrixStudy,
     ):
         if dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
             for key_capacitances in self.system_target_params[
@@ -775,6 +801,11 @@ class DesignAnalysis:
                     log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
+        # if dc.QUBIT_CHARGE_LINE_LIMITED_T1 in self.system_target_params and isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
+        log.info("Computing T1 limit from decay in charge line.")
+        self.system_optimized_params[capacitance_study.branch_name][
+            dc.QUBIT_CHARGE_LINE_LIMITED_T1
+        ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod
     def _apply_adjustment_rate(new_val, old_val, rate):
@@ -865,7 +896,6 @@ class DesignAnalysis:
             for idx, name in enumerate(ordered_design_var_names_to_minimize):
                 all_design_var_updated[name] = ordered_design_var_vals_updated[idx]
             cost = 0
-
             for target in targets_to_minimize_for:
                 Q_k1_i = (
                     self.get_quantity_value(target, all_quantities_current)
@@ -1012,11 +1042,14 @@ class DesignAnalysis:
             iteration_result["capacitance_matrix"] = []
             for capacitance_study in self.mini_study.capacitance_matrix_studies:
                 capacitance_study.set_render_qiskit_metal(self.render_qiskit_metal)
+                log.info("Simulating capacitance matrix study.")
                 capacitance_matrix = capacitance_study.simulate_capacitance_matrix(
                     self.design
                 )
-
-                self._update_optimized_params_capacitance_simulation(capacitance_matrix)
+                log.info("CAPACITANCE MATRIX\n%s", capacitance_matrix.to_string())
+                self._update_optimized_params_capacitance_simulation(
+                    capacitance_matrix, capacitance_study
+                )
 
                 iteration_result["capacitance_matrix"].append(
                     deepcopy(capacitance_matrix)
