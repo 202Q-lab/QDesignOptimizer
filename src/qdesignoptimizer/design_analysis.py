@@ -194,15 +194,19 @@ class DesignAnalysis:
             **system_optimized_params,
         }
 
-    def get_meshing_names(self):
+    def get_fine_mesh_names(self):
+        """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names". This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class."""
         finer_mesh_names = []
         for component in self.mini_study.component_names:
             if hasattr(self.design.components[component],"get_meshing_names"):
                 finer_mesh_names+=(self.design.components[component].get_meshing_names())
-            else:
+            elif self.meshing_map != None:
                 for map in self.meshing_map:
                     if isinstance(self.design.components[component],map.component_class):
                         finer_mesh_names+=(map.mesh_names(component))
+            else:
+                log.info("No fine mesh map was found for "+component)
+                
         return finer_mesh_names
 
 
@@ -210,7 +214,7 @@ class DesignAnalysis:
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
 
     def run_eigenmodes(self):
-        """Simulate eigenmodes and calculate EPR."""
+        """Simulate eigenmodes."""
         self.update_var({}, {})
         self.pinfo.validate_junction_info()
 
@@ -219,36 +223,34 @@ class DesignAnalysis:
         self.render_qiskit_metal(
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
         )
-        # set hfss wire bonds
+        # set hfss wire bonds properties
         self.renderer.options['wb_size'] = self.mini_study.hfss_wire_bond_size
         self.renderer.options['wb_threshold'] = self.mini_study.hfss_wire_bond_threshold
         self.renderer.options['wb_offset'] = self.mini_study.hfss_wire_bond_offset
 
+        # render design in HFSS
         self.renderer.render_design(
             selection=self.mini_study.component_names,
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
         )
 
-        # set air bridges
+        # set custom air bridges
         for component_name in self.mini_study.component_names:
             if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
                 for coord in self.design.components[component_name].get_air_bridge_coordinates():
                     hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
                                                  bond_type=0, name="mybox1", matname="aluminum")
-            
+                    
+        # set fine mesh
+        # fine_mesh_names = self.get_fine_mesh_names()
+        # restrict_mesh = fine_mesh_names != None and self.mini_study.build_fine_mesh and len(self.mini_study.port_list) > 0
 
-        # set meshing
-        restrict_mesh = (not self.mini_study.allow_crude_decay_estimates) and len(self.mini_study.port_list) > 0
-        if restrict_mesh:
+        # if restrict_mesh:
+        #     self.renderer.modeler.mesh_length(
+        #         'fine_mesh', fine_mesh_names, MaxLength=self.mini_study.max_mesh_length_lines_to_ports, RefineInside=True)
 
-            self.renderer.modeler.mesh_length(
-                'cpw_to_port_mesh',    
-                [
-                    *self.get_meshing_names()
-                    ],
-                MaxLength=self.mini_study.max_mesh_length_lines_to_ports)
-
+        # run eigenmode analysis
         self.setup.analyze()
         eig_results = self.eig_solver.get_frequencies()
         eig_results["Kappas (kHz)"] = (
@@ -257,11 +259,6 @@ class DesignAnalysis:
         eig_results["Freq. (Hz)"] = eig_results["Freq. (GHz)"] * 1e9
         eig_results["Kappas (Hz)"] = eig_results["Kappas (kHz)"] * 1e3
 
-        for target in self.opt_targets:
-            if target.system_target_param is not dc.CAPACITANCE_MATRIX_ELEMENTS:
-                pass
-                # TODO map linear freq and kappa
-                # self._update_optimized_params_for_eigenmode_target(target, eig_results)  # TODO what is this?
         self._update_optimized_params(eig_results)
 
         return eig_results
