@@ -249,12 +249,12 @@ class DesignAnalysis:
                                                  bond_type=0, name="mybox1", matname="aluminum")
                     
         # set fine mesh
-        # fine_mesh_names = self.get_fine_mesh_names()
-        # restrict_mesh = fine_mesh_names != None and self.mini_study.build_fine_mesh and len(self.mini_study.port_list) > 0
+        fine_mesh_names = self.get_fine_mesh_names()
+        restrict_mesh = fine_mesh_names != None and self.mini_study.build_fine_mesh and len(self.mini_study.port_list) > 0
 
-        # if restrict_mesh:
-        #     self.renderer.modeler.mesh_length(
-        #         'fine_mesh', fine_mesh_names, MaxLength=self.mini_study.max_mesh_length_lines_to_ports, RefineInside=True)
+        if restrict_mesh:
+            self.renderer.modeler.mesh_length(
+                'fine_mesh', fine_mesh_names, MaxLength=self.mini_study.max_mesh_length_lines_to_ports, RefineInside=True)
 
         # run eigenmode analysis
         self.setup.analyze()
