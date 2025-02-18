@@ -9,17 +9,21 @@ COUPLER = "coupler"
 # target type
 FREQ = "freq"
 KAPPA = "kappa"
+T1_DECAY = "charge_line_limited_t1"
 NONLINEARITY = "nonlinearity"
 CROSS_KERR = "CROSS_KERR"
 
 
 
 def mode_freq(mode_name):
-    return mode_name + "_freq"
+    return mode_name + "_" + FREQ
 
 
 def mode_kappa(mode_name):
-    return mode_name + "_kappa"
+    return mode_name + "_" + KAPPA
+
+def mode_t1_decay(mode_name):
+    return mode_name + "_" + T1_DECAY
 
 def mode_freq_to_mode_kappa(mode_freq: str)->str:
     assert mode_freq.endswith("_"+FREQ), f"mode frequency {mode_freq} must end with _{FREQ}"
@@ -36,7 +40,7 @@ def cross_kerr(branch_list: List[str],mode_list: List[str]):
     return ((branch_list[0], mode_list[0]), (branch_list[1], mode_list[1]))
 
 def mode_type(mode_name:str, target_type:str)->str:
-    assert (target_type in [FREQ, KAPPA]), f"target_type {target_type} must be in {[FREQ, KAPPA]}"
+    assert (target_type in [FREQ, KAPPA, T1_DECAY]), f"target_type {target_type} must be in {[FREQ, KAPPA, T1_DECAY]}"
     return mode_name+"_"+target_type
 
 

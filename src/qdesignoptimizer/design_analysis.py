@@ -143,34 +143,37 @@ class DesignAnalysis:
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
 
-                if target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
-                    capacitance_1 = target.involved_modes[0]
-                    capacitance_2 = target.involved_modes[1]
-                    assert (
-                        dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
-                    ), f"Target for {dc.CAPACITANCE_MATRIX_ELEMENTS} requires {dc.CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
-                    assert (
-                        len(target.involved_modes) == 2
-                    ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
-                    assert isinstance(
-                        capacitance_1, str
-                    ), f"First capacitance name {capacitance_1} must be a string."
-                    assert isinstance(
-                        capacitance_2, str
-                    ), f"Second capacitance name {capacitance_2} must be a string."
+                if target.system_target_param == dc.T1_DECAY:
+                    assert len(self.mini_study.capacitance_matrix_studies)!=0, "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
 
-                    if (capacitance_2, capacitance_1) in self.system_target_params[
-                        dc.CAPACITANCE_MATRIX_ELEMENTS
-                    ]:
-                        tip = f" The reversed ordered key {(capacitance_2, capacitance_1)} exists, but the order must be consistent."
-                    else:
-                        tip = ""
-                    assert (capacitance_1, capacitance_2) in self.system_target_params[
-                        dc.CAPACITANCE_MATRIX_ELEMENTS
-                    ], (
-                        f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{dc.CAPACITANCE_MATRIX_ELEMENTS}]."
-                        + tip
-                    )
+                # if target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
+                #     capacitance_1 = target.involved_modes[0]
+                #     capacitance_2 = target.involved_modes[1]
+                #     assert (
+                #         dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
+                #     ), f"Target for {dc.CAPACITANCE_MATRIX_ELEMENTS} requires {dc.CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
+                #     assert (
+                #         len(target.involved_modes) == 2
+                #     ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
+                #     assert isinstance(
+                #         capacitance_1, str
+                #     ), f"First capacitance name {capacitance_1} must be a string."
+                #     assert isinstance(
+                #         capacitance_2, str
+                #     ), f"Second capacitance name {capacitance_2} must be a string."
+
+                #     if (capacitance_2, capacitance_1) in self.system_target_params[
+                #         dc.CAPACITANCE_MATRIX_ELEMENTS
+                #     ]:
+                #         tip = f" The reversed ordered key {(capacitance_2, capacitance_1)} exists, but the order must be consistent."
+                #     else:
+                #         tip = ""
+                #     assert (capacitance_1, capacitance_2) in self.system_target_params[
+                #         dc.CAPACITANCE_MATRIX_ELEMENTS
+                #     ], (
+                #         f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{dc.CAPACITANCE_MATRIX_ELEMENTS}]."
+                #         + tip
+                #     )
                 elif target.system_target_param == dc.NONLINEARITY:
                     assert len(target.involved_modes) == 2, f"Target for {target.system_target_param} expects 2 modes."
                     assert len(self.mini_study.mode_freqs) >= len(target.involved_modes), f"Target for {target.system_target_param} expects \
@@ -620,10 +623,10 @@ class DesignAnalysis:
                 if elem[0] == branch and elem[1] == dc.mode_freq(mode_name):
                     all_mode_idx.append(idx)
                     break
-            else:
-                raise ValueError(
-                    f"Mode {branch}, {mode_name} not found in simulated modes"
-                )
+                else:
+                    raise ValueError(
+                        f"Mode {branch}, {mode_name} not found in simulated modes"
+                    )
 
         return all_mode_idx
 
@@ -733,7 +736,7 @@ class DesignAnalysis:
         # if dc.QUBIT_CHARGE_LINE_LIMITED_T1 in self.system_target_params and isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
         log.info("Computing T1 limit from decay in charge line.")
         self.system_optimized_params[capacitance_study.branch_name][
-            dc.QUBIT_CHARGE_LINE_LIMITED_T1
+            dc.mode_t1_decay(dc.mode_freq_to_mode(capacitance_study.freq_name))
         ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod

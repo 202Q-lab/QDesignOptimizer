@@ -88,8 +88,8 @@ def get_opt_target_qubit_T1_limit_via_charge_posx(
 ) -> OptTarget:
 
     return OptTarget(
-        system_target_param=(str(branch), dc.QUBIT_CHARGE_LINE_LIMITED_T1),
-        involved_mode_freqs=[],
+        system_target_param=dc.T1_DECAY,
+        involved_modes=[(str(branch), dc.QUBIT)],
         design_var=u.design_var_cl_pos_x(branch),
         design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
         prop_to=lambda p, v: v[u.design_var_cl_pos_x(branch)] ** 2,

@@ -74,7 +74,7 @@ class OptTarget:
 
     def __init__(
         self,
-        system_target_param: Literal["freq", "kappa", "nonlinearity", "CAPACITANCE_MATRIX_ELEMENTS"],
+        system_target_param: Literal["freq", "kappa", "charge_line_limited_t1", "nonlinearity", "CAPACITANCE_MATRIX_ELEMENTS"],
         involved_modes: List[Union[tuple, str]],
         design_var: str,
         design_var_constraint: object,
