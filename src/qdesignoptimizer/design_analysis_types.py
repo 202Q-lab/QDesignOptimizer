@@ -23,30 +23,27 @@ class TargetType(Enum):
 
 
 
-class MeshingMap():
 
-    def __init__(component_class, mesh_names):
-        component_class = component_class
-        mesh_names = mesh_names
-
-"""
-
-Example 
-
-from qdesignoptimizer.designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
-def QTCoupledLineTee_string_func(comp_names: List[str]) -> List[str]:
-    cpw_to_port_center = [f"prime_cpw_{comp}" for comp in comp_names]
-    cpw_to_port_gap = [f"prime_cpw_sub_{comp}" for comp in comp_names]
-    all_names_to_mesh = [*cpw_to_port_center, *cpw_to_port_gap]
-    return all_names_to_mesh
-
-
-meshing_map = []
-meshing_map.append(
-    MeshingMap(QTCoupledLineTee, QTCoupledLineTee_string_func)
-
-    )
-"""
+class MeshingMap:
+    """
+    A class to map a component class to a function that generates mesh names.
+    
+    Attributes:
+        component_class: The class of the component being meshed.
+        mesh_names: A callable function that generates mesh names from component names.
+    """
+    
+    def __init__(self, component_class: type, mesh_names: Callable[[List[str]], List[str]]):
+        """
+        Initializes the MeshingMap with a component class and a mesh name function.
+        
+        Args:
+            component_class (type): The component class to be meshed.
+            mesh_names (Callable[[List[str]], List[str]]): A function that takes a list 
+                of component names and returns a list of mesh names.
+        """
+        self.component_class = component_class
+        self.mesh_names = mesh_names
 
 
 
@@ -145,7 +142,7 @@ class MiniStudy:
         y_buffer_width_mm (float): y buffer width in driven modal simulation
         max_mesh_length_port (str): max mesh length of port
         max_mesh_length_lines_to_ports (str): max mesh length of lines to ports to enhance accuracy of decay estiamtes
-        allow_crude_decay_estimates (bool): if True: use default mesh to ports which gives unreliable decay estimates in Eigenmode sim
+        build_fine_mesh (bool): if True: use default mesh to ports which gives unreliable decay estimates in Eigenmode sim
         adjustment_rate (float): rate of adjustment of design variable w.r.t. to calculated optimal values. Example 0.7 is slower but might be more robust.
         render_qiskit_metal_eigenmode_kw_args (dict): kw_args for render_qiskit_metal used during eigenmode and EPR analysis,
                                                       Example: {'include_charge_line': True}
@@ -172,7 +169,7 @@ class MiniStudy:
         hfss_wire_bond_size = 4, 
         hfss_wire_bond_offset = '0um', 
         hfss_wire_bond_threshold = '300um', 
-        allow_crude_decay_estimates=True,
+        build_fine_mesh=True,
         adjustment_rate: float = 1.0,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
         scattering_studies: List[ScatteringStudy] = [],
@@ -195,7 +192,7 @@ class MiniStudy:
         self.hfss_wire_bond_size = hfss_wire_bond_size
         self.hfss_wire_bond_offset = hfss_wire_bond_offset
         self.hfss_wire_bond_threshold = hfss_wire_bond_threshold
-        self.allow_crude_decay_estimates = allow_crude_decay_estimates
+        self.build_fine_mesh = build_fine_mesh
         self.adjustment_rate = adjustment_rate
         self.render_qiskit_metal_eigenmode_kw_args = (
             render_qiskit_metal_eigenmode_kw_args
