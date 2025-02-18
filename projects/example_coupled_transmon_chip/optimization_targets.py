@@ -36,7 +36,6 @@ def get_opt_target_qubit_anharmonicity_via_pad_width(
 
     return OptTarget(
         system_target_param=dc.NONLINEARITY,
-        # involved_mode_freqs=[(str(branch), dc.QUBIT_FREQ)],
         involved_modes=dc.cross_kerr([str(branch),str(branch)],[dc.QUBIT,dc.QUBIT]),
         design_var=u.design_var_qb_pad_width(branch),
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},

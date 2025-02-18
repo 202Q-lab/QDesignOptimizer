@@ -32,8 +32,6 @@ def get_opt_target_qubit_anharmonicity_via_pad_width(
 ) -> OptTarget:
 
     return OptTarget(
-        # system_target_param=(str(branch), dc.QUBIT_ANHARMONICITY),
-        # involved_mode_freqs=[(str(branch), dc.QUBIT_FREQ)],
         system_target_param=dc.NONLINEARITY,
         involved_modes=dc.cross_kerr([str(branch),str(branch)], [dc.QUBIT, dc.QUBIT]),
         design_var=u.design_var_qb_pad_width(branch),
@@ -42,10 +40,6 @@ def get_opt_target_qubit_anharmonicity_via_pad_width(
         independent_target=True,
     )
 
-
-
-# system_target_param=Literal["freq", "kappa", "nonlin"],
-# involved_modes=[(str(branch), dc.QUBIT), (str(branch), dc.QUBIT)],
 
 def get_opt_target_res_qub_chi_via_res_qub_coupl_length(
     branch: int,

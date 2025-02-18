@@ -19,8 +19,8 @@ def get_mini_study_qb_res(branch: int):
         ],
         open_pins=[],
         mode_freqs=[
-            (str(branch), dc.QUBIT_FREQ),
-            (str(branch), dc.RES_FREQ),
+            (str(branch), dc.mode_freq(dc.QUBIT)),
+            (str(branch), dc.mode_freq(dc.RESONATOR)),
         ],
         jj_var=dv,
         jj_setup={**junction_setup(u.name_qb(branch))},

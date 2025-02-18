@@ -674,11 +674,6 @@ class DesignAnalysis:
         for idx_i, (branch_i, freq_name_i, value_i) in enumerate(all_modes):
             if branch_i not in mode_idx:
                 mode_idx[branch_i] = {}
-            # if freq_name_i not in dc.modes_list: # I think this condition is always satisfied
-            #     log.warning(
-            #         f"Warning: unidentified mode {branch_i}, {freq_name_i} is skipped"
-            #     )
-            # else:
             mode_idx[branch_i][freq_name_i] = idx_i
         return mode_idx
 
@@ -898,12 +893,6 @@ class DesignAnalysis:
         ]
         if independent_targets is not []:
             for independent_target in independent_targets:
-                # print("printing in minimization")
-                # pprint(independent_target)
-                # pprint(design_vars_current)
-                # pprint(design_vars_updated)
-                # pprint(system_params_current)
-                # pprint(system_params_targets_met)
                 self._minimize_for_design_vars(
                     [independent_target],
                     design_vars_current,

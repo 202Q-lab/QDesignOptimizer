@@ -26,7 +26,7 @@ TARGET_PARAMS = {
         dc.mode_freq(dc.RESONATOR): 8e9,
         dc.mode_kappa(dc.RESONATOR): 600e3,
     },
-    "CROSS_KERR": {
+    dc.CROSS_KERR: {
         dc.cross_kerr(["0","0"], [dc.QUBIT,dc.QUBIT]): 220e6,
         dc.cross_kerr(["0","0"], [dc.QUBIT,dc.RESONATOR]): 1e6,
 

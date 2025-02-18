@@ -21,8 +21,8 @@ def get_mini_study_qb_res(branch: int):
         ],
         open_pins=[],
         mode_freqs=[
-            (str(branch), dc.QUBIT_FREQ),
-            (str(branch), dc.RES_FREQ),
+            (str(branch), dc.mode_freq(dc.QUBIT)),
+            (str(branch), dc.mode_freq(dc.RESONATOR)),
         ],
         jj_var=dv,
         jj_setup={**junction_setup(u.name_qb(branch))},
@@ -45,11 +45,11 @@ def get_mini_study_2qb_resonator_coupler(branches: list, coupler: int):
                 (u.name_tee(branch), "prime_start", 50),
             ]
         )
-        all_modes.extend([(str(branch), dc.QUBIT_FREQ), (str(branch), dc.RES_FREQ)])
+        all_modes.extend([(str(branch), dc.mode_freq(dc.QUBIT)), (str(branch), dc.mode_freq(dc.RESONATOR))])
         all_jjs.update(junction_setup(u.name_qb(branch)))
 
     all_comps.extend([u.name_res(coupler)])
-    all_modes.extend([(str(coupler), dc.RES_FREQ)])
+    all_modes.extend([(str(coupler), dc.mode_freq(dc.RESONATOR))])
 
     all_mode_freq = []
     for i in range(len(all_modes)):

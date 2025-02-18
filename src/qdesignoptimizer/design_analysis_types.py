@@ -52,21 +52,17 @@ meshing_map.append(
 
 
 
-BRANCH_PARAMETER = Tuple[str, str]
-CROSS_KERR_PARAMETER = Tuple[str,str,str,str]
-"""Example ("branch1", "qubit_freq")"""
-
 
 class OptTarget:
     """Class for optimization target.
 
     Args:
         system_target_param: system target parameter to be optimized,
-            (str, str) example ('branch1', qubit_freq')
-            (str) CROSS_BRANCH_NONLIN is used when defining non-linear cross branch coupling
-            (str) CAPACITANCE_MATRIX_ELEMENTS is used when defining capacitance matrix elements
+            "freq", "kappa", "nonlinearity"
         involved_mode_freqs (list): mode freqs involved in target,
-            Example [('BRANCH_1, 'res_freq'), ('BRANCH_1, 'qubit_freq')]
+            Example [('BRANCH_1', 'res')] for freq or kappa system_target_params.
+            (('BRANCH_1', 'qubit'), ('BRANCH_1', 'qubit')), (('BRANCH_1', 'qubit'), ('BRANCH_1', 'resonator')) for nonlinearity system_target_params
+            
             If system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_mode_freqs should be
             the names of the TWO capacitive islands as optained from capacitance matrix simulation.
             Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.

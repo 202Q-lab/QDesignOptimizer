@@ -33,9 +33,6 @@ def cross_kerr(branch_list: List[str],mode_list: List[str]):
     if len(branch_list)!=2 or len(mode_list)!=2:
         raise "branch_lis and mdoe_list both must contain two elements"
     mode_list,branch_list = zip(*sorted(zip(mode_list,branch_list))) # zip(*___) is the inverse of zip.
-    # This function changes sorts both the list based on the sorting for mode names
-    # branch_list.sort()
-    # mode_list.sort()
     return ((branch_list[0], mode_list[0]), (branch_list[1], mode_list[1]))
 
 def mode_type(mode_name:str, target_type:str)->str:
@@ -84,6 +81,7 @@ RES_FREQ = "res_freq"
 RES_KAPPA = "res_kappa"
 """kappa/2pi (Hz)"""
 RES_KERR = "res_kerr"  # Hz
+KERR = "kerr"  # Hz
 
 
 # Qubit
@@ -93,6 +91,8 @@ QUBIT_PURCELL_DECAY = "qubit_purcell_decay"  # Hz
 QUBIT_CHARGE_LINE_LIMITED_T1 = "qubit_charge_line_limited_t1"  # Hz
 
 QUBIT_ANHARMONICITY = "qubit_anharmonicity"  # Hz
+ANHARMONICITY = "anharmonicity"  # Hz
+
 
 QUBIT_T1 = "qubit_T1"  # s
 QUBIT_T2 = "qubit_T2"  # s
@@ -115,6 +115,7 @@ CAVITY_T1 = "cavity_T1"  # Hz
 # %%  Coupling
 # Resonator qubit interaction
 RES_QUBIT_CHI = "res_qubit_chi"  # Hz
+CHI = "chi"  # Hz
 RES_QUBIT_CHI_PRIME = "res_qubit_chi_prime"  # Hz
 
 # Cavity qubit interaction
