@@ -108,7 +108,8 @@ def plot_progress(
                 axes = axs
             else:
                 axes = axs[idx]
-
+            if axes.get_legend() is not None:
+                axes.get_legend().remove()
             color = next(colors)
             x_data_opt = [
                 get_data_from_parameter(panel.x, result, branch, ii)
@@ -137,7 +138,7 @@ def plot_progress(
                     label=f"target",
                 )
 
-            axes.legend()
+            axes.legend(["optimized", "target"])
             axes.set_xlabel(panel.x_label)
             axes.set_ylabel(panel.y_label)
             if plot_option == "log":

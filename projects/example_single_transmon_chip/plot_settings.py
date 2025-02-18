@@ -12,3 +12,10 @@ PLOT_SETTINGS = {
         OptPltSet(dc.ITERATION, dc.RES_QUBIT_CHI),
     ],
 }
+
+
+PLOT_SETTINGS_CHARGE_LINE_DECAY = {
+    "QUBIT": [
+        OptPltSet(dc.ITERATION, dc.QUBIT_CHARGE_LINE_LIMITED_T1),
+    ],
+}

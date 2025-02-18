@@ -17,18 +17,18 @@ repos:
       - id: debug-statements  # Detects and removes debug print statements
 
   - repo: https://github.com/psf/black
-    rev: 24.8.0  # Version of Black, a code formatter
+    rev: 25.1.0  # Version of Black, a code formatter
     hooks:
       - id: black  # Enforces consistent code formatting following Black's guidelines
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.2  # Version of isort for import sorting
+    rev: 6.0.0  # Version of isort for import sorting
     hooks:
       - id: isort  # Automatically sorts imports
         args: ["--profile", "black"]  # Configures isort to be compatible with Black's formatting rules
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.4.0
+    rev: v2.5.0
     hooks:
       - id: pycln # Automatically remove unused imports
         files: ^src/qdesignoptimizer/
@@ -37,23 +37,20 @@ repos:
           - --all
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.17.0  # Version of pyupgrade for Python syntax upgrades
+    rev: v3.19.1  # Version of pyupgrade for Python syntax upgrades
     hooks:
       - id: pyupgrade  # Automatically upgrades code syntax to the latest Python standards
 
-  # - repo: https://github.com/pycqa/pydocstyle
-  #   rev: 6.3.0  # pick a git hash / tag to point to
-  #   hooks:
-  #     - id: pydocstyle
-  # - repo: https://github.com/nbQA-dev/nbQA
-  #   rev: 1.7.1
-  #   hooks:
-  #    - id: nbqa-black
-  #    - id: nbqa-pyupgrade
-  #      additional_dependencies: [pyupgrade==2.7.3]
-  #    - id: nbqa-isort
-  #      additional_dependencies: [isort==5.6.4]
-  # - repo: https://github.com/kynan/nbstripout
-  #   rev: 0.7.1
-  #   hooks:
-  #     - id: nbstripout
+#  - repo: https://github.com/pycqa/pydocstyle
+#    rev: 6.3.0  # pick a git hash / tag to point to
+#    hooks:
+#      - id: pydocstyle
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.9.1
+    hooks:
+     - id: nbqa-black
+     - id: nbqa-pyupgrade
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
