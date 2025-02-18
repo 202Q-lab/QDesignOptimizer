@@ -1,5 +1,6 @@
 import json
-with open('design_variables.json') as in_file:
+
+with open("design_variables.json") as in_file:
     dv = json.load(in_file)
 import design_constants as c
 import design_variable_names as u
@@ -8,14 +9,15 @@ from qiskit_metal.designs.design_planar import DesignPlanar
 from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
+from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
-
 
 
 def add_branch(design: DesignPlanar, branch: int, gui: MetalGUI):
 
     make_transmon_plus_resonator(design=design, branch=branch)
+    add_chargeline(design, branch)
 
     gui.rebuild()
     gui.autoscale()
@@ -23,11 +25,22 @@ def add_branch(design: DesignPlanar, branch: int, gui: MetalGUI):
 
 def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
 
+    pos_x = ["-2000um", "+2000um", "-2000um", "+2000um", "-2000um"][branch]
+    pos_y = ["-4000um", "-2000um", "0um", "2000um", "4000um"][branch]
+    rot = ["-90", "+90", "-90", "+90", "-90"][branch]
+    x_cl_relative = (
+        str(design.parse_value(u.design_var_cl_pos_x(branch)) * 1000) + "um"
+    )  # Hacky but required to parse the values correctly
+    sign_str = "+"
+    if branch % 2 == 0:
+        sign_str = "-"
+    x_cl = sign_str + x_cl_relative + pos_x + sign_str + "600um"
+    y_cl = pos_y
     # make transmon
     transmon_options = dict(
-        pos_x=["-2mm", "+2mm", "-2mm", "+2mm", "-2mm"][branch],
-        pos_y=["-4mm", "-2mm", "0mm", "2mm", "4mm"][branch],
-        orientation=["-90", "+90", "-90", "+90", "-90"][branch],
+        pos_x=pos_x,
+        pos_y=pos_y,
+        orientation=rot,
         pad_gap="100um",
         inductor_width="30um",
         pad_width=u.design_var_qb_pad_width(branch),
@@ -48,7 +61,7 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
                 cpw_gap=c.RESONATOR_GAP,
                 cpw_extend="0.0um",
                 pocket_extent="5um",
-            )
+            ),
         ),
         gds_cell_name=f"Manhattan_{branch}",
         hfss_inductance=u.design_var_lj(u.name_qb(branch)),
@@ -56,7 +69,18 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
     )
 
     qub = TransmonPocketTeeth(design, u.name_qb(branch), options=transmon_options)
-
+    _ = OpenToGround(
+        design,
+        u.name_otg_chargeline(branch),
+        options=dict(
+            pos_x=x_cl,
+            pos_y=y_cl,
+            width=c.LINE_50_OHM_WIDTH,
+            gap=c.LINE_50_OHM_GAP,
+            termination_gap=c.LINE_50_OHM_GAP,
+            orientation=["0", "180", "0", "180", "0"][branch],
+        ),
+    )
     # make open end of resonator
     cltee_options = dict(
         pos_x="0mm",
@@ -81,7 +105,7 @@ def make_transmon_plus_resonator(design: DesignPlanar, branch: int):
         ),
         fillet=c.BEND_RADIUS,
         total_length=u.design_var_res_length(branch),
-        hfss_wire_bonds = True,
+        hfss_wire_bonds=True,
         lead=dict(start_straight="150um"),
         trace_width=c.RESONATOR_WIDTH,
         trace_gap=c.RESONATOR_GAP,
@@ -170,3 +194,38 @@ def add_launch_pads(design: DesignPlanar, gui: MetalGUI):
 
     gui.rebuild()
     gui.autoscale()
+
+
+def add_chargeline(design: DesignPlanar, branch: int):
+
+    launch_options = dict(
+        chip="main",
+        trace_width=c.LINE_50_OHM_WIDTH,
+        trace_gap=c.LINE_50_OHM_GAP,
+        lead_length="30um",
+        pad_gap="125um",
+        pad_width="260um",
+        pad_height="260um",
+        pos_x=["-5000um", "5000um", "-5000um", "5000um", "-5000um"][branch],
+        pos_y=["-3000um", "-3000um", "0um", "3000um", "3000um"][branch],
+        orientation=["0", "180", "0", "180", "0"][branch],
+    )
+
+    LaunchpadWirebond(design, u.name_lp_chargeline(branch), options=launch_options)
+
+    pins_top = dict(
+        start_pin=dict(component=u.name_lp_chargeline(branch), pin="tie"),
+        end_pin=dict(component=u.name_otg_chargeline(branch), pin="open"),
+    )
+
+    options_chargeline = dict(
+        fillet="150um",
+        hfss_wire_bonds=False,
+        trace_width=c.LINE_50_OHM_WIDTH,
+        trace_gap=c.LINE_50_OHM_GAP,
+        pin_inputs=pins_top,
+        step_size="20um",
+        lead=dict(start_straight="300um", end_straight="500um"),
+    )
+
+    RoutePathfinder(design, u.name_charge_line(branch), options=options_chargeline)

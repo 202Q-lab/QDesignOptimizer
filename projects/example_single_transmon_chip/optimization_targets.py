@@ -1,12 +1,12 @@
+import json
 from typing import List
 
-import json
-with open('design_variables.json') as in_file:
+with open("design_variables.json") as in_file:
     dv = json.load(in_file)
-import numpy as np
-
 import design_constants as dc
 import design_variable_names as u
+import numpy as np
+
 from qdesignoptimizer.design_analysis_types import OptTarget
 
 
@@ -21,11 +21,11 @@ def get_opt_target_qubit_freq_via_lj(
         design_var_constraint={"larger_than": "0.1nH", "smaller_than": "400nH"},
         prop_to=lambda p, v: 1
         / np.sqrt(
-            v[u.design_var_lj(u.name_qb(branch))]
-            * v[u.design_var_qb_pad_width(branch)]
+            v[u.design_var_lj(u.name_qb(branch))] * v[u.design_var_qb_pad_width(branch)]
         ),
         independent_target=True,
     )
+
 
 def get_opt_target_qubit_anharmonicity_via_pad_width(
     branch: int,
@@ -83,6 +83,20 @@ def get_opt_target_res_kappa_via_coupl_length(
     )
 
 
+def get_opt_target_qubit_T1_limit_via_charge_posx(
+    branch: int,
+) -> OptTarget:
+
+    return OptTarget(
+        system_target_param=(str(branch), dc.QUBIT_CHARGE_LINE_LIMITED_T1),
+        involved_mode_freqs=[],
+        design_var=u.design_var_cl_pos_x(branch),
+        design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
+        prop_to=lambda p, v: v[u.design_var_cl_pos_x(branch)] ** 2,
+        independent_target=True,
+    )
+
+
 def get_opt_targets_qb_res(
     branch: int,
     qb_freq=True,
@@ -102,4 +116,13 @@ def get_opt_targets_qb_res(
         opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(branch))
     if qb_res_chi:
         opt_targets.append(get_opt_target_res_qub_chi_via_res_qub_coupl_length(branch))
+    return opt_targets
+
+
+def get_opt_targets_qb_charge_line(
+    branch: int, qb_T1_limit: bool = True
+) -> List[OptTarget]:
+    opt_targets = []
+    if qb_T1_limit:
+        opt_targets.append(get_opt_target_qubit_T1_limit_via_charge_posx(branch))
     return opt_targets

@@ -43,3 +43,13 @@ TARGET_PARAMS = {
         dc.cross_kerr(["4","4"], [dc.QUBIT,dc.RESONATOR]): 1e6,
     },
 }
+
+TARGET_PARAMS_CHARGE_LINE_DECAY = {
+    "0": {
+        dc.QUBIT_CHARGE_LINE_LIMITED_T1: 1e-3,
+    },
+    "1": {dc.QUBIT_CHARGE_LINE_LIMITED_T1: 1e-3},
+    "2": {dc.QUBIT_CHARGE_LINE_LIMITED_T1: 1e-3},
+    "3": {dc.QUBIT_CHARGE_LINE_LIMITED_T1: 1e-3},
+    "4": {dc.QUBIT_CHARGE_LINE_LIMITED_T1: 1e-3},
+}
