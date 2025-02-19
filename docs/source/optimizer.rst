@@ -44,7 +44,7 @@ As an initial guess for the optimization, the user will provide sensible values 
 Simulate Design Variables
 -------------------------
 
-To obtain knowledge of which values of the quantities the current design variables result in, the QDesignOptimizer runs a detailed electromagnetic simulation in HFSS (potentially also a capacitance matrix and/or scattering simulation) and performs an energy-participation ratio (**EPR**) analysis. The quantities :math:`\overrightarrow{Q}^{k}`, in the k-th iteration, are then extracted from the simulation and analysis results.  
+To obtain knowledge of which values of the quantities the current design variables result in, the QDesignOptimizer runs a detailed electromagnetic simulation in HFSS (potentially also a capacitance matrix) and performs an energy-participation ratio (**EPR**) analysis. The quantities :math:`\overrightarrow{Q}^{k}`, in the k-th iteration, are then extracted from the simulation and analysis results.  
 
 Update Design Variables
 -------------------------

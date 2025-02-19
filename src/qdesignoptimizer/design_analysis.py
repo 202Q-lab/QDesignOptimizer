@@ -121,9 +121,6 @@ class DesignAnalysis:
     def update_nbr_passes(self, nbr_passes):
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
-        log.warning(
-            "Does not update passes in Scattering simulation nor in Capacitance matrix simulation."
-        )
 
     def update_nbr_passes_capacitance_ministudies(self, nbr_passes):
         """Updates the number of passes for capacitance matrix studies."""
@@ -146,34 +143,34 @@ class DesignAnalysis:
                 if target.system_target_param == dc.T1_DECAY:
                     assert len(self.mini_study.capacitance_matrix_studies)!=0, "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
 
-                # if target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
-                #     capacitance_1 = target.involved_modes[0]
-                #     capacitance_2 = target.involved_modes[1]
-                #     assert (
-                #         dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
-                #     ), f"Target for {dc.CAPACITANCE_MATRIX_ELEMENTS} requires {dc.CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
-                #     assert (
-                #         len(target.involved_modes) == 2
-                #     ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
-                #     assert isinstance(
-                #         capacitance_1, str
-                #     ), f"First capacitance name {capacitance_1} must be a string."
-                #     assert isinstance(
-                #         capacitance_2, str
-                #     ), f"Second capacitance name {capacitance_2} must be a string."
+                if target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
+                    capacitance_1 = target.involved_modes[0]
+                    capacitance_2 = target.involved_modes[1]
+                    assert (
+                        dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
+                    ), f"Target for {dc.CAPACITANCE_MATRIX_ELEMENTS} requires {dc.CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
+                    assert (
+                        len(target.involved_modes) == 2
+                    ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
+                    assert isinstance(
+                        capacitance_1, str
+                    ), f"First capacitance name {capacitance_1} must be a string."
+                    assert isinstance(
+                        capacitance_2, str
+                    ), f"Second capacitance name {capacitance_2} must be a string."
 
-                #     if (capacitance_2, capacitance_1) in self.system_target_params[
-                #         dc.CAPACITANCE_MATRIX_ELEMENTS
-                #     ]:
-                #         tip = f" The reversed ordered key {(capacitance_2, capacitance_1)} exists, but the order must be consistent."
-                #     else:
-                #         tip = ""
-                #     assert (capacitance_1, capacitance_2) in self.system_target_params[
-                #         dc.CAPACITANCE_MATRIX_ELEMENTS
-                #     ], (
-                #         f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{dc.CAPACITANCE_MATRIX_ELEMENTS}]."
-                #         + tip
-                #     )
+                    if (capacitance_2, capacitance_1) in self.system_target_params[
+                        dc.CAPACITANCE_MATRIX_ELEMENTS
+                    ]:
+                        tip = f" The reversed ordered key {(capacitance_2, capacitance_1)} exists, but the order must be consistent."
+                    else:
+                        tip = ""
+                    assert (capacitance_1, capacitance_2) in self.system_target_params[
+                        dc.CAPACITANCE_MATRIX_ELEMENTS
+                    ], (
+                        f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{dc.CAPACITANCE_MATRIX_ELEMENTS}]."
+                        + tip
+                    )
                 elif target.system_target_param == dc.NONLINEARITY:
                     assert len(target.involved_modes) == 2, f"Target for {target.system_target_param} expects 2 modes."
                     assert len(self.mini_study.mode_freqs) >= len(target.involved_modes), f"Target for {target.system_target_param} expects \
@@ -337,251 +334,6 @@ class DesignAnalysis:
                 add_msg = " However, a linear element was found."
             log.warning("No junctions found, skipping EPR analysis." + add_msg)
             return
-
-    # def run_decay(self, scattering_study: ScatteringStudy):
-    #     self.scattering_solver = ScatteringImpedanceSim(self.design, "hfss")
-    #     scattering_renderer = self.scattering_solver.renderer
-    #     setup = self.scattering_solver.setup
-    #     #setup.name = "Sweep_DrivenModal_setup"
-
-    #     # scattering_pinfo = scattering_renderer.pinfo.setup
-    #     scattering_renderer.start()
-    #     scattering_renderer.activate_ansys_design(f"{self.mini_study.design_name}_drivenmodal", 'drivenmodal')
-    #     # setup_args = Dict(
-    #     #     max_delta_s=scattering_study.max_delta_s
-    #     #     )
-    #     # setup_args.name = 'Setup'
-    #     # scattering_renderer.edit_drivenmodal_setup(setup_args)
-    #     scattering_renderer.options['x_buffer_width_mm'] = self.mini_study.x_buffer_width_mm
-    #     scattering_renderer.options['y_buffer_width_mm'] = self.mini_study.y_buffer_width_mm
-    #     scattering_renderer.options['keep_originals'] = True
-
-    #     for branch_freq_name in scattering_study.mode_freqs:
-    #         scattering_renderer.clean_active_design()
-    #         scattering_renderer.render_design(
-    #             selection=self.mini_study.component_names,
-    #             # solution_type='drivenmodal',
-    #             # vars_to_initialize=setup.vars,
-    #             open_pins=self.mini_study.open_pins,
-    #             port_list=self.mini_study.port_list,
-    #             box_plus_buffer = True
-    #         )
-
-    #         # # TODO check if this is reasonable
-    #         # TODO does this support several readouts?
-    #         def _is_meander(component: str):
-    #             return any([isinstance(self.design.components[component], meander_class) for meander_class in [
-    #                 QTRouteMeander,
-    #                 RouteMeander
-    #                 ]])
-    #         def _is_tee_coupling(component: str):
-    #             return any([isinstance(self.design.components[component], meander_class) for meander_class in [
-    #                 QTCoupledLineTee,
-    #                 ]])
-
-    #         resonator_components = [f"trace_{component}" for component in self.mini_study.component_names if _is_meander(component)]
-    #         tee_components = [f"second_cpw_{component}" for component in self.mini_study.component_names if _is_tee_coupling(component)]
-    #         scattering_renderer.modeler.mesh_length(
-    #             'cpw_mesh',
-    #             [*resonator_components, *tee_components],
-    #             MaxLength='0.005mm')
-    #         # print("desing")
-    #         # pprint(dir(self.design))
-    #         branch = branch_freq_name[0]
-    #         freq_name = branch_freq_name[1]
-    #         assert freq_name in [dc.RES_FREQ], \
-    #             f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
-    #         #mode_freq = self._get_simulated_mode_freq(branch, freq_name) # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         mode_freq = self.system_optimized_params[branch][freq_name] # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         print("mode_freq", mode_freq)
-    #         GHz = 1e9
-    #         kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
-    #         start_ghz = (mode_freq - 150 * kappa_target) / GHz
-    #         stop_ghz = (mode_freq + 150 * kappa_target) / GHz
-    #         setup.freq_ghz = mode_freq / GHz
-    #         count = min(25000, int(5 * (stop_ghz - start_ghz) / (kappa_target / GHz)))
-    #         print("count", count)
-    #         sweep = scattering_renderer.add_sweep(
-    #             setup_name="Setup",
-    #             start_ghz=start_ghz,
-    #             stop_ghz=stop_ghz,
-    #             name="Sweep",
-    #             count=count,
-    #             type="Fast")
-    #         pinfo_setup = scattering_renderer.pinfo.setup
-    #         pinfo_setup.max_delta_s = scattering_study.max_delta_s
-    #         pinfo_setup.passes = scattering_study.nbr_passes
-    #         # pinfo_setup.min_passes = scattering_study.nbr_passes_min
-    #         # pinfo_setup.basis_order = scattering_study.basis_order
-    #         setup.basis_order = scattering_study.basis_order
-    #         pinfo_setup.delta_s = scattering_study.max_delta_s
-    #         print("pinfo_setup")
-    #         print("solution_freq default", pinfo_setup.solution_freq)
-    #         print(dir(pinfo_setup))
-    #         pinfo_setup.solution_freq = f"{stop_ghz}GHz"
-    #         print(pinfo_setup)
-    #         print(mode_freq)
-    #         scattering_renderer.analyze_sweep(sweep.name, 'Setup')
-    #         nbr_ports = len(self.mini_study.port_list)
-    #         if nbr_ports == 1:
-    #             measurement = 'S11'
-    #         elif nbr_ports == 2:
-    #             measurement = 'S21'
-    #         else:
-    #             raise ValueError("Only 1 or 2 ports supported")
-    #         scattering_renderer.plot_params([measurement])
-    #         # scattering_renderer.get_convergences()
-    #         # print("DONE WITH IT")
-    #         # print(f"scattering_renderer.plot_params([{measurement}])", scattering_renderer.plot_params([measurement]))
-    #         np.save(f"scattering_{branch}_{freq_name}_passes_12_length2_800um.npy", [scattering_renderer.plot_params([measurement])], allow_pickle=True)
-
-    #         s21_values = scattering_renderer.plot_params([measurement]).values
-    #         probe_freqs = scattering_renderer.plot_params(['Freq']).values
-
-    #         self._fit_scattering_angle(probe_freqs, s21_values, mode_freq, kappa_target, nbr_ports)
-    #     self.system_optimized_params[branch][dc.RES_KAPPA] = kappa_target
-
-    #         #probe_freq = np.linspace(8.202846e9, 8.292846e9, 1499)
-
-    #         # df = np.load(f"scattering_{branch}_{freq_name}_passes_12_length2_200um.npy", allow_pickle=True)
-    #         # df = np.load(f"scattering_{branch}_{freq_name}_passes_12_length2_{design.components[c.NAME_INDUCTIVE_TEE].options.prime_length_2}.npy", allow_pickle=True)
-    #         # pprint(dir(df))
-    #         s11_raw = scattering_renderer.plot_params([measurement])[0]['S11'].values
-    #         # pprint(s11)
-
-    #         # vals = df['S11'].values
-    #         # plt.figure()
-    #         # plt.plot(vals)
-    #         # plt.show()
-    #         angle_offset = np.mean([np.angle(s11_raw)[0], np.angle(s11_raw)[-1]]) # - np.pi/2
-    #         s11 = s11_raw * np.exp(-1j * angle_offset)
-    #         s11_abs = np.abs(s11)
-    #         func = np.argmin if abs(min(s11_abs) - np.mean(s11_abs)) > abs(max(s11_abs) - np.mean(s11_abs)) else np.argmax
-    #         argmin = func(s11_abs) #if np.mean(np.abs(s11)) >
-    #         freq_guess = probe_freqs[argmin]
-    #         print("freq_guess", freq_guess)
-    #         argmin_kappa = np.argmin(abs(np.angle(s11) - np.pi/2))
-    #         # print("freq_guess_kappa_cut", probe_freq[argmin_kappa])
-    #         kappa_est = 2 * (probe_freqs[argmin_kappa] - freq_guess)
-    #         self.system_optimized_params[branch][dc.RES_KAPPA] = kappa_est
-
-    #         resonator_components = [f"trace_{component}" for component in self.mini_study.component_names if _is_meander(component)]
-    #         tee_components = [f"second_cpw_{component}" for component in self.mini_study.component_names if _is_tee_coupling(component)]
-    #         scattering_renderer.modeler.mesh_length(
-    #             'cpw_mesh',
-    #             [*resonator_components, *tee_components],
-    #             MaxLength='0.005mm')
-    #         # print("desing")
-    #         # pprint(dir(self.design))
-    #         branch = branch_freq_name[0]
-    #         freq_name = branch_freq_name[1]
-    #         assert freq_name in [dc.RES_FREQ], \
-    #             f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
-    #         #mode_freq = self._get_simulated_mode_freq(branch, freq_name) # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         mode_freq = self.system_optimized_params[branch][freq_name] # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         print("mode_freq", mode_freq)
-    #         GHz = 1e9
-    #         kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
-    #         start_ghz = (mode_freq - 150 * kappa_target) / GHz
-    #         stop_ghz = (mode_freq + 150 * kappa_target) / GHz
-    #         setup.freq_ghz = mode_freq / GHz
-    #         count = min(25000, int(5 * (stop_ghz - start_ghz) / (kappa_target / GHz)))
-    #         print("count", count)
-    #         sweep = scattering_renderer.add_sweep(
-    #             setup_name="Setup",
-    #             start_ghz=start_ghz,
-    #             stop_ghz=stop_ghz,
-    #             name="Sweep",
-    #             count=count,
-    #             type="Fast")
-    #         pinfo_setup = scattering_renderer.pinfo.setup
-    #         pinfo_setup.max_delta_s = scattering_study.max_delta_s
-    #         pinfo_setup.passes = scattering_study.nbr_passes
-    #         # pinfo_setup.min_passes = scattering_study.nbr_passes_min
-    #         # pinfo_setup.basis_order = scattering_study.basis_order
-    #         setup.basis_order = scattering_study.basis_order
-    #         pinfo_setup.delta_s = scattering_study.max_delta_s
-    #         print("pinfo_setup")
-    #         print("solution_freq default", pinfo_setup.solution_freq)
-    #         print(dir(pinfo_setup))
-    #         pinfo_setup.solution_freq = f"{stop_ghz}GHz"
-    #         print(pinfo_setup)
-    #         print(mode_freq)
-    #         scattering_renderer.analyze_sweep(sweep.name, 'Setup')
-    #         nbr_ports = len(self.mini_study.port_list)
-    #         if nbr_ports == 1:
-    #             measurement = 'S11'
-    #         elif nbr_ports == 2:
-    #             measurement = 'S21'
-    #         else:
-    #             raise ValueError("Only 1 or 2 ports supported")
-    #         scattering_renderer.plot_params([measurement])
-    #         # scattering_renderer.get_convergences()
-    #         # print("DONE WITH IT")
-    #         # print(f"scattering_renderer.plot_params([{measurement}])", scattering_renderer.plot_params([measurement]))
-    #         np.save(f"scattering_{branch}_{freq_name}_passes_12_length2_800um.npy", [scattering_renderer.plot_params([measurement])], allow_pickle=True)
-
-    #         resonator_components = [f"trace_{component}" for component in self.mini_study.component_names if _is_meander(component)]
-    #         tee_components = [f"second_cpw_{component}" for component in self.mini_study.component_names if _is_tee_coupling(component)]
-    #         scattering_renderer.modeler.mesh_length(
-    #             'cpw_mesh',
-    #             [*resonator_components, *tee_components],
-    #             MaxLength='0.005mm')
-    #         # print("desing")
-    #         # pprint(dir(self.design))
-    #         branch = branch_freq_name[0]
-    #         freq_name = branch_freq_name[1]
-    #         assert freq_name in [dc.RES_FREQ], \
-    #             f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
-    #         #mode_freq = self._get_simulated_mode_freq(branch, freq_name) # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         mode_freq = self.system_optimized_params[branch][freq_name] # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         print("mode_freq", mode_freq)
-    #         GHz = 1e9
-    #         kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
-    #         start_ghz = (mode_freq - 150 * kappa_target) / GHz
-    #         stop_ghz = (mode_freq + 150 * kappa_target) / GHz
-    #         setup.freq_ghz = mode_freq / GHz
-    #         count = min(25000, int(5 * (stop_ghz - start_ghz) / (kappa_target / GHz)))
-    #         print("count", count)
-    #         sweep = scattering_renderer.add_sweep(
-    #             setup_name="Setup",
-    #             start_ghz=start_ghz,
-    #             stop_ghz=stop_ghz,
-    #             name="Sweep",
-    #             count=count,
-    #             type="Fast")
-    #         pinfo_setup = scattering_renderer.pinfo.setup
-    #         pinfo_setup.max_delta_s = scattering_study.max_delta_s
-    #         pinfo_setup.passes = scattering_study.nbr_passes
-    #         # pinfo_setup.min_passes = scattering_study.nbr_passes_min
-    #         # pinfo_setup.basis_order = scattering_study.basis_order
-    #         setup.basis_order = scattering_study.basis_order
-    #         pinfo_setup.delta_s = scattering_study.max_delta_s
-    #         print("pinfo_setup")
-    #         print("solution_freq default", pinfo_setup.solution_freq)
-    #         print(dir(pinfo_setup))
-    #         pinfo_setup.solution_freq = f"{stop_ghz}GHz"
-    #         print(pinfo_setup)
-    #         print(mode_freq)
-    #         scattering_renderer.analyze_sweep(sweep.name, 'Setup')
-    #         nbr_ports = len(self.mini_study.port_list)
-    #         if nbr_ports == 1:
-    #             measurement = 'S11'
-    #         elif nbr_ports == 2:
-    #             measurement = 'S21'
-    #         else:
-    #             raise ValueError("Only 1 or 2 ports supported")
-    #         scattering_renderer.plot_params([measurement])
-    #         # scattering_renderer.get_convergences()
-    #         # print("DONE WITH IT")
-    #         # print(f"scattering_renderer.plot_params([{measurement}])", scattering_renderer.plot_params([measurement]))
-    #         np.save(f"scattering_{branch}_{freq_name}_passes_12_length2_800um.npy", [scattering_renderer.plot_params([measurement])], allow_pickle=True)
-
-    #         s21_values = scattering_renderer.plot_params([measurement]).values
-    #         probe_freqs = scattering_renderer.plot_params(['Freq']).values
-
-    #         s21_values = scattering_renderer.plot_params([measurement]).values
-    #         probe_freqs = scattering_renderer.plot_params(['Freq']).values
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -1029,13 +781,6 @@ class DesignAnalysis:
                 self.plot_settings,
                 plot_branches_separately=self.plot_branches_separately,
             )
-
-        # # Scattering analysis for decay rates
-        # for scattering_study in self.mini_study.scattering_studies:
-        #     try:
-        #         self.run_decay(scattering_study)
-        #     except:
-        #         print("Scattering analysis failed")
 
     def overwrite_parameters(self):
         if self.save_path is None:
