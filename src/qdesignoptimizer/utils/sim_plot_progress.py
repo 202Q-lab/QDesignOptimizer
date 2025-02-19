@@ -4,7 +4,7 @@ from itertools import cycle
 import numpy as np
 from matplotlib import pyplot as plt
 
-import qdesignoptimizer.utils.constants as dc
+import design_constants as dc
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
 DEFAULT_PLT_SET = {
@@ -65,15 +65,35 @@ def plot_progress(
         plot_option (str, optional): 'linear', 'log', 'loglog'.
     """
 
+    def get_parameter_name_for_system_optimized_params(parameter_name:list[tuple,str], branch:str):
+        """
+        Checks the parameter_name for the colloquial name for the parameter and returns the searchable name for system_optimized_params
+        """
+        if type(parameter_name) == tuple:
+            return parameter_name
+        parameter_keys = parameter_name.split("_")
+        if parameter_keys[-1] == dc.ANHARMONICITY or parameter_keys[-1] == dc.KERR:
+            assert len(parameter_keys)==2, f"For self-Kerr type parameters, parameter {parameter_name} name must have two names separated by '_', for example qubit_anharmonicity"
+            return dc.cross_kerr([branch,branch],[parameter_keys[0],parameter_keys[0]])
+        elif parameter_keys[-1] == dc.CHI:
+            assert len(parameter_keys)==3, f"For self-Kerr type parameters, parameter {parameter_name} name must have three names separated by '_', for example qubit_resonator_chi"
+            return dc.cross_kerr([branch,branch],[parameter_keys[0],parameter_keys[1]])
+        else:
+            return parameter_name
+
+
     def get_data_from_parameter(
         axes_parameter: str, result: dict, branch: str, ii: int
     ):
-        if axes_parameter == dc.ITERATION:
+        parameter_name= get_parameter_name_for_system_optimized_params(axes_parameter,branch)
+        if parameter_name == dc.ITERATION:
             data_opt = ii + 1
-        elif axes_parameter in result["system_optimized_params"][branch]:
-            data_opt = result["system_optimized_params"][branch][axes_parameter]
-        elif axes_parameter in result["design_variables"]:
-            data_opt = get_value_and_unit(result["design_variables"][axes_parameter])[0]
+        elif parameter_name in result["system_optimized_params"][branch]:
+            data_opt = result["system_optimized_params"][branch][parameter_name]
+        elif parameter_name in result["system_optimized_params"][dc.CROSS_KERR]:
+            data_opt = result["system_optimized_params"][dc.CROSS_KERR][parameter_name]
+        elif parameter_name in result["design_variables"]:
+            data_opt = get_value_and_unit(result["design_variables"][parameter_name])[0]
         else:
             data_opt = None
         return data_opt

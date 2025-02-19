@@ -49,20 +49,17 @@ class MeshingMap:
 
 
 
-BRANCH_PARAMETER = Tuple[str, str]
-"""Example ("branch1", "qubit_freq")"""
-
 
 class OptTarget:
     """Class for optimization target.
 
     Args:
         system_target_param: system target parameter to be optimized,
-            (str, str) example ('branch1', qubit_freq')
-            (str) CROSS_BRANCH_NONLIN is used when defining non-linear cross branch coupling
-            (str) CAPACITANCE_MATRIX_ELEMENTS is used when defining capacitance matrix elements
+            "freq", "kappa", "nonlinearity"
         involved_mode_freqs (list): mode freqs involved in target,
-            Example [('BRANCH_1, 'res_freq'), ('BRANCH_1, 'qubit_freq')]
+            Example [('BRANCH_1', 'res')] for freq or kappa system_target_params.
+            (('BRANCH_1', 'qubit'), ('BRANCH_1', 'qubit')), (('BRANCH_1', 'qubit'), ('BRANCH_1', 'resonator')) for nonlinearity system_target_params
+            
             If system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_mode_freqs should be
             the names of the TWO capacitive islands as optained from capacitance matrix simulation.
             Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.
@@ -77,11 +74,8 @@ class OptTarget:
 
     def __init__(
         self,
-        system_target_param: Union[
-            BRANCH_PARAMETER,
-            Literal["CROSS_BRANCH_NONLIN", "CAPACITANCE_MATRIX_ELEMENTS"],
-        ],
-        involved_mode_freqs: List[Union[tuple, str]],
+        system_target_param: Literal["freq", "kappa", "charge_line_limited_t1", "nonlinearity", "CAPACITANCE_MATRIX_ELEMENTS"],
+        involved_modes: List[Union[tuple, str]],
         design_var: str,
         design_var_constraint: object,
         prop_to: Callable[
@@ -91,7 +85,7 @@ class OptTarget:
     ):
 
         self.system_target_param = system_target_param
-        self.involved_mode_freqs = involved_mode_freqs
+        self.involved_modes = involved_modes
         self.design_var = design_var
         self.design_var_constraint = design_var_constraint
         self.prop_to = prop_to
@@ -166,7 +160,7 @@ class MiniStudy:
         y_buffer_width_mm=0.5,
         max_mesh_length_port="3um",
         max_mesh_length_lines_to_ports="5um",
-        hfss_wire_bond_size = 4, 
+        hfss_wire_bond_size = 3, 
         hfss_wire_bond_offset = '0um', 
         hfss_wire_bond_threshold = '300um', 
         build_fine_mesh=True,
