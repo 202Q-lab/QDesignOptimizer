@@ -24,7 +24,7 @@ class CapacitanceMatrixStudy:
     Note that the capacitance name typically change if you change which components are included in the analysis.
 
     Args:
-        component_names (list):         list of Qiskit component names to be included in the capacitance simulation
+        qiskit_component_names (list):         list of Qiskit component names to be included in the capacitance simulation
         freq_GHz (float):               Sets the frequency in GHz of the capacitance matrix. Or (not supported yet): If tuple, the simulation will use the frequency from corresponding mode in the EPR analysis.n
                                         Example1: 5e9, Example2: ('BRANCH_1', 'qubit_freq')
         open_pins (list):               pins to be left open (called open_terminations in the capacitance matrix simulation),
@@ -44,7 +44,7 @@ class CapacitanceMatrixStudy:
 
     def __init__(
         self,
-        component_names: list,
+        qiskit_component_names: list,
         freq_GHz: Union[float],
         open_pins: list = [],
         x_buffer_width_mm: float = 2,
@@ -54,7 +54,7 @@ class CapacitanceMatrixStudy:
         percent_error: Optional[float] = 0.5,
         nbr_passes: Optional[int] = 10,
     ):
-        self.component_names = component_names
+        self.qiskit_component_names = qiskit_component_names
         self.freq_GHz = freq_GHz
         self.open_pins = open_pins
         self.x_buffer_width_mm = x_buffer_width_mm
@@ -107,7 +107,7 @@ class CapacitanceMatrixStudy:
         lom_analysis.sim.renderer.options["y_buffer_width_mm"] = self.y_buffer_width_mm
 
         lom_analysis.sim.run(
-            components=self.component_names, open_terminations=self.open_pins
+            components=self.qiskit_component_names, open_terminations=self.open_pins
         )
         self.capacitance_matrix_fF = lom_analysis.sim.capacitance_matrix
         return self.capacitance_matrix_fF
@@ -136,7 +136,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         mode_capacitance_name: Union[str, List[str]],
         charge_line_capacitance_name: str,
         charge_line_impedance_Ohm: float,
-        component_names: list,
+        qiskit_component_names: list,
         freq_GHz: Union[float],
         open_pins: list = [],
         ground_plane_capacitance_name: str = None,
@@ -146,7 +146,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         nbr_passes: int = 10,
     ):
         super().__init__(
-            component_names=component_names,
+            qiskit_component_names=qiskit_component_names,
             freq_GHz=freq_GHz,
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
@@ -242,7 +242,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
 def sim_capacitance_matrix(
     design: QDesign,
-    component_names: list,
+    qiskit_component_names: list,
     open_terminations: list,
     freq_ghz: float = 4,
     nbr_passes: int = 16,
@@ -257,7 +257,7 @@ def sim_capacitance_matrix(
     log.info("lom_analysis.sim.setup %s", dict_log_format(lom_analysis.sim.setup))
 
     lom_analysis.sim.run(
-        components=component_names, open_terminations=open_terminations
+        components=qiskit_component_names, open_terminations=open_terminations
     )
     capacitance_matrix = lom_analysis.sim.capacitance_matrix
 

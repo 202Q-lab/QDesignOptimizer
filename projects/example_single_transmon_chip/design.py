@@ -1,7 +1,3 @@
-import json
-
-with open("design_variables.json") as in_file:
-    dv = json.load(in_file)
 import design_constants as c
 import design_variable_names as u
 from qiskit_metal import MetalGUI

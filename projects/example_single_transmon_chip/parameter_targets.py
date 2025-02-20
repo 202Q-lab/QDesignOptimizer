@@ -1,6 +1,6 @@
 import design_constants as dc
 
-TARGET_PARAMS = {
+PARAM_TARGETS = {
     "0": {
         dc.mode_freq(dc.QUBIT): 4e9,
         dc.mode_freq(dc.RESONATOR): 7e9,
@@ -27,20 +27,16 @@ TARGET_PARAMS = {
         dc.mode_kappa(dc.RESONATOR): 600e3,
     },
     dc.CROSS_KERR: {
-        dc.cross_kerr(["0","0"], [dc.QUBIT,dc.QUBIT]): 220e6,
-        dc.cross_kerr(["0","0"], [dc.QUBIT,dc.RESONATOR]): 1e6,
-
-        dc.cross_kerr(["1","1"], [dc.QUBIT,dc.QUBIT]): 220e6,
-        dc.cross_kerr(["1","1"], [dc.QUBIT,dc.RESONATOR]): 1e6,
-
-        dc.cross_kerr(["2","2"], [dc.QUBIT,dc.QUBIT]): 220e6,
-        dc.cross_kerr(["2","2"], [dc.QUBIT,dc.RESONATOR]): 1e6,
-
-        dc.cross_kerr(["3","3"], [dc.QUBIT,dc.QUBIT]): 220e6,
-        dc.cross_kerr(["3","3"], [dc.QUBIT,dc.RESONATOR]): 1e6,
-        
-        dc.cross_kerr(["4","4"], [dc.QUBIT,dc.QUBIT]): 220e6,
-        dc.cross_kerr(["4","4"], [dc.QUBIT,dc.RESONATOR]): 1e6,
+        dc.cross_kerr(["0", "0"], [dc.QUBIT, dc.QUBIT]): 220e6,
+        dc.cross_kerr(["0", "0"], [dc.QUBIT, dc.RESONATOR]): 1e6,
+        dc.cross_kerr(["1", "1"], [dc.QUBIT, dc.QUBIT]): 220e6,
+        dc.cross_kerr(["1", "1"], [dc.QUBIT, dc.RESONATOR]): 1e6,
+        dc.cross_kerr(["2", "2"], [dc.QUBIT, dc.QUBIT]): 220e6,
+        dc.cross_kerr(["2", "2"], [dc.QUBIT, dc.RESONATOR]): 1e6,
+        dc.cross_kerr(["3", "3"], [dc.QUBIT, dc.QUBIT]): 220e6,
+        dc.cross_kerr(["3", "3"], [dc.QUBIT, dc.RESONATOR]): 1e6,
+        dc.cross_kerr(["4", "4"], [dc.QUBIT, dc.QUBIT]): 220e6,
+        dc.cross_kerr(["4", "4"], [dc.QUBIT, dc.RESONATOR]): 1e6,
     },
 }
 

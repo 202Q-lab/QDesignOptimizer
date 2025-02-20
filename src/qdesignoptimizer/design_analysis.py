@@ -1,6 +1,5 @@
 import json
 from copy import deepcopy
-from pprint import pprint
 from typing import List, Optional
 
 import numpy as np
@@ -12,7 +11,7 @@ from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 
-import design_constants as dc
+import qdesignoptimizer.utils.constants as c
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
@@ -34,8 +33,10 @@ class DesignAnalysis:
         mini_study (MiniStudy): MiniStudy object
         opt_targets (List[OptTarget]): list of OptTarget objects
         save_path (str): path to save results
+        update_parameters (bool): update parameters
         plot_settings (dict): plot settings for progress plots
         plot_branches_separately (bool): plot branches separately
+        meshing_map (List[MeshingMap]): meshing map
 
     """
 
@@ -43,7 +44,9 @@ class DesignAnalysis:
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
-        opt_targets: List[OptTarget] = None,
+        opt_targets: List[
+            OptTarget
+        ] = None,  # TODO  didn't we device to move these to the
         save_path: str = None,
         update_parameters: bool = True,
         plot_settings: dict = None,
@@ -69,7 +72,6 @@ class DesignAnalysis:
         self.all_design_vars = [target.design_var for target in opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
-        
 
         self.is_system_optimized_params_initialized = False
         if state.system_optimized_params is not None:
@@ -87,14 +89,12 @@ class DesignAnalysis:
 
             sys_opt_param = fill_leaves_with_none(deepcopy(state.system_target_params))
         self.system_optimized_params = sys_opt_param
-        
 
         self.save_path = save_path
-        self.update_parameters = update_parameters
+        self.update_parameters = update_parameters  # TODO  AXEL this should rather be update_design_variables, we said we will reserve parameter for what I called quantity
         self.plot_settings = plot_settings
         self.plot_branches_separately = plot_branches_separately
         self.meshing_map = meshing_map
-        
 
         self.optimization_results = []
 
@@ -140,15 +140,17 @@ class DesignAnalysis:
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
 
-                if target.system_target_param == dc.T1_DECAY:
-                    assert len(self.mini_study.capacitance_matrix_studies)!=0, "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
+                if target.system_target_param == c.T1_DECAY:
+                    assert (
+                        len(self.mini_study.capacitance_matrix_studies) != 0
+                    ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
 
-                if target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
+                if target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
                     assert (
-                        dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
-                    ), f"Target for {dc.CAPACITANCE_MATRIX_ELEMENTS} requires {dc.CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
+                        c.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
+                    ), f"Target for {c.CAPACITANCE_MATRIX_ELEMENTS} requires {c.CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
                     assert (
                         len(target.involved_modes) == 2
                     ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
@@ -160,39 +162,42 @@ class DesignAnalysis:
                     ), f"Second capacitance name {capacitance_2} must be a string."
 
                     if (capacitance_2, capacitance_1) in self.system_target_params[
-                        dc.CAPACITANCE_MATRIX_ELEMENTS
+                        c.CAPACITANCE_MATRIX_ELEMENTS
                     ]:
                         tip = f" The reversed ordered key {(capacitance_2, capacitance_1)} exists, but the order must be consistent."
                     else:
                         tip = ""
                     assert (capacitance_1, capacitance_2) in self.system_target_params[
-                        dc.CAPACITANCE_MATRIX_ELEMENTS
+                        c.CAPACITANCE_MATRIX_ELEMENTS
                     ], (
-                        f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{dc.CAPACITANCE_MATRIX_ELEMENTS}]."
+                        f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{c.CAPACITANCE_MATRIX_ELEMENTS}]."
                         + tip
                     )
-                elif target.system_target_param == dc.NONLINEARITY:
-                    assert len(target.involved_modes) == 2, f"Target for {target.system_target_param} expects 2 modes."
-                    assert len(self.mini_study.mode_freqs) >= len(target.involved_modes), f"Target for {target.system_target_param} expects \
-                        {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
-                    for branch, mode_name in target.involved_modes:
-                        assert (
-                            branch,
-                            dc.mode_freq(mode_name),
-                        ) in self.mini_study.mode_freqs, f"Target mode {dc.mode_freq(mode_name)} in branch {branch} \
-                            not found in modes which will be simulated. Type must be the same, {type(branch)}, {type(dc.FREQ)}?"
-                else:
+                elif target.system_target_param == c.NONLINEARITY:
+                    assert (
+                        len(target.involved_modes) == 2
+                    ), f"Target for {target.system_target_param} expects 2 modes."
                     assert len(self.mini_study.mode_freqs) >= len(
                         target.involved_modes
-
                     ), f"Target for {target.system_target_param} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                     for branch, mode_name in target.involved_modes:
                         assert (
                             branch,
-                            dc.mode_freq(mode_name),
-                        ) in self.mini_study.mode_freqs, f"Target mode {dc.mode_freq(mode_name)} in branch {branch} \
-                            not found in modes which will be simulated. Type must be the same, {type(branch)}, {type(dc.FREQ)}?"
+                            c.mode_freq(mode_name),
+                        ) in self.mini_study.mode_freqs, f"Target mode {c.mode_freq(mode_name)} in branch {branch} \
+                            not found in modes which will be simulated. Type must be the same, {type(branch)}, {type(c.FREQ)}?"
+                else:
+                    assert len(self.mini_study.mode_freqs) >= len(
+                        target.involved_modes
+                    ), f"Target for {target.system_target_param} expects \
+                        {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
+                    for branch, mode_name in target.involved_modes:
+                        assert (
+                            branch,
+                            c.mode_freq(mode_name),
+                        ) in self.mini_study.mode_freqs, f"Target mode {c.mode_freq(mode_name)} in branch {branch} \
+                            not found in modes which will be simulated. Type must be the same, {type(branch)}, {type(c.FREQ)}?"
 
             design_variables = [target.design_var for target in self.opt_targets]
             assert len(design_variables) == len(
@@ -220,16 +225,20 @@ class DesignAnalysis:
     def get_fine_mesh_names(self):
         """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names". This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class."""
         finer_mesh_names = []
-        for component in self.mini_study.component_names:
-            if hasattr(self.design.components[component],"get_meshing_names"):
-                finer_mesh_names+=(self.design.components[component].get_meshing_names())
+        for component in self.mini_study.qiskit_component_names:
+            if hasattr(self.design.components[component], "get_meshing_names"):
+                finer_mesh_names += self.design.components[
+                    component
+                ].get_meshing_names()
             elif self.meshing_map != None:
                 for map in self.meshing_map:
-                    if isinstance(self.design.components[component],map.component_class):
-                        finer_mesh_names+=(map.mesh_names(component))
+                    if isinstance(
+                        self.design.components[component], map.component_class
+                    ):
+                        finer_mesh_names += map.mesh_names(component)
             else:
-                log.info("No fine mesh map was found for "+component)
-                
+                log.info("No fine mesh map was found for " + component)
+
         return finer_mesh_names
 
     def get_port_gap_names(self):
@@ -246,31 +255,53 @@ class DesignAnalysis:
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
         )
         # set hfss wire bonds properties
-        self.renderer.options['wb_size'] = self.mini_study.hfss_wire_bond_size
-        self.renderer.options['wb_threshold'] = self.mini_study.hfss_wire_bond_threshold
-        self.renderer.options['wb_offset'] = self.mini_study.hfss_wire_bond_offset
+        self.renderer.options["wb_size"] = self.mini_study.hfss_wire_bond_size
+        self.renderer.options["wb_threshold"] = self.mini_study.hfss_wire_bond_threshold
+        self.renderer.options["wb_offset"] = self.mini_study.hfss_wire_bond_offset
 
         # render design in HFSS
         self.renderer.render_design(
-            selection=self.mini_study.component_names,
+            selection=self.mini_study.qiskit_component_names,
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
         )
 
         # set custom air bridges
-        for component_name in self.mini_study.component_names:
-            if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
-                for coord in self.design.components[component_name].get_air_bridge_coordinates():
-                    hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
-                                                 bond_type=0, name="mybox1", matname="aluminum")
-                    
+        for component_name in self.mini_study.qiskit_component_names:
+            if hasattr(
+                self.design.components[component_name], "get_air_bridge_coordinates"
+            ):
+                for coord in self.design.components[
+                    component_name
+                ].get_air_bridge_coordinates():
+                    hfss.modeler.create_bondwire(
+                        coord[0],
+                        coord[1],
+                        h1=0.005,
+                        h2=0.000,
+                        alpha=90,
+                        beta=45,
+                        diameter=0.005,
+                        bond_type=0,
+                        name="mybox1",
+                        matname="aluminum",
+                    )
+
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
-        restrict_mesh = fine_mesh_names != None and self.mini_study.build_fine_mesh and len(self.mini_study.port_list) > 0
+        restrict_mesh = (
+            fine_mesh_names != None
+            and self.mini_study.build_fine_mesh
+            and len(self.mini_study.port_list) > 0
+        )
 
         if restrict_mesh:
             self.renderer.modeler.mesh_length(
-                'fine_mesh', fine_mesh_names, MaxLength=self.mini_study.max_mesh_length_lines_to_ports, RefineInside=True)
+                "fine_mesh",
+                fine_mesh_names,
+                MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
+                RefineInside=True,
+            )
 
         # run eigenmode analysis
         self.setup.analyze()
@@ -372,7 +403,7 @@ class DesignAnalysis:
         all_mode_idx = []
         for branch, mode_name in target.involved_modes:
             for idx, elem in enumerate(simulated_branch_freqname_sorted_on_value):
-                if elem[0] == branch and elem[1] == dc.mode_freq(mode_name):
+                if elem[0] == branch and elem[1] == c.mode_freq(mode_name):
                     all_mode_idx.append(idx)
                     break
                 else:
@@ -402,7 +433,9 @@ class DesignAnalysis:
             return  # should be updated by EPR analysis instaed
         for branch, mode in target.involved_modes:
             print("Test _update_optimized_params_for_eigenmode_target ", branch, mode)
-            self.system_optimized_params[branch][dc.mode_type(mode,target_type = target.system_target_param)] = optimized_value
+            self.system_optimized_params[branch][
+                c.mode_type(mode, target_type=target.system_target_param)
+            ] = optimized_value
 
     def _update_optimized_params(self, eig_result: pd.DataFrame):
 
@@ -413,9 +446,12 @@ class DesignAnalysis:
             decay = eig_result["Kappas (Hz)"][idx]
 
             self.system_optimized_params[branch][freq_name] = freq
-            if dc.mode_freq_to_mode_kappa(freq_name) in self.system_target_params[branch]: 
+            if (
+                c.mode_freq_to_mode_kappa(freq_name)
+                in self.system_target_params[branch]
+            ):
                 self.system_optimized_params[branch][
-                    dc.mode_freq_to_mode_kappa(freq_name)
+                    c.mode_freq_to_mode_kappa(freq_name)
                 ] = decay
 
     def _get_mode_idx_map(self):
@@ -449,21 +485,21 @@ class DesignAnalysis:
                 self.system_optimized_params[branch][mode_frequency] = (
                     freq_ND_results.iloc[mib[mode_frequency]][freq_column] * MHz
                 )
-        if dc.CROSS_KERR in self.system_optimized_params:
+        if c.CROSS_KERR in self.system_optimized_params:
             for (branch_i, mode_i), (branch_j, mode_j) in self.system_target_params[
-                dc.CROSS_KERR
+                c.CROSS_KERR
             ].keys():
                 if (
                     branch_i in mode_idx
                     and branch_j in mode_idx
-                    and dc.mode_freq(mode_i) in mode_idx[branch_i]
-                    and dc.mode_freq(mode_j) in mode_idx[branch_j]
+                    and c.mode_freq(mode_i) in mode_idx[branch_i]
+                    and c.mode_freq(mode_j) in mode_idx[branch_j]
                 ):
-                    self.system_optimized_params[dc.CROSS_KERR][
-                        dc.cross_kerr([branch_i, branch_j], [mode_i, mode_j])
+                    self.system_optimized_params[c.CROSS_KERR][
+                        c.cross_kerr([branch_i, branch_j], [mode_i, mode_j])
                     ] = (
-                        epr_result[mode_idx[branch_i][dc.mode_freq(mode_i)]].iloc[
-                            mode_idx[branch_j][dc.mode_freq(mode_j)]
+                        epr_result[mode_idx[branch_i][c.mode_freq(mode_i)]].iloc[
+                            mode_idx[branch_j][c.mode_freq(mode_j)]
                         ]
                         * MHz
                     )
@@ -473,22 +509,22 @@ class DesignAnalysis:
         capacitance_matrix: pd.DataFrame,
         capacitance_study: CapacitanceMatrixStudy,
     ):
-        if dc.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
+        if c.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
             for key_capacitances in self.system_target_params[
-                dc.CAPACITANCE_MATRIX_ELEMENTS
+                c.CAPACITANCE_MATRIX_ELEMENTS
             ].keys():
                 try:
-                    self.system_optimized_params[dc.CAPACITANCE_MATRIX_ELEMENTS][
+                    self.system_optimized_params[c.CAPACITANCE_MATRIX_ELEMENTS][
                         key_capacitances
                     ] = capacitance_matrix.loc[key_capacitances[0], key_capacitances[1]]
                 except KeyError:
                     log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
-        # if dc.QUBIT_CHARGE_LINE_LIMITED_T1 in self.system_target_params and isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
+        # if c.QUBIT_CHARGE_LINE_LIMITED_T1 in self.system_target_params and isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
         log.info("Computing T1 limit from decay in charge line.")
         self.system_optimized_params[capacitance_study.branch_name][
-            dc.mode_t1_decay(dc.mode_freq_to_mode(capacitance_study.freq_name))
+            c.mode_t1_decay(c.mode_freq_to_mode(capacitance_study.freq_name))
         ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod
@@ -538,17 +574,17 @@ class DesignAnalysis:
         return f"{design_value} {d_unit}"
 
     @staticmethod
-    def get_quantity_value(target: OptTarget, system_params: dict):
-        if target.system_target_param == dc.NONLINEARITY:
+    def get_parameter_value(target: OptTarget, system_params: dict):
+        if target.system_target_param == c.NONLINEARITY:
             mode1, mode2 = target.involved_modes
             branch1, param1 = mode1
             branch2, param2 = mode2
-            current_value = system_params[dc.CROSS_KERR][
-                dc.cross_kerr([branch1, branch2], [param1,param2])
+            current_value = system_params[c.CROSS_KERR][
+                c.cross_kerr([branch1, branch2], [param1, param2])
             ]
-        elif target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
+        elif target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
             [capacitance_name_1, capacitance_name_2] = target.involved_modes
-            current_value = system_params[dc.CAPACITANCE_MATRIX_ELEMENTS][
+            current_value = system_params[c.CAPACITANCE_MATRIX_ELEMENTS][
                 (capacitance_name_1, capacitance_name_2)
             ]
         else:
@@ -563,8 +599,8 @@ class DesignAnalysis:
         targets_to_minimize_for: List[OptTarget],
         all_design_var_current: dict,
         all_design_var_updated: dict,
-        all_quantities_current: dict,
-        all_quantities_targets_met: dict,
+        all_parameters_current: dict,
+        all_parameters_targets_met: dict,
     ):
         """Minimize the cost function to find the optimal design variables to reach the target.
         The all_design_var_updated variable is automatically updated with the optimal design variables during the minimization.
@@ -584,14 +620,14 @@ class DesignAnalysis:
             cost = 0
             for target in targets_to_minimize_for:
                 Q_k1_i = (
-                    self.get_quantity_value(target, all_quantities_current)
-                    * target.prop_to(all_quantities_targets_met, all_design_var_updated)
-                    / target.prop_to(all_quantities_current, all_design_var_current)
+                    self.get_parameter_value(target, all_parameters_current)
+                    * target.prop_to(all_parameters_targets_met, all_design_var_updated)
+                    / target.prop_to(all_parameters_current, all_design_var_current)
                 )
                 cost += (
                     (
                         Q_k1_i
-                        / self.get_quantity_value(target, all_quantities_targets_met)
+                        / self.get_parameter_value(target, all_parameters_targets_met)
                     )
                     - 1
                 ) ** 2
@@ -608,23 +644,23 @@ class DesignAnalysis:
     def get_system_params_targets_met(self):
         system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
-            if target.system_target_param == dc.NONLINEARITY:
+            if target.system_target_param == c.NONLINEARITY:
                 mode1, mode2 = target.involved_modes
                 branch1, param1 = mode1
                 branch2, param2 = mode2
-                system_params_targets_met[dc.CROSS_KERR][
-                    dc.cross_kerr([branch1,branch2],[ param1, param2])
-                ] = self.get_quantity_value(target, self.system_target_params)
-            elif target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
+                system_params_targets_met[c.CROSS_KERR][
+                    c.cross_kerr([branch1, branch2], [param1, param2])
+                ] = self.get_parameter_value(target, self.system_target_params)
+            elif target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
                 [capacitance_name_1, capacitance_name_2] = target.involved_modes
-                system_params_targets_met[dc.CAPACITANCE_MATRIX_ELEMENTS][
+                system_params_targets_met[c.CAPACITANCE_MATRIX_ELEMENTS][
                     (capacitance_name_1, capacitance_name_2)
-                ] = self.get_quantity_value(target, self.system_target_params)
+                ] = self.get_parameter_value(target, self.system_target_params)
             else:
                 [(branch, mode)] = target.involved_modes
-                system_params_targets_met[branch][dc.mode_type(mode,target.system_target_param)] = self.get_quantity_value(
-                    target, self.system_target_params
-                )
+                system_params_targets_met[branch][
+                    c.mode_type(mode, target.system_target_param)
+                ] = self.get_parameter_value(target, self.system_target_params)
         return system_params_targets_met
 
     def _calculate_target_design_var(self) -> dict:
@@ -709,22 +745,19 @@ class DesignAnalysis:
             self.is_system_optimized_params_initialized = True
         self.update_var(updated_design_vars_input, system_optimized_params)
 
-       
         updated_design_vars = self._calculate_target_design_var()
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
-        
 
         iteration_result = {}
         if self.mini_study is not None and len(self.mini_study.mode_freqs) > 0:
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
             iteration_result["eig_results"] = deepcopy(self.eig_result)
-            
 
             # EPR analysis for nonlinearities
             self.cross_kerrs = self.run_epr()
-            
+
             iteration_result["cross_kerrs"] = deepcopy(self.cross_kerrs)
 
         if self.mini_study.capacitance_matrix_studies is not None:

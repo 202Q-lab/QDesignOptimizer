@@ -134,6 +134,7 @@ def name_tee_to_tee(
 ):
     return f"NAME_TEE{tee_branch_number1}_TO_TEE{tee_branch_number2}"
 
+
 # Extra design variables
 def design_var_cl_pos_x(branch: int):
     return f"design_var_cl_pos_x{branch}"
@@ -146,6 +147,7 @@ def design_var_cl_pos_y(branch: int):
 # Extra component names
 def name_lp_chargeline(branch_number: int):
     return f"NAME_LP_chargeline{branch_number}"
+
 
 def design_var_res_length(branch: int):
     return f"design_var_res_length_{branch}"

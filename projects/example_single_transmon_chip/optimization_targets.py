@@ -1,8 +1,6 @@
 import json
 from typing import List
 
-with open("design_variables.json") as in_file:
-    dv = json.load(in_file)
 import design_constants as dc
 import design_variable_names as u
 import numpy as np
@@ -33,7 +31,7 @@ def get_opt_target_qubit_anharmonicity_via_pad_width(
 
     return OptTarget(
         system_target_param=dc.NONLINEARITY,
-        involved_modes=dc.cross_kerr([str(branch),str(branch)], [dc.QUBIT, dc.QUBIT]),
+        involved_modes=dc.cross_kerr([str(branch), str(branch)], [dc.QUBIT, dc.QUBIT]),
         design_var=u.design_var_qb_pad_width(branch),
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
         prop_to=lambda p, v: 1 / v[u.design_var_qb_pad_width(branch)],
@@ -47,7 +45,9 @@ def get_opt_target_res_qub_chi_via_res_qub_coupl_length(
 
     return OptTarget(
         system_target_param=dc.NONLINEARITY,
-        involved_modes=dc.cross_kerr([str(branch),str(branch)],[dc.RESONATOR, dc.QUBIT]),
+        involved_modes=dc.cross_kerr(
+            [str(branch), str(branch)], [dc.RESONATOR, dc.QUBIT]
+        ),
         design_var=u.design_var_res_qb_coupl_length(branch),
         design_var_constraint={"larger_than": "5um", "smaller_than": "350um"},
         prop_to=lambda p, v: v[u.design_var_res_qb_coupl_length(branch)],

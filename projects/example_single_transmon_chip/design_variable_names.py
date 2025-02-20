@@ -1,4 +1,4 @@
-from qdesignoptimizer.utils.utils_design_variables import *
+from qdesignoptimizer.utils.utils_design_variable_names import *
 
 
 # Design parameters for optimization
