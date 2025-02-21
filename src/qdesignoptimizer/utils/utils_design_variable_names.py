@@ -2,6 +2,8 @@ from typing import Literal, Union
 
 from qiskit_metal.designs.design_planar import DesignPlanar
 
+from qdesignoptimizer.utils.utils_parameter_names import Mode
+
 
 def add_design_variables_to_design(
     design: DesignPlanar, design_variables: dict[str:str]
@@ -16,20 +18,40 @@ def add_design_variables_to_design(
         design.variables[key] = val
 
 
-# Junction design variables
-def design_var_lj(component_name: str):
-    assert component_name.startswith("NAME_")
-    return f"design_var_lj_{component_name}"
+# Design variables
+def design_var_length(identifier: str):
+    return f"design_var_length_{identifier}"
 
 
-def design_var_cj(component_name: str):
-    assert component_name.startswith("NAME_")
-    return f"design_var_cj_{component_name}"
+def design_var_width(identifier: str):
+    return f"design_var_width_{identifier}"
 
 
-def junction_setup(
-    component_name: Union[str, int], type: Literal[None, "linear"] = None
-):
+def design_var_gap(identifier: str):
+    return f"design_var_gap_{identifier}"
+
+
+def design_var_coupl_length(identifier_1: str, identifier_2: str):
+    return f"design_var_coupl_length_{identifier_1}_{identifier_2}"
+
+
+def design_var_lj(identifier: str):
+    return f"design_var_lj_{identifier}"
+
+
+def design_var_cj(identifier: str):
+    return f"design_var_cj_{identifier}"
+
+
+def design_var_cl_pos_x(identifier: Union[str, int]):
+    return f"design_var_cl_pos_x_{identifier}"
+
+
+def design_var_cl_pos_y(identifier: Union[str, int]):
+    return f"design_var_cl_pos_y_{identifier}"
+
+
+def junction_setup(mode: Mode, type: Literal[None, "linear"] = None):
     """Generate jj setup for
 
     Args:
@@ -39,13 +61,13 @@ def junction_setup(
     Returns:
         Dict: jj setup
     """
-    jj_name = f"jj_{component_name}"
+    jj_name = f"jj_{name_mode(mode)}"
     setup = {
         jj_name: dict(
-            rect=f"JJ_rect_Lj_{component_name}_rect_jj",
-            line=f"JJ_Lj_{component_name}_rect_jj_",
-            Lj_variable=design_var_lj(component_name),
-            Cj_variable=design_var_cj(component_name),
+            rect=f"JJ_rect_Lj_{name_mode(mode)}_rect_jj",
+            line=f"JJ_Lj_{name_mode(mode)}_rect_jj_",
+            Lj_variable=design_var_lj(mode),
+            Cj_variable=design_var_cj(mode),
         )
     }
     if type is not None:
@@ -53,113 +75,46 @@ def junction_setup(
     return setup
 
 
-# Design variables
-def design_var_res_length(branch: int):
-    return f"design_var_res_length_{branch}"
-
-
-def design_var_res_coupl_length(branch: int):
-    return f"design_var_ind_coupl_length_{branch}"
-
-
-def design_var_qb_pad_width(branch: int):
-    return f"design_var_qb_pad_width_{branch}"
-
-
-def design_var_res_qb_coupl_length(branch: int):
-    return f"design_var_res_qb_coupl_length_{branch}"
-
-
-def design_var_res_coupl_length(branch: int):
-    return f"design_var_res_coupl_length_{branch}"
-
-
-def design_var_qb_coupl_gap(branch: int):
-    return f"design_var_qb_coupl_gap_{branch}"
-
-
 # Component names
-def name_res(branch_number: int):
-    return f"NAME_RES{branch_number}"
 
 
-def name_qb(branch_number: int):
-    return f"NAME_QB{branch_number}"
+def name_(identifier: Union[str, int]):
+    return f"name_{identifier}"
 
 
-def name_cav(branch_number: int):
-    return f"NAME_CAV{branch_number}"
+def name_mode(identifier: Mode):
+    return f"name_{identifier}"
 
 
-def name_coupler(branch_number: int):
-    return f"NAME_COUPLER{branch_number}"
+def name_mode_to_mode(identifier_1: Mode, identifier_2: Mode):
+    return f"name_{identifier_1}_to_{identifier_2}"
 
 
-def name_tee(branch_number: int):
-    return f"NAME_TEE{branch_number}"
+def name_tee(identifier: Union[str, int]):
+    return f"name_tee{identifier}"
 
 
-def name_lp(branch_number: int):
-    return f"NAME_LP{branch_number}"
+def name_lp(identifier: Union[str, int]):
+    return f"name_lp{identifier}"
 
 
-def name_charge_line(branch_number: Union[str, int]):
-    return f"NAME_CHARGE_LINE_{branch_number}"
+def name_charge_line(identifier: Union[str, int]):
+    return f"name_charge_line{identifier}"
 
 
-def name_flux_line(component_name: str):
-    assert component_name.startswith("NAME_")
-    component = component_name.strip("NAME_")
-    return f"NAME_FLUX_LINE_{component}"
+def name_flux_line(identifier: Union[str, int]):
+    return f"name_flux_line_{identifier}"
 
 
-def name_cav_to_qb(branch_number: Union[str, int]):
-    return f"NAME_CAV{branch_number}_TO_QB{branch_number}"
+def name_lp_to_tee(lp_identifier: Union[str, int], tee_identifier: Union[str, int]):
+    return f"name_lp{lp_identifier}_to_tee{tee_identifier}"
 
 
-def name_cav_to_coupler(
-    branch_number: int, coupler_number: Union[str, int, None] = None
+def name_tee_to_tee(tee_identifier1: Union[str, int], tee_identifier2: Union[str, int]):
+    return f"name_tee{tee_identifier1}_to_tee{tee_identifier2}"
+
+
+def name_lp_to_chargeline(
+    lp_identifier: Union[str, int], chargeline_identifier: Union[str, int]
 ):
-    return f"NAME_CAV{branch_number}_TO_COUPLER{coupler_number}"
-
-
-def name_lp_to_tee(
-    lp_branch_number: Union[str, int], tee_branch_number: Union[str, int]
-):
-    return f"NAME_LP{lp_branch_number}_TO_TEE{tee_branch_number}"
-
-
-def name_tee_to_tee(
-    tee_branch_number1: Union[str, int], tee_branch_number2: Union[str, int]
-):
-    return f"NAME_TEE{tee_branch_number1}_TO_TEE{tee_branch_number2}"
-
-
-# Extra design variables
-def design_var_cl_pos_x(branch: int):
-    return f"design_var_cl_pos_x{branch}"
-
-
-def design_var_cl_pos_y(branch: int):
-    return f"design_var_cl_pos_y{branch}"
-
-
-# Extra component names
-def name_lp_chargeline(branch_number: int):
-    return f"NAME_LP_chargeline{branch_number}"
-
-
-def design_var_res_length(branch: int):
-    return f"design_var_res_length_{branch}"
-
-
-def design_var_res_coupl_length(branch: int):
-    return f"design_var_res_coupl_length_{branch}"
-
-
-def design_var_qb_pad_width(branch: int):
-    return f"design_var_qb_pad_width_{branch}"
-
-
-def design_var_res_qb_coupl_length(branch: int):
-    return f"design_var_res_qb_coupl_length_{branch}"
+    return f"name_lp{lp_identifier}_to_chargeline{chargeline_identifier}"

@@ -1,15 +1,11 @@
 from qdesignoptimizer.utils.utils_design_variable_names import *
 
 
-# Extra design variables
-def design_var_cl_pos_x(branch: int):
-    return f"design_var_cl_pos_x{branch}"
-
-
-def design_var_cl_pos_y(branch: int):
-    return f"design_var_cl_pos_y{branch}"
+# # Extra design variables
+def design_var_my_custom(identifier: int):
+    return f"design_var_my_custom_{identifier}"
 
 
 # Extra component names
-def name_lp_chargeline(branch_number: int):
-    return f"NAME_LP_chargeline{branch_number}"
+def name_my_custom(identifier: int):
+    return f"name_my_custom{identifier}"

@@ -39,7 +39,7 @@ def get_opt_target_qubit_anharmonicity_via_pad_width(
     )
 
 
-def get_opt_target_res_qub_chi_via_res_qub_coupl_length(
+def get_opt_target_res_qub_chi_via_coupl_length(
     branch: int,
 ) -> OptTarget:
 
@@ -111,11 +111,11 @@ def get_opt_targets_qb_res(
     if res_freq:
         opt_targets.append(get_opt_target_res_freq_via_length(branch))
     if res_kappa:
-        opt_targets.append(get_opt_target_res_kappa_via_coupl_length(branch))
+        opt_targets.append(get_opt_target_res_kappa_via_coupl_length(resonator, "tee"))
     if qb_anharmonicity:
         opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(branch))
     if qb_res_chi:
-        opt_targets.append(get_opt_target_res_qub_chi_via_res_qub_coupl_length(branch))
+        opt_targets.append(get_opt_target_res_qub_chi_via_coupl_length(branch))
     return opt_targets
 
 

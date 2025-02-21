@@ -5,66 +5,64 @@ import design_constants as dc
 import design_variable_names as u
 import numpy as np
 
-import qdesignoptimizer.utils.constants as dc
 from qdesignoptimizer.design_analysis_types import OptTarget
 from qdesignoptimizer.utils.utils_design_variable_names import design_var_lj
+from qdesignoptimizer.utils.utils_parameter_names import Mode
 
 
 def get_opt_target_qubit_freq_via_lj(
-    branch: int,
+    qubit: Mode,
 ) -> OptTarget:
 
     return OptTarget(
         system_target_param=dc.FREQ,
-        involved_modes=[(str(branch), dc.QUBIT)],
-        design_var=design_var_lj(u.name_qb(branch)),
+        involved_modes=[qubit],
+        design_var=u.design_var_lj(qubit),
         design_var_constraint={"larger_than": "0.1nH", "smaller_than": "400nH"},
         prop_to=lambda p, v: 1
-        / np.sqrt(
-            v[design_var_lj(u.name_qb(branch))] * v[u.design_var_qb_pad_width(branch)]
-        ),
+        / np.sqrt(v[design_var_lj(qubit)] * v[u.design_var_width(qubit)]),
         independent_target=False,
     )
 
 
 def get_opt_target_qubit_anharmonicity_via_pad_width(
-    branch: int,
+    qubit: Mode,
 ) -> OptTarget:
 
     return OptTarget(
         system_target_param=dc.NONLINEARITY,
-        involved_modes=dc.cross_kerr([str(branch), str(branch)], [dc.QUBIT, dc.QUBIT]),
-        design_var=u.design_var_qb_pad_width(branch),
+        involved_modes=[qubit, qubit],
+        design_var=u.design_var_width(qubit),
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
-        prop_to=lambda p, v: 1 / v[u.design_var_qb_pad_width(branch)],
+        prop_to=lambda p, v: 1 / v[u.design_var_width(qubit)],
         independent_target=True,
     )
 
 
 def get_opt_target_res_freq_via_length(
-    branch: int,
+    resonator: Mode,
 ) -> OptTarget:
 
     return OptTarget(
         system_target_param=dc.FREQ,
-        involved_modes=[(str(branch), dc.RESONATOR)],
-        design_var=u.design_var_res_length(branch),
+        involved_modes=[resonator],
+        design_var=u.design_var_length(resonator),
         design_var_constraint={"larger_than": "1mm", "smaller_than": "12mm"},
-        prop_to=lambda p, v: 1 / v[u.design_var_res_length(branch)],
+        prop_to=lambda p, v: 1 / v[u.design_var_length(resonator)],
         independent_target=True,
     )
 
 
 def get_opt_target_res_kappa_via_coupl_length(
-    branch: int,
+    resonator: Mode, couples_to: str
 ) -> OptTarget:
 
     return OptTarget(
         system_target_param=dc.KAPPA,
-        involved_modes=[(str(branch), dc.RESONATOR)],
-        design_var=u.design_var_res_coupl_length(branch),
+        involved_modes=[resonator],
+        design_var=u.design_var_coupl_length(resonator, couples_to),
         design_var_constraint={"larger_than": "200um", "smaller_than": "1000um"},
-        prop_to=lambda p, v: v[u.design_var_res_coupl_length(branch)] ** 2,
+        prop_to=lambda p, v: v[u.design_var_coupl_length(resonator, couples_to)] ** 2,
         independent_target=True,
     )
 
@@ -90,42 +88,44 @@ def get_opt_target_res_kappa_via_coupl_length(
 #     )
 
 
-def get_opt_target_res_qub_chi_via_res_qub_coupl_length(
-    branch: int,
+def get_opt_target_res_qub_chi_via_coupl_length(
+    resonator: Mode, qubit: Mode
 ) -> OptTarget:
 
     return OptTarget(
         system_target_param=dc.NONLINEARITY,
-        involved_modes=dc.cross_kerr(
-            [str(branch), str(branch)], [dc.RESONATOR, dc.QUBIT]
-        ),
+        involved_modes=[resonator, qubit],
         # involved_modes=[(str(branch), dc.RESONATOR), (str(branch), dc.QUBIT)],
-        design_var=u.design_var_res_qb_coupl_length(branch),
+        design_var=u.design_var_coupl_length(resonator, qubit),
         design_var_constraint={"larger_than": "5um", "smaller_than": "350um"},
-        prop_to=lambda p, v: v[u.design_var_res_qb_coupl_length(branch)],
+        prop_to=lambda p, v: v[u.design_var_coupl_length(resonator, qubit)],
         independent_target=True,
     )
 
 
 def get_opt_targets_qb_res(
-    branch: int,
+    nbr: int,
     qb_freq=True,
     qb_anharmonicity=True,
     res_freq=True,
     res_kappa=True,
     res_qub_chi=True,
 ) -> List[OptTarget]:
+    resonator = dc.RESONATOR_1 if nbr == 1 else dc.RESONATOR_2
+    qubit = dc.QUBIT_1 if nbr == 1 else dc.QUBIT_2
     opt_targets = []
     if qb_freq:
-        opt_targets.append(get_opt_target_qubit_freq_via_lj(branch))
+        opt_targets.append(get_opt_target_qubit_freq_via_lj(qubit))
     if qb_anharmonicity:
-        opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(branch))
+        opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(qubit))
     if res_freq:
-        opt_targets.append(get_opt_target_res_freq_via_length(branch))
+        opt_targets.append(get_opt_target_res_freq_via_length(resonator))
     if res_kappa:
-        opt_targets.append(get_opt_target_res_kappa_via_coupl_length(branch))
+        opt_targets.append(get_opt_target_res_kappa_via_coupl_length(resonator, "tee"))
     if res_qub_chi:
-        opt_targets.append(get_opt_target_res_qub_chi_via_res_qub_coupl_length(branch))
+        opt_targets.append(
+            get_opt_target_res_qub_chi_via_coupl_length(resonator, qubit)
+        )
     return opt_targets
 
 
@@ -146,9 +146,9 @@ def get_opt_targets_2qb_resonator_coupler(
         if res_freq:
             opt_targets.append(get_opt_target_res_freq_via_length(branch))
         if res_kappa:
-            opt_targets.append(get_opt_target_res_kappa_via_coupl_length(branch))
-        if res_qub_chi:
             opt_targets.append(
-                get_opt_target_res_qub_chi_via_res_qub_coupl_length(branch)
+                get_opt_target_res_kappa_via_coupl_length(resonator, "tee")
             )
+        if res_qub_chi:
+            opt_targets.append(get_opt_target_res_qub_chi_via_coupl_length(branch))
     return opt_targets

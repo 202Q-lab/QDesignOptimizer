@@ -4,21 +4,23 @@ from itertools import cycle
 import numpy as np
 from matplotlib import pyplot as plt
 
-import design_constants as dc
+import qdesignoptimizer.utils.constants as c
 from qdesignoptimizer.utils.utils import get_value_and_unit
+from qdesignoptimizer.utils.utils_design_variable_names import name_mode
+from qdesignoptimizer.utils.utils_parameter_names import param
 
 DEFAULT_PLT_SET = {
-    dc.RES_FREQ: {"label": "Res freq (Hz)"},
-    dc.RES_KERR: {"label": "Res Kerr (Hz)"},
-    dc.RES_KAPPA: {"label": "Res kappa (Hz)"},
-    dc.QUBIT_FREQ: {"label": "Qubit freq (Hz)"},
-    dc.QUBIT_ANHARMONICITY: {"label": "Qubit anharm (Hz)"},
-    dc.RES_QUBIT_CHI: {"label": "Res-qubit chi (Hz)"},
-    dc.CAVITY_FREQ: {"label": "Cavity freq (Hz)"},
-    dc.CAVITY_QUBIT_CHI: {"label": "Cavity-qubit chi (Hz)"},
-    dc.CAVITY_RES_CROSS_KERR: {"label": "Cavity-res cross-Kerr (Hz)"},
-    dc.ITERATION: {"label": "Iteration"},
-    # Any other will default to the key name
+    #     dc.RES_FREQ: {"label": "Res freq (Hz)"},
+    #     dc.RES_KERR: {"label": "Res Kerr (Hz)"},
+    #     dc.RES_KAPPA: {"label": "Res kappa (Hz)"},
+    #     dc.QUBIT_FREQ: {"label": "Qubit freq (Hz)"},
+    #     dc.QUBIT_ANHARMONICITY: {"label": "Qubit anharm (Hz)"},
+    #     dc.RES_QUBIT_CHI: {"label": "Res-qubit chi (Hz)"},
+    #     dc.CAVITY_FREQ: {"label": "Cavity freq (Hz)"},
+    #     dc.CAVITY_QUBIT_CHI: {"label": "Cavity-qubit chi (Hz)"},
+    #     dc.CAVITY_RES_CROSS_KERR: {"label": "Cavity-res cross-Kerr (Hz)"},
+    #     dc.ITERATION: {"label": "Iteration"},
+    #     # Any other will default to the key name
 }
 
 
@@ -50,7 +52,6 @@ def plot_progress(
     opt_results: dict,
     system_target_params: dict,
     plot_settings: dict,
-    plot_branches_separately: bool = True,
     plot_option: str = "linear",
     block_plots: bool = False,
 ):
@@ -61,39 +62,18 @@ def plot_progress(
         system_target_params (dict): The target system parameters
         plot_settings (dict): The plot settings, example
             {"plt_name": [OptPltSet("panel1_x", "panel1_y"), OptPltSet("panel2_x", "panel2_y")], "plt_name2": ...}
-        plot_branches_separately (bool, optional): Plot the branches separately. Defaults to True.
         plot_option (str, optional): 'linear', 'log', 'loglog'.
     """
 
-    def get_parameter_name_for_system_optimized_params(parameter_name:list[tuple,str], branch:str):
-        """
-        Checks the parameter_name for the colloquial name for the parameter and returns the searchable name for system_optimized_params
-        """
-        if type(parameter_name) == tuple:
-            return parameter_name
-        parameter_keys = parameter_name.split("_")
-        if parameter_keys[-1] == dc.ANHARMONICITY or parameter_keys[-1] == dc.KERR:
-            assert len(parameter_keys)==2, f"For self-Kerr type parameters, parameter {parameter_name} name must have two names separated by '_', for example qubit_anharmonicity"
-            return dc.cross_kerr([branch,branch],[parameter_keys[0],parameter_keys[0]])
-        elif parameter_keys[-1] == dc.CHI:
-            assert len(parameter_keys)==3, f"For self-Kerr type parameters, parameter {parameter_name} name must have three names separated by '_', for example qubit_resonator_chi"
-            return dc.cross_kerr([branch,branch],[parameter_keys[0],parameter_keys[1]])
-        else:
-            return parameter_name
-
-
-    def get_data_from_parameter(
-        axes_parameter: str, result: dict, branch: str, ii: int
-    ):
-        parameter_name= get_parameter_name_for_system_optimized_params(axes_parameter,branch)
-        if parameter_name == dc.ITERATION:
+    def get_data_from_parameter(axes_parameter: str, result: dict, ii: int):
+        if axes_parameter == c.ITERATION:
             data_opt = ii + 1
-        elif parameter_name in result["system_optimized_params"][branch]:
-            data_opt = result["system_optimized_params"][branch][parameter_name]
-        elif parameter_name in result["system_optimized_params"][dc.CROSS_KERR]:
-            data_opt = result["system_optimized_params"][dc.CROSS_KERR][parameter_name]
-        elif parameter_name in result["design_variables"]:
-            data_opt = get_value_and_unit(result["design_variables"][parameter_name])[0]
+        elif axes_parameter in result["system_optimized_params"]:
+            data_opt = result["system_optimized_params"][axes_parameter]
+        elif axes_parameter in result["system_optimized_params"]:
+            data_opt = result["system_optimized_params"][axes_parameter]
+        elif axes_parameter in result["design_variables"]:
+            data_opt = get_value_and_unit(result["design_variables"][axes_parameter])[0]
         else:
             data_opt = None
         return data_opt
@@ -103,7 +83,6 @@ def plot_progress(
         system_target_params: dict,
         panels: list,
         axs: list,
-        branch: str,
         colors: cycle,
         plot_option: str,
     ) -> bool:
@@ -114,7 +93,6 @@ def plot_progress(
             system_target_params (dict): The target system parameters
             panels (list): The list of OptPltSet objects
             axs (list): The list of axes, one for each panel in panels
-            branch (str): The branch to plot
             colors (cycle): The cycle of colors
             plot_option (str): 'linear', 'log', 'loglog'
 
@@ -132,11 +110,11 @@ def plot_progress(
                 axes.get_legend().remove()
             color = next(colors)
             x_data_opt = [
-                get_data_from_parameter(panel.x, result, branch, ii)
+                get_data_from_parameter(panel.x, result, ii)
                 for ii, result in enumerate(opt_results)
             ]
             y_data_opt = [
-                get_data_from_parameter(panel.y, result, branch, ii)
+                get_data_from_parameter(panel.y, result, ii)
                 for ii, result in enumerate(opt_results)
             ]
             if all(element is not None for element in y_data_opt):
@@ -145,11 +123,11 @@ def plot_progress(
             axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized", color=color)
 
             if (
-                panel.y in system_target_params[branch]
+                panel.y in system_target_params
                 and (not None in x_data_opt)
                 and (not None in y_data_opt)
             ):
-                y_data_target = system_target_params[branch][panel.y]
+                y_data_target = system_target_params[panel.y]
                 axes.plot(
                     [min(x_data_opt), max(x_data_opt)],
                     [y_data_target, y_data_target],
@@ -172,29 +150,28 @@ def plot_progress(
     colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
     for plot_name, panels in plot_settings.items():
+        plot_branches_separately = False  # TODO AXEL remove
         if not plot_branches_separately:
             fig, axs = plt.subplots(len(panels))
         data_plotted_in_any_branch = False
-        for branch in opt_results[0]["system_optimized_params"].keys():
-            if plot_branches_separately:
-                fig, axs = plt.subplots(len(panels))
-            data_plotted = plot_figure(
-                opt_results,
-                system_target_params,
-                panels,
-                axs,
-                branch,
-                colors,
-                plot_option,
-            )
-            data_plotted_in_any_branch = data_plotted_in_any_branch or data_plotted
-            fig.suptitle(plot_name)
-            fig.subplots_adjust(hspace=0.5)
+        if plot_branches_separately:
+            fig, axs = plt.subplots(len(panels))
+        data_plotted = plot_figure(
+            opt_results,
+            system_target_params,
+            panels,
+            axs,
+            colors,
+            plot_option,
+        )
+        data_plotted_in_any_branch = data_plotted_in_any_branch or data_plotted
+        fig.suptitle(plot_name)
+        fig.subplots_adjust(hspace=0.5)
 
-            if plot_branches_separately:
-                if not data_plotted:
-                    "plot_branches_separately: No data to plot for this figure"
-                    plt.close(fig)
+        if plot_branches_separately:
+            if not data_plotted:
+                "plot_branches_separately: No data to plot for this figure"
+                plt.close(fig)
 
         if not plot_branches_separately:
             if not data_plotted_in_any_branch:
@@ -205,11 +182,20 @@ def plot_progress(
 
 PLOT_SETTINGS_EXAMPLE = {
     "RES": [
-        OptPltSet(dc.RES_FREQ, dc.ITERATION, "Edited label Y", "Edited label X"),
-        OptPltSet(dc.RES_FREQ, "design_variable_x"),
+        OptPltSet(
+            c.ITERATION,
+            param(name_mode("resonator"), "freq"),
+            "Edited label Y",
+            "Edited label X",
+        ),
     ],
     "QUBIT": [
-        OptPltSet(dc.QUBIT_FREQ, "design_variable_y"),
+        OptPltSet(
+            c.ITERATION,
+            param(name_mode("qubit"), "freq"),
+            "Edited label Y",
+            "Edited label X",
+        ),
     ],
 }
 
@@ -226,7 +212,6 @@ if __name__ == "__main__":
         simulation["optimization_results"],
         simulation["system_target_params"],
         simulation["plot_settings"],
-        plot_branches_separately=True,
         plot_option="linear",
         block_plots=True,
     )

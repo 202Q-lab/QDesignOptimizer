@@ -17,12 +17,19 @@ from qdesignoptimizer.design_analysis_types import (
     MeshingMap,
     MiniStudy,
     OptTarget,
-    TargetType,
 )
 from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit
+from qdesignoptimizer.utils.utils_parameter_names import (
+    NONLIN,
+    get_modes_from_param_nonlin,
+    mode,
+    param,
+    param_capacitance,
+    param_nonlin,
+)
 
 
 class DesignAnalysis:
@@ -103,7 +110,7 @@ class DesignAnalysis:
 
         self.pinfo = self.renderer.pinfo
         self.setup = self.pinfo.setup
-        self.setup.n_modes = len(self.mini_study.mode_freqs)
+        self.setup.n_modes = len(self.mini_study.modes)
         self.setup.passes = self.mini_study.nbr_passes
         self.setup.delta_f = self.mini_study.delta_f
         self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
@@ -177,27 +184,25 @@ class DesignAnalysis:
                     assert (
                         len(target.involved_modes) == 2
                     ), f"Target for {target.system_target_param} expects 2 modes."
-                    assert len(self.mini_study.mode_freqs) >= len(
+                    assert len(self.mini_study.modes) >= len(
                         target.involved_modes
                     ), f"Target for {target.system_target_param} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
-                    for branch, mode_name in target.involved_modes:
+                    for mode in target.involved_modes:
                         assert (
-                            branch,
-                            c.mode_freq(mode_name),
-                        ) in self.mini_study.mode_freqs, f"Target mode {c.mode_freq(mode_name)} in branch {branch} \
-                            not found in modes which will be simulated. Type must be the same, {type(branch)}, {type(c.FREQ)}?"
+                            mode in self.mini_study.modes
+                        ), f"Target mode {mode} \
+                            not found in modes which will be simulated."
                 else:
-                    assert len(self.mini_study.mode_freqs) >= len(
+                    assert len(self.mini_study.modes) >= len(
                         target.involved_modes
                     ), f"Target for {target.system_target_param} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
-                    for branch, mode_name in target.involved_modes:
+                    for mode in target.involved_modes:
                         assert (
-                            branch,
-                            c.mode_freq(mode_name),
-                        ) in self.mini_study.mode_freqs, f"Target mode {c.mode_freq(mode_name)} in branch {branch} \
-                            not found in modes which will be simulated. Type must be the same, {type(branch)}, {type(c.FREQ)}?"
+                            mode in self.mini_study.modes
+                        ), f"Target mode {mode} \
+                            not found in modes which will be simulated."
 
             design_variables = [target.design_var for target in self.opt_targets]
             assert len(design_variables) == len(
@@ -208,9 +213,6 @@ class DesignAnalysis:
         """Update junction and design variables in mini_study, design, pinfo and."""
 
         for key, val in {**self.design.variables, **updated_design_vars}.items():
-            # only include jjs rendered in this setting
-            if key in self.mini_study.jj_var:
-                self.mini_study.jj_var[key] = val
             self.pinfo.design.set_variable(key, val)
             self.design.variables[key] = val
 
@@ -319,7 +321,7 @@ class DesignAnalysis:
     def run_epr(self):
         """Run EPR, requires design with junctions."""
         no_junctions = (
-            self.mini_study.jj_var is None or len(self.mini_study.jj_var) == 0
+            self.mini_study.jj_setup is None or len(self.mini_study.jj_setup) == 0
         )
 
         jj_setups_to_include_in_epr = {}
@@ -370,139 +372,63 @@ class DesignAnalysis:
         """Get simulated modes sorted on value.
 
         Returns:
-            List[tuple]: list of (branch, freq_name, freq_value) sorted on freq_value
+            List[tuple]: list of modes sorted on freq_value
         """
-        simulated_branch_freqname = self.mini_study.mode_freqs
-        simulated_branch_freqname_value = [
-            (branch, freq_name, self.system_target_params[branch][freq_name])
-            for branch, freq_name in simulated_branch_freqname
+        simulated_modes = self.mini_study.modes
+        simulated_mode_freq_value = [
+            (mode, self.system_target_params[param(mode, c.FREQ)])
+            for mode in simulated_modes
         ]
-        simulated_branch_freqname_sorted_on_value = sorted(
-            simulated_branch_freqname_value, key=lambda x: x[2]
+        simulated_modes_sorted_on_freq_value = sorted(
+            simulated_mode_freq_value, key=lambda x: x[1]
         )
-        return simulated_branch_freqname_sorted_on_value
-
-    def _get_simulated_mode_freq(self, branch: str, freq_name: str):
-        """Get simulated mode frequency.
-
-        Args:
-            branch (str): branch name
-            freq_name (str): frequency name
-
-        Returns:
-            float: frequency value
-        """
-        simulated_modes_sorted = self.get_simulated_modes_sorted()
-        for branch_i, freq_name_i, value_i in simulated_modes_sorted:
-            if branch_i == branch and freq_name_i == freq_name:
-                return value_i
-        raise ValueError(f"Mode {branch}, {freq_name} not found in simulated modes")
-
-    def get_mode_idx(self, target: OptTarget) -> List[int]:
-        simulated_branch_freqname_sorted_on_value = self.get_simulated_modes_sorted()
-        all_mode_idx = []
-        for branch, mode_name in target.involved_modes:
-            for idx, elem in enumerate(simulated_branch_freqname_sorted_on_value):
-                if elem[0] == branch and elem[1] == c.mode_freq(mode_name):
-                    all_mode_idx.append(idx)
-                    break
-                else:
-                    raise ValueError(
-                        f"Mode {branch}, {mode_name} not found in simulated modes"
-                    )
-
-        return all_mode_idx
-
-    def _update_optimized_params_for_eigenmode_target(
-        self, target: OptTarget, eig_result: pd.DataFrame
-    ):
-        """Update optimized parameters from eigenmode simulation.
-
-        Args:
-            target (OptTarget): optimization target
-            eig_result (pd.DataFrame): eigenmode simulation results
-
-        """
-        all_mode_idx = self.get_mode_idx(target)
-        if target.target_type.value == TargetType.FREQUENCY.value:
-            optimized_value = eig_result["Freq. (Hz)"][all_mode_idx[0]]
-        elif target.target_type.value == TargetType.KAPPA.value:
-            optimized_value = eig_result["Kappas (Hz)"][all_mode_idx[0]]
-            return
-        else:
-            return  # should be updated by EPR analysis instaed
-        for branch, mode in target.involved_modes:
-            print("Test _update_optimized_params_for_eigenmode_target ", branch, mode)
-            self.system_optimized_params[branch][
-                c.mode_type(mode, target_type=target.system_target_param)
-            ] = optimized_value
+        return simulated_modes_sorted_on_freq_value
 
     def _update_optimized_params(self, eig_result: pd.DataFrame):
 
-        for idx, (branch, freq_name, value) in enumerate(
-            self.get_simulated_modes_sorted()
-        ):
+        for idx, (mode, freq) in enumerate(self.get_simulated_modes_sorted()):
             freq = eig_result["Freq. (Hz)"][idx]
             decay = eig_result["Kappas (Hz)"][idx]
 
-            self.system_optimized_params[branch][freq_name] = freq
-            if (
-                c.mode_freq_to_mode_kappa(freq_name)
-                in self.system_target_params[branch]
-            ):
-                self.system_optimized_params[branch][
-                    c.mode_freq_to_mode_kappa(freq_name)
-                ] = decay
+            self.system_optimized_params[param(mode, c.FREQ)] = freq
+            if param(mode, c.KAPPA) in self.system_target_params:
+                self.system_optimized_params[param(mode, c.KAPPA)] = decay
 
     def _get_mode_idx_map(self):
         """Get mode index map.
 
         Returns:
-            dict: object mode_idx_map[branch][VAR_FREQ]
+            dict: object {mode: idx}
         """
         all_modes = self.get_simulated_modes_sorted()
         mode_idx = {}
-        for idx_i, (branch_i, freq_name_i, value_i) in enumerate(all_modes):
-            if branch_i not in mode_idx:
-                mode_idx[branch_i] = {}
-            mode_idx[branch_i][freq_name_i] = idx_i
+        for idx_i, (mode, _) in enumerate(all_modes):
+            mode_idx[mode] = idx_i
         return mode_idx
 
     def _update_optimized_params_epr(
         self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame
     ):
-        all_modes = self.get_simulated_modes_sorted()
-        all_branches = {branch for branch, _, _ in all_modes}
 
         MHz = 1e6
         mode_idx = self._get_mode_idx_map()
         log.info("freq_ND_results%s", dict_log_format(freq_ND_results.to_dict()))
-        # Parameters within the same branch
         freq_column = 0
-        for branch in all_branches:
-            mib = mode_idx[branch]
-            for mode_frequency, ind in mib.items():
-                self.system_optimized_params[branch][mode_frequency] = (
-                    freq_ND_results.iloc[mib[mode_frequency]][freq_column] * MHz
+
+        for mode, _ in mode_idx.items():
+            self.system_optimized_params[param(mode, c.FREQ)] = (
+                freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
+            )
+            # TODO AXEL what about KAPPA?
+        print(self.system_optimized_params)
+        for _param, _ in self.system_optimized_params.items():
+            if _param.endswith(NONLIN):
+                mode_1, mode_2 = get_modes_from_param_nonlin(_param)
+                if mode_1 not in mode_idx or mode_2 not in mode_idx:
+                    continue
+                self.system_optimized_params[param_nonlin(mode_1, mode_2)] = (
+                    epr_result[mode_idx[mode_1]].iloc[mode_idx[mode_2]] * MHz
                 )
-        if c.CROSS_KERR in self.system_optimized_params:
-            for (branch_i, mode_i), (branch_j, mode_j) in self.system_target_params[
-                c.CROSS_KERR
-            ].keys():
-                if (
-                    branch_i in mode_idx
-                    and branch_j in mode_idx
-                    and c.mode_freq(mode_i) in mode_idx[branch_i]
-                    and c.mode_freq(mode_j) in mode_idx[branch_j]
-                ):
-                    self.system_optimized_params[c.CROSS_KERR][
-                        c.cross_kerr([branch_i, branch_j], [mode_i, mode_j])
-                    ] = (
-                        epr_result[mode_idx[branch_i][c.mode_freq(mode_i)]].iloc[
-                            mode_idx[branch_j][c.mode_freq(mode_j)]
-                        ]
-                        * MHz
-                    )
 
     def _update_optimized_params_capacitance_simulation(
         self,
@@ -577,21 +503,15 @@ class DesignAnalysis:
     def get_parameter_value(target: OptTarget, system_params: dict):
         if target.system_target_param == c.NONLINEARITY:
             mode1, mode2 = target.involved_modes
-            branch1, param1 = mode1
-            branch2, param2 = mode2
-            current_value = system_params[c.CROSS_KERR][
-                c.cross_kerr([branch1, branch2], [param1, param2])
-            ]
+            current_value = system_params[param_nonlin(mode1, mode2)]
         elif target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
-            [capacitance_name_1, capacitance_name_2] = target.involved_modes
-            current_value = system_params[c.CAPACITANCE_MATRIX_ELEMENTS][
-                (capacitance_name_1, capacitance_name_2)
+            capacitance_name_1, capacitance_name_2 = target.involved_modes
+            current_value = system_params[
+                param_capacitance(capacitance_name_1, capacitance_name_2)
             ]
         else:
-            [(branch, mode)] = target.involved_modes
-            current_value = system_params[branch][
-                mode + "_" + target.system_target_param
-            ]
+            mode = target.involved_modes[0]
+            current_value = system_params[param(mode, target.system_target_param)]
         return current_value
 
     def _minimize_for_design_vars(
@@ -646,20 +566,18 @@ class DesignAnalysis:
         for target in self.opt_targets:
             if target.system_target_param == c.NONLINEARITY:
                 mode1, mode2 = target.involved_modes
-                branch1, param1 = mode1
-                branch2, param2 = mode2
-                system_params_targets_met[c.CROSS_KERR][
-                    c.cross_kerr([branch1, branch2], [param1, param2])
-                ] = self.get_parameter_value(target, self.system_target_params)
+                system_params_targets_met[param_nonlin(mode1, mode2)] = (
+                    self.get_parameter_value(target, self.system_target_params)
+                )
             elif target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
-                [capacitance_name_1, capacitance_name_2] = target.involved_modes
-                system_params_targets_met[c.CAPACITANCE_MATRIX_ELEMENTS][
-                    (capacitance_name_1, capacitance_name_2)
+                capacitance_name_1, capacitance_name_2 = target.involved_modes
+                system_params_targets_met[
+                    param_capacitance(capacitance_name_1, capacitance_name_2)
                 ] = self.get_parameter_value(target, self.system_target_params)
             else:
-                [(branch, mode)] = target.involved_modes
-                system_params_targets_met[branch][
-                    c.mode_type(mode, target.system_target_param)
+                mode_name = target.involved_modes
+                system_params_targets_met[
+                    param(mode_name, target.system_target_param)
                 ] = self.get_parameter_value(target, self.system_target_params)
         return system_params_targets_met
 
@@ -750,7 +668,7 @@ class DesignAnalysis:
         self.update_var(updated_design_vars, {})
 
         iteration_result = {}
-        if self.mini_study is not None and len(self.mini_study.mode_freqs) > 0:
+        if self.mini_study is not None and len(self.mini_study.modes) > 0:
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
             iteration_result["eig_results"] = deepcopy(self.eig_result)
@@ -776,13 +694,6 @@ class DesignAnalysis:
                 iteration_result["capacitance_matrix"].append(
                     deepcopy(capacitance_matrix)
                 )
-
-        log.info("Design variables%s", dict_log_format(self.design.variables))
-        log_optimized_dict = {}
-        for branch, param_dict in self.system_optimized_params.items():
-            if not all(v is None for _, v in param_dict.items()):
-                log_optimized_dict[branch] = self.system_optimized_params[branch]
-        # log.info("System optimized parameters%s", dict_log_format(log_optimized_dict))
 
         iteration_result["design_variables"] = deepcopy(self.design.variables)
         iteration_result["system_optimized_params"] = deepcopy(
@@ -812,7 +723,6 @@ class DesignAnalysis:
                 self.optimization_results,
                 self.system_target_params,
                 self.plot_settings,
-                plot_branches_separately=self.plot_branches_separately,
             )
 
     def overwrite_parameters(self):

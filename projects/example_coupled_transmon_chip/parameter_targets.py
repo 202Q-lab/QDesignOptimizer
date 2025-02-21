@@ -1,45 +1,22 @@
 import design_constants as dc
 
+from qdesignoptimizer.utils.utils_parameter_names import (
+    FREQ,
+    KAPPA,
+    param,
+    param_nonlin,
+)
+
 PARAM_TARGETS = {
-    "0": {
-        dc.mode_freq(dc.QUBIT): 4e9,
-        dc.mode_freq(dc.RESONATOR): 7e9,
-        dc.mode_kappa(dc.RESONATOR): 600e3,
-    },
-    "1": {
-        dc.mode_freq(dc.QUBIT): 5e9,
-        dc.mode_freq(dc.RESONATOR): 8e9,
-        dc.mode_kappa(dc.RESONATOR): 600e3,
-    },
-    "2": {
-        dc.mode_freq(dc.QUBIT): 5e9,
-        dc.mode_freq(dc.RESONATOR): 8e9,
-        dc.mode_kappa(dc.RESONATOR): 600e3,
-    },
-    "3": {
-        dc.mode_freq(dc.QUBIT): 5e9,
-        dc.mode_freq(dc.RESONATOR): 8e9,
-        dc.mode_kappa(dc.RESONATOR): 600e3,
-    },
-    "4": {
-        dc.mode_freq(dc.QUBIT): 5e9,
-        dc.mode_freq(dc.RESONATOR): 8e9,
-        dc.mode_kappa(dc.RESONATOR): 600e3,
-    },
-    "5": {
-        dc.mode_freq(dc.RESONATOR): 10e9,
-    },
-    dc.CROSS_KERR: {
-        dc.cross_kerr(["0", "0"], [dc.QUBIT, dc.QUBIT]): 200e6,
-        dc.cross_kerr(["0", "0"], [dc.QUBIT, dc.RESONATOR]): 1e6,
-        dc.cross_kerr(["1", "1"], [dc.QUBIT, dc.QUBIT]): 200e6,
-        dc.cross_kerr(["1", "1"], [dc.QUBIT, dc.RESONATOR]): 1e6,
-        dc.cross_kerr(["2", "2"], [dc.QUBIT, dc.QUBIT]): 200e6,
-        dc.cross_kerr(["2", "2"], [dc.QUBIT, dc.RESONATOR]): 1e6,
-        dc.cross_kerr(["3", "3"], [dc.QUBIT, dc.QUBIT]): 200e6,
-        dc.cross_kerr(["3", "3"], [dc.QUBIT, dc.RESONATOR]): 1e6,
-        dc.cross_kerr(["4", "4"], [dc.QUBIT, dc.QUBIT]): 200e6,
-        dc.cross_kerr(["4", "4"], [dc.QUBIT, dc.RESONATOR]): 1e6,
-        dc.cross_kerr(["5", "5"], [dc.QUBIT, dc.RESONATOR]): 1e6,
-    },
+    param(dc.QUBIT_1, FREQ): 4e9,
+    param(dc.RESONATOR_1, FREQ): 6e9,
+    param(dc.RESONATOR_1, KAPPA): 1e6,
+    param(dc.QUBIT_2, FREQ): 5e9,
+    param(dc.RESONATOR_2, FREQ): 7e9,
+    param(dc.RESONATOR_2, KAPPA): 1e6,
+    param(dc.COUPLER_12, FREQ): 7.5e9,
+    param_nonlin(dc.QUBIT_1, dc.QUBIT_1): 200e6,  # Qubit anharmonicity
+    param_nonlin(dc.QUBIT_1, dc.RESONATOR_1): 1e6,  # Qubit resonaotr chi
+    param_nonlin(dc.QUBIT_2, dc.QUBIT_2): 200e6,  # Qubit anharmonicity
+    param_nonlin(dc.QUBIT_2, dc.RESONATOR_2): 1e6,  # Qubit resonaotr chi
 }

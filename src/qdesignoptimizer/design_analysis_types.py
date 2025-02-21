@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Literal, Union
 from qiskit_metal.designs.design_base import QDesign
 
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
+from qdesignoptimizer.utils.utils_parameter_names import Mode
 
 
 class TargetType(Enum):
@@ -52,11 +53,7 @@ class OptTarget:
     Args:
         system_target_param: system target parameter to be optimized,
             "freq", "kappa", "nonlinearity"
-        involved_mode_freqs (list): mode freqs involved in target,
-            Example [('BRANCH_1', 'res')] for freq or kappa system_target_params.
-            (('BRANCH_1', 'qubit'), ('BRANCH_1', 'qubit')), (('BRANCH_1', 'qubit'), ('BRANCH_1', 'resonator')) for nonlinearity system_target_params
-
-            If system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_mode_freqs should be
+        involved_modes (list): mode freqs involved in target except when system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_modes should be
             the names of the TWO capacitive islands as optained from capacitance matrix simulation.
             Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.
             Example: ['capacitance_name_1', 'capacitance_name_2']
@@ -77,7 +74,7 @@ class OptTarget:
             "nonlinearity",
             "CAPACITANCE_MATRIX_ELEMENTS",
         ],
-        involved_modes: List[Union[tuple, str]],
+        involved_modes: List[Mode] | List[str],
         design_var: str,
         design_var_constraint: object,
         prop_to: Callable[
@@ -101,9 +98,9 @@ class MiniStudy:
         qiskit_component_names (list(str)): List of names
         port_list (list): component pins with ports, example with 50 Ohm: [(comp_name,'pin_name', 50)],
         open_pins (list): pins to be left open, example: [(comp_name, 'pin_name')],
-        mode_freqs (list): list of modes (branch, freq_name) to simulate in increasing frequency order, simulated nbr of modes = len(mode_freqs)
+        modes (list): list of modes to simulate in increasing frequency order, simulated nbr of modes = len(modes)
                            If the mode_freqs is empty, eigenmode and EPR analysis will be skipped.
-                           Example: [('BRANCH_1, 'qb_freq'), ('BRANCH_1, 'res_freq')]
+                           Example: [qubit_1, resonator_1]
         nbr_passes (int): nbr of passes in eigenmode simulation
         delta_f (float): Convergence freq max delta percent diff
         jj_setup (object): junction setup, example: {'Lj_variable': 'Lj', 'rect': 'JJ_rect_Lj_Q1_rect_jj', 'line': 'JJ_Lj_Q1_rect_jj', 'Cj_variable': 'Cj'}
@@ -125,7 +122,7 @@ class MiniStudy:
         qiskit_component_names: list,
         port_list: list,
         open_pins: list,
-        mode_freqs: List[tuple],
+        modes: List[Mode],
         nbr_passes: int = 10,
         delta_f: float = 0.1,
         jj_setup: object = {},
@@ -146,7 +143,7 @@ class MiniStudy:
         self.qiskit_component_names = qiskit_component_names
         self.port_list = port_list
         self.open_pins = open_pins
-        self.mode_freqs = mode_freqs
+        self.modes = modes
         self.nbr_passes = nbr_passes
         self.delta_f = delta_f
         self.jj_setup = jj_setup
