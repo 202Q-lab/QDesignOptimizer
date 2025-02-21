@@ -1,10 +1,11 @@
 import os
 from itertools import cycle
+from typing import Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-import design_constants as dc
+import qdesignoptimizer.utils.constants as dc
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
 DEFAULT_PLT_SET = {
@@ -23,7 +24,13 @@ DEFAULT_PLT_SET = {
 
 
 class OptPltSet:
-    def __init__(self, x: str, y: str, x_label: str = None, y_label: str = None):
+    def __init__(
+        self,
+        x: str,
+        y: str,
+        x_label: Optional[str] = None,
+        y_label: Optional[str] = None,
+    ):
         """Set the plot settings for a progress plots of the optimization framework
 
         Args:
@@ -37,7 +44,7 @@ class OptPltSet:
         self.x_label = self._get_label(x, x_label)
         self.y_label = self._get_label(y, y_label)
 
-    def _get_label(self, variable: str, x_label: str):
+    def _get_label(self, variable: str, x_label: Optional[str]) -> str:
         if x_label is not None:
             return x_label
         elif variable in DEFAULT_PLT_SET:
@@ -47,7 +54,7 @@ class OptPltSet:
 
 
 def plot_progress(
-    opt_results: dict,
+    opt_results: list[dict],
     system_target_params: dict,
     plot_settings: dict,
     plot_branches_separately: bool = True,
@@ -65,27 +72,38 @@ def plot_progress(
         plot_option (str, optional): 'linear', 'log', 'loglog'.
     """
 
-    def get_parameter_name_for_system_optimized_params(parameter_name:list[tuple,str], branch:str):
+    def get_parameter_name_for_system_optimized_params(
+        parameter_name: tuple | str, branch: str
+    ):
         """
         Checks the parameter_name for the colloquial name for the parameter and returns the searchable name for system_optimized_params
         """
-        if type(parameter_name) == tuple:
+        if isinstance(parameter_name, tuple):
             return parameter_name
         parameter_keys = parameter_name.split("_")
         if parameter_keys[-1] == dc.ANHARMONICITY or parameter_keys[-1] == dc.KERR:
-            assert len(parameter_keys)==2, f"For self-Kerr type parameters, parameter {parameter_name} name must have two names separated by '_', for example qubit_anharmonicity"
-            return dc.cross_kerr([branch,branch],[parameter_keys[0],parameter_keys[0]])
+            assert (
+                len(parameter_keys) == 2
+            ), f"For self-Kerr type parameters, parameter {parameter_name} name must have two names separated by '_', for example qubit_anharmonicity"
+            return dc.cross_kerr(
+                [branch, branch], [parameter_keys[0], parameter_keys[0]]
+            )
         elif parameter_keys[-1] == dc.CHI:
-            assert len(parameter_keys)==3, f"For self-Kerr type parameters, parameter {parameter_name} name must have three names separated by '_', for example qubit_resonator_chi"
-            return dc.cross_kerr([branch,branch],[parameter_keys[0],parameter_keys[1]])
+            assert (
+                len(parameter_keys) == 3
+            ), f"For self-Kerr type parameters, parameter {parameter_name} name must have three names separated by '_', for example qubit_resonator_chi"
+            return dc.cross_kerr(
+                [branch, branch], [parameter_keys[0], parameter_keys[1]]
+            )
         else:
             return parameter_name
-
 
     def get_data_from_parameter(
         axes_parameter: str, result: dict, branch: str, ii: int
     ):
-        parameter_name= get_parameter_name_for_system_optimized_params(axes_parameter,branch)
+        parameter_name = get_parameter_name_for_system_optimized_params(
+            axes_parameter, branch
+        )
         if parameter_name == dc.ITERATION:
             data_opt = ii + 1
         elif parameter_name in result["system_optimized_params"][branch]:
@@ -102,7 +120,7 @@ def plot_progress(
         opt_results: dict,
         system_target_params: dict,
         panels: list,
-        axs: list,
+        axs: list[plt.Axes] | plt.Axes,
         branch: str,
         colors: cycle,
         plot_option: str,

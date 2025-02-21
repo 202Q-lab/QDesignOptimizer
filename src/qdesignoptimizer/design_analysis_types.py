@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, Dict, List, Literal, Tuple, Union
+from typing import Callable, Dict, List, Literal, Union
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -22,32 +22,28 @@ class TargetType(Enum):
     SQUARED = "SQUARED"
 
 
-
-
 class MeshingMap:
     """
     A class to map a component class to a function that generates mesh names.
-    
+
     Attributes:
         component_class: The class of the component being meshed.
         mesh_names: A callable function that generates mesh names from component names.
     """
-    
-    def __init__(self, component_class: type, mesh_names: Callable[[List[str]], List[str]]):
+
+    def __init__(
+        self, component_class: type, mesh_names: Callable[[List[str]], List[str]]
+    ):
         """
         Initializes the MeshingMap with a component class and a mesh name function.
-        
+
         Args:
             component_class (type): The component class to be meshed.
-            mesh_names (Callable[[List[str]], List[str]]): A function that takes a list 
+            mesh_names (Callable[[List[str]], List[str]]): A function that takes a list
                 of component names and returns a list of mesh names.
         """
         self.component_class = component_class
         self.mesh_names = mesh_names
-
-
-
-
 
 
 class OptTarget:
@@ -59,7 +55,7 @@ class OptTarget:
         involved_mode_freqs (list): mode freqs involved in target,
             Example [('BRANCH_1', 'res')] for freq or kappa system_target_params.
             (('BRANCH_1', 'qubit'), ('BRANCH_1', 'qubit')), (('BRANCH_1', 'qubit'), ('BRANCH_1', 'resonator')) for nonlinearity system_target_params
-            
+
             If system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_mode_freqs should be
             the names of the TWO capacitive islands as optained from capacitance matrix simulation.
             Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.
@@ -74,8 +70,14 @@ class OptTarget:
 
     def __init__(
         self,
-        system_target_param: Literal["freq", "kappa", "charge_line_limited_t1", "nonlinearity", "CAPACITANCE_MATRIX_ELEMENTS"],
-        involved_modes: List[Union[tuple, str]],
+        system_target_param: Literal[
+            "freq",
+            "kappa",
+            "charge_line_limited_t1",
+            "nonlinearity",
+            "CAPACITANCE_MATRIX_ELEMENTS",
+        ],
+        involved_modes: List[tuple[str]],
         design_var: str,
         design_var_constraint: object,
         prop_to: Callable[
@@ -135,9 +137,9 @@ class MiniStudy:
         y_buffer_width_mm=0.5,
         max_mesh_length_port="3um",
         max_mesh_length_lines_to_ports="5um",
-        hfss_wire_bond_size = 3, 
-        hfss_wire_bond_offset = '0um', 
-        hfss_wire_bond_threshold = '300um', 
+        hfss_wire_bond_size=3,
+        hfss_wire_bond_offset="0um",
+        hfss_wire_bond_threshold="300um",
         build_fine_mesh=True,
         adjustment_rate: float = 1.0,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
@@ -166,7 +168,6 @@ class MiniStudy:
             render_qiskit_metal_eigenmode_kw_args
         )
         self.capacitance_matrix_studies = capacitance_matrix_studies
-
 
 
 class DesignAnalysisState:

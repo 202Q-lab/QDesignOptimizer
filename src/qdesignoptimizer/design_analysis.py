@@ -1,6 +1,5 @@
 import json
 from copy import deepcopy
-from pprint import pprint
 from typing import List, Optional
 
 import numpy as np
@@ -12,7 +11,7 @@ from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 
-import design_constants as dc
+import qdesignoptimizer.utils.constants as dc
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
@@ -21,7 +20,10 @@ from qdesignoptimizer.design_analysis_types import (
     TargetType,
 )
 from qdesignoptimizer.logging import dict_log_format, log
-from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
+from qdesignoptimizer.sim_capacitance_matrix import (
+    CapacitanceMatrixStudy,
+    ModeDecayIntoChargeLineStudy,
+)
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
@@ -69,7 +71,6 @@ class DesignAnalysis:
         self.all_design_vars = [target.design_var for target in opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
-        
 
         self.is_system_optimized_params_initialized = False
         if state.system_optimized_params is not None:
@@ -87,14 +88,12 @@ class DesignAnalysis:
 
             sys_opt_param = fill_leaves_with_none(deepcopy(state.system_target_params))
         self.system_optimized_params = sys_opt_param
-        
 
         self.save_path = save_path
         self.update_parameters = update_parameters
         self.plot_settings = plot_settings
         self.plot_branches_separately = plot_branches_separately
         self.meshing_map = meshing_map
-        
 
         self.optimization_results = []
 
@@ -141,7 +140,9 @@ class DesignAnalysis:
                 ), f"Design variable {target.design_var} not found in design variables."
 
                 if target.system_target_param == dc.T1_DECAY:
-                    assert len(self.mini_study.capacitance_matrix_studies)!=0, "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
+                    assert (
+                        len(self.mini_study.capacitance_matrix_studies) != 0
+                    ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
 
                 if target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
                     capacitance_1 = target.involved_modes[0]
@@ -172,8 +173,12 @@ class DesignAnalysis:
                         + tip
                     )
                 elif target.system_target_param == dc.NONLINEARITY:
-                    assert len(target.involved_modes) == 2, f"Target for {target.system_target_param} expects 2 modes."
-                    assert len(self.mini_study.mode_freqs) >= len(target.involved_modes), f"Target for {target.system_target_param} expects \
+                    assert (
+                        len(target.involved_modes) == 2
+                    ), f"Target for {target.system_target_param} expects 2 modes."
+                    assert len(self.mini_study.mode_freqs) >= len(
+                        target.involved_modes
+                    ), f"Target for {target.system_target_param} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                     for branch, mode_name in target.involved_modes:
                         assert (
@@ -184,7 +189,6 @@ class DesignAnalysis:
                 else:
                     assert len(self.mini_study.mode_freqs) >= len(
                         target.involved_modes
-
                     ), f"Target for {target.system_target_param} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                     for branch, mode_name in target.involved_modes:
@@ -221,15 +225,19 @@ class DesignAnalysis:
         """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names". This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class."""
         finer_mesh_names = []
         for component in self.mini_study.component_names:
-            if hasattr(self.design.components[component],"get_meshing_names"):
-                finer_mesh_names+=(self.design.components[component].get_meshing_names())
+            if hasattr(self.design.components[component], "get_meshing_names"):
+                finer_mesh_names += self.design.components[
+                    component
+                ].get_meshing_names()
             elif self.meshing_map != None:
                 for map in self.meshing_map:
-                    if isinstance(self.design.components[component],map.component_class):
-                        finer_mesh_names+=(map.mesh_names(component))
+                    if isinstance(
+                        self.design.components[component], map.component_class
+                    ):
+                        finer_mesh_names += map.mesh_names(component)
             else:
-                log.info("No fine mesh map was found for "+component)
-                
+                log.info("No fine mesh map was found for " + component)
+
         return finer_mesh_names
 
     def get_port_gap_names(self):
@@ -246,9 +254,9 @@ class DesignAnalysis:
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
         )
         # set hfss wire bonds properties
-        self.renderer.options['wb_size'] = self.mini_study.hfss_wire_bond_size
-        self.renderer.options['wb_threshold'] = self.mini_study.hfss_wire_bond_threshold
-        self.renderer.options['wb_offset'] = self.mini_study.hfss_wire_bond_offset
+        self.renderer.options["wb_size"] = self.mini_study.hfss_wire_bond_size
+        self.renderer.options["wb_threshold"] = self.mini_study.hfss_wire_bond_threshold
+        self.renderer.options["wb_offset"] = self.mini_study.hfss_wire_bond_offset
 
         # render design in HFSS
         self.renderer.render_design(
@@ -259,18 +267,40 @@ class DesignAnalysis:
 
         # set custom air bridges
         for component_name in self.mini_study.component_names:
-            if hasattr(self.design.components[component_name], 'get_air_bridge_coordinates'):
-                for coord in self.design.components[component_name].get_air_bridge_coordinates():
-                    hfss.modeler.create_bondwire(coord[0], coord[1],h1=0.005, h2=0.000, alpha=90, beta=45,diameter=0.005,
-                                                 bond_type=0, name="mybox1", matname="aluminum")
-                    
+            if hasattr(
+                self.design.components[component_name], "get_air_bridge_coordinates"
+            ):
+                for coord in self.design.components[
+                    component_name
+                ].get_air_bridge_coordinates():
+                    hfss.modeler.create_bondwire(
+                        coord[0],
+                        coord[1],
+                        h1=0.005,
+                        h2=0.000,
+                        alpha=90,
+                        beta=45,
+                        diameter=0.005,
+                        bond_type=0,
+                        name="mybox1",
+                        matname="aluminum",
+                    )
+
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
-        restrict_mesh = fine_mesh_names != None and self.mini_study.build_fine_mesh and len(self.mini_study.port_list) > 0
+        restrict_mesh = (
+            fine_mesh_names != None
+            and self.mini_study.build_fine_mesh
+            and len(self.mini_study.port_list) > 0
+        )
 
         if restrict_mesh:
             self.renderer.modeler.mesh_length(
-                'fine_mesh', fine_mesh_names, MaxLength=self.mini_study.max_mesh_length_lines_to_ports, RefineInside=True)
+                "fine_mesh",
+                fine_mesh_names,
+                MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
+                RefineInside=True,
+            )
 
         # run eigenmode analysis
         self.setup.analyze()
@@ -402,7 +432,9 @@ class DesignAnalysis:
             return  # should be updated by EPR analysis instaed
         for branch, mode in target.involved_modes:
             print("Test _update_optimized_params_for_eigenmode_target ", branch, mode)
-            self.system_optimized_params[branch][dc.mode_type(mode,target_type = target.system_target_param)] = optimized_value
+            self.system_optimized_params[branch][
+                dc.mode_type(mode, target_type=target.system_target_param)
+            ] = optimized_value
 
     def _update_optimized_params(self, eig_result: pd.DataFrame):
 
@@ -413,7 +445,10 @@ class DesignAnalysis:
             decay = eig_result["Kappas (Hz)"][idx]
 
             self.system_optimized_params[branch][freq_name] = freq
-            if dc.mode_freq_to_mode_kappa(freq_name) in self.system_target_params[branch]: 
+            if (
+                dc.mode_freq_to_mode_kappa(freq_name)
+                in self.system_target_params[branch]
+            ):
                 self.system_optimized_params[branch][
                     dc.mode_freq_to_mode_kappa(freq_name)
                 ] = decay
@@ -485,11 +520,13 @@ class DesignAnalysis:
                     log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
-        # if dc.QUBIT_CHARGE_LINE_LIMITED_T1 in self.system_target_params and isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
-        log.info("Computing T1 limit from decay in charge line.")
-        self.system_optimized_params[capacitance_study.branch_name][
-            dc.mode_t1_decay(dc.mode_freq_to_mode(capacitance_study.freq_name))
-        ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
+        if dc.QUBIT_CHARGE_LINE_LIMITED_T1 in self.system_target_params and isinstance(
+            capacitance_study, ModeDecayIntoChargeLineStudy
+        ):
+            log.info("Computing T1 limit from decay in charge line.")
+            self.system_optimized_params[capacitance_study.branch_name][
+                dc.mode_t1_decay(dc.mode_freq_to_mode(capacitance_study.freq_name))
+            ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod
     def _apply_adjustment_rate(new_val, old_val, rate):
@@ -506,13 +543,13 @@ class DesignAnalysis:
         self,
         design_value_old: str,
         design_value_new: str,
-        design_var_constraint: object,
+        design_var_constraint: dict[str, str],
     ):
         """Constrain design value.
 
         Args:
             design_value (str): design value to be constrained
-            design_var_constraint (object): design variable constraint, example {'min': '10 um', 'max': '100 um'}
+            design_var_constraint (dict[str, str]): design variable constraint, example {'min': '10 um', 'max': '100 um'}
         """
         d_val_o, d_unit = get_value_and_unit(design_value_old)
         d_val_n, d_unit = get_value_and_unit(design_value_new)
@@ -544,7 +581,7 @@ class DesignAnalysis:
             branch1, param1 = mode1
             branch2, param2 = mode2
             current_value = system_params[dc.CROSS_KERR][
-                dc.cross_kerr([branch1, branch2], [param1,param2])
+                dc.cross_kerr([branch1, branch2], [param1, param2])
             ]
         elif target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
             [capacitance_name_1, capacitance_name_2] = target.involved_modes
@@ -613,7 +650,7 @@ class DesignAnalysis:
                 branch1, param1 = mode1
                 branch2, param2 = mode2
                 system_params_targets_met[dc.CROSS_KERR][
-                    dc.cross_kerr([branch1,branch2],[ param1, param2])
+                    dc.cross_kerr([branch1, branch2], [param1, param2])
                 ] = self.get_quantity_value(target, self.system_target_params)
             elif target.system_target_param == dc.CAPACITANCE_MATRIX_ELEMENTS:
                 [capacitance_name_1, capacitance_name_2] = target.involved_modes
@@ -622,9 +659,9 @@ class DesignAnalysis:
                 ] = self.get_quantity_value(target, self.system_target_params)
             else:
                 [(branch, mode)] = target.involved_modes
-                system_params_targets_met[branch][dc.mode_type(mode,target.system_target_param)] = self.get_quantity_value(
-                    target, self.system_target_params
-                )
+                system_params_targets_met[branch][
+                    dc.mode_type(mode, target.system_target_param)
+                ] = self.get_quantity_value(target, self.system_target_params)
         return system_params_targets_met
 
     def _calculate_target_design_var(self) -> dict:
@@ -709,22 +746,19 @@ class DesignAnalysis:
             self.is_system_optimized_params_initialized = True
         self.update_var(updated_design_vars_input, system_optimized_params)
 
-       
         updated_design_vars = self._calculate_target_design_var()
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
-        
 
         iteration_result = {}
         if self.mini_study is not None and len(self.mini_study.mode_freqs) > 0:
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
             iteration_result["eig_results"] = deepcopy(self.eig_result)
-            
 
             # EPR analysis for nonlinearities
             self.cross_kerrs = self.run_epr()
-            
+
             iteration_result["cross_kerrs"] = deepcopy(self.cross_kerrs)
 
         if self.mini_study.capacitance_matrix_studies is not None:

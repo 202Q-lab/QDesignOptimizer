@@ -2,7 +2,6 @@ from collections import defaultdict
 from typing import Callable, List, Optional, Union
 
 import numpy as np
-import pandas as pd
 from qiskit_metal.analyses.quantization import LOManalysis
 from qiskit_metal.designs.design_base import QDesign
 
@@ -66,11 +65,11 @@ class CapacitanceMatrixStudy:
         self.percent_error = percent_error
         self.nbr_passes = nbr_passes
 
-        self.capacitance_matrix_fF: pd.DataFrame = (
-            None  # (fF) gets populated by simulate_capacitance_matrix
+        self.capacitance_matrix_fF = (
+            None  # (fF) gets populated by simulate_capacitance_matrix (pd.DataFrame)
         )
-        self.mode_capacitances_matrix_fF: dict = (
-            None  # (fF) gets populated by simulate_capacitance_matrix
+        self.mode_capacitances_matrix_fF = (
+            None  # (fF) gets populated by simulate_capacitance_matrix (dict)
         )
         # Example: {('branch_name', 'freq_name'): 100}
 

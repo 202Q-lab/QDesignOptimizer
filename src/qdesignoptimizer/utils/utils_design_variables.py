@@ -4,7 +4,7 @@ from qiskit_metal.designs.design_planar import DesignPlanar
 
 
 def add_design_variables_to_design(
-    design: DesignPlanar, design_variables: dict[str:str]
+    design: DesignPlanar, design_variables: dict[str, str]
 ):
     """Add design variables to a Qiskit Metal design so that the variables can be used in render.
 
@@ -27,13 +27,11 @@ def design_var_cj(component_name: str):
     return f"design_var_cj_{component_name}"
 
 
-def junction_setup(
-    component_name: Union[str, int], type: Literal[None, "linear"] = None
-):
+def junction_setup(component_name: str, type: Literal[None, "linear"] = None):
     """Generate jj setup for
 
     Args:
-        component_name (str): component name
+        component_name (str): component name, must start with 'NAME_'
         type (str): type of JJ, e.g. 'linear' for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.
 
     Returns:
@@ -58,7 +56,7 @@ def design_var_res_length(branch: int):
     return f"design_var_res_length_{branch}"
 
 
-def design_var_res_coupl_length(branch: int):
+def design_var_ind_coupl_length(branch: int):
     return f"design_var_ind_coupl_length_{branch}"
 
 
@@ -134,6 +132,7 @@ def name_tee_to_tee(
 ):
     return f"NAME_TEE{tee_branch_number1}_TO_TEE{tee_branch_number2}"
 
+
 # Extra design variables
 def design_var_cl_pos_x(branch: int):
     return f"design_var_cl_pos_x{branch}"
@@ -146,18 +145,3 @@ def design_var_cl_pos_y(branch: int):
 # Extra component names
 def name_lp_chargeline(branch_number: int):
     return f"NAME_LP_chargeline{branch_number}"
-
-def design_var_res_length(branch: int):
-    return f"design_var_res_length_{branch}"
-
-
-def design_var_res_coupl_length(branch: int):
-    return f"design_var_res_coupl_length_{branch}"
-
-
-def design_var_qb_pad_width(branch: int):
-    return f"design_var_qb_pad_width_{branch}"
-
-
-def design_var_res_qb_coupl_length(branch: int):
-    return f"design_var_res_qb_coupl_length_{branch}"
