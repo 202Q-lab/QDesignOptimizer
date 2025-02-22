@@ -17,7 +17,7 @@ Mode = str
 
 Examples:
     qubit
-    qubit_1
+    QUBIT_1
     1_qubit_3
     gr1_qubit_3
 """
@@ -74,8 +74,8 @@ def param(mode: Mode, param_type: Literal["freq", "kappa"]) -> Parameter:
     """Construct a parameter name from the mode and parameter type.
 
     Examples:
-        param("qubit_1", "freq") -> "qubit_1_freq"
-        param("qubit_1", "kappa") -> "qubit_1_kappa"
+        param("QUBIT_1", "freq") -> "qubit_1_freq"
+        param("QUBIT_1", "kappa") -> "qubit_1_kappa"
     """
     assert param_type in ["freq", "kappa"], "param_type must be 'freq' or 'kappa'"
     return f"{mode}_{param_type}"
@@ -87,8 +87,8 @@ def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:
     If mode_1 == mode_2, the parameter name is the anharmonicity/self-Kerr of the mode.
 
     Examples:
-        param_nonlin("qubit_1", "qubit_2") -> "qubit_1_to_qubit_2_nonlin"
-        param_nonlin("qubit_2", "qubit_1") -> "qubit_1_to_qubit_2_nonlin"
+        param_nonlin("QUBIT_1", "QUBIT_2") -> "qubit_1_to_qubit_2_nonlin"
+        param_nonlin("QUBIT_2", "QUBIT_1") -> "qubit_1_to_qubit_2_nonlin"
     """
     modes = [mode_1, mode_2]
     modes.sort()

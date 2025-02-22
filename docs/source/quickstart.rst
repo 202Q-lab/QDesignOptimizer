@@ -106,13 +106,13 @@ A minimal example for the resonator length can look like this:
     from qdesignoptimizer.design_analysis_types import OptTarget
     import design_constants as dc
     import design_variable_names as u
-
+    # TODO AXEL update
     def get_opt_target_res_freq_via_length(branch):
         return OptTarget(
             system_target_param=(str(branch), dc.RES_FREQ),
             involved_mode_freqs=[(str(branch), dc.RES_FREQ)],
             design_var=u.design_var_res_length(branch),
-            design_var_constraint={"larger_than": "1mm", "smaller_than": "12mm"},
+            design_var_constraint={"larger_than": "500um", "smaller_than": "12000um"},
             prop_to=lambda p, v: 1 / v[u.design_var_res_length(branch)],
             independent_target=True,
         )

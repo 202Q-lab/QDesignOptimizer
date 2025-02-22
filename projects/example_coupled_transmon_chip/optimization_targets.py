@@ -1,154 +1,66 @@
 from typing import List
 
-# import qdesignoptimizer.utils.constants as dc
-import design_constants as dc
-import design_variable_names as u
-import numpy as np
+import names as n
 
 from qdesignoptimizer.design_analysis_types import OptTarget
-from qdesignoptimizer.utils.utils_design_variable_names import design_var_lj
-from qdesignoptimizer.utils.utils_parameter_names import Mode
+from qdesignoptimizer.utils.constants import FREQ
+from qdesignoptimizer.utils.optimization_targets import (
+    get_opt_targets_qb_res_transmission,
+)
 
 
-def get_opt_target_qubit_freq_via_lj(
-    qubit: Mode,
-) -> OptTarget:
-
-    return OptTarget(
-        system_target_param=dc.FREQ,
-        involved_modes=[qubit],
-        design_var=u.design_var_lj(qubit),
-        design_var_constraint={"larger_than": "0.1nH", "smaller_than": "400nH"},
-        prop_to=lambda p, v: 1
-        / np.sqrt(v[design_var_lj(qubit)] * v[u.design_var_width(qubit)]),
-        independent_target=False,
-    )
-
-
-def get_opt_target_qubit_anharmonicity_via_pad_width(
-    qubit: Mode,
-) -> OptTarget:
-
-    return OptTarget(
-        system_target_param=dc.NONLINEARITY,
-        involved_modes=[qubit, qubit],
-        design_var=u.design_var_width(qubit),
-        design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
-        prop_to=lambda p, v: 1 / v[u.design_var_width(qubit)],
-        independent_target=True,
-    )
-
-
-def get_opt_target_res_freq_via_length(
-    resonator: Mode,
-) -> OptTarget:
-
-    return OptTarget(
-        system_target_param=dc.FREQ,
-        involved_modes=[resonator],
-        design_var=u.design_var_length(resonator),
-        design_var_constraint={"larger_than": "1mm", "smaller_than": "12mm"},
-        prop_to=lambda p, v: 1 / v[u.design_var_length(resonator)],
-        independent_target=True,
-    )
-
-
-def get_opt_target_res_kappa_via_coupl_length(
-    resonator: Mode, couples_to: str
-) -> OptTarget:
-
-    return OptTarget(
-        system_target_param=dc.KAPPA,
-        involved_modes=[resonator],
-        design_var=u.design_var_coupl_length(resonator, couples_to),
-        design_var_constraint={"larger_than": "200um", "smaller_than": "1000um"},
-        prop_to=lambda p, v: v[u.design_var_coupl_length(resonator, couples_to)] ** 2,
-        independent_target=True,
-    )
-
-
-# def get_opt_target_res_qub_chi_via_pad_width(
-#         branch: int,
-#         ) -> OptTarget:
-
-#     return OptTarget(
-#         system_target_param=(str(branch), dc.RES_QUBIT_CHI),
-#         involved_mode_freqs= [(str(branch), dc.RES_FREQ), (str(branch), dc.QUBIT_FREQ)],
-#         design_var= u.design_var_qb_pad_width(branch),
-#         design_var_constraint = {'larger_than': '5um', 'smaller_than': '1000um'} ,
-#         prop_to=lambda p, v: np.abs(
-#         v[u.design_var_qb_pad_width(branch)]
-#         * p[f'{branch}'][dc.QUBIT_ANHARMONICITY]
-#         / ( p[f'{branch}'][dc.QUBIT_FREQ]
-#            - p[f'{branch}'][dc.RES_FREQ]
-#            - p[f'{branch}'][dc.QUBIT_ANHARMONICITY]
-#            )
-#         ),
-#         independent_target=False,
-#     )
-
-
-def get_opt_target_res_qub_chi_via_coupl_length(
-    resonator: Mode, qubit: Mode
-) -> OptTarget:
-
-    return OptTarget(
-        system_target_param=dc.NONLINEARITY,
-        involved_modes=[resonator, qubit],
-        # involved_modes=[(str(branch), dc.RESONATOR), (str(branch), dc.QUBIT)],
-        design_var=u.design_var_coupl_length(resonator, qubit),
-        design_var_constraint={"larger_than": "5um", "smaller_than": "350um"},
-        prop_to=lambda p, v: v[u.design_var_coupl_length(resonator, qubit)],
-        independent_target=True,
-    )
-
-
-def get_opt_targets_qb_res(
-    nbr: int,
-    qb_freq=True,
-    qb_anharmonicity=True,
-    res_freq=True,
-    res_kappa=True,
-    res_qub_chi=True,
+def get_opt_targets_2qubits_resonator_coupler(
+    nbrs: List[int],
+    opt_target_qubit_freq=False,
+    opt_target_qubit_anharm=False,
+    opt_target_resonator_freq=False,
+    opt_target_resonator_kappa=False,
+    opt_target_resonator_qubit_chi=False,
+    opt_target_coupler_freq=False,
 ) -> List[OptTarget]:
-    resonator = dc.RESONATOR_1 if nbr == 1 else dc.RESONATOR_2
-    qubit = dc.QUBIT_1 if nbr == 1 else dc.QUBIT_2
+    """Get the optimization targets for a 2 qubit-resonator system with a coupler.
+
+    Args:
+        nbrs (List[int]): The qubit-resonator pair numbers.
+        opt_target_qubit_freq (bool, optional): Whether to add an optimization target for the qubit frequency.
+        opt_target_qubit_anharm (bool, optional): Whether to add an optimization target for the qubit anharmonicity.
+        opt_target_resonator_freq (bool, optional): Whether to add an optimization target for the resonator frequency.
+        opt_target_resonator_kappa (bool, optional): Whether to add an optimization target for the resonator kappa.
+        opt_target_resonator_qubit_chi (bool, optional): Whether to add an optimization target for the resonator-qubit chi.
+        opt_target_coupler_freq (bool, optional): Whether to add an optimization target for the coupler frequency.
+    """
     opt_targets = []
-    if qb_freq:
-        opt_targets.append(get_opt_target_qubit_freq_via_lj(qubit))
-    if qb_anharmonicity:
-        opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(qubit))
-    if res_freq:
-        opt_targets.append(get_opt_target_res_freq_via_length(resonator))
-    if res_kappa:
-        opt_targets.append(get_opt_target_res_kappa_via_coupl_length(resonator, "tee"))
-    if res_qub_chi:
-        opt_targets.append(
-            get_opt_target_res_qub_chi_via_coupl_length(resonator, qubit)
+
+    # Example of how to add an optimization target.
+    # IMPORTANT: the design variable name used MUST be specified in the design_variables.json and
+    # should be used in the design.py to adjust a component's geometry.
+    if opt_target_coupler_freq:
+        opt_target_coupler = OptTarget(
+            system_target_param=FREQ,
+            involved_modes=[n.COUPLER_12],
+            design_var=n.design_var_length(n.COUPLER_12),
+            design_var_constraint={"larger_than": "50um", "smaller_than": "10000um"},
+            prop_to=lambda p, v: 1 / v[n.design_var_length(n.COUPLER_12)],
+            independent_target=True,
         )
-    return opt_targets
+        opt_targets.append(opt_target_coupler)
 
+    # Add OptTargets for each specified qubit-resonator pair using a convenience function.
+    for nbr in nbrs:
+        qubit = [n.QUBIT_1, n.QUBIT_2][nbr - 1]
+        resonator = [n.RESONATOR_1, n.RESONATOR_2][nbr - 1]
 
-def get_opt_targets_2qb_resonator_coupler(
-    branches: list,
-    qb_freq=True,
-    qb_anharmonicity=True,
-    res_freq=True,
-    res_kappa=True,
-    res_qub_chi=True,
-) -> List[OptTarget]:
-    opt_targets = []
-    for branch in branches:
-        if qb_freq:
-            opt_targets.append(get_opt_target_qubit_freq_via_lj(branch))
-        if qb_anharmonicity:
-            opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(branch))
-        if res_freq:
-            opt_targets.append(get_opt_target_res_freq_via_length(branch))
-        if res_kappa:
-            opt_targets.append(
-                get_opt_target_res_kappa_via_coupl_length(resonator, "tee")
+        opt_targets.extend(
+            get_opt_targets_qb_res_transmission(
+                qubit,
+                resonator,
+                resonator_coupled_identifier="tee",
+                opt_target_qubit_freq=opt_target_qubit_freq,
+                opt_target_qubit_anharm=opt_target_qubit_anharm,
+                opt_target_resonator_freq=opt_target_resonator_freq,
+                opt_target_resonator_kappa=opt_target_resonator_kappa,
+                opt_target_resonator_qubit_chi=opt_target_resonator_qubit_chi,
             )
-        if res_qub_chi:
-            opt_targets.append(get_opt_target_res_qub_chi_via_coupl_length(branch))
+        )
+
     return opt_targets

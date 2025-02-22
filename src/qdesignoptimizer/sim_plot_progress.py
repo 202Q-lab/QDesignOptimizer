@@ -5,9 +5,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import qdesignoptimizer.utils.constants as c
+from qdesignoptimizer.utils.names_design_variables import name_mode
+from qdesignoptimizer.utils.names_parameters import param
 from qdesignoptimizer.utils.utils import get_value_and_unit
-from qdesignoptimizer.utils.utils_design_variable_names import name_mode
-from qdesignoptimizer.utils.utils_parameter_names import param
 
 DEFAULT_PLT_SET = {
     #     dc.RES_FREQ: {"label": "Res freq (Hz)"},

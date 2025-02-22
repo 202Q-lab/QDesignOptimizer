@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Literal, Union
 from qiskit_metal.designs.design_base import QDesign
 
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
-from qdesignoptimizer.utils.utils_parameter_names import Mode
+from qdesignoptimizer.utils.names_parameters import Mode
 
 
 class TargetType(Enum):
@@ -100,7 +100,7 @@ class MiniStudy:
         open_pins (list): pins to be left open, example: [(comp_name, 'pin_name')],
         modes (list): list of modes to simulate in increasing frequency order, simulated nbr of modes = len(modes)
                            If the mode_freqs is empty, eigenmode and EPR analysis will be skipped.
-                           Example: [qubit_1, resonator_1]
+                           Example: [qubit_1, g2_resonator_1]
         nbr_passes (int): nbr of passes in eigenmode simulation
         delta_f (float): Convergence freq max delta percent diff
         jj_setup (object): junction setup, example: {'Lj_variable': 'Lj', 'rect': 'JJ_rect_Lj_Q1_rect_jj', 'line': 'JJ_Lj_Q1_rect_jj', 'Cj_variable': 'Cj'}

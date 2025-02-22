@@ -1,5 +1,5 @@
 import qdesignoptimizer.utils.constants as dc
-from qdesignoptimizer.utils.sim_plot_progress import OptPltSet
+from qdesignoptimizer.sim_plot_progress import OptPltSet
 
 PLOT_SETTINGS = {
     "RES": [

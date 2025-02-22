@@ -1,19 +1,20 @@
-import design_constants as dc
+import names as n
 
-from qdesignoptimizer.utils.sim_plot_progress import OptPltSet
-from qdesignoptimizer.utils.utils_parameter_names import param, param_nonlin
+import qdesignoptimizer.utils.constants as c
+from qdesignoptimizer.sim_plot_progress import OptPltSet
+from qdesignoptimizer.utils.names_parameters import param, param_nonlin
 
 PLOT_SETTINGS = {
     "RES": [
-        OptPltSet(dc.ITERATION, param(dc.RESONATOR_1, dc.FREQ)),
-        OptPltSet(dc.ITERATION, param(dc.RESONATOR_1, dc.KAPPA)),
-        OptPltSet(dc.ITERATION, param_nonlin(dc.RESONATOR_1, dc.RESONATOR_1)),
+        OptPltSet(c.ITERATION, param(n.RESONATOR_1, c.FREQ)),
+        OptPltSet(c.ITERATION, param(n.RESONATOR_1, c.KAPPA)),
+        OptPltSet(c.ITERATION, param_nonlin(n.RESONATOR_1, n.RESONATOR_1)),
     ],
     "QUBIT": [
-        OptPltSet(dc.ITERATION, param(dc.QUBIT_1, dc.FREQ)),
-        OptPltSet(dc.ITERATION, param_nonlin(dc.QUBIT_1, dc.QUBIT_1)),
+        OptPltSet(c.ITERATION, param(n.QUBIT_1, c.FREQ)),
+        OptPltSet(c.ITERATION, param_nonlin(n.QUBIT_1, n.QUBIT_1)),
     ],
     "COUPLINGS": [
-        OptPltSet(dc.ITERATION, param_nonlin(dc.RESONATOR_1, dc.QUBIT_1)),
+        OptPltSet(c.ITERATION, param_nonlin(n.RESONATOR_1, n.QUBIT_1)),
     ],
 }

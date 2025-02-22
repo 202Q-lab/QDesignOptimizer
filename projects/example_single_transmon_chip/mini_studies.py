@@ -4,7 +4,7 @@ import parameter_targets as pt
 import qdesignoptimizer.utils.constants as dc
 from qdesignoptimizer.design_analysis_types import MiniStudy
 from qdesignoptimizer.sim_capacitance_matrix import ModeDecayIntoChargeLineStudy
-from qdesignoptimizer.utils.utils_design_variable_names import junction_setup
+from qdesignoptimizer.utils.names_design_variables import junction_setup
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 

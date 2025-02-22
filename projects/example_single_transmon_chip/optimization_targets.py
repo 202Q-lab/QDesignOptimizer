@@ -63,7 +63,7 @@ def get_opt_target_res_freq_via_length(
         system_target_param=dc.FREQ,
         involved_modes=[(str(branch), dc.RESONATOR)],
         design_var=u.design_var_res_length(branch),
-        design_var_constraint={"larger_than": "1mm", "smaller_than": "12mm"},
+        design_var_constraint={"larger_than": "500um", "smaller_than": "12000um"},
         prop_to=lambda p, v: 1 / v[u.design_var_res_length(branch)],
         independent_target=False,
     )
@@ -99,20 +99,20 @@ def get_opt_target_qubit_T1_limit_via_charge_posx(
 
 def get_opt_targets_qb_res(
     branch: int,
-    qb_freq=True,
-    qb_anharmonicity=True,
+    opt_target_qubit_freq=True,
+    opt_target_qubit_anharm=True,
     qb_res_chi=True,
     res_freq=True,
     res_kappa=True,
 ) -> List[OptTarget]:
     opt_targets = []
-    if qb_freq:
+    if opt_target_qubit_freq:
         opt_targets.append(get_opt_target_qubit_freq_via_lj(branch))
     if res_freq:
         opt_targets.append(get_opt_target_res_freq_via_length(branch))
     if res_kappa:
         opt_targets.append(get_opt_target_res_kappa_via_coupl_length(resonator, "tee"))
-    if qb_anharmonicity:
+    if opt_target_qubit_anharm:
         opt_targets.append(get_opt_target_qubit_anharmonicity_via_pad_width(branch))
     if qb_res_chi:
         opt_targets.append(get_opt_target_res_qub_chi_via_coupl_length(branch))

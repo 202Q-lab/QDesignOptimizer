@@ -20,9 +20,8 @@ from qdesignoptimizer.design_analysis_types import (
 )
 from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
-from qdesignoptimizer.utils.sim_plot_progress import plot_progress
-from qdesignoptimizer.utils.utils import get_value_and_unit
-from qdesignoptimizer.utils.utils_parameter_names import (
+from qdesignoptimizer.sim_plot_progress import plot_progress
+from qdesignoptimizer.utils.names_parameters import (
     NONLIN,
     get_modes_from_param_nonlin,
     mode,
@@ -30,6 +29,7 @@ from qdesignoptimizer.utils.utils_parameter_names import (
     param_capacitance,
     param_nonlin,
 )
+from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class DesignAnalysis:
@@ -59,6 +59,7 @@ class DesignAnalysis:
         plot_settings: dict = None,
         plot_branches_separately=False,
         meshing_map: List[MeshingMap] = None,
+        minimization_tol=1e-12,
     ):
         self.design_analysis_version = "1.0.1"
         """To be updated each time we update the DesignAnalysis class.
@@ -102,6 +103,7 @@ class DesignAnalysis:
         self.plot_settings = plot_settings
         self.plot_branches_separately = plot_branches_separately
         self.meshing_map = meshing_map
+        self.minimization_tol = minimization_tol
 
         self.optimization_results = []
 
@@ -420,7 +422,6 @@ class DesignAnalysis:
                 freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
             )
             # TODO AXEL what about KAPPA?
-        print(self.system_optimized_params)
         for _param, _ in self.system_optimized_params.items():
             if _param.endswith(NONLIN):
                 mode_1, mode_2 = get_modes_from_param_nonlin(_param)
@@ -559,7 +560,9 @@ class DesignAnalysis:
             for name in ordered_design_var_names_to_minimize
         ]
 
-        scipy.optimize.minimize(cost_function, init_design_var)
+        scipy.optimize.minimize(
+            cost_function, init_design_var, tol=self.minimization_tol
+        )
 
     def get_system_params_targets_met(self):
         system_params_targets_met = deepcopy(self.system_optimized_params)
@@ -575,7 +578,7 @@ class DesignAnalysis:
                     param_capacitance(capacitance_name_1, capacitance_name_2)
                 ] = self.get_parameter_value(target, self.system_target_params)
             else:
-                mode_name = target.involved_modes
+                mode_name = target.involved_modes[0]
                 system_params_targets_met[
                     param(mode_name, target.system_target_param)
                 ] = self.get_parameter_value(target, self.system_target_params)
@@ -644,7 +647,7 @@ class DesignAnalysis:
                 constrained_val_and_unit
             )
 
-        # TODO document that the user must make sure that if they use e.g. sums or differences of design variables, they must make sure they are the same dimensions
+        # TODO AXEL document that the user must make sure that if they use e.g. sums or differences of design variables, they must make sure they are the same dimensions
         return design_vars_updated_constrained_str
 
     def optimize_target(

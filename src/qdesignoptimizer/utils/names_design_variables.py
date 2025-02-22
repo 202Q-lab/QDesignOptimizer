@@ -2,7 +2,8 @@ from typing import Literal, Union
 
 from qiskit_metal.designs.design_planar import DesignPlanar
 
-from qdesignoptimizer.utils.utils_parameter_names import Mode
+from qdesignoptimizer.utils.names_parameters import Mode
+from qdesignoptimizer.utils.names_qiskit_components import name_mode
 
 
 def add_design_variables_to_design(
@@ -32,7 +33,8 @@ def design_var_gap(identifier: str):
 
 
 def design_var_coupl_length(identifier_1: str, identifier_2: str):
-    return f"design_var_coupl_length_{identifier_1}_{identifier_2}"
+    identifier_first, identifier_second = sorted([identifier_1, identifier_2])
+    return f"design_var_coupl_length_{identifier_first}_{identifier_second}"
 
 
 def design_var_lj(identifier: str):
@@ -73,48 +75,3 @@ def junction_setup(mode: Mode, type: Literal[None, "linear"] = None):
     if type is not None:
         setup[jj_name]["type"] = type
     return setup
-
-
-# Component names
-
-
-def name_(identifier: Union[str, int]):
-    return f"name_{identifier}"
-
-
-def name_mode(identifier: Mode):
-    return f"name_{identifier}"
-
-
-def name_mode_to_mode(identifier_1: Mode, identifier_2: Mode):
-    return f"name_{identifier_1}_to_{identifier_2}"
-
-
-def name_tee(identifier: Union[str, int]):
-    return f"name_tee{identifier}"
-
-
-def name_lp(identifier: Union[str, int]):
-    return f"name_lp{identifier}"
-
-
-def name_charge_line(identifier: Union[str, int]):
-    return f"name_charge_line{identifier}"
-
-
-def name_flux_line(identifier: Union[str, int]):
-    return f"name_flux_line_{identifier}"
-
-
-def name_lp_to_tee(lp_identifier: Union[str, int], tee_identifier: Union[str, int]):
-    return f"name_lp{lp_identifier}_to_tee{tee_identifier}"
-
-
-def name_tee_to_tee(tee_identifier1: Union[str, int], tee_identifier2: Union[str, int]):
-    return f"name_tee{tee_identifier1}_to_tee{tee_identifier2}"
-
-
-def name_lp_to_chargeline(
-    lp_identifier: Union[str, int], chargeline_identifier: Union[str, int]
-):
-    return f"name_lp{lp_identifier}_to_chargeline{chargeline_identifier}"
