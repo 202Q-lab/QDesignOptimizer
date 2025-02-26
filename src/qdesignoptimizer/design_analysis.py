@@ -42,7 +42,6 @@ class DesignAnalysis:
         save_path (str): path to save results
         update_design_variables (bool): update parameters
         plot_settings (dict): plot settings for progress plots
-        plot_branches_separately (bool): plot branches separately
         meshing_map (List[MeshingMap]): meshing map
 
     """
@@ -57,7 +56,6 @@ class DesignAnalysis:
         save_path: str = None,
         update_design_variables: bool = True,
         plot_settings: dict = None,
-        plot_branches_separately=False,
         meshing_map: List[MeshingMap] = None,
         minimization_tol=1e-12,
     ):
@@ -97,7 +95,6 @@ class DesignAnalysis:
         self.save_path = save_path
         self.update_design_variables = update_design_variables
         self.plot_settings = plot_settings
-        self.plot_branches_separately = plot_branches_separately
         self.meshing_map = meshing_map
         self.minimization_tol = minimization_tol
 
@@ -290,7 +287,7 @@ class DesignAnalysis:
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
-            fine_mesh_names != None
+            (not not fine_mesh_names)
             and self.mini_study.build_fine_mesh
             and len(self.mini_study.port_list) > 0
         )
@@ -418,13 +415,10 @@ class DesignAnalysis:
                 freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
             )
 
-        for _param, _ in self.system_optimized_params.items():
-            if _param.endswith(NONLIN):
-                mode_1, mode_2 = get_modes_from_param_nonlin(_param)
-                if mode_1 not in mode_idx or mode_2 not in mode_idx:
-                    continue
-                self.system_optimized_params[param_nonlin(mode_1, mode_2)] = (
-                    epr_result[mode_idx[mode_1]].iloc[mode_idx[mode_2]] * MHz
+        for mode_i in self.mini_study.modes:
+            for mode_j in self.mini_study.modes:
+                self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
+                    epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
                 )
 
     def _update_optimized_params_capacitance_simulation(
@@ -722,7 +716,6 @@ class DesignAnalysis:
                 self.optimization_results,
                 self.system_target_params,
                 self.plot_settings,
-                self.plot_branches_separately,
             )
 
     def overwrite_parameters(self):

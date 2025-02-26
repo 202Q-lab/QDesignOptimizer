@@ -259,7 +259,6 @@ A minimal example can look like this:
       save_path=CHIP_NAME + "_" + time.strftime("%Y%m%d-%H%M%S"),
       update_parameters = True,
       plot_settings=ps.PLOT_SETTINGS,
-      plot_branches_separately=False
       )
 
   nbr_runs = 10

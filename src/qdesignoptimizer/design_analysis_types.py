@@ -7,22 +7,6 @@ from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.utils.names_parameters import Mode
 
 
-class TargetType(Enum):
-    FREQUENCY = "FREQUENCY"
-    ANHARMONICITY = "ANHARMONICITY"
-    KAPPA = "KAPPA"
-    CHI = "CHI"
-
-    INVERSE_SQUARED = "INVERSE_SQUARED"
-    INVERSE_THREE_HALVES = "INVERSE_THREE_HALVES"
-    INVERSE = "INVERSE"
-    INVERSE_SQRT = "INVERSE_SQRT"
-    SQRT = "SQRT"
-    LINEAR = "LINEAR"
-    THREE_HALVES = "THREE_HALVES"
-    SQUARED = "SQUARED"
-
-
 class MeshingMap:
     """
     A class to map a component class to a function that generates mesh names.
@@ -135,7 +119,7 @@ class MiniStudy:
         hfss_wire_bond_size=3,
         hfss_wire_bond_offset="0um",
         hfss_wire_bond_threshold="300um",
-        build_fine_mesh=True,
+        build_fine_mesh=False,
         adjustment_rate: float = 1.0,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
         capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],

@@ -10,7 +10,7 @@ PARAM_TARGETS = {
     param(n.QUBIT_2, n.FREQ): 5e9,
     param(n.RESONATOR_2, n.FREQ): 7e9,
     param(n.RESONATOR_2, n.KAPPA): 1e6,
-    param(n.COUPLER_12, n.FREQ): 7.5e9,
+    param(n.COUPLER_12, n.FREQ): 9e9,
     param_nonlin(n.QUBIT_1, n.QUBIT_1): 200e6,  # Qubit anharmonicity
     param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonaotr chi
     param_nonlin(n.QUBIT_2, n.QUBIT_2): 200e6,  # Qubit anharmonicity

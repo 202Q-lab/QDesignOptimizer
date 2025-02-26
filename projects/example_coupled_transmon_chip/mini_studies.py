@@ -1,5 +1,5 @@
-import names as n
 import numpy as np
+import names as n
 import parameter_targets as pt
 
 from qdesignoptimizer.design_analysis_types import MiniStudy
@@ -29,7 +29,7 @@ def get_mini_study_qb_res(group: int):
         jj_setup={**junction_setup(qubit)},
         design_name="get_mini_study_qb_res",
         adjustment_rate=1,
-        build_fine_mesh=False,
+        build_fine_mesh=True,
         **CONVERGENCE
     )
 
@@ -57,7 +57,7 @@ def get_mini_study_2qb_resonator_coupler():
 
     all_mode_freq = []
     for i in range(len(all_modes)):
-        all_mode_freq.append(pt.PARAM_TARGETS[all_modes[i][0]][all_modes[i][1]])
+        all_mode_freq.append(pt.PARAM_TARGETS[param(all_modes[i], FREQ)])
     all_modes_sorted = [all_modes[i] for i in np.argsort(all_mode_freq)]
 
     return MiniStudy(
@@ -68,6 +68,7 @@ def get_mini_study_2qb_resonator_coupler():
         jj_setup=all_jjs,
         design_name="get_mini_study_2qb_resonator_coupler",
         adjustment_rate=1,
+        build_fine_mesh=False,
         **CONVERGENCE
     )
 

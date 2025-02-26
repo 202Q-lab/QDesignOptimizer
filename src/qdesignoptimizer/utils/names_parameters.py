@@ -80,7 +80,7 @@ def get_group_from_mode(mode: Mode) -> int | None:
         return None
 
 
-def param(mode: Mode, param_type: Literal["freq", "kappa"]) -> Parameter:
+def param(mode: Mode, param_type: Literal["freq", "kappa", "purcell_limit_T1"]) -> Parameter:
     """Construct a parameter name from the mode and parameter type.
 
     Examples:

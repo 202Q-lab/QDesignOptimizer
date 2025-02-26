@@ -9,21 +9,6 @@ from qdesignoptimizer.utils.names_design_variables import name_mode
 from qdesignoptimizer.utils.names_parameters import param, ITERATION
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
-DEFAULT_PLT_SET = {
-    #     dc.RES_FREQ: {"label": "Res freq (Hz)"},
-    #     dc.RES_KERR: {"label": "Res Kerr (Hz)"},
-    #     dc.RES_KAPPA: {"label": "Res kappa (Hz)"},
-    #     dc.QUBIT_FREQ: {"label": "Qubit freq (Hz)"},
-    #     dc.QUBIT_ANHARMONICITY: {"label": "Qubit anharm (Hz)"},
-    #     dc.RES_QUBIT_CHI: {"label": "Res-qubit chi (Hz)"},
-    #     dc.CAVITY_FREQ: {"label": "Cavity freq (Hz)"},
-    #     dc.CAVITY_QUBIT_CHI: {"label": "Cavity-qubit chi (Hz)"},
-    #     dc.CAVITY_RES_CROSS_KERR: {"label": "Cavity-res cross-Kerr (Hz)"},
-    #     dc.ITERATION: {"label": "Iteration"},
-    #     # Any other will default to the key name
-}
-
-
 class OptPltSet:
     def __init__(self, x: str, y: Union[str, List[str]], x_label: str = None, y_label: str = None):
         """Set the plot settings for a progress plots of the optimization framework
@@ -42,8 +27,6 @@ class OptPltSet:
     def _get_label(self, variable: str, x_label: str):
         if x_label is not None:
             return x_label
-        elif variable in DEFAULT_PLT_SET:
-            return DEFAULT_PLT_SET[variable]["label"]
         else:
             return variable
 
