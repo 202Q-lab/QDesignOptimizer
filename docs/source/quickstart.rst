@@ -60,10 +60,7 @@ As a minimal example we can look at the definition of a ``RouteMeander`` resonat
 
     RouteMeander(design, u.name_res(branch), options=resonator_options)
 
-
-.. caution:: The correct use of the design variables is important. E.g. ``u.design_var_res_length`` is varied in the optimization, while ``dv[u.design_var_res_length]`` only loads the parameter once the design is created for the fist time and remains fixed from there on.  TODO AXEL I would completely delete this, I think it is bad practice. I also removed the need to load the file for the targets.
-
-The user can proceed in a similar manner with all other components. We suggest to wrap all components of one branch into a function of the form: TODO AXEL I would remove this, for a single branch you would like not do this?
+The user can proceed in a similar manner with all other components. For bigger projects involving multiple sets or tiles of identical components types, we suggest to wrap all components of one set into a group as a function of the form:
 
 .. code-block:: python
 
@@ -106,16 +103,19 @@ A minimal example for the resonator length can look like this:
     from qdesignoptimizer.design_analysis_types import OptTarget
     import design_constants as dc
     import design_variable_names as u
-    # TODO AXEL update
-    def get_opt_target_res_freq_via_length(branch):
-        return OptTarget(
-            system_target_param=(str(branch), dc.RES_FREQ),
-            involved_mode_freqs=[(str(branch), dc.RES_FREQ)],
-            design_var=u.design_var_res_length(branch),
-            design_var_constraint={"larger_than": "500um", "smaller_than": "12000um"},
-            prop_to=lambda p, v: 1 / v[u.design_var_res_length(branch)],
-            independent_target=True,
-        )
+    def get_opt_target_res_freq_via_length(
+    resonator: Mode,
+    design_var_res_length: Callable = n.design_var_length,
+        ) -> OptTarget:
+
+    return OptTarget(
+        system_target_param=c.FREQ,
+        involved_modes=[resonator],
+        design_var=design_var_res_length(resonator),
+        design_var_constraint={"larger_than": "500um", "smaller_than": "15000um"},
+        prop_to=lambda p, v: 1 / v[design_var_res_length(resonator)],
+        independent_target=True,
+    )
 
 
 .. caution:: Ensure that the units of the design variable matches the unit of the contrain in the optimization target and the parameters in the propotionality statement prop_to. For consistency we suggest to use the units :math:`um` for measures of length, :math:`nH` for inductances and :math:`fF` for capacitances.
@@ -161,23 +161,25 @@ One strength of the qdesignoptimizer is how it handles the physical relations be
 
 Parameter Targets
 -----------------
-The parameter targets are specified in a ``dict`` per branch and target parameter. The target parameters can be called from ``design_constants``. A minimal example for a single qubit-resonator system may look like this:
-# TODO AXEL didn't we say that all these should be derived? We should also have a conceåt of "Mode" which should be described
+The parameter targets are specified in a ``dict`` per target parameter. The target parameters can be called from ``design_constants``. A minimal example for a single qubit-resonator system may look like this:
+# TODO AXEL  We should also have a conceåt of "Mode" which should be described
 # TODO AXEL here we should also examplify the nonlinearity part and the capacitance matrix part
 # TODO AXEL I more and more think we should deprecate the branch concept. With the changes we have done, it is more awkward now.
 .. code-block:: python
 
-    import design_constants as dc
+    import names as n
+
+    from qdesignoptimizer.utils.names_parameters import (
+        FREQ, KAPPA, param, param_nonlin,
+    )
 
     PARAM_TARGETS = {
-        "0": {
-              dc.QUBIT_FREQ: 4e9,
-              dc.RES_QUBIT_CHI: 1e6,
-              dc.RES_FREQ: 7e9,
-              dc.RES_KAPPA: 600e3,
-              dc.QUBIT_ANHARMONICITY: 200e6,
-        },
-    }
+    param(n.QUBIT_1, FREQ): 4e9,
+    param(n.RESONATOR_1, FREQ): 6e9,
+    param(n.RESONATOR_1, KAPPA): 1e6,
+    param_nonlin(n.QUBIT_1, n.QUBIT_1): 200e6,  # Qubit anharmonicity
+    param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonaotr chi
+}
 
 
 Mini Studies
@@ -187,26 +189,28 @@ The core idea of a ``MiniStudy`` is to break down your quantum chip into smaller
 
 .. code-block:: python
 
-  import qdesignoptimizer.utils.constants as dc
-  import qdesignoptimizer.utils.utils_design_variables as u
-  from qdesignoptimizer.design_analysis_types import MiniStudy
-  from qdesignoptimizer.utils.utils_design_variables import junction_setup
+    import name as n
+    from qdesignoptimizer.design_analysis_types import MiniStudy
+    from qdesignoptimizer.utils.utils_design_variables import junction_setup
 
-  MiniStudy(
-      qiskit_component_names=[u.name_qb(branch), u.name_res(branch), u.name_tee(branch)],
-      port_list=[
-          (u.name_tee(branch), "prime_end", 50),
-          (u.name_tee(branch), "prime_start", 50),
-      ],
-      open_pins=[],
-      mode_freqs=[
-          (str(branch), dc.QUBIT_FREQ),
-          (str(branch), dc.RES_FREQ),
-      ],
-      jj_setup={**junction_setup(u.name_qb(branch))},
-      design_name="get_mini_study_qb_res",
-      adjustment_rate=0.8,
-      )
+    MiniStudy(
+        qiskit_component_names=[
+            n.name_mode(qubit),
+            n.name_mode(resonator),
+            n.name_tee(nbr),
+        ],
+        port_list=[
+            (n.name_tee(nbr), "prime_end", 50),
+            (n.name_tee(nbr), "prime_start", 50),
+        ],
+        open_pins=[],
+        modes=[qubit, resonator],
+        jj_setup={**junction_setup(qubit)},
+        design_name="get_mini_study_qb_res",
+        adjustment_rate=1,
+        build_fine_mesh=False,
+        **CONVERGENCE
+        )
 
 .. caution:: Important is the ordering of the mode frequencies from lowest to highest, and need to match the order of the modes in the HFSS eigenmode simulation.
 

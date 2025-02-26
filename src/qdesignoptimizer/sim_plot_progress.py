@@ -52,6 +52,7 @@ def plot_progress(
     opt_results: dict,
     system_target_params: dict,
     plot_settings: dict,
+    plot_branches_separately: bool = False,
     plot_option: str = "linear",
     block_plots: bool = False,
 ):
@@ -150,7 +151,6 @@ def plot_progress(
     colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
     for plot_name, panels in plot_settings.items():
-        plot_branches_separately = False  # TODO AXEL remove
         if not plot_branches_separately:
             fig, axs = plt.subplots(len(panels))
         data_plotted_in_any_branch = False

@@ -149,7 +149,7 @@ class DesignAnalysis:
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
 
-                if target.system_target_param == c.T1_DECAY:
+                if target.system_target_param == c.PURCELL_DECAY:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
@@ -726,6 +726,7 @@ class DesignAnalysis:
                 self.optimization_results,
                 self.system_target_params,
                 self.plot_settings,
+                self.plot_branches_separately,
             )
 
     def overwrite_parameters(self):

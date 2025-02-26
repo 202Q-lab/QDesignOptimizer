@@ -7,7 +7,7 @@ COUPLER = "coupler"
 # target type
 FREQ = "freq"
 KAPPA = "kappa"
-T1_DECAY = "charge_line_limited_t1"  # TODO this could be just purcell decay
+PURCELL_DECAY = "purcell_decay"
 NONLINEARITY = "nonlinearity"
 
 
