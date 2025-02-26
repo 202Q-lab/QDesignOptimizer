@@ -1,20 +1,40 @@
 import names as n
 
-import qdesignoptimizer.utils.constants as c
 from qdesignoptimizer.sim_plot_progress import OptPltSet
 from qdesignoptimizer.utils.names_parameters import param, param_nonlin
 
 PLOT_SETTINGS = {
     "RES": [
-        OptPltSet(c.ITERATION, param(n.RESONATOR_1, c.FREQ)),
-        OptPltSet(c.ITERATION, param(n.RESONATOR_1, c.KAPPA)),
-        OptPltSet(c.ITERATION, param_nonlin(n.RESONATOR_1, n.RESONATOR_1)),
+        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.FREQ), y_label='RES Freq (Hz)'),
+        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.KAPPA), y_label='RES Kappa (Hz)'),
+        OptPltSet(n.ITERATION, param_nonlin(n.RESONATOR_1, n.RESONATOR_1), y_label='RES Kerr (Hz)'),
     ],
     "QUBIT": [
-        OptPltSet(c.ITERATION, param(n.QUBIT_1, c.FREQ)),
-        OptPltSet(c.ITERATION, param_nonlin(n.QUBIT_1, n.QUBIT_1)),
+        OptPltSet(n.ITERATION, param(n.QUBIT_1, n.FREQ), y_label='QB Freq (Hz)'),
+        OptPltSet(n.ITERATION, param_nonlin(n.QUBIT_1, n.QUBIT_1), y_label='QB Anharm. (Hz)'),
     ],
     "COUPLINGS": [
-        OptPltSet(c.ITERATION, param_nonlin(n.RESONATOR_1, n.QUBIT_1)),
+        OptPltSet(n.ITERATION, param_nonlin(n.RESONATOR_1, n.QUBIT_1), y_label='RES-QB Chi (Hz)'),
+    ],
+}
+
+PLOT_SETTINGS_TWO_QB = {
+    "RES": [
+        OptPltSet(n.ITERATION, [param(n.RESONATOR_1, n.FREQ), param(n.RESONATOR_2, n.FREQ)], y_label='RES Freq (Hz)'),
+        OptPltSet(n.ITERATION, [param(n.RESONATOR_1, n.KAPPA), param(n.RESONATOR_2, n.KAPPA)], y_label='RES Kappa (Hz)'),
+        OptPltSet(n.ITERATION, [param_nonlin(n.RESONATOR_1, n.RESONATOR_1), param_nonlin(n.RESONATOR_2, n.RESONATOR_2)], y_label='RES Kerr (Hz)'),
+    ],
+    "QUBIT": [
+        OptPltSet(n.ITERATION, [param(n.QUBIT_1, n.FREQ), param(n.QUBIT_2, n.FREQ)], y_label='QB Freq (Hz)'),
+        OptPltSet(n.ITERATION, [param_nonlin(n.QUBIT_1, n.QUBIT_1), param_nonlin(n.QUBIT_2, n.QUBIT_2)], y_label='QB Anharm. (Hz)'),
+    ],
+    "COUPLINGS": [
+        OptPltSet(n.ITERATION, [param_nonlin(n.RESONATOR_1, n.QUBIT_1), param_nonlin(n.RESONATOR_2, n.QUBIT_2)], y_label='RES-QB Chi (Hz)'),
+    ],
+}
+
+PLOT_SETTINGS_CHARGE_LINE_DECAY = {
+    "QUBIT": [
+        OptPltSet(n.ITERATION, n.PURCELL_LIMIT_T1),
     ],
 }

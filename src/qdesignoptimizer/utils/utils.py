@@ -1,6 +1,8 @@
 import os
 
 import numpy as np
+import tomli
+from pathlib import Path
 
 
 def close_ansys():
@@ -133,3 +135,36 @@ def sum_expression(vals: list):
         sum_unit = unit
 
     return f"{sum_val}{sum_unit}"
+
+
+def get_version_from_pyproject():
+    """
+    Read the version from pyproject.toml file, finding it relative to the current module.
+    
+    Returns:
+        str: The version string from pyproject.toml
+    """
+    # Get the path of the current file
+    current_file = Path(__file__)
+    
+    # Navigate up to find the project root (where pyproject.toml is)
+    # This assumes the directory structure you described
+    project_root = current_file.parents[3]  # Go up 3 levels from design_analysis.py
+    pyproject_path = project_root / "pyproject.toml"
+    
+    try:
+        if not pyproject_path.exists():
+            raise FileNotFoundError(f"pyproject.toml not found at {pyproject_path}")
+            
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomli.load(f)
+        
+        # Get version from the project section
+        version = pyproject_data.get("project", {}).get("version")
+        
+        if not version:
+            raise ValueError("Version not found in pyproject.toml")
+            
+        return version
+    except Exception as e:
+        raise Exception(f"Error reading version from pyproject.toml: {str(e)}")

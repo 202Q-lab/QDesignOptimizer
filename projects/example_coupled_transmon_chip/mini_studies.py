@@ -5,23 +5,24 @@ import parameter_targets as pt
 from qdesignoptimizer.design_analysis_types import MiniStudy
 from qdesignoptimizer.sim_capacitance_matrix import ModeDecayIntoChargeLineStudy
 from qdesignoptimizer.utils.names_design_variables import junction_setup
+from qdesignoptimizer.utils.names_parameters import (FREQ, param)
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 
 
-def get_mini_study_qb_res(nbr: int):
-    qubit = [n.QUBIT_1, n.QUBIT_2][nbr - 1]
-    resonator = [n.RESONATOR_1, n.RESONATOR_2][nbr - 1]
+def get_mini_study_qb_res(group: int):
+    qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
+    resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
 
     return MiniStudy(
         qiskit_component_names=[
             n.name_mode(qubit),
             n.name_mode(resonator),
-            n.name_tee(nbr),
+            n.name_tee(group),
         ],
         port_list=[
-            (n.name_tee(nbr), "prime_end", 50),
-            (n.name_tee(nbr), "prime_start", 50),
+            (n.name_tee(group), "prime_end", 50),
+            (n.name_tee(group), "prime_start", 50),
         ],
         open_pins=[],
         modes=[qubit, resonator],
@@ -38,14 +39,14 @@ def get_mini_study_2qb_resonator_coupler():
     all_ports = []
     all_modes = []
     all_jjs = {}
-    for nbr in [n.NBR_1, n.NBR_2]:
-        qubit = [n.QUBIT_1, n.QUBIT_2][nbr - 1]
-        resonator = [n.RESONATOR_1, n.RESONATOR_2][nbr - 1]
-        all_comps.extend([n.name_mode(qubit), n.name_mode(resonator), n.name_tee(nbr)])
+    for group in [n.GROUP_1, n.GROUP_2]:
+        qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
+        resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+        all_comps.extend([n.name_mode(qubit), n.name_mode(resonator), n.name_tee(group)])
         all_ports.extend(
             [
-                (n.name_tee(nbr), "prime_end", 50),
-                (n.name_tee(nbr), "prime_start", 50),
+                (n.name_tee(group), "prime_end", 50),
+                (n.name_tee(group), "prime_start", 50),
             ]
         )
         all_modes.extend([qubit, resonator])
@@ -70,18 +71,16 @@ def get_mini_study_2qb_resonator_coupler():
         **CONVERGENCE
     )
 
-def get_mini_study_qb_charge_line(branch: int):
+def get_mini_study_qb_charge_line(group: int):
+    qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     qiskit_component_names = [
-        u.name_qb(branch),
-        u.name_charge_line(branch),
-        u.name_otg_chargeline(branch),
+        n.name_mode(qubit),
+        n.name_charge_line(group),
     ]
     charge_decay_study = ModeDecayIntoChargeLineStudy(
-        str(branch),
-        dc.QUBIT_FREQ,
         open_pins=[
-            (u.name_qb(branch), "readout"),
-            (u.name_charge_line(branch), "start"),
+            (n.name_mode(qubit), "readout"),
+            (n.name_charge_line(group), "start"),
         ],
         mode_capacitance_name=[
             "pad_bot_NAME_QB0",
@@ -90,8 +89,7 @@ def get_mini_study_qb_charge_line(branch: int):
         charge_line_capacitance_name="trace_NAME_CHARGE_LINE_0",
         charge_line_impedance_Ohm=50,
         qiskit_component_names=qiskit_component_names,
-        freq_GHz=pt.PARAM_TARGETS[str(branch)][dc.QUBIT_FREQ]
-        * 1e-9,  # not updated dynamically at the moment
+        freq_GHz=pt.PARAM_TARGETS[param(n.QUBIT_1, FREQ)]* 1e-9,  # not updated dynamically at the moment
         ground_plane_capacitance_name="ground_main_plane",
         nbr_passes=8,
     )
@@ -99,8 +97,8 @@ def get_mini_study_qb_charge_line(branch: int):
         qiskit_component_names=qiskit_component_names,
         port_list=[],
         open_pins=[],
-        mode_freqs=[],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
-        jj_setup={**junction_setup(u.name_qb(branch))},
+        modes=[],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
+        jj_setup={**junction_setup(n.name_mode(qubit))},
         design_name="get_mini_study_qb_charge_line",
         adjustment_rate=0.8,
         capacitance_matrix_studies=[charge_decay_study],

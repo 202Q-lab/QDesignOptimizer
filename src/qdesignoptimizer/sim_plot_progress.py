@@ -1,12 +1,12 @@
 import os
 from itertools import cycle
+from typing import Union, List
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-import qdesignoptimizer.utils.constants as c
 from qdesignoptimizer.utils.names_design_variables import name_mode
-from qdesignoptimizer.utils.names_parameters import param
+from qdesignoptimizer.utils.names_parameters import param, ITERATION
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
 DEFAULT_PLT_SET = {
@@ -25,7 +25,7 @@ DEFAULT_PLT_SET = {
 
 
 class OptPltSet:
-    def __init__(self, x: str, y: str, x_label: str = None, y_label: str = None):
+    def __init__(self, x: str, y: Union[str, List[str]], x_label: str = None, y_label: str = None):
         """Set the plot settings for a progress plots of the optimization framework
 
         Args:
@@ -52,7 +52,6 @@ def plot_progress(
     opt_results: dict,
     system_target_params: dict,
     plot_settings: dict,
-    plot_branches_separately: bool = False,
     plot_option: str = "linear",
     block_plots: bool = False,
 ):
@@ -67,10 +66,8 @@ def plot_progress(
     """
 
     def get_data_from_parameter(axes_parameter: str, result: dict, ii: int):
-        if axes_parameter == c.ITERATION:
+        if axes_parameter == ITERATION:
             data_opt = ii + 1
-        elif axes_parameter in result["system_optimized_params"]:
-            data_opt = result["system_optimized_params"][axes_parameter]
         elif axes_parameter in result["system_optimized_params"]:
             data_opt = result["system_optimized_params"][axes_parameter]
         elif axes_parameter in result["design_variables"]:
@@ -114,30 +111,55 @@ def plot_progress(
                 get_data_from_parameter(panel.x, result, ii)
                 for ii, result in enumerate(opt_results)
             ]
-            y_data_opt = [
-                get_data_from_parameter(panel.y, result, ii)
-                for ii, result in enumerate(opt_results)
-            ]
-            if all(element is not None for element in y_data_opt):
-                data_plotted = True
-            print(idx, panel, x_data_opt, y_data_opt)
-            axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized", color=color)
+            if isinstance(panel.y, str):
+                # Handle single y parameter (string)
+                y_data_opt = [
+                    get_data_from_parameter(panel.y, result, ii)
+                    for ii, result in enumerate(opt_results)
+                ]
+                if all(element is not None for element in y_data_opt):
+                    data_plotted = True
+                axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized", color=color)
+                if (
+                    panel.y in system_target_params
+                    and (not None in x_data_opt)
+                    and (not None in y_data_opt)
+                ):
+                    y_data_target = system_target_params[panel.y]
+                    axes.plot(
+                        [min(x_data_opt), max(x_data_opt)],
+                        [y_data_target, y_data_target],
+                        "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
+                        color=color,
+                        label=f"target",
+                    )
+            else:
+                # Handle multiple y parameters (list of strings)
+                for y_idx, y_param in enumerate(panel.y):
+                    y_data_opt = [
+                        get_data_from_parameter(y_param, result, ii)
+                        for ii, result in enumerate(opt_results)
+                    ]
+                    if all(element is not None for element in y_data_opt):
+                        data_plotted = True
+                    curr_color = color if y_idx == 0 else f"C{y_idx}"
+                    axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized {y_param}", color=curr_color)
 
-            if (
-                panel.y in system_target_params
-                and (not None in x_data_opt)
-                and (not None in y_data_opt)
-            ):
-                y_data_target = system_target_params[panel.y]
-                axes.plot(
-                    [min(x_data_opt), max(x_data_opt)],
-                    [y_data_target, y_data_target],
-                    "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
-                    color=color,
-                    label=f"target",
-                )
+                    if (
+                        y_param in system_target_params
+                        and (not None in x_data_opt)
+                        and (not None in y_data_opt)
+                    ):
+                        y_data_target = system_target_params[y_param]
+                        axes.plot(
+                            [min(x_data_opt), max(x_data_opt)],
+                            [y_data_target, y_data_target],
+                            "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
+                            color=curr_color,
+                            label=f"target {y_param}",
+                        )
 
-            axes.legend(["optimized", "target"])
+            axes.legend()
             axes.set_xlabel(panel.x_label)
             axes.set_ylabel(panel.y_label)
             if plot_option == "log":
@@ -151,12 +173,8 @@ def plot_progress(
     colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
     for plot_name, panels in plot_settings.items():
-        if not plot_branches_separately:
-            fig, axs = plt.subplots(len(panels))
-        data_plotted_in_any_branch = False
-        if plot_branches_separately:
-            fig, axs = plt.subplots(len(panels))
-        data_plotted = plot_figure(
+        fig, axs = plt.subplots(len(panels))
+        plot_figure(
             opt_results,
             system_target_params,
             panels,
@@ -164,40 +182,12 @@ def plot_progress(
             colors,
             plot_option,
         )
-        data_plotted_in_any_branch = data_plotted_in_any_branch or data_plotted
         fig.suptitle(plot_name)
         fig.subplots_adjust(hspace=0.5)
 
-        if plot_branches_separately:
-            if not data_plotted:
-                "plot_branches_separately: No data to plot for this figure"
-                plt.close(fig)
-
-        if not plot_branches_separately:
-            if not data_plotted_in_any_branch:
-                "NOT plot_branches_separately: No data to plot for this figure"
-                plt.close(fig)
     plt.show(block=block_plots)
 
 
-PLOT_SETTINGS_EXAMPLE = {
-    "RES": [
-        OptPltSet(
-            c.ITERATION,
-            param(name_mode("resonator"), "freq"),
-            "Edited label Y",
-            "Edited label X",
-        ),
-    ],
-    "QUBIT": [
-        OptPltSet(
-            c.ITERATION,
-            param(name_mode("qubit"), "freq"),
-            "Edited label Y",
-            "Edited label X",
-        ),
-    ],
-}
 
 if __name__ == "__main__":
     from pprint import pprint

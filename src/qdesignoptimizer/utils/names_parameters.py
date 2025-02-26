@@ -9,11 +9,26 @@ COUPLER = "coupler"
 # Parameter types
 FREQ = "freq"
 KAPPA = "kappa"
+PURCELL_LIMIT_T1 = "purcell_limit_T1"
 NONLIN = "nonlin"
+
+CAPACITANCE_MATRIX_ELEMENTS = "CAPACITANCE_MATRIX_ELEMENTS"
+""" dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.
+    Capacitance matrix elements are in femto Farads (fF).
+
+    Format: (capacitance_name, capacitance_name): value
+
+    Example: {
+        ('comb_NAME_QB1', 'comb_NAME_QB1'): 100,
+        ('comb_NAME_QB1', 'comb_NAME_QB2'): 5,
+        }
+"""
+
+ITERATION = "ITERATION"
 
 
 Mode = str
-""""Mode name on the format group_modetype_nbr where group and nbr are optional.
+""""Mode name on the format group_modetype_nbr where group are optional.
 
 Examples:
     qubit
@@ -22,7 +37,7 @@ Examples:
     gr1_qubit_3
 """
 Parameter = str
-""""Paramter name on the format group_modetype_nbr_paramtype where group and nbr are optional.
+""""Paramter name on the format group_modetype_nbr_paramtype where group are optional.
 
 Examples:
     qubit_freq
@@ -32,8 +47,7 @@ Examples:
 
 def mode(
     mode_type: str,
-    nbr: int | str | None = None,
-    group: int | None = None,
+    group: int | str | None = None,
 ) -> Mode:
     """Construct a mode name from the mode type, group, and number."""
     assert "_" not in mode_type, "mode_type cannot contain underscores"
@@ -41,18 +55,14 @@ def mode(
         "_to_" not in mode_type
     ), "mode_type cannot contain the string '_to_', since it is a keyword for non-linear parameters"
 
-    assert nbr is None or "_" not in str(nbr), "nbr cannot contain underscores"
+    assert group is None or "_" not in str(group), "group cannot contain underscores"
     assert (
-        isinstance(nbr, int) or "_to_" not in nbr
-    ), "nbr cannot contain the string '_to_', since it is a keyword for non-linear parameters"
-
-    assert group is None or isinstance(group, int), "group must be an integer or None"
+        isinstance(group, int) or "_to_" not in group
+    ), "group cannot contain the string '_to_', since it is a keyword for non-linear parameters"
 
     mode_name = mode_type
     if group is not None:
-        mode_name = f"gr{group}_{mode_name}"
-    if nbr is not None:
-        mode_name = f"{mode_name}_{nbr}"
+        mode_name = f"{mode_name}_{group}"
 
     assert (
         ":" not in mode_name
@@ -77,7 +87,7 @@ def param(mode: Mode, param_type: Literal["freq", "kappa"]) -> Parameter:
         param("QUBIT_1", "freq") -> "qubit_1_freq"
         param("QUBIT_1", "kappa") -> "qubit_1_kappa"
     """
-    assert param_type in ["freq", "kappa"], "param_type must be 'freq' or 'kappa'"
+    assert param_type in ["freq", "kappa", "purcell_limit_T1"], "param_type must be 'freq' or 'kappa' or 'purcell_limit_T1"
     return f"{mode}_{param_type}"
 
 

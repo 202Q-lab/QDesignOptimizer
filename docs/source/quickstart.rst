@@ -162,8 +162,7 @@ One strength of the qdesignoptimizer is how it handles the physical relations be
 Parameter Targets
 -----------------
 The parameter targets are specified in a ``dict`` per target parameter. The target parameters can be called from ``design_constants``. A minimal example for a single qubit-resonator system may look like this:
-# TODO AXEL  We should also have a conceåt of "Mode" which should be described
-# TODO AXEL here we should also examplify the nonlinearity part and the capacitance matrix part
+# TODO AXEL  Decription: Mode, nonlinearity, capacitance matrix
 # TODO AXEL I more and more think we should deprecate the branch concept. With the changes we have done, it is more awkward now.
 .. code-block:: python
 
@@ -197,11 +196,11 @@ The core idea of a ``MiniStudy`` is to break down your quantum chip into smaller
         qiskit_component_names=[
             n.name_mode(qubit),
             n.name_mode(resonator),
-            n.name_tee(nbr),
+            n.name_tee(group),
         ],
         port_list=[
-            (n.name_tee(nbr), "prime_end", 50),
-            (n.name_tee(nbr), "prime_start", 50),
+            (n.name_tee(group), "prime_end", 50),
+            (n.name_tee(group), "prime_start", 50),
         ],
         open_pins=[],
         modes=[qubit, resonator],
@@ -223,7 +222,6 @@ A minimal example looks like this:
 
 .. code-block:: python
 
-  import qdesignoptimizer.utils.constants as dc
   from qdesignoptimizer.utils.sim_plot_progress import OptPltSet
 
   PLOT_SETTINGS = {
