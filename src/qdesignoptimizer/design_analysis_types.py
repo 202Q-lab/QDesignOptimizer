@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Callable, Dict, List, Literal, Union
 
 from qiskit_metal.designs.design_base import QDesign
@@ -95,6 +94,8 @@ class MiniStudy:
         max_mesh_length_port (str): max mesh length of port
         max_mesh_length_lines_to_ports (str): max mesh length of lines to ports to enhance accuracy of decay estiamtes
         build_fine_mesh (bool): if True: use default mesh to ports which gives unreliable decay estimates in Eigenmode sim
+        cos_trunc (int): cosine truncation in the EPR analysis. You might have to lower cos_trunc if you simulate very many modes.
+        fock_trunc (int): fock truncation in the EPR analysis. You might have to lower fock_trunc if you simulate very many modes.
         adjustment_rate (float): rate of adjustment of design variable w.r.t. to calculated optimal values. Example 0.7 is slower but might be more robust.
         render_qiskit_metal_eigenmode_kw_args (dict): kw_args for render_qiskit_metal used during eigenmode and EPR analysis,
                                                       Example: {'include_charge_line': True}
@@ -121,6 +122,8 @@ class MiniStudy:
         hfss_wire_bond_threshold="300um",
         build_fine_mesh=False,
         adjustment_rate: float = 1.0,
+        cos_trunc=8,
+        fock_trunc=7,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
         capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],
     ):
@@ -142,6 +145,8 @@ class MiniStudy:
         self.hfss_wire_bond_threshold = hfss_wire_bond_threshold
         self.build_fine_mesh = build_fine_mesh
         self.adjustment_rate = adjustment_rate
+        self.cos_trunc = cos_trunc
+        self.fock_trunc = fock_trunc
         self.render_qiskit_metal_eigenmode_kw_args = (
             render_qiskit_metal_eigenmode_kw_args
         )

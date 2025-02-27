@@ -11,7 +11,6 @@ from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 
-
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
@@ -22,8 +21,11 @@ from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.names_parameters import (
-    FREQ, KAPPA, NONLIN, PURCELL_LIMIT_T1, CAPACITANCE_MATRIX_ELEMENTS,
-    get_modes_from_param_nonlin,
+    CAPACITANCE_MATRIX_ELEMENTS,
+    FREQ,
+    KAPPA,
+    NONLIN,
+    PURCELL_LIMIT_T1,
     mode,
     param,
     param_capacitance,
@@ -50,9 +52,7 @@ class DesignAnalysis:
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
-        opt_targets: List[
-            OptTarget
-        ] = None,
+        opt_targets: List[OptTarget] = None,
         save_path: str = None,
         update_design_variables: bool = True,
         plot_settings: dict = None,
@@ -341,7 +341,10 @@ class DesignAnalysis:
                     self.eig_solver.get_stored_energy(no_junctions)
                     self.eprd.do_EPR_analysis()
                     self.epra = epr.QuantumAnalysis(self.eprd.data_filename)
-                    self.epra.analyze_all_variations(cos_trunc=8, fock_trunc=7)
+                    self.epra.analyze_all_variations(
+                        cos_trunc=self.mini_study.cos_trunc,
+                        fock_trunc=self.mini_study.fock_trunc,
+                    )
                     self.epra.plot_hamiltonian_results()
                     freqs = self.epra.get_frequencies(numeric=True)
                     chis = self.epra.get_chis(numeric=True)
@@ -438,7 +441,7 @@ class DesignAnalysis:
                     log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
-        if PURCELL_LIMIT_T1 in self.system_target_params:         
+        if PURCELL_LIMIT_T1 in self.system_target_params:
             log.info("Computing T1 limit from decay in charge line.")
             self.system_optimized_params[capacitance_study.mode][
                 capacitance_study.mode
