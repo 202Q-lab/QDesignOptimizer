@@ -240,7 +240,7 @@ def sim_capacitance_matrix(
     open_terminations: list,
     freq_ghz: float = 4,
     nbr_passes: int = 16,
-):
+    ):
 
     lom_analysis = LOManalysis(design, "q3d")
     lom_analysis.sim.setup.max_passes = nbr_passes
@@ -257,23 +257,3 @@ def sim_capacitance_matrix(
 
     return capacitance_matrix
 
-
-# c1.sim.setup
-# {'name': 'Setup',
-#  'reuse_selected_design': True,
-#  'freq_ghz': 5.0,
-#  'save_fields': False,
-#  'enabled': True,
-#  'max_passes': 15,
-#  'min_passes': 2,
-#  'min_converged_passes': 2,
-#  'percent_error': 0.5,
-#  'percent_refinement': 30,
-#  'auto_increase_solution_order': True,
-#  'solution_order': 'High',
-#  'solver_type': 'Iterative'}
-
-
-# c1.plot_convergence();
-# c1.plot_convergence_chi()
-# c1.sim.close()

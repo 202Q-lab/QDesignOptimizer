@@ -79,10 +79,7 @@ def get_mini_study_qb_charge_line(group: int):
         n.name_charge_line(group),
     ]
     charge_decay_study = ModeDecayIntoChargeLineStudy(
-        open_pins=[
-            (n.name_mode(qubit), "readout"),
-            (n.name_charge_line(group), "start"),
-        ],
+        mode=[qubit],
         mode_capacitance_name=[
             "pad_bot_NAME_QB0",
             "pad_top_NAME_QB0",
@@ -90,7 +87,11 @@ def get_mini_study_qb_charge_line(group: int):
         charge_line_capacitance_name="trace_NAME_CHARGE_LINE_0",
         charge_line_impedance_Ohm=50,
         qiskit_component_names=qiskit_component_names,
-        freq_GHz=pt.PARAM_TARGETS[param(n.QUBIT_1, FREQ)]* 1e-9,  # not updated dynamically at the moment
+        open_pins=[
+            (n.name_mode(qubit), "readout"),
+            (n.name_charge_line(group), "start"),
+        ],
+        # freq_GHz=pt.PARAM_TARGETS[param(qubit, FREQ)]* 1e-9,  # not updated dynamically at the moment
         ground_plane_capacitance_name="ground_main_plane",
         nbr_passes=8,
     )

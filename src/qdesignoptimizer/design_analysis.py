@@ -74,7 +74,7 @@ class DesignAnalysis:
         self.all_design_vars = [target.design_var for target in opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
-
+        
         self.is_system_optimized_params_initialized = False
         if state.system_optimized_params is not None:
             sys_opt_param = state.system_optimized_params
@@ -114,8 +114,12 @@ class DesignAnalysis:
             self.mini_study.max_mesh_length_port
         )
         self.renderer.options["keep_originals"] = True
-
+        
+        print('lukas', self.system_target_params)
+        print('lukas', self.system_optimized_params)
         self._validate_opt_targets()
+        
+
         assert (
             not self.system_target_params is self.system_optimized_params
         ), "system_target_params and system_optimized_params may not be references to the same object"
@@ -136,18 +140,19 @@ class DesignAnalysis:
 
     def _validate_opt_targets(self):
         """Validate opt_targets."""
+        print('lukas', self.opt_targets)
         if not self.opt_targets is None:
             for target in self.opt_targets:
                 assert (
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
-
+                print('lukas', target.system_target_param )
                 if target.system_target_param == PURCELL_LIMIT_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
-
-                if target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
+                    print('lukas')
+                elif target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
                     assert (
@@ -426,6 +431,7 @@ class DesignAnalysis:
         capacitance_matrix: pd.DataFrame,
         capacitance_study: CapacitanceMatrixStudy,
     ):
+        print('lukas', self.system_target_params)  
         if CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
             for key_capacitances in self.system_target_params[
                 CAPACITANCE_MATRIX_ELEMENTS
@@ -438,6 +444,8 @@ class DesignAnalysis:
                     log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
+
+                  
         if PURCELL_LIMIT_T1 in self.system_target_params:         
             log.info("Computing T1 limit from decay in charge line.")
             self.system_optimized_params[capacitance_study.mode][
