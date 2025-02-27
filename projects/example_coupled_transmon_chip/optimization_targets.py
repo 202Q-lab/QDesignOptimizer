@@ -3,14 +3,12 @@ from typing import List
 import names as n
 
 from qdesignoptimizer.design_analysis_types import OptTarget
-from qdesignoptimizer.utils.constants import FREQ
 from qdesignoptimizer.utils.optimization_targets import (
     get_opt_targets_qb_res_transmission,
 )
 
-
 def get_opt_targets_2qubits_resonator_coupler(
-    nbrs: List[int],
+    groups: List[int],
     opt_target_qubit_freq=False,
     opt_target_qubit_anharm=False,
     opt_target_resonator_freq=False,
@@ -21,7 +19,7 @@ def get_opt_targets_2qubits_resonator_coupler(
     """Get the optimization targets for a 2 qubit-resonator system with a coupler.
 
     Args:
-        nbrs (List[int]): The qubit-resonator pair numbers.
+        groups (List[int]): The qubit-resonator pair numbers.
         opt_target_qubit_freq (bool, optional): Whether to add an optimization target for the qubit frequency.
         opt_target_qubit_anharm (bool, optional): Whether to add an optimization target for the qubit anharmonicity.
         opt_target_resonator_freq (bool, optional): Whether to add an optimization target for the resonator frequency.
@@ -36,7 +34,7 @@ def get_opt_targets_2qubits_resonator_coupler(
     # should be used in the design.py to adjust a component's geometry.
     if opt_target_coupler_freq:
         opt_target_coupler = OptTarget(
-            system_target_param=FREQ,
+            system_target_param=n.FREQ,
             involved_modes=[n.COUPLER_12],
             design_var=n.design_var_length(n.COUPLER_12),
             design_var_constraint={"larger_than": "50um", "smaller_than": "10000um"},
@@ -46,9 +44,9 @@ def get_opt_targets_2qubits_resonator_coupler(
         opt_targets.append(opt_target_coupler)
 
     # Add OptTargets for each specified qubit-resonator pair using a convenience function.
-    for nbr in nbrs:
-        qubit = [n.QUBIT_1, n.QUBIT_2][nbr - 1]
-        resonator = [n.RESONATOR_1, n.RESONATOR_2][nbr - 1]
+    for group in groups:
+        qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
+        resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
 
         opt_targets.extend(
             get_opt_targets_qb_res_transmission(
@@ -63,4 +61,27 @@ def get_opt_targets_2qubits_resonator_coupler(
             )
         )
 
+    return opt_targets
+
+
+def get_opt_target_qubit_T1_limit_via_charge_posx(
+    group: int,
+    ) -> OptTarget:
+    qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
+    return OptTarget(
+        system_target_param=n.PURCELL_LIMIT_T1,
+        involved_modes=[qubit],
+        design_var=n.design_var_cl_pos_x(qubit),
+        design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
+        prop_to=lambda p, v: v[n.design_var_cl_pos_x(qubit)] ** 2,
+        independent_target=True,
+    )
+
+def get_opt_targets_qb_charge_line(
+    group: int, 
+    qb_T1_limit: bool = True
+    ) -> List[OptTarget]:
+    opt_targets = []
+    if qb_T1_limit:
+        opt_targets.append(get_opt_target_qubit_T1_limit_via_charge_posx(group))
     return opt_targets

@@ -39,13 +39,13 @@ class CapacitanceMatrixStudy:
         render_qiskit_metal_kwargs (dict): kwargs for render_qiskit_metal
 
         percent_error (float):          percent error in capacitance simulation
-        nbr_passes (int):               nbr of passes in capacitance simulation
+        nbr_passes (int):               group of passes in capacitance simulation
     """
 
     def __init__(
         self,
         qiskit_component_names: list,
-        freq_GHz: Union[float],
+        mode: Union[str],
         open_pins: list = [],
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
@@ -55,7 +55,7 @@ class CapacitanceMatrixStudy:
         nbr_passes: Optional[int] = 10,
     ):
         self.qiskit_component_names = qiskit_component_names
-        self.freq_GHz = freq_GHz
+        self.mode = mode
         self.open_pins = open_pins
         self.x_buffer_width_mm = x_buffer_width_mm
         self.y_buffer_width_mm = y_buffer_width_mm
@@ -101,7 +101,7 @@ class CapacitanceMatrixStudy:
 
         lom_analysis = LOManalysis(design, "q3d")
         lom_analysis.sim.setup.max_passes = self.nbr_passes
-        lom_analysis.sim.setup.freq_ghz = self.freq_GHz
+        # lom_analysis.sim.setup.freq_ghz = self.freq_GHz
         lom_analysis.sim.setup.percent_error = self.percent_error
         lom_analysis.sim.renderer.options["x_buffer_width_mm"] = self.x_buffer_width_mm
         lom_analysis.sim.renderer.options["y_buffer_width_mm"] = self.y_buffer_width_mm
@@ -120,8 +120,6 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
     each decay analysis should be done in a separate ModeDecayIntoChargeLineStudy.
 
     Args:
-        branch_name (str): branch name
-        freq_name (str): freq_GHz name
         mode_capacitance_name (str): capacitance name of mode, if grounded: 1 string of island name, if floating: list of 2 strings of respective island name
         charge_line_capacitance_name (str): capacitance name of charge line
         charge_line_impedance_Ohm (float): charge line impedance in Ohm
@@ -131,13 +129,11 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
     def __init__(
         self,
-        branch_name: str,
-        freq_name: str,
+        mode: Union[float],
         mode_capacitance_name: Union[str, List[str]],
         charge_line_capacitance_name: str,
         charge_line_impedance_Ohm: float,
         qiskit_component_names: list,
-        freq_GHz: Union[float],
         open_pins: list = [],
         ground_plane_capacitance_name: str = None,
         x_buffer_width_mm: float = 2,
@@ -147,15 +143,13 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
     ):
         super().__init__(
             qiskit_component_names=qiskit_component_names,
-            freq_GHz=freq_GHz,
+            mode=mode,
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
             y_buffer_width_mm=y_buffer_width_mm,
             percent_error=percent_error,
             nbr_passes=nbr_passes,
         )
-        self.branch_name = branch_name
-        self.freq_name = freq_name
         self.mode_capacitance_name = mode_capacitance_name
         self.ground_plane_capacitance_name = ground_plane_capacitance_name
         self.charge_line_capacitance_name = charge_line_capacitance_name

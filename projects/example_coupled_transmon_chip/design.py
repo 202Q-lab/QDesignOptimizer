@@ -8,8 +8,8 @@ from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
 
-def add_transmon_plus_resonator(design: DesignPlanar, nbr: int):
-    nbr_idx = nbr - 1  # zero indexed
+def add_transmon_plus_resonator(design: DesignPlanar, group: int):
+    nbr_idx = group - 1  # zero indexed
 
     qubit = [n.QUBIT_1, n.QUBIT_2][nbr_idx]
     resonator = [n.RESONATOR_1, n.RESONATOR_2][nbr_idx]
@@ -68,7 +68,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, nbr: int):
                 pad_cpw_shift="150um",
             ),
         ),
-        gds_cell_name=f"Manhattan_{nbr}",
+        gds_cell_name=f"Manhattan_{group}",
         hfss_inductance=n.design_var_lj(qubit),
         hfss_capacitance=n.design_var_cj(qubit),
     )
@@ -89,7 +89,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, nbr: int):
         coupling_length=n.design_var_coupl_length(resonator, "tee"),
     )
 
-    cltee = CoupledLineTee(design, n.name_tee(nbr), options=cltee_options)
+    cltee = CoupledLineTee(design, n.name_tee(group), options=cltee_options)
 
     # make resonator
     resonator_options = dict(
@@ -198,8 +198,8 @@ def add_coupler(design: DesignPlanar):
     RouteMeander(design, n.name_mode(n.COUPLER_12), options=resonator_options)
 
 
-def add_chargeline(design: DesignPlanar, nbr: int):
-    nbr_idx = nbr - 1
+def add_chargeline(design: DesignPlanar, group: int):
+    nbr_idx = group - 1
     qubit = [n.QUBIT_1, n.QUBIT_2][nbr_idx]
     lp_nbr = [2, 3][nbr_idx]
 
@@ -233,4 +233,4 @@ def add_chargeline(design: DesignPlanar, nbr: int):
         lead=dict(start_straight="100um", end_straight="100um"),
     )
 
-    RoutePathfinder(design, n.name_charge_line(nbr), options=options_chargeline)
+    RoutePathfinder(design, n.name_charge_line(group), options=options_chargeline)

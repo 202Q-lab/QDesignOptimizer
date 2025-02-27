@@ -7,22 +7,6 @@ from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.utils.names_parameters import Mode
 
 
-class TargetType(Enum):
-    FREQUENCY = "FREQUENCY"
-    ANHARMONICITY = "ANHARMONICITY"
-    KAPPA = "KAPPA"
-    CHI = "CHI"
-
-    INVERSE_SQUARED = "INVERSE_SQUARED"
-    INVERSE_THREE_HALVES = "INVERSE_THREE_HALVES"
-    INVERSE = "INVERSE"
-    INVERSE_SQRT = "INVERSE_SQRT"
-    SQRT = "SQRT"
-    LINEAR = "LINEAR"
-    THREE_HALVES = "THREE_HALVES"
-    SQUARED = "SQUARED"
-
-
 class MeshingMap:
     """
     A class to map a component class to a function that generates mesh names.
@@ -98,10 +82,10 @@ class MiniStudy:
         qiskit_component_names (list(str)): List of names
         port_list (list): component pins with ports, example with 50 Ohm: [(comp_name,'pin_name', 50)],
         open_pins (list): pins to be left open, example: [(comp_name, 'pin_name')],
-        modes (list): list of modes to simulate in increasing frequency order, simulated nbr of modes = len(modes)
+        modes (list): list of modes to simulate in increasing frequency order, simulated group of modes = len(modes)
                            If the mode_freqs is empty, eigenmode and EPR analysis will be skipped.
                            Example: [qubit_1, g2_resonator_1]
-        nbr_passes (int): nbr of passes in eigenmode simulation
+        nbr_passes (int): group of passes in eigenmode simulation
         delta_f (float): Convergence freq max delta percent diff
         jj_setup (object): junction setup, example: {'Lj_variable': 'Lj', 'rect': 'JJ_rect_Lj_Q1_rect_jj', 'line': 'JJ_Lj_Q1_rect_jj', 'Cj_variable': 'Cj'}
         design_name (str): name of design
@@ -135,7 +119,7 @@ class MiniStudy:
         hfss_wire_bond_size=3,
         hfss_wire_bond_offset="0um",
         hfss_wire_bond_threshold="300um",
-        build_fine_mesh=True,
+        build_fine_mesh=False,
         adjustment_rate: float = 1.0,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
         capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],

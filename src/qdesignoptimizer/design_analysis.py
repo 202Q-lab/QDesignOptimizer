@@ -11,7 +11,7 @@ from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 
-import qdesignoptimizer.utils.constants as c
+
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
@@ -22,14 +22,14 @@ from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.names_parameters import (
-    NONLIN,
+    FREQ, KAPPA, NONLIN, PURCELL_LIMIT_T1, CAPACITANCE_MATRIX_ELEMENTS,
     get_modes_from_param_nonlin,
     mode,
     param,
     param_capacitance,
     param_nonlin,
 )
-from qdesignoptimizer.utils.utils import get_value_and_unit
+from qdesignoptimizer.utils.utils import get_value_and_unit, get_version_from_pyproject
 
 
 class DesignAnalysis:
@@ -40,9 +40,8 @@ class DesignAnalysis:
         mini_study (MiniStudy): MiniStudy object
         opt_targets (List[OptTarget]): list of OptTarget objects
         save_path (str): path to save results
-        update_parameters (bool): update parameters
+        update_design_variables (bool): update parameters
         plot_settings (dict): plot settings for progress plots
-        plot_branches_separately (bool): plot branches separately
         meshing_map (List[MeshingMap]): meshing map
 
     """
@@ -53,19 +52,14 @@ class DesignAnalysis:
         mini_study: MiniStudy,
         opt_targets: List[
             OptTarget
-        ] = None,  # TODO  didn't we device to move these to the
+        ] = None,
         save_path: str = None,
-        update_parameters: bool = True,
+        update_design_variables: bool = True,
         plot_settings: dict = None,
-        plot_branches_separately=False,
         meshing_map: List[MeshingMap] = None,
         minimization_tol=1e-12,
     ):
-        self.design_analysis_version = "1.0.1"
-        """To be updated each time we update the DesignAnalysis class.
-        1.0.0 at 2024-08-13 Get freqs from quantum f_ND instead of linear
-        1.0.1 at 2024-08-17 SideEffectCompensation in OptTarget
-        """
+        self.design_analysis_version = get_version_from_pyproject()
         self.design = state.design
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
@@ -99,9 +93,8 @@ class DesignAnalysis:
         self.system_optimized_params = sys_opt_param
 
         self.save_path = save_path
-        self.update_parameters = update_parameters  # TODO  AXEL this should rather be update_design_variables, we said we will reserve parameter for what I called quantity
+        self.update_design_variables = update_design_variables
         self.plot_settings = plot_settings
-        self.plot_branches_separately = plot_branches_separately
         self.meshing_map = meshing_map
         self.minimization_tol = minimization_tol
 
@@ -149,17 +142,17 @@ class DesignAnalysis:
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
 
-                if target.system_target_param == c.T1_DECAY:
+                if target.system_target_param == PURCELL_LIMIT_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
 
-                if target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
+                if target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
                     assert (
-                        c.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
-                    ), f"Target for {c.CAPACITANCE_MATRIX_ELEMENTS} requires {c.CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
+                        CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
+                    ), f"Target for {CAPACITANCE_MATRIX_ELEMENTS} requires {CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
                     assert (
                         len(target.involved_modes) == 2
                     ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
@@ -171,18 +164,18 @@ class DesignAnalysis:
                     ), f"Second capacitance name {capacitance_2} must be a string."
 
                     if (capacitance_2, capacitance_1) in self.system_target_params[
-                        c.CAPACITANCE_MATRIX_ELEMENTS
+                        CAPACITANCE_MATRIX_ELEMENTS
                     ]:
                         tip = f" The reversed ordered key {(capacitance_2, capacitance_1)} exists, but the order must be consistent."
                     else:
                         tip = ""
                     assert (capacitance_1, capacitance_2) in self.system_target_params[
-                        c.CAPACITANCE_MATRIX_ELEMENTS
+                        CAPACITANCE_MATRIX_ELEMENTS
                     ], (
-                        f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{c.CAPACITANCE_MATRIX_ELEMENTS}]."
+                        f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{CAPACITANCE_MATRIX_ELEMENTS}]."
                         + tip
                     )
-                elif target.system_target_param == c.NONLINEARITY:
+                elif target.system_target_param == NONLIN:
                     assert (
                         len(target.involved_modes) == 2
                     ), f"Target for {target.system_target_param} expects 2 modes."
@@ -294,7 +287,7 @@ class DesignAnalysis:
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
-            fine_mesh_names != None
+            (not not fine_mesh_names)
             and self.mini_study.build_fine_mesh
             and len(self.mini_study.port_list) > 0
         )
@@ -378,7 +371,7 @@ class DesignAnalysis:
         """
         simulated_modes = self.mini_study.modes
         simulated_mode_freq_value = [
-            (mode, self.system_target_params[param(mode, c.FREQ)])
+            (mode, self.system_target_params[param(mode, FREQ)])
             for mode in simulated_modes
         ]
         simulated_modes_sorted_on_freq_value = sorted(
@@ -392,9 +385,9 @@ class DesignAnalysis:
             freq = eig_result["Freq. (Hz)"][idx]
             decay = eig_result["Kappas (Hz)"][idx]
 
-            self.system_optimized_params[param(mode, c.FREQ)] = freq
-            if param(mode, c.KAPPA) in self.system_target_params:
-                self.system_optimized_params[param(mode, c.KAPPA)] = decay
+            self.system_optimized_params[param(mode, FREQ)] = freq
+            if param(mode, KAPPA) in self.system_target_params:
+                self.system_optimized_params[param(mode, KAPPA)] = decay
 
     def _get_mode_idx_map(self):
         """Get mode index map.
@@ -418,17 +411,14 @@ class DesignAnalysis:
         freq_column = 0
 
         for mode, _ in mode_idx.items():
-            self.system_optimized_params[param(mode, c.FREQ)] = (
+            self.system_optimized_params[param(mode, FREQ)] = (
                 freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
             )
-            # TODO AXEL what about KAPPA?
-        for _param, _ in self.system_optimized_params.items():
-            if _param.endswith(NONLIN):
-                mode_1, mode_2 = get_modes_from_param_nonlin(_param)
-                if mode_1 not in mode_idx or mode_2 not in mode_idx:
-                    continue
-                self.system_optimized_params[param_nonlin(mode_1, mode_2)] = (
-                    epr_result[mode_idx[mode_1]].iloc[mode_idx[mode_2]] * MHz
+
+        for mode_i in self.mini_study.modes:
+            for mode_j in self.mini_study.modes:
+                self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
+                    epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
                 )
 
     def _update_optimized_params_capacitance_simulation(
@@ -436,23 +426,23 @@ class DesignAnalysis:
         capacitance_matrix: pd.DataFrame,
         capacitance_study: CapacitanceMatrixStudy,
     ):
-        if c.CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
+        if CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
             for key_capacitances in self.system_target_params[
-                c.CAPACITANCE_MATRIX_ELEMENTS
+                CAPACITANCE_MATRIX_ELEMENTS
             ].keys():
                 try:
-                    self.system_optimized_params[c.CAPACITANCE_MATRIX_ELEMENTS][
+                    self.system_optimized_params[CAPACITANCE_MATRIX_ELEMENTS][
                         key_capacitances
                     ] = capacitance_matrix.loc[key_capacitances[0], key_capacitances[1]]
                 except KeyError:
                     log.warning(
                         f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
                     )
-        # if c.QUBIT_CHARGE_LINE_LIMITED_T1 in self.system_target_params and isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
-        log.info("Computing T1 limit from decay in charge line.")
-        self.system_optimized_params[capacitance_study.branch_name][
-            c.mode_t1_decay(c.mode_freq_to_mode(capacitance_study.freq_name))
-        ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
+        if PURCELL_LIMIT_T1 in self.system_target_params:         
+            log.info("Computing T1 limit from decay in charge line.")
+            self.system_optimized_params[capacitance_study.mode][
+                capacitance_study.mode
+            ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod
     def _apply_adjustment_rate(new_val, old_val, rate):
@@ -502,10 +492,10 @@ class DesignAnalysis:
 
     @staticmethod
     def get_parameter_value(target: OptTarget, system_params: dict):
-        if target.system_target_param == c.NONLINEARITY:
+        if target.system_target_param == NONLIN:
             mode1, mode2 = target.involved_modes
             current_value = system_params[param_nonlin(mode1, mode2)]
-        elif target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
+        elif target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
             capacitance_name_1, capacitance_name_2 = target.involved_modes
             current_value = system_params[
                 param_capacitance(capacitance_name_1, capacitance_name_2)
@@ -567,12 +557,12 @@ class DesignAnalysis:
     def get_system_params_targets_met(self):
         system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
-            if target.system_target_param == c.NONLINEARITY:
+            if target.system_target_param == NONLIN:
                 mode1, mode2 = target.involved_modes
                 system_params_targets_met[param_nonlin(mode1, mode2)] = (
                     self.get_parameter_value(target, self.system_target_params)
                 )
-            elif target.system_target_param == c.CAPACITANCE_MATRIX_ELEMENTS:
+            elif target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
                 capacitance_name_1, capacitance_name_2 = target.involved_modes
                 system_params_targets_met[
                     param_capacitance(capacitance_name_1, capacitance_name_2)
@@ -718,7 +708,7 @@ class DesignAnalysis:
             with open(self.save_path + "_design_variables.json", "w") as outfile:
                 json.dump(updated_design_vars, outfile, indent=4)
 
-        if self.update_parameters is True:
+        if self.update_design_variables is True:
             self.overwrite_parameters()
 
         if self.plot_settings is not None:
