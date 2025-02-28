@@ -1,6 +1,10 @@
 import names as n
 
-from qdesignoptimizer.utils.names_parameters import param, param_nonlin
+from qdesignoptimizer.utils.names_parameters import (
+    param,
+    param_capacitance,
+    param_nonlin,
+)
 
 PARAM_TARGETS = {
     param(n.QUBIT_1, n.FREQ): 4e9,
@@ -15,4 +19,5 @@ PARAM_TARGETS = {
     param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonaotr chi
     param_nonlin(n.QUBIT_2, n.QUBIT_2): 200e6,  # Qubit anharmonicity
     param_nonlin(n.QUBIT_2, n.RESONATOR_2): 1e6,  # Qubit resonaotr chi
+    param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"): -3,
 }
