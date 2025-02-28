@@ -81,16 +81,18 @@ def get_mini_study_qb_charge_line(group: int):
         n.name_charge_line(group),
     ]
     charge_decay_study = ModeDecayIntoChargeLineStudy(
-        mode=[qubit],
+        mode=qubit,
+        mode_freq_GHz= pt.PARAM_TARGETS[param(qubit, FREQ)] / 1e9,
         mode_capacitance_name=[
-            "pad_bot_NAME_QB0",
-            "pad_top_NAME_QB0",
+            "pad_bot_name_qubit_1",
+            "pad_top_name_qubit_1",
         ],  # These names must be found from the model list in Ansys
-        charge_line_capacitance_name="trace_NAME_CHARGE_LINE_0",
+        charge_line_capacitance_name="charge_line_connector_pad_name_qubit_1",
         charge_line_impedance_Ohm=50,
         qiskit_component_names=qiskit_component_names,
         open_pins=[
             (n.name_mode(qubit), "readout"),
+            (n.name_mode(qubit), "coupler"),
             (n.name_charge_line(group), "start"),
         ],
         # freq_GHz=pt.PARAM_TARGETS[param(qubit, FREQ)]* 1e-9,  # not updated dynamically at the moment

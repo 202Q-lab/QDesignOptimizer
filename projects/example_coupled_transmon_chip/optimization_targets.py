@@ -64,16 +64,16 @@ def get_opt_targets_2qubits_resonator_coupler(
     return opt_targets
 
 
-def get_opt_target_qubit_T1_limit_via_charge_posx(
+def get_opt_target_qubit_T1_limit_via_charge_posy(
     group: int,
     ) -> OptTarget:
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     return OptTarget(
         system_target_param=n.PURCELL_LIMIT_T1,
         involved_modes=[qubit],
-        design_var=n.design_var_cl_pos_x(qubit),
+        design_var=n.design_var_cl_pos_y(qubit),
         design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
-        prop_to=lambda p, v: v[n.design_var_cl_pos_x(qubit)] ** 2,
+        prop_to=lambda p, v: v[n.design_var_cl_pos_y(qubit)] ** 2,
         independent_target=True,
     )
 
@@ -83,5 +83,5 @@ def get_opt_targets_qb_charge_line(
     ) -> List[OptTarget]:
     opt_targets = []
     if qb_T1_limit:
-        opt_targets.append(get_opt_target_qubit_T1_limit_via_charge_posx(group))
+        opt_targets.append(get_opt_target_qubit_T1_limit_via_charge_posy(group))
     return opt_targets

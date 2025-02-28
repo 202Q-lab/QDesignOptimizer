@@ -11,6 +11,7 @@ from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
 from qdesignoptimizer.logging import dict_log_format, log
+from qdesignoptimizer.utils.names_parameters import (FREQ, param)
 
 
 class CapacitanceMatrixStudy:
@@ -45,7 +46,8 @@ class CapacitanceMatrixStudy:
     def __init__(
         self,
         qiskit_component_names: list,
-        mode: Union[str],
+        mode: str,
+        mode_freq_GHz: Union[float],
         open_pins: list = [],
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
@@ -56,6 +58,7 @@ class CapacitanceMatrixStudy:
     ):
         self.qiskit_component_names = qiskit_component_names
         self.mode = mode
+        self.mode_freq_GHz = mode_freq_GHz
         self.open_pins = open_pins
         self.x_buffer_width_mm = x_buffer_width_mm
         self.y_buffer_width_mm = y_buffer_width_mm
@@ -129,7 +132,8 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
     def __init__(
         self,
-        mode: Union[float],
+        mode: Union[str],     
+        mode_freq_GHz: Union[float],   
         mode_capacitance_name: Union[str, List[str]],
         charge_line_capacitance_name: str,
         charge_line_impedance_Ohm: float,
@@ -144,6 +148,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         super().__init__(
             qiskit_component_names=qiskit_component_names,
             mode=mode,
+            mode_freq_GHz=mode_freq_GHz,
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
             y_buffer_width_mm=y_buffer_width_mm,
@@ -154,6 +159,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         self.ground_plane_capacitance_name = ground_plane_capacitance_name
         self.charge_line_capacitance_name = charge_line_capacitance_name
         self.charge_line_impedance_Ohm = charge_line_impedance_Ohm
+        self.freq_GHz = mode_freq_GHz
 
     def get_t1_limit_due_to_decay_into_charge_line(self) -> float:
         """Get the T1 limit due to decay into charge line decay

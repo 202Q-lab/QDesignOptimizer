@@ -114,9 +114,6 @@ class DesignAnalysis:
             self.mini_study.max_mesh_length_port
         )
         self.renderer.options["keep_originals"] = True
-        
-        print('lukas', self.system_target_params)
-        print('lukas', self.system_optimized_params)
         self._validate_opt_targets()
         
 
@@ -140,18 +137,15 @@ class DesignAnalysis:
 
     def _validate_opt_targets(self):
         """Validate opt_targets."""
-        print('lukas', self.opt_targets)
         if not self.opt_targets is None:
             for target in self.opt_targets:
                 assert (
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
-                print('lukas', target.system_target_param )
                 if target.system_target_param == PURCELL_LIMIT_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
-                    print('lukas')
                 elif target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
@@ -434,7 +428,6 @@ class DesignAnalysis:
         capacitance_matrix: pd.DataFrame,
         capacitance_study: CapacitanceMatrixStudy,
     ):
-        print('lukas', self.system_target_params)  
         if CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
             for key_capacitances in self.system_target_params[
                 CAPACITANCE_MATRIX_ELEMENTS
@@ -449,11 +442,9 @@ class DesignAnalysis:
                     )
 
                   
-        if PURCELL_LIMIT_T1 in self.system_target_params:         
-            log.info("Computing T1 limit from decay in charge line.")
-            self.system_optimized_params[capacitance_study.mode][
-                capacitance_study.mode
-            ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
+        # if PURCELL_LIMIT_T1 in self.system_target_params:         
+        log.info("Computing T1 limit from decay in charge line.")
+        self.system_optimized_params[param(capacitance_study.mode, PURCELL_LIMIT_T1)] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod
     def _apply_adjustment_rate(new_val, old_val, rate):
@@ -530,7 +521,6 @@ class DesignAnalysis:
         ordered_design_var_names_to_minimize = [
             target.design_var for target in targets_to_minimize_for
         ]
-
         def cost_function(ordered_design_var_vals_updated):
             """Cost function to minimize.
 
@@ -541,6 +531,7 @@ class DesignAnalysis:
                 all_design_var_updated[name] = ordered_design_var_vals_updated[idx]
             cost = 0
             for target in targets_to_minimize_for:
+                
                 Q_k1_i = (
                     self.get_parameter_value(target, all_parameters_current)
                     * target.prop_to(all_parameters_targets_met, all_design_var_updated)
@@ -610,6 +601,7 @@ class DesignAnalysis:
         independent_targets = [
             target for target in self.opt_targets if target.independent_target
         ]
+        
         if independent_targets is not []:
             for independent_target in independent_targets:
                 self._minimize_for_design_vars(
