@@ -68,6 +68,8 @@ def get_mini_study_2qb_resonator_coupler():
         jj_setup=all_jjs,
         design_name="get_mini_study_2qb_resonator_coupler",
         adjustment_rate=1,
+        cos_trunc=6, 
+        fock_trunc=5,
         build_fine_mesh=False,
         **CONVERGENCE
     )
