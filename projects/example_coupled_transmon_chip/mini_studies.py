@@ -122,7 +122,6 @@ def get_mini_study_resonator_capacitance(group: int):
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
     qiskit_component_names = [n.name_mode(resonator), n.name_tee(group)]
     cap_study = CapacitanceMatrixStudy(
-        mode="dummy",
         qiskit_component_names=qiskit_component_names,
         open_pins=[
             (n.name_mode(resonator), "start"),
