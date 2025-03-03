@@ -11,7 +11,6 @@ from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
 from qdesignoptimizer.logging import dict_log_format, log
-from qdesignoptimizer.utils.names_parameters import (FREQ, param)
 
 
 class CapacitanceMatrixStudy:
@@ -46,7 +45,6 @@ class CapacitanceMatrixStudy:
     def __init__(
         self,
         qiskit_component_names: list,
-        mode: str,
         mode_freq_GHz: Union[float],
         open_pins: list = [],
         x_buffer_width_mm: float = 2,
@@ -57,7 +55,6 @@ class CapacitanceMatrixStudy:
         nbr_passes: Optional[int] = 10,
     ):
         self.qiskit_component_names = qiskit_component_names
-        self.mode = mode
         self.mode_freq_GHz = mode_freq_GHz
         self.open_pins = open_pins
         self.x_buffer_width_mm = x_buffer_width_mm
@@ -132,8 +129,8 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
     def __init__(
         self,
-        mode: Union[str],     
-        mode_freq_GHz: Union[float],   
+        mode: Union[str],
+        mode_freq_GHz: Union[float],
         mode_capacitance_name: Union[str, List[str]],
         charge_line_capacitance_name: str,
         charge_line_impedance_Ohm: float,
@@ -246,7 +243,7 @@ def sim_capacitance_matrix(
     open_terminations: list,
     freq_ghz: float = 4,
     nbr_passes: int = 16,
-    ):
+):
 
     lom_analysis = LOManalysis(design, "q3d")
     lom_analysis.sim.setup.max_passes = nbr_passes
@@ -262,4 +259,3 @@ def sim_capacitance_matrix(
     capacitance_matrix = lom_analysis.sim.capacitance_matrix
 
     return capacitance_matrix
-

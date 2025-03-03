@@ -18,7 +18,10 @@ from qdesignoptimizer.design_analysis_types import (
     OptTarget,
 )
 from qdesignoptimizer.logging import dict_log_format, log
-from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
+from qdesignoptimizer.sim_capacitance_matrix import (
+    CapacitanceMatrixStudy,
+    ModeDecayIntoChargeLineStudy,
+)
 from qdesignoptimizer.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.names_parameters import (
     CAPACITANCE_MATRIX_ELEMENTS,
@@ -74,7 +77,7 @@ class DesignAnalysis:
         self.all_design_vars = [target.design_var for target in opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
-        
+
         self.is_system_optimized_params_initialized = False
         if state.system_optimized_params is not None:
             sys_opt_param = state.system_optimized_params
@@ -115,7 +118,6 @@ class DesignAnalysis:
         )
         self.renderer.options["keep_originals"] = True
         self._validate_opt_targets()
-        
 
         assert (
             not self.system_target_params is self.system_optimized_params
@@ -150,8 +152,9 @@ class DesignAnalysis:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
                     assert (
-                        CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params
-                    ), f"Target for {CAPACITANCE_MATRIX_ELEMENTS} requires {CAPACITANCE_MATRIX_ELEMENTS} in system_target_params."
+                        param_capacitance(*target.involved_modes)
+                        in self.system_target_params
+                    ), f"Target for {CAPACITANCE_MATRIX_ELEMENTS} requires {param_capacitance(*target.involved_modes)} in system_target_params."
                     assert (
                         len(target.involved_modes) == 2
                     ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
@@ -162,18 +165,6 @@ class DesignAnalysis:
                         capacitance_2, str
                     ), f"Second capacitance name {capacitance_2} must be a string."
 
-                    if (capacitance_2, capacitance_1) in self.system_target_params[
-                        CAPACITANCE_MATRIX_ELEMENTS
-                    ]:
-                        tip = f" The reversed ordered key {(capacitance_2, capacitance_1)} exists, but the order must be consistent."
-                    else:
-                        tip = ""
-                    assert (capacitance_1, capacitance_2) in self.system_target_params[
-                        CAPACITANCE_MATRIX_ELEMENTS
-                    ], (
-                        f"Capacitance names key {(capacitance_1, capacitance_2)} not found in system_target_params[{CAPACITANCE_MATRIX_ELEMENTS}]."
-                        + tip
-                    )
                 elif target.system_target_param == NONLIN:
                     assert (
                         len(target.involved_modes) == 2
@@ -428,23 +419,28 @@ class DesignAnalysis:
         capacitance_matrix: pd.DataFrame,
         capacitance_study: CapacitanceMatrixStudy,
     ):
-        if CAPACITANCE_MATRIX_ELEMENTS in self.system_target_params:
-            for key_capacitances in self.system_target_params[
-                CAPACITANCE_MATRIX_ELEMENTS
-            ].keys():
-                try:
-                    self.system_optimized_params[CAPACITANCE_MATRIX_ELEMENTS][
-                        key_capacitances
-                    ] = capacitance_matrix.loc[key_capacitances[0], key_capacitances[1]]
-                except KeyError:
-                    log.warning(
-                        f"Warning: capacitance {key_capacitances} not found in capacitance matrix"
-                    )
+        capacitance_names_all_targets = [
+            target.involved_modes
+            for target in self.opt_targets
+            if target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS
+        ]
 
-                  
-        # if PURCELL_LIMIT_T1 in self.system_target_params:         
+        for capacitance_names in capacitance_names_all_targets:
+            try:
+                self.system_optimized_params[param_capacitance(*capacitance_names)] = (
+                    capacitance_matrix.loc[capacitance_names[0], capacitance_names[1]]
+                )
+            except KeyError:
+                log.warning(
+                    f"Warning: capacitance {capacitance_names} not found in capacitance matrix with names {capacitance_matrix.columns}"
+                )
+
+        # if PURCELL_LIMIT_T1 in self.system_target_params:
         log.info("Computing T1 limit from decay in charge line.")
-        self.system_optimized_params[param(capacitance_study.mode, PURCELL_LIMIT_T1)] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
+        if isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
+            self.system_optimized_params[
+                param(capacitance_study.mode, PURCELL_LIMIT_T1)
+            ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod
     def _apply_adjustment_rate(new_val, old_val, rate):
@@ -521,6 +517,7 @@ class DesignAnalysis:
         ordered_design_var_names_to_minimize = [
             target.design_var for target in targets_to_minimize_for
         ]
+
         def cost_function(ordered_design_var_vals_updated):
             """Cost function to minimize.
 
@@ -531,7 +528,6 @@ class DesignAnalysis:
                 all_design_var_updated[name] = ordered_design_var_vals_updated[idx]
             cost = 0
             for target in targets_to_minimize_for:
-                
                 Q_k1_i = (
                     self.get_parameter_value(target, all_parameters_current)
                     * target.prop_to(all_parameters_targets_met, all_design_var_updated)
@@ -601,7 +597,7 @@ class DesignAnalysis:
         independent_targets = [
             target for target in self.opt_targets if target.independent_target
         ]
-        
+
         if independent_targets is not []:
             for independent_target in independent_targets:
                 self._minimize_for_design_vars(

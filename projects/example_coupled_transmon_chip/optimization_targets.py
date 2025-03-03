@@ -1,11 +1,13 @@
 from typing import List
 
 import names as n
+import numpy as np
 
 from qdesignoptimizer.design_analysis_types import OptTarget
 from qdesignoptimizer.utils.optimization_targets import (
     get_opt_targets_qb_res_transmission,
 )
+
 
 def get_opt_targets_2qubits_resonator_coupler(
     groups: List[int],
@@ -66,7 +68,7 @@ def get_opt_targets_2qubits_resonator_coupler(
 
 def get_opt_target_qubit_T1_limit_via_charge_posy(
     group: int,
-    ) -> OptTarget:
+) -> OptTarget:
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     return OptTarget(
         system_target_param=n.PURCELL_LIMIT_T1,
@@ -77,11 +79,28 @@ def get_opt_target_qubit_T1_limit_via_charge_posy(
         independent_target=True,
     )
 
+
 def get_opt_targets_qb_charge_line(
-    group: int, 
-    qb_T1_limit: bool = True
-    ) -> List[OptTarget]:
+    group: int, qb_T1_limit: bool = True
+) -> List[OptTarget]:
     opt_targets = []
     if qb_T1_limit:
         opt_targets.append(get_opt_target_qubit_T1_limit_via_charge_posy(group))
     return opt_targets
+
+
+def get_opt_target_capacitance(
+    group: int,
+) -> List[OptTarget]:
+    resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+    return [
+        OptTarget(
+            system_target_param=n.CAPACITANCE_MATRIX_ELEMENTS,
+            involved_modes=["prime_cpw_name_tee1", "second_cpw_name_tee1"],
+            design_var=n.design_var_length(f"{resonator}_capacitance"),
+            design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
+            prop_to=lambda p, v: 1
+            / np.sqrt(v[n.design_var_length(f"{resonator}_capacitance")]),
+            independent_target=True,
+        )
+    ]

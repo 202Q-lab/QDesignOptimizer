@@ -83,8 +83,9 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
         second_gap=c.RESONATOR_GAP,
         prime_width=c.LINE_50_OHM_WIDTH,
         prime_gap=c.LINE_50_OHM_GAP,
-        coupling_space="10um",
+        coupling_space=n.design_var_length(f"{resonator}_capacitance"),
         fillet=c.BEND_RADIUS,
+        prime_length_factor=5,
         coupling_length=n.design_var_coupl_length(resonator, "tee"),
     )
 
@@ -97,7 +98,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
             end_pin=dict(component=cltee.name, pin="second_end"),
         ),
         fillet=c.BEND_RADIUS,
-        hfss_wire_bonds=True,
+        hfss_wire_bonds=False,
         total_length=n.design_var_length(resonator),
         lead=dict(start_straight="600um", end_straight="100um"),
         trace_width=c.RESONATOR_WIDTH,

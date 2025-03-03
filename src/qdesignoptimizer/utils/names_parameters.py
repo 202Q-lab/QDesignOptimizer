@@ -80,14 +80,20 @@ def get_group_from_mode(mode: Mode) -> int | None:
         return None
 
 
-def param(mode: Mode, param_type: Literal["freq", "kappa", "purcell_limit_T1"]) -> Parameter:
+def param(
+    mode: Mode, param_type: Literal["freq", "kappa", "purcell_limit_T1"]
+) -> Parameter:
     """Construct a parameter name from the mode and parameter type.
 
     Examples:
         param("QUBIT_1", "freq") -> "qubit_1_freq"
         param("QUBIT_1", "kappa") -> "qubit_1_kappa"
     """
-    assert param_type in ["freq", "kappa", "purcell_limit_T1"], "param_type must be 'freq' or 'kappa' or 'purcell_limit_T1"
+    assert param_type in [
+        "freq",
+        "kappa",
+        "purcell_limit_T1",
+    ], "param_type must be 'freq' or 'kappa' or 'purcell_limit_T1"
     return f"{mode}_{param_type}"
 
 
@@ -106,7 +112,7 @@ def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:
 
 
 def param_capacitance(capacitance_name_1: str, capacitance_name_2: str) -> Parameter:
-    """Construct a parameter name for capacitance matrix elements from two capacitance names.
+    """Construct a parameter name for capacitance matrix elements (femto Farad) from two capacitance names.
     The capacitance names are sorted alphabetically before constructing the parameter name.
 
     Examples:
