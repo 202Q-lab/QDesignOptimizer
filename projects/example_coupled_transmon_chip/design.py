@@ -4,9 +4,11 @@ from qiskit_metal.designs.design_planar import DesignPlanar
 from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
+from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
+from qdesignoptimizer.utils.utils import get_value_and_unit
 
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     nbr_idx = group - 1  # zero indexed
@@ -23,8 +25,8 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
         inductor_width="30um",
         pad_width=n.design_var_width(qubit),
         pad_height="120um",
-        pocket_width="1800um",
-        pocket_height="1800um",
+        pocket_width="1200um",
+        pocket_height="1200um",
         coupled_pad_width="0um",
         coupled_pad_height="0um",
         coupled_pad_gap="100um",
@@ -52,19 +54,6 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
                 cpw_gap=c.RESONATOR_GAP,
                 cpw_extend="0.0um",
                 pocket_extent="5um",
-            ),
-            charge_line=dict(
-                loc_W=[1, -1][nbr_idx],
-                loc_H=-1,
-                pad_gap=n.design_var_cl_pos_y(qubit),
-                pad_width="40um",
-                pad_height="170um",
-                cpw_width=c.LINE_50_OHM_WIDTH,
-                cpw_gap=c.LINE_50_OHM_GAP,
-                cpw_extend="100.0um",
-                pocket_extent="5um",
-                pocket_rise="0um",
-                pad_cpw_shift="150um",
             ),
         ),
         gds_cell_name=f"Manhattan_{group}",
@@ -218,9 +207,20 @@ def add_chargeline(design: DesignPlanar, group: int):
     launch_options["pos_y"] = ["-2mm", "2mm"][nbr_idx]
     LaunchpadWirebond(design, n.name_lp(lp_nbr), options=launch_options)
 
+    otg_options = dict(
+        pos_x=n.design_var_cl_pos_x(qubit),
+        pos_y=n.design_var_cl_pos_y(qubit),
+        orientation='0',
+        width=c.LINE_50_OHM_WIDTH,
+        gap=c.LINE_50_OHM_GAP,
+        termination_gap=c.LINE_50_OHM_GAP,
+    )
+    
+    OpenToGround(design, n.name_('otg_'+qubit), options=otg_options)
+
     pins_top = dict(
         start_pin=dict(component=n.name_lp(lp_nbr), pin="tie"),
-        end_pin=dict(component=n.name_mode(qubit), pin="charge_line"),
+        end_pin=dict(component=n.name_('otg_'+qubit), pin="open"),
     )
 
     options_chargeline = dict(

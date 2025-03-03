@@ -435,7 +435,6 @@ class DesignAnalysis:
                     f"Warning: capacitance {capacitance_names} not found in capacitance matrix with names {capacitance_matrix.columns}"
                 )
 
-        # if PURCELL_LIMIT_T1 in self.system_target_params:
         log.info("Computing T1 limit from decay in charge line.")
         if isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
             self.system_optimized_params[

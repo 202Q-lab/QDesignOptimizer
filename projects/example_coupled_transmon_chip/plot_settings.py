@@ -78,7 +78,7 @@ PLOT_SETTINGS_TWO_QB = {
 }
 
 PLOT_SETTINGS_CHARGE_LINE_DECAY = {
-    "QUBIT": [OptPltSet(n.ITERATION, param(n.QUBIT_1, n.PURCELL_LIMIT_T1))],
+    "QUBIT": [OptPltSet(n.ITERATION, param(n.QUBIT_1, n.PURCELL_LIMIT_T1), y_label="T1 limit (s)", y_scale='log')],
 }
 
 PLOT_SETTINGS_CAPACITANCE = {

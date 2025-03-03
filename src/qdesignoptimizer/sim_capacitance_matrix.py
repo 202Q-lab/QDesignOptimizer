@@ -144,7 +144,6 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
     ):
         super().__init__(
             qiskit_component_names=qiskit_component_names,
-            mode=mode,
             mode_freq_GHz=mode_freq_GHz,
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
@@ -152,6 +151,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
             percent_error=percent_error,
             nbr_passes=nbr_passes,
         )
+        self.mode = mode
         self.mode_capacitance_name = mode_capacitance_name
         self.ground_plane_capacitance_name = ground_plane_capacitance_name
         self.charge_line_capacitance_name = charge_line_capacitance_name

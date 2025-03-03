@@ -10,7 +10,12 @@ from qdesignoptimizer.utils.names_parameters import param, ITERATION
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
 class OptPltSet:
-    def __init__(self, x: str, y: Union[str, List[str]], x_label: str = None, y_label: str = None):
+    def __init__(self, x: str, 
+                 y: Union[str, List[str]], 
+                 x_label: str = None, 
+                 y_label: str = None, 
+                 x_scale: str = 'linear', 
+                 y_scale: str = 'linear'):
         """Set the plot settings for a progress plots of the optimization framework
 
         Args:
@@ -23,6 +28,8 @@ class OptPltSet:
         self.y = y
         self.x_label = self._get_label(x, x_label)
         self.y_label = self._get_label(y, y_label)
+        self.x_scale = x_scale
+        self.y_scale = y_scale
 
     def _get_label(self, variable: str, x_label: str):
         if x_label is not None:
@@ -35,7 +42,6 @@ def plot_progress(
     opt_results: dict,
     system_target_params: dict,
     plot_settings: dict,
-    plot_option: str = "linear",
     block_plots: bool = False,
 ):
     """Plot the progress of the optimization framework
@@ -65,7 +71,6 @@ def plot_progress(
         panels: list,
         axs: list,
         colors: cycle,
-        plot_option: str,
     ) -> bool:
         """Plot all panels in the figure
 
@@ -145,11 +150,8 @@ def plot_progress(
             axes.legend()
             axes.set_xlabel(panel.x_label)
             axes.set_ylabel(panel.y_label)
-            if plot_option == "log":
-                axes.set_yscale("log")
-            if plot_option == "loglog":
-                axes.set_xscale("log")
-                axes.set_yscale("log")
+            axes.set_xscale(panel.x_scale)
+            axes.set_yscale(panel.y_scale)
         return data_plotted
 
     plt.close("all")
@@ -162,8 +164,7 @@ def plot_progress(
             system_target_params,
             panels,
             axs,
-            colors,
-            plot_option,
+            colors
         )
         fig.suptitle(plot_name)
         fig.subplots_adjust(hspace=0.5)
@@ -185,6 +186,5 @@ if __name__ == "__main__":
         simulation["optimization_results"],
         simulation["system_target_params"],
         simulation["plot_settings"],
-        plot_option="linear",
         block_plots=True,
     )
