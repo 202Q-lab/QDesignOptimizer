@@ -1,6 +1,7 @@
 import os
+import time
 from itertools import cycle
-from typing import Union, List
+from typing import Union, List, Literal
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -15,7 +16,8 @@ class OptPltSet:
                  x_label: str = None, 
                  y_label: str = None, 
                  x_scale: str = 'linear', 
-                 y_scale: str = 'linear'):
+                 y_scale: str = 'linear',
+                 unit: Literal['Hz', 'kHz', 'MHz','GHz']= 'Hz'):
         """Set the plot settings for a progress plots of the optimization framework
 
         Args:
@@ -30,6 +32,8 @@ class OptPltSet:
         self.y_label = self._get_label(y, y_label)
         self.x_scale = x_scale
         self.y_scale = y_scale
+        self.unit = unit
+        self.normalization =  {'Hz': 1,'kHz': 1e3, 'MHz': 1e6,'GHz': 1e9}[unit]
 
     def _get_label(self, variable: str, x_label: str):
         if x_label is not None:
@@ -39,10 +43,11 @@ class OptPltSet:
 
 
 def plot_progress(
-    opt_results: dict,
+    opt_results: List[dict],
     system_target_params: dict,
     plot_settings: dict,
     block_plots: bool = False,
+    save_figures: bool = False,
 ):
     """Plot the progress of the optimization framework
 
@@ -66,7 +71,7 @@ def plot_progress(
         return data_opt
 
     def plot_figure(
-        opt_results: dict,
+        opt_results: List[dict],
         system_target_params: dict,
         panels: list,
         axs: list,
@@ -95,63 +100,67 @@ def plot_progress(
             if axes.get_legend() is not None:
                 axes.get_legend().remove()
             color = next(colors)
-            x_data_opt = [
-                get_data_from_parameter(panel.x, result, ii)
-                for ii, result in enumerate(opt_results)
-            ]
-            if isinstance(panel.y, str):
-                # Handle single y parameter (string)
-                y_data_opt = [
-                    get_data_from_parameter(panel.y, result, ii)
-                    for ii, result in enumerate(opt_results)
+            no_opt_results = len(opt_results)
+            for i, opt_result in enumerate(opt_results):
+                x_data_opt = [
+                    get_data_from_parameter(panel.x, result, ii)
+                    for ii, result in enumerate(opt_result)
                 ]
-                if all(element is not None for element in y_data_opt):
-                    data_plotted = True
-                axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized", color=color)
-                if (
-                    panel.y in system_target_params
-                    and (not None in x_data_opt)
-                    and (not None in y_data_opt)
-                ):
-                    y_data_target = system_target_params[panel.y]
-                    axes.plot(
-                        [min(x_data_opt), max(x_data_opt)],
-                        [y_data_target, y_data_target],
-                        "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
-                        color=color,
-                        label=f"target",
-                    )
-            else:
-                # Handle multiple y parameters (list of strings)
-                for y_idx, y_param in enumerate(panel.y):
+                if isinstance(panel.y, str):
+                    # Handle single y parameter (string)
                     y_data_opt = [
-                        get_data_from_parameter(y_param, result, ii)
-                        for ii, result in enumerate(opt_results)
+                        get_data_from_parameter(panel.y, result, ii)
+                        for ii, result in enumerate(opt_result)
                     ]
                     if all(element is not None for element in y_data_opt):
                         data_plotted = True
-                    curr_color = color if y_idx == 0 else f"C{y_idx}"
-                    axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized {y_param}", color=curr_color)
-
+                    axes.plot(x_data_opt, np.array(y_data_opt)/panel.normalization, "o-", label=f"optimized {'' if no_opt_results==1 else i+1}", color=color)
                     if (
-                        y_param in system_target_params
+                        panel.y in system_target_params
                         and (not None in x_data_opt)
                         and (not None in y_data_opt)
+                        and i == no_opt_results-1 # We are plotting the target only for the last of opt_results.
                     ):
-                        y_data_target = system_target_params[y_param]
-                        axes.plot(
+                        y_data_target = system_target_params[panel.y]
+                        axes.plot( 
                             [min(x_data_opt), max(x_data_opt)],
-                            [y_data_target, y_data_target],
+                            [y_data_target/panel.normalization, y_data_target/panel.normalization],
                             "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
-                            color=curr_color,
-                            label=f"target {y_param}",
+                            color=color,
+                            label=f"target",
                         )
+                else:
+                    # Handle multiple y parameters (list of strings)
+                    for y_idx, y_param in enumerate(panel.y):
+                        y_data_opt = [
+                            get_data_from_parameter(y_param, result, ii)
+                            for ii, result in enumerate(opt_result)
+                        ]
+                        if all(element is not None for element in y_data_opt):
+                            data_plotted = True
+                        curr_color = color if y_idx == 0 else f"C{y_idx}"
+                        axes.plot(x_data_opt, np.array(y_data_opt)/panel.normalization, "o-", label=f"optimized {y_param} {'' if no_opt_results==1 else i+1}", color=curr_color)
 
-            axes.legend()
-            axes.set_xlabel(panel.x_label)
-            axes.set_ylabel(panel.y_label)
-            axes.set_xscale(panel.x_scale)
-            axes.set_yscale(panel.y_scale)
+                        if (
+                            y_param in system_target_params
+                            and (not None in x_data_opt)
+                            and (not None in y_data_opt)
+                            and i == no_opt_results-1 # We are plotting the target only for the last of opt_results.
+                        ):
+                            y_data_target = system_target_params[y_param]
+                            axes.plot(
+                                [min(x_data_opt), max(x_data_opt)],
+                                [np.array(y_data_target)/panel.normalization, np.array(y_data_target)/panel.normalization],
+                                "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
+                                color=curr_color,
+                                label=f"target {y_param}",
+                            )
+
+                axes.legend()
+                axes.set_xlabel(panel.x_label)
+                axes.set_ylabel(panel.y_label+f" ({panel.unit})")
+                axes.set_xscale(panel.x_scale)
+                axes.set_yscale(panel.y_scale)
         return data_plotted
 
     plt.close("all")
@@ -168,7 +177,8 @@ def plot_progress(
         )
         fig.suptitle(plot_name)
         fig.subplots_adjust(hspace=0.5)
-
+        if save_figures == True:
+            fig.savefig(f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png")
     plt.show(block=block_plots)
 
 
