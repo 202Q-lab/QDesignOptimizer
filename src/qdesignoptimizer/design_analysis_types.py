@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, Dict, List, Literal, Union
+from typing import Callable, Dict, List, Literal, Optional, Union
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -77,11 +77,11 @@ class OptTarget:
             "nonlinearity",
             "CAPACITANCE_MATRIX_ELEMENTS",
         ],
-        involved_modes: List[tuple[str]],
+        involved_modes: List[tuple[str, str]],
         design_var: str,
-        design_var_constraint: object,
-        prop_to: Callable[
-            [Dict[str, Union[float, int]], Dict[str, Union[float, int]]], None
+        design_var_constraint: dict[str, str],
+        prop_to: Optional[
+            Callable[[Dict[str, Union[float, int]], Dict[str, Union[float, int]]], None]
         ] = None,
         independent_target: bool = False,
     ):
@@ -129,8 +129,8 @@ class MiniStudy:
         mode_freqs: List[tuple],
         nbr_passes: int = 10,
         delta_f: float = 0.1,
-        jj_var: object = {},
-        jj_setup: object = {},
+        jj_var: dict = dict(),
+        jj_setup: dict = dict(),
         design_name: str = "mini_study",
         project_name: str = "dummy_project",
         x_buffer_width_mm=0.5,
@@ -186,7 +186,7 @@ class DesignAnalysisState:
         design: QDesign,
         render_qiskit_metal: Callable,
         system_target_params: dict,
-        system_optimized_params: dict = None,
+        system_optimized_params: Optional[dict] = None,
     ):
         self.design = design
         self.render_qiskit_metal = render_qiskit_metal

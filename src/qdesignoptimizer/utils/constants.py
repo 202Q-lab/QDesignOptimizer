@@ -43,7 +43,7 @@ def mode_freq_to_mode(mode_freq: str) -> str:
 def cross_kerr(branch_list: List[str], mode_list: List[str]):
     if len(branch_list) != 2 or len(mode_list) != 2:
         raise ValueError("branch_list and mode_list both must contain two elements")
-    mode_list, branch_list = zip(
+    mode_list, branch_list = zip(  # type: ignore[assignment]
         *sorted(zip(mode_list, branch_list))
     )  # zip(*___) is the inverse of zip.
     return ((branch_list[0], mode_list[0]), (branch_list[1], mode_list[1]))

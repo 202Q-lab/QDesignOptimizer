@@ -69,5 +69,5 @@ sphinx-mdinclude = "*"
 testpaths = ['tests/']
 
 [[tool.mypy.overrides]]
-module = ["qiskit_metal.*", "matplotlib.*", "pyEPR.*", "pyaedt.*"]
+module = ["qiskit_metal.*", "matplotlib.*", "pyEPR.*", "pyaedt.*", "scipy.*"]
 ignore_missing_imports = true

@@ -117,7 +117,7 @@ def plot_progress(
         return data_opt
 
     def plot_figure(
-        opt_results: dict,
+        opt_results: list[dict],
         system_target_params: dict,
         panels: list,
         axs: list[plt.Axes] | plt.Axes,
@@ -143,7 +143,7 @@ def plot_progress(
         for idx, panel in enumerate(panels):
 
             if len(panels) == 1:
-                axes = axs
+                axes: plt.Axes = axs
             else:
                 axes = axs[idx]
             if axes.get_legend() is not None:

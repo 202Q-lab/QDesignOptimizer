@@ -49,7 +49,7 @@ class CapacitanceMatrixStudy:
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
         render_qiskit_metal: Optional[Callable] = None,
-        render_qiskit_metal_kwargs: Optional[dict] = defaultdict(),
+        render_qiskit_metal_kwargs: dict = defaultdict(),
         percent_error: Optional[float] = 0.5,
         nbr_passes: Optional[int] = 10,
     ):
@@ -125,7 +125,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         charge_line_capacitance_name (str): capacitance name of charge line
         charge_line_impedance_Ohm (float): charge line impedance in Ohm
     """
-        + CapacitanceMatrixStudy.__doc__
+        + str(CapacitanceMatrixStudy.__doc__)
     )
 
     def __init__(
@@ -138,7 +138,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         component_names: list,
         freq_GHz: Union[float],
         open_pins: list = [],
-        ground_plane_capacitance_name: str = None,
+        ground_plane_capacitance_name: Optional[str] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
         percent_error: float = 0.5,

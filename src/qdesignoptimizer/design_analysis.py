@@ -45,12 +45,12 @@ class DesignAnalysis:
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
-        opt_targets: List[OptTarget] = None,
-        save_path: str = None,
+        opt_targets: List[OptTarget] = list(),
+        save_path: Optional[str] = None,
         update_parameters: bool = True,
-        plot_settings: dict = None,
+        plot_settings: Optional[dict] = None,
         plot_branches_separately=False,
-        meshing_map: List[MeshingMap] = None,
+        meshing_map: Optional[List[MeshingMap]] = None,
     ):
         self.design_analysis_version = "1.0.1"
         """To be updated each time we update the DesignAnalysis class.
@@ -95,7 +95,7 @@ class DesignAnalysis:
         self.plot_branches_separately = plot_branches_separately
         self.meshing_map = meshing_map
 
-        self.optimization_results = []
+        self.optimization_results: list[dict] = []
 
         self.renderer.start()
         self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
@@ -133,7 +133,7 @@ class DesignAnalysis:
 
     def _validate_opt_targets(self):
         """Validate opt_targets."""
-        if not self.opt_targets is None:
+        if self.opt_targets:
             for target in self.opt_targets:
                 assert (
                     target.design_var in self.design.variables
@@ -800,7 +800,7 @@ class DesignAnalysis:
             }
         ]
         if self.save_path is not None:
-            np.save(self.save_path, simulation, allow_pickle=True)
+            np.save(self.save_path, np.array(simulation), allow_pickle=True)
 
             with open(self.save_path + "_design_variables.json", "w") as outfile:
                 json.dump(updated_design_vars, outfile, indent=4)
@@ -835,7 +835,7 @@ class DesignAnalysis:
 
         log.info("Overwritten parameters%s", dict_log_format(updated_design_vars))
 
-    def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
+    def get_cross_kerr_matrix(self, iteration: int = -1) -> Optional[pd.DataFrame]:
         """Get cross kerr matrix from EPR analysis.
 
         Args:
@@ -846,8 +846,10 @@ class DesignAnalysis:
         """
         if "cross_kerrs" in self.optimization_results[iteration]:
             return self.optimization_results[iteration]["cross_kerrs"]
+        log.warning("No cross kerr matrix in optimization results.")
+        return None
 
-    def get_eigenmode_results(self, iteration: int = -1) -> pd.DataFrame:
+    def get_eigenmode_results(self, iteration: int = -1) -> Optional[pd.DataFrame]:
         """Get eigenmode results.
 
         Args:
@@ -858,6 +860,8 @@ class DesignAnalysis:
         """
         if "eig_results" in self.optimization_results[iteration]:
             return self.optimization_results[iteration]["eig_results"]
+        log.warning("No eigenmode matrix in optimization results.")
+        return None
 
     def get_capacitance_matrix(
         self, capacitance_study_number: int, iteration: int = -1
