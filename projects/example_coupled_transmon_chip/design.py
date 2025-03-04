@@ -40,7 +40,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
                 pad_height="40um",
                 cpw_width=c.RESONATOR_WIDTH,
                 cpw_gap=c.RESONATOR_GAP,
-                cpw_extend="0.0um",
+                cpw_extend="300um",
                 pocket_extent="5um",
             ),
             coupler=dict(
