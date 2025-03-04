@@ -2116,7 +2116,7 @@ xmp = ["defusedxml"]
 [[package]]
 name = "pint"
 version = "0.20.1"
-description = "Physical quantities module"
+description = "Physical parameters module"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]

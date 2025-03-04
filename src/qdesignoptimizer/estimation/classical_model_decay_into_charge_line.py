@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def decay_rate_oscillator_transmissionline(
+def mode_decay_rate_into_transmissionline(
     mode_freq_GHz: float,
     mode_capacitance_fF: float,
     coupling_capacitance_fF: float,
@@ -34,7 +34,7 @@ def calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline(
     mode_capacitance_to_charge_line_fF: float,
     charge_line_impedance: float = 50.0,
 ):
-    """Wrapper around decay_rate_oscillator_transmissionline for the case of a grounded mode.
+    """Wrapper around mode_decay_rate_into_transmissionline for the case of a grounded mode.
     In this case the coupling capacitance is just the capacitance between the single island and the charge line.
 
     Args:
@@ -47,7 +47,7 @@ def calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline(
         float: (s) The T1 limit due to decay into charge line decay.
     """
 
-    gamma = decay_rate_oscillator_transmissionline(
+    gamma = mode_decay_rate_into_transmissionline(
         mode_freq_GHz,
         mode_capacitance_fF,
         mode_capacitance_to_charge_line_fF,
@@ -66,7 +66,7 @@ def calculate_t1_limit_floating_lumped_mode_decay_into_chargeline(
     cap_island_b_line_fF: float,
     charge_line_impedance: float = 50.0,
 ):
-    """Wrapper around decay_rate_oscillator_transmissionline for the case of a floating mode.
+    """Wrapper around mode_decay_rate_into_transmissionline for the case of a floating mode.
     In this case the coupling capacitance is an effective capacitance including different capacitance networks, which we need to compute here first.
 
     Args:
@@ -89,7 +89,7 @@ def calculate_t1_limit_floating_lumped_mode_decay_into_chargeline(
         (cap_a * cap_island_b_line_fF - cap_b * cap_island_a_line_fF) / (cap_a + cap_b)
     )
 
-    gamma = decay_rate_oscillator_transmissionline(
+    gamma = mode_decay_rate_into_transmissionline(
         mode_freq_GHz, Csum, coupling_capacitance, charge_line_impedance
     )
 
