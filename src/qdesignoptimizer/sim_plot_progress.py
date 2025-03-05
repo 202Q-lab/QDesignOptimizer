@@ -5,6 +5,7 @@ from typing import Union, List, Literal
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 from qdesignoptimizer.utils.names_design_variables import name_mode
 from qdesignoptimizer.utils.names_parameters import param, ITERATION
@@ -48,6 +49,7 @@ def plot_progress(
     plot_settings: dict,
     block_plots: bool = False,
     save_figures: bool = False,
+    plot_variance: bool = False,
 ):
     """Plot the progress of the optimization framework
 
@@ -101,66 +103,86 @@ def plot_progress(
                 axes.get_legend().remove()
             color = next(colors)
             no_opt_results = len(opt_results)
-            for i, opt_result in enumerate(opt_results):
-                x_data_opt = [
-                    get_data_from_parameter(panel.x, result, ii)
-                    for ii, result in enumerate(opt_result)
-                ]
-                if isinstance(panel.y, str):
+            x_data_opt = [
+                get_data_from_parameter(panel.x, result, ii)
+                for ii, result in enumerate(opt_results[0]) # Using the 0th index because all different instances of optimization are supposed to have same number of passes
+            ]
+            if isinstance(panel.y, str):
+                y_data_opt_list = []
+                for i, opt_result in enumerate(opt_results): # Looping for different instances of optimization used for analysis
                     # Handle single y parameter (string)
                     y_data_opt = [
                         get_data_from_parameter(panel.y, result, ii)
                         for ii, result in enumerate(opt_result)
                     ]
-                    if all(element is not None for element in y_data_opt):
-                        data_plotted = True
-                    axes.plot(x_data_opt, np.array(y_data_opt)/panel.normalization, "o-", label=f"optimized {'' if no_opt_results==1 else i+1}", color=color)
-                    if (
-                        panel.y in system_target_params
-                        and (not None in x_data_opt)
-                        and (not None in y_data_opt)
-                        and i == no_opt_results-1 # We are plotting the target only for the last of opt_results.
-                    ):
-                        y_data_target = system_target_params[panel.y]
-                        axes.plot( 
-                            [min(x_data_opt), max(x_data_opt)],
-                            [y_data_target/panel.normalization, y_data_target/panel.normalization],
-                            "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
-                            color=color,
-                            label=f"target",
-                        )
+                    y_data_opt_list.append(y_data_opt)
+                y_data_opt_list = np.array(y_data_opt_list)
+                if all(all(element is not None for element in y_data_opt) for y_data_opt in y_data_opt_list):
+                    data_plotted = True
+                if plot_variance is False:
+                    for i, y_data_opt in enumerate(y_data_opt_list):
+                        axes.plot(x_data_opt, np.array(y_data_opt)/panel.normalization, "o-", label=f"optimized {'' if no_opt_results==1 else i+1}", color=color)
                 else:
-                    # Handle multiple y parameters (list of strings)
-                    for y_idx, y_param in enumerate(panel.y):
+                    y_data_mean = np.mean(np.transpose(y_data_opt_list),axis=1)
+                    y_data_std = np.std(np.transpose(y_data_opt_list),axis=1)
+                    axes.plot(x_data_opt, np.array(y_data_mean)/panel.normalization, "o-", label=f"optimized mean", color=color)
+                    # axes.errorbar(x_data_opt, np.array(y_data_mean)/panel.normalization, np.array(y_data_std)/panel.normalization, linestyle = 'None', elinewidth = 1,  ecolor=color, label = None, capsize = 2)
+                    axes.fill_between(x_data_opt, np.array(y_data_mean)/panel.normalization - np.array(y_data_std)/panel.normalization, np.array(y_data_mean)/panel.normalization +  np.array(y_data_std)/panel.normalization, alpha=0.3, facecolor= color)
+                if (
+                    panel.y in system_target_params
+                    and (not None in x_data_opt)
+                    and (not None in y_data_opt)
+                ):
+                    y_data_target = system_target_params[panel.y]
+                    axes.plot( 
+                        [min(x_data_opt), max(x_data_opt)],
+                        [y_data_target/panel.normalization, y_data_target/panel.normalization],
+                        "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
+                        color=color,
+                        label=f"target",
+                    )
+            else:
+                # Handle multiple y parameters (list of strings)
+                for y_idx, y_param in enumerate(panel.y):
+                    y_data_opt_list = []
+                    for i, opt_result in enumerate(opt_results): # Looping for different instances of optimization used for analysis
                         y_data_opt = [
                             get_data_from_parameter(y_param, result, ii)
                             for ii, result in enumerate(opt_result)
                         ]
-                        if all(element is not None for element in y_data_opt):
-                            data_plotted = True
-                        curr_color = color if y_idx == 0 else f"C{y_idx}"
-                        axes.plot(x_data_opt, np.array(y_data_opt)/panel.normalization, "o-", label=f"optimized {y_param} {'' if no_opt_results==1 else i+1}", color=curr_color)
+                        y_data_opt_list.append(y_data_opt)
+                    if all(all(element is not None for element in y_data_opt) for y_data_opt in y_data_opt_list):
+                        data_plotted = True
+                    curr_color = color if y_idx == 0 else f"C{y_idx}"
+                    if plot_variance is False:
+                        for i, y_data_opt in enumerate(y_data_opt_list):
+                            axes.plot(x_data_opt, np.array(y_data_opt)/panel.normalization, "o-", label=f"optimized {y_param} {'' if no_opt_results==1 else i+1}", color=curr_color)
+                    else:
+                        y_data_mean = np.mean(np.transpose(y_data_opt_list),axis=1)
+                        y_data_std = np.std(np.transpose(y_data_opt_list),axis=1)
+                        axes.plot(x_data_opt, np.array(y_data_mean)/panel.normalization, "o-", label=f"optimized mean", color=color)
+                        # axes.errorbar(x_data_opt, np.array(y_data_mean)/panel.normalization, np.array(y_data_std)/panel.normalization, linestyle = 'None', elinewidth = 1,  ecolor=color, label = None, capsize = 2)
+                        axes.fill_between(x_data_opt, np.array(y_data_mean)/panel.normalization - np.array(y_data_std)/panel.normalization, np.array(y_data_mean)/panel.normalization +  np.array(y_data_std)/panel.normalization, alpha=0.3, facecolor= color)
+                    if (
+                        y_param in system_target_params
+                        and (not None in x_data_opt)
+                        and (not None in y_data_opt)
+                    ):
+                        y_data_target = system_target_params[y_param]
+                        axes.plot(
+                            [min(x_data_opt), max(x_data_opt)],
+                            [np.array(y_data_target)/panel.normalization, np.array(y_data_target)/panel.normalization],
+                            "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
+                            color=curr_color,
+                            label=f"target {y_param}",
+                        )
 
-                        if (
-                            y_param in system_target_params
-                            and (not None in x_data_opt)
-                            and (not None in y_data_opt)
-                            and i == no_opt_results-1 # We are plotting the target only for the last of opt_results.
-                        ):
-                            y_data_target = system_target_params[y_param]
-                            axes.plot(
-                                [min(x_data_opt), max(x_data_opt)],
-                                [np.array(y_data_target)/panel.normalization, np.array(y_data_target)/panel.normalization],
-                                "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
-                                color=curr_color,
-                                label=f"target {y_param}",
-                            )
-
-                axes.legend()
-                axes.set_xlabel(panel.x_label)
-                axes.set_ylabel(panel.y_label+f" ({panel.unit})")
-                axes.set_xscale(panel.x_scale)
-                axes.set_yscale(panel.y_scale)
+            axes.legend()
+            axes.set_xlabel(panel.x_label)
+            axes.set_ylabel(panel.y_label+f" ({panel.unit})")
+            axes.set_xscale(panel.x_scale)
+            axes.set_yscale(panel.y_scale)
+            axes.xaxis.set_major_locator(MaxNLocator(integer=True))
         return data_plotted
 
     plt.close("all")
