@@ -3,9 +3,15 @@ from typing import Callable, List
 import numpy as np
 
 import qdesignoptimizer.utils.names_design_variables as n
-from qdesignoptimizer.utils.names_parameters import FREQ, KAPPA, NONLIN
 from qdesignoptimizer.design_analysis_types import OptTarget
-from qdesignoptimizer.utils.names_parameters import Mode, param, param_nonlin
+from qdesignoptimizer.utils.names_parameters import (
+    FREQ,
+    KAPPA,
+    NONLIN,
+    Mode,
+    param,
+    param_nonlin,
+)
 
 discard_design_var_single = lambda x: 1
 """Used to discard the design variable dependency in the prop_to function of the OptTarget
@@ -22,7 +28,7 @@ def get_opt_target_qubit_freq_via_lj(
 ) -> OptTarget:
 
     return OptTarget(
-        system_target_param=FREQ,
+        target_param_type=FREQ,
         involved_modes=[qubit],
         design_var=design_var_qubit_lj(qubit),
         design_var_constraint={"larger_than": "0.1nH", "smaller_than": "400nH"},
@@ -38,7 +44,7 @@ def get_opt_target_qubit_anharmonicity_via_capacitance_width(
 ) -> OptTarget:
 
     return OptTarget(
-        system_target_param=NONLIN,
+        target_param_type=NONLIN,
         involved_modes=[qubit, qubit],
         design_var=design_var_qubit_width(qubit),
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
@@ -53,7 +59,7 @@ def get_opt_target_res_freq_via_length(
 ) -> OptTarget:
 
     return OptTarget(
-        system_target_param=FREQ,
+        target_param_type=FREQ,
         involved_modes=[resonator],
         design_var=design_var_res_length(resonator),
         design_var_constraint={"larger_than": "500um", "smaller_than": "15000um"},
@@ -69,7 +75,7 @@ def get_opt_target_res_kappa_via_coupl_length(
 ) -> OptTarget:
 
     return OptTarget(
-        system_target_param=KAPPA,
+        target_param_type=KAPPA,
         involved_modes=[resonator],
         design_var=design_var_res_coupl_length(resonator, resonator_coupled_identifier),
         design_var_constraint={"larger_than": "20um", "smaller_than": "1000um"},
@@ -89,7 +95,7 @@ def get_opt_target_res_qub_chi_via_coupl_length(
 ) -> OptTarget:
 
     return OptTarget(
-        system_target_param=NONLIN,
+        target_param_type=NONLIN,
         involved_modes=[qubit, resonator],
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},

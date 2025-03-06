@@ -24,7 +24,7 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.names_parameters import (
-    CAPACITANCE_MATRIX_ELEMENTS,
+    CAPACITANCE,
     FREQ,
     KAPPA,
     NONLIN,
@@ -116,7 +116,6 @@ class DesignAnalysis:
         self.renderer.options["max_mesh_length_port"] = (
             self.mini_study.max_mesh_length_port
         )
-        self.renderer.options["keep_originals"] = True
         self._validate_opt_targets()
 
         assert (
@@ -144,20 +143,20 @@ class DesignAnalysis:
                 assert (
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
-                if target.system_target_param == PURCELL_LIMIT_T1:
+                if target.target_param_type == PURCELL_LIMIT_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
-                elif target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
+                elif target.target_param_type == CAPACITANCE:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
                     assert (
                         param_capacitance(*target.involved_modes)
                         in self.system_target_params
-                    ), f"Target for {CAPACITANCE_MATRIX_ELEMENTS} requires {param_capacitance(*target.involved_modes)} in system_target_params."
+                    ), f"Target for '{CAPACITANCE}' requires {param_capacitance(*target.involved_modes)} in system_target_params."
                     assert (
                         len(target.involved_modes) == 2
-                    ), f"Target for {target.system_target_param} expects 2 capacitance names, but {len(target.involved_modes)} were given."
+                    ), f"Target for {target.target_param_type} expects 2 capacitance names, but {len(target.involved_modes)} were given."
                     assert isinstance(
                         capacitance_1, str
                     ), f"First capacitance name {capacitance_1} must be a string."
@@ -165,13 +164,13 @@ class DesignAnalysis:
                         capacitance_2, str
                     ), f"Second capacitance name {capacitance_2} must be a string."
 
-                elif target.system_target_param == NONLIN:
+                elif target.target_param_type == NONLIN:
                     assert (
                         len(target.involved_modes) == 2
-                    ), f"Target for {target.system_target_param} expects 2 modes."
+                    ), f"Target for {target.target_param_type} expects 2 modes."
                     assert len(self.mini_study.modes) >= len(
                         target.involved_modes
-                    ), f"Target for {target.system_target_param} expects \
+                    ), f"Target for {target.target_param_type} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                     for mode in target.involved_modes:
                         assert (
@@ -181,7 +180,7 @@ class DesignAnalysis:
                 else:
                     assert len(self.mini_study.modes) >= len(
                         target.involved_modes
-                    ), f"Target for {target.system_target_param} expects \
+                    ), f"Target for {target.target_param_type} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                     for mode in target.involved_modes:
                         assert (
@@ -422,7 +421,7 @@ class DesignAnalysis:
         capacitance_names_all_targets = [
             target.involved_modes
             for target in self.opt_targets
-            if target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS
+            if target.target_param_type == CAPACITANCE
         ]
 
         for capacitance_names in capacitance_names_all_targets:
@@ -489,17 +488,17 @@ class DesignAnalysis:
 
     @staticmethod
     def get_parameter_value(target: OptTarget, system_params: dict):
-        if target.system_target_param == NONLIN:
+        if target.target_param_type == NONLIN:
             mode1, mode2 = target.involved_modes
             current_value = system_params[param_nonlin(mode1, mode2)]
-        elif target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
+        elif target.target_param_type == CAPACITANCE:
             capacitance_name_1, capacitance_name_2 = target.involved_modes
             current_value = system_params[
                 param_capacitance(capacitance_name_1, capacitance_name_2)
             ]
         else:
             mode = target.involved_modes[0]
-            current_value = system_params[param(mode, target.system_target_param)]
+            current_value = system_params[param(mode, target.target_param_type)]
         return current_value
 
     def _minimize_for_design_vars(
@@ -554,12 +553,12 @@ class DesignAnalysis:
     def get_system_params_targets_met(self):
         system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
-            if target.system_target_param == NONLIN:
+            if target.target_param_type == NONLIN:
                 mode1, mode2 = target.involved_modes
                 system_params_targets_met[param_nonlin(mode1, mode2)] = (
                     self.get_parameter_value(target, self.system_target_params)
                 )
-            elif target.system_target_param == CAPACITANCE_MATRIX_ELEMENTS:
+            elif target.target_param_type == CAPACITANCE:
                 capacitance_name_1, capacitance_name_2 = target.involved_modes
                 system_params_targets_met[
                     param_capacitance(capacitance_name_1, capacitance_name_2)
@@ -567,7 +566,7 @@ class DesignAnalysis:
             else:
                 mode_name = target.involved_modes[0]
                 system_params_targets_met[
-                    param(mode_name, target.system_target_param)
+                    param(mode_name, target.target_param_type)
                 ] = self.get_parameter_value(target, self.system_target_params)
         return system_params_targets_met
 

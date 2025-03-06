@@ -12,7 +12,7 @@ KAPPA = "kappa"
 PURCELL_LIMIT_T1 = "purcell_limit_T1"
 NONLIN = "nonlin"
 
-CAPACITANCE_MATRIX_ELEMENTS = "CAPACITANCE_MATRIX_ELEMENTS"
+CAPACITANCE = "capacitance"
 """ dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.
     Capacitance matrix elements are in femto Farads (fF).
 
@@ -28,41 +28,42 @@ ITERATION = "ITERATION"
 
 
 Mode = str
-""""Mode name on the format group_modetype_nbr where group are optional.
+""""Mode name on the format  modetype_identifier, the complete Mode name must be unique.
 
 Examples:
     qubit
     QUBIT_1
-    1_qubit_3
-    gr1_qubit_3
+    qubit_xy3
 """
 Parameter = str
-""""Paramter name on the format group_modetype_nbr_paramtype where group are optional.
+""""Paramter name which is a unique mode name concatenated with a parameter type.
 
 Examples:
     qubit_freq
-    gr1_qubit_3_freq
+    qubit_3_freq
 """
 
 
 def mode(
     mode_type: str,
-    group: int | str | None = None,
+    identifier: int | str | None = None,
 ) -> Mode:
-    """Construct a mode name from the mode type, group, and number."""
+    """Construct a mode name from the mode type and identifier. Note that the complete mode name must be unique."""
     assert "_" not in mode_type, "mode_type cannot contain underscores"
     assert (
         "_to_" not in mode_type
     ), "mode_type cannot contain the string '_to_', since it is a keyword for non-linear parameters"
 
-    assert group is None or "_" not in str(group), "group cannot contain underscores"
+    assert identifier is None or "_" not in str(
+        identifier
+    ), "identifier cannot contain underscores"
     assert (
-        isinstance(group, int) or "_to_" not in group
-    ), "group cannot contain the string '_to_', since it is a keyword for non-linear parameters"
+        isinstance(identifier, int) or "_to_" not in identifier
+    ), "identifier cannot contain the string '_to_', since it is a keyword for non-linear parameters"
 
     mode_name = mode_type
-    if group is not None:
-        mode_name = f"{mode_name}_{group}"
+    if identifier is not None:
+        mode_name = f"{mode_name}_{identifier}"
 
     assert (
         ":" not in mode_name
@@ -71,13 +72,6 @@ def mode(
         "-" not in mode_name
     ), "Qiskit parsing does not allow mode_name to contain the character '-'"
     return mode_name
-
-
-def get_group_from_mode(mode: Mode) -> int | None:
-    if "gr" in mode:
-        return int(mode.split("_")[0][2:])
-    else:
-        return None
 
 
 def param(
@@ -131,7 +125,3 @@ def get_mode_from_param(param: Parameter) -> Mode:
 def get_modes_from_param_nonlin(param: Parameter) -> tuple[Mode, Mode]:
     assert param.endswith("_nonlin"), "param must end with '_nonlin'"
     return tuple(param.split("_nonlin")[0].split("_to_")[:2])
-
-
-def get_paramtype_from_param(param: Parameter) -> Literal["freq", "kappa", "nonlin"]:
-    return param.split("_")[-1]
