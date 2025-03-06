@@ -83,7 +83,7 @@ class MiniStudy:
         open_pins (list): pins to be left open, example: [(comp_name, 'pin_name')],
         modes (list): list of modes to simulate in increasing frequency order, simulated group of modes = len(modes)
                            If the mode_freqs is empty, eigenmode and EPR analysis will be skipped.
-                           Example: [qubit_1, g2_resonator_1]
+                           Example: [qubit_1, resonator_1]
         nbr_passes (int): group of passes in eigenmode simulation
         delta_f (float): Convergence freq max delta percent diff
         jj_setup (object): junction setup, example: {'Lj_variable': 'Lj', 'rect': 'JJ_rect_Lj_Q1_rect_jj', 'line': 'JJ_Lj_Q1_rect_jj', 'Cj_variable': 'Cj'}
