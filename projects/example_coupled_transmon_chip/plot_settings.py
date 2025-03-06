@@ -11,11 +11,11 @@ PLOT_SETTINGS = {
     "RES": [
         OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.FREQ), y_label="RES Freq",unit='GHz'),
         OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa",unit='MHz'),
-        OptPltSet(
-            n.ITERATION,
-            param_nonlin(n.RESONATOR_1, n.RESONATOR_1),
-            y_label="RES Kerr (Hz)",
-        ),
+        # OptPltSet(
+        #     n.ITERATION,
+        #     param_nonlin(n.RESONATOR_1, n.RESONATOR_1),
+        #     y_label="RES Kerr (Hz)",
+        # ),
     ],
     "QUBIT": [
         OptPltSet(n.ITERATION, param(n.QUBIT_1, n.FREQ), y_label="QB Freq",unit='GHz'),
