@@ -116,7 +116,6 @@ class DesignAnalysis:
         self.renderer.options["max_mesh_length_port"] = (
             self.mini_study.max_mesh_length_port
         )
-        self.renderer.options["keep_originals"] = True
         self._validate_opt_targets()
 
         assert (
