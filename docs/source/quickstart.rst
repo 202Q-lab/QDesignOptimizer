@@ -31,13 +31,13 @@ Project setup
 
 Mode Names and Component Names
 ------------------------------
-| For mode names we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As identifier we suggest a count of the component group or of the component in a group of components. 
-| For component names we suggest a naming convention of the form ``name_identifier``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``. A collection of common component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. 
+| For mode names we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``, for example ``qubit_1``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As identifier we suggest a count of the component group or of the component in a group of components. 
+| For qiskit-metal component names we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``. A collection of common qiskit-metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. 
 
 
 Design Variable Names and Values
 --------------------------------
-| Design variable names are string identifiers (for geometric lengths, Josephson junction inductances etc.) specified in the qiskit-metal design, which are varied during the optimization. For the design variable names we suggest a naming convention of the form ``design_var_res_length_`` followed by the mode identifier. A collection of common design variable names can be directly called from ``utils.names_design_variables.py``. User specific component names can be added in and called from ``names.py`` in the project folder.
+| Design variable names are string identifiers (for geometric lengths, Josephson junction inductances etc.) specified in the qiskit-metal design. The design variables can be varied by the optimizer during the optimization to reach the target parameters. For the design variable names we suggest a naming convention of the form ``design_var_`` followed by an identifier which indicates what the design variable controls, for example ``design_var_length_resonator_1``. A collection of common design variable names can be directly called from ``utils.names_design_variables.py``. User specific component names can be added in and called from ``names.py`` in the project folder.
 | To render the qiskit-metal design, the user must provide initial values based on a sensible guess for all design variables, which by convention are written in ``design_variables.json`` in the project folder and provided to the optimizer.
 
 Design
@@ -85,7 +85,7 @@ Finally, the design can be instantiated by the ``create_chip_base`` method and r
 
 Optimization Target
 --------------------
-| The optimization target ``OptTarget`` is a required core component of the qdesignoptimizer. It relates the parameter target (e.g. frequency, kappa, capacitance, Purcell limited T1) with the involved modes, the design variable and the physical relation used during optimization. 
+| The optimization target ``OptTarget`` is a required core component of the qdesignoptimizer. It relates the parameter target (e.g. frequency, kappa, capacitance, or Purcell limited T1) with the involved modes (e.g. ``resonator`` or ``qubit``), the design variable (e.g. ``design_var_length_resonator_1``) and the physical relation used during optimization (e.g. ``1/design_var_length_resonator_1`` in case of the resonator frequency). 
 | One ``OptTarget`` must be created for each target parameter the user wants to optimize for. The names of the involved eigenmodes and parameter names is by convention called from ``names.py`` in the project folder. 
 | The full class documentation can be found in src/qdesignoptimizer/design_analysis_types.py.
 | A minimal example for the resonator length can look like this:
@@ -180,6 +180,7 @@ Parameter Targets
         param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"): -3, # fF
     }
 
+.. caution:: Make sure that all frequencies and rates are defined in units of Hz.
 
 Mini Studies
 ------------
@@ -214,7 +215,7 @@ Mini Studies
         **CONVERGENCE
         )
 
-.. caution:: The modes must be matched by order of their frequency from lowest to highest, and must match the order of the modes in the HFSS eigenmode simulation.
+.. caution:: The modes must be ordered from lowest to highest frequency, and the mode order in teh definition of the MiniStudy must match the resulting order of the modes in the HFSS eigenmode simulation.
 
 
 Plot Settings
@@ -250,15 +251,17 @@ Plot Settings
 
 Optimization Workflow
 ---------------------
-| Once the optimization problem has been set up, the user can start the optimization. We suggest to break down the entire optimization problem into mini studies per group of components, and subsequently to optimize linking components between the groups that have been studied initially. 
+| Once the optimization problem has been set up, the user can start the optimization. We suggest to break the entire optimization problem down into smaller optimization problems defined as mini studies of groups of qiskit-metal components (e.g. a set of ``resonator``, ``qubit``, and ``feedline`` as a tile of a larger chip design). Subsequently, the user can optimize linking qiskit-metal components between the groups that have been studied initially (e.g. ``qubit_1``, ``coupler``, ``qubit_2``). 
 | A minimal example can look like this:
 
 .. code-block:: python
 
+    # select MiniStudy
     MINI_STUDY_GROUP = n.NBR_1
     MINI_STUDY = ms.get_mini_study_qb_res(group=MINI_STUDY_GROUP)
     RENDER_QISKIT_METAL = lambda design: render_qiskit_metal_design(design, gui)
 
+    # select OptTarget
     opt_targets = [get_opt_target_res_freq_via_length(branch)]
 
     # initialization
