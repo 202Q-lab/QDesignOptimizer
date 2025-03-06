@@ -16,11 +16,11 @@ def name_my_custom_qiskit_component(identifier: int):
 
 
 # Modes names for all modes in the design, which you define according to your design needs
-GROUP_1 = 1
-GROUP_2 = 2
+NBR_1 = 1
+NBR_2 = 2
 
-QUBIT_1 = mode(QUBIT, group=GROUP_1)
-RESONATOR_1 = mode(RESONATOR, group=GROUP_1)
-QUBIT_2 = mode(QUBIT, group=GROUP_2)
-RESONATOR_2 = mode(RESONATOR, group=GROUP_2)
+QUBIT_1 = mode(QUBIT, group=NBR_1)
+RESONATOR_1 = mode(RESONATOR, group=NBR_1)
+QUBIT_2 = mode(QUBIT, group=NBR_2)
+RESONATOR_2 = mode(RESONATOR, group=NBR_2)
 COUPLER_12 = mode(COUPLER, group="1to2")  # Coupler between qubit 1 and qubit 2

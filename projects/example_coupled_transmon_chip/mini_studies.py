@@ -42,7 +42,7 @@ def get_mini_study_2qb_resonator_coupler():
     all_ports = []
     all_modes = []
     all_jjs = {}
-    for group in [n.GROUP_1, n.GROUP_2]:
+    for group in [n.NBR_1, n.NBR_2]:
         qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
         resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
         all_comps.extend(
