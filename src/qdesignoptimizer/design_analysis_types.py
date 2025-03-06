@@ -1,66 +1,42 @@
-from enum import Enum
-from typing import Callable, Dict, List, Literal, Tuple, Union
+from typing import Callable, Dict, List, Literal, Union
 
 from qiskit_metal.designs.design_base import QDesign
 
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
-
-
-class TargetType(Enum):
-    FREQUENCY = "FREQUENCY"
-    ANHARMONICITY = "ANHARMONICITY"
-    KAPPA = "KAPPA"
-    CHI = "CHI"
-
-    INVERSE_SQUARED = "INVERSE_SQUARED"
-    INVERSE_THREE_HALVES = "INVERSE_THREE_HALVES"
-    INVERSE = "INVERSE"
-    INVERSE_SQRT = "INVERSE_SQRT"
-    SQRT = "SQRT"
-    LINEAR = "LINEAR"
-    THREE_HALVES = "THREE_HALVES"
-    SQUARED = "SQUARED"
-
-
+from qdesignoptimizer.utils.names_parameters import Mode
 
 
 class MeshingMap:
     """
     A class to map a component class to a function that generates mesh names.
-    
+
     Attributes:
         component_class: The class of the component being meshed.
         mesh_names: A callable function that generates mesh names from component names.
     """
-    
-    def __init__(self, component_class: type, mesh_names: Callable[[List[str]], List[str]]):
+
+    def __init__(
+        self, component_class: type, mesh_names: Callable[[List[str]], List[str]]
+    ):
         """
         Initializes the MeshingMap with a component class and a mesh name function.
-        
+
         Args:
             component_class (type): The component class to be meshed.
-            mesh_names (Callable[[List[str]], List[str]]): A function that takes a list 
+            mesh_names (Callable[[List[str]], List[str]]): A function that takes a list
                 of component names and returns a list of mesh names.
         """
         self.component_class = component_class
         self.mesh_names = mesh_names
 
 
-
-
-
-
 class OptTarget:
     """Class for optimization target.
 
     Args:
-        system_target_param: system target parameter to be optimized,
-            "freq", "kappa", "nonlinearity"
-        involved_mode_freqs (list): mode freqs involved in target,
-            Example [('BRANCH_1', 'res')] for freq or kappa system_target_params.
-            (('BRANCH_1', 'qubit'), ('BRANCH_1', 'qubit')), (('BRANCH_1', 'qubit'), ('BRANCH_1', 'resonator')) for nonlinearity system_target_params
-            
-            If system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_mode_freqs should be
+        target_param_type: system target parameter to be optimized,
+            "freq", "kappa", "nonlinearity", "capacitance"
+        involved_modes (list): mode freqs involved in target except when target_param_type is "capacitance", involved_modes should be
             the names of the TWO capacitive islands as optained from capacitance matrix simulation.
             Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.
             Example: ['capacitance_name_1', 'capacitance_name_2']
@@ -74,8 +50,14 @@ class OptTarget:
 
     def __init__(
         self,
-        system_target_param: Literal["freq", "kappa", "charge_line_limited_t1", "nonlinearity", "CAPACITANCE_MATRIX_ELEMENTS"],
-        involved_modes: List[Union[tuple, str]],
+        target_param_type: Literal[
+            "freq",
+            "kappa",
+            "charge_line_limited_t1",
+            "nonlinearity",
+            "capacitance",
+        ],
+        involved_modes: List[Mode] | List[str],
         design_var: str,
         design_var_constraint: object,
         prop_to: Callable[
@@ -84,7 +66,7 @@ class OptTarget:
         independent_target: bool = False,
     ):
 
-        self.system_target_param = system_target_param
+        self.target_param_type = target_param_type
         self.involved_modes = involved_modes
         self.design_var = design_var
         self.design_var_constraint = design_var_constraint
@@ -96,15 +78,14 @@ class MiniStudy:
     """Mini_study for eigenmode simulation and energy participation (EPR) analysis in DesignAnalysis.
 
     Args:
-        component_names (list(str)): List of names
+        qiskit_component_names (list(str)): List of names
         port_list (list): component pins with ports, example with 50 Ohm: [(comp_name,'pin_name', 50)],
         open_pins (list): pins to be left open, example: [(comp_name, 'pin_name')],
-        mode_freqs (list): list of modes (branch, freq_name) to simulate in increasing frequency order, simulated nbr of modes = len(mode_freqs)
+        modes (list): list of modes to simulate in increasing frequency order, simulated group of modes = len(modes)
                            If the mode_freqs is empty, eigenmode and EPR analysis will be skipped.
-                           Example: [('BRANCH_1, 'qb_freq'), ('BRANCH_1, 'res_freq')]
-        nbr_passes (int): nbr of passes in eigenmode simulation
+                           Example: [qubit_1, resonator_1]
+        nbr_passes (int): group of passes in eigenmode simulation
         delta_f (float): Convergence freq max delta percent diff
-        jj_var (object):  junction variables, example: {'Lj': '10 nH', 'Cj': '0 fF'}
         jj_setup (object): junction setup, example: {'Lj_variable': 'Lj', 'rect': 'JJ_rect_Lj_Q1_rect_jj', 'line': 'JJ_Lj_Q1_rect_jj', 'Cj_variable': 'Cj'}
         design_name (str): name of design
         project_name (str): name of project (default: dummy_project
@@ -113,6 +94,8 @@ class MiniStudy:
         max_mesh_length_port (str): max mesh length of port
         max_mesh_length_lines_to_ports (str): max mesh length of lines to ports to enhance accuracy of decay estiamtes
         build_fine_mesh (bool): if True: use default mesh to ports which gives unreliable decay estimates in Eigenmode sim
+        cos_trunc (int): cosine truncation in the EPR analysis. You might have to lower cos_trunc if you simulate very many modes.
+        fock_trunc (int): fock truncation in the EPR analysis. You might have to lower fock_trunc if you simulate very many modes.
         adjustment_rate (float): rate of adjustment of design variable w.r.t. to calculated optimal values. Example 0.7 is slower but might be more robust.
         render_qiskit_metal_eigenmode_kw_args (dict): kw_args for render_qiskit_metal used during eigenmode and EPR analysis,
                                                       Example: {'include_charge_line': True}
@@ -121,13 +104,12 @@ class MiniStudy:
 
     def __init__(
         self,
-        component_names: list,
+        qiskit_component_names: list,
         port_list: list,
         open_pins: list,
-        mode_freqs: List[tuple],
+        modes: List[Mode],
         nbr_passes: int = 10,
         delta_f: float = 0.1,
-        jj_var: object = {},
         jj_setup: object = {},
         design_name: str = "mini_study",
         project_name: str = "dummy_project",
@@ -135,21 +117,22 @@ class MiniStudy:
         y_buffer_width_mm=0.5,
         max_mesh_length_port="3um",
         max_mesh_length_lines_to_ports="5um",
-        hfss_wire_bond_size = 3, 
-        hfss_wire_bond_offset = '0um', 
-        hfss_wire_bond_threshold = '300um', 
-        build_fine_mesh=True,
+        hfss_wire_bond_size=3,
+        hfss_wire_bond_offset="0um",
+        hfss_wire_bond_threshold="300um",
+        build_fine_mesh=False,
         adjustment_rate: float = 1.0,
+        cos_trunc=8,
+        fock_trunc=7,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
         capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],
     ):
-        self.component_names = component_names
+        self.qiskit_component_names = qiskit_component_names
         self.port_list = port_list
         self.open_pins = open_pins
-        self.mode_freqs = mode_freqs
+        self.modes = modes
         self.nbr_passes = nbr_passes
         self.delta_f = delta_f
-        self.jj_var = jj_var
         self.jj_setup = jj_setup
         self.design_name = design_name
         self.project_name = project_name
@@ -162,11 +145,12 @@ class MiniStudy:
         self.hfss_wire_bond_threshold = hfss_wire_bond_threshold
         self.build_fine_mesh = build_fine_mesh
         self.adjustment_rate = adjustment_rate
+        self.cos_trunc = cos_trunc
+        self.fock_trunc = fock_trunc
         self.render_qiskit_metal_eigenmode_kw_args = (
             render_qiskit_metal_eigenmode_kw_args
         )
         self.capacitance_matrix_studies = capacitance_matrix_studies
-
 
 
 class DesignAnalysisState:
