@@ -224,13 +224,13 @@ def add_chargeline(design: DesignPlanar, group: int):
     )
 
     options_chargeline = dict(
-        fillet="50um",
+        fillet="90um",
         hfss_wire_bonds=False,
         trace_width=c.LINE_50_OHM_WIDTH,
         trace_gap=c.LINE_50_OHM_GAP,
         pin_inputs=pins_top,
         step_size="20um",
-        lead=dict(start_straight="100um", end_straight="100um"),
+        lead=dict(start_straight="100um", end_straight="1600um"),
     )
 
     RoutePathfinder(design, n.name_charge_line(group), options=options_chargeline)
