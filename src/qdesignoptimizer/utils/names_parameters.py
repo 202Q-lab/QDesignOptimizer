@@ -12,7 +12,7 @@ KAPPA = "kappa"
 PURCELL_LIMIT_T1 = "purcell_limit_T1"
 NONLIN = "nonlin"
 
-CAPACITANCE_MATRIX_ELEMENTS = "CAPACITANCE_MATRIX_ELEMENTS"
+CAPACITANCE = "capacitance"
 """ dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.
     Capacitance matrix elements are in femto Farads (fF).
 
@@ -125,7 +125,3 @@ def get_mode_from_param(param: Parameter) -> Mode:
 def get_modes_from_param_nonlin(param: Parameter) -> tuple[Mode, Mode]:
     assert param.endswith("_nonlin"), "param must end with '_nonlin'"
     return tuple(param.split("_nonlin")[0].split("_to_")[:2])
-
-
-def get_paramtype_from_param(param: Parameter) -> Literal["freq", "kappa", "nonlin"]:
-    return param.split("_")[-1]

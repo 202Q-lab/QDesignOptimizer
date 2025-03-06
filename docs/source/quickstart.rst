@@ -109,7 +109,7 @@ A minimal example for the resonator length can look like this:
         ) -> OptTarget:
 
     return OptTarget(
-        system_target_param=c.FREQ,
+        target_param_type=c.FREQ,
         involved_modes=[resonator],
         design_var=design_var_res_length(resonator),
         design_var_constraint={"larger_than": "500um", "smaller_than": "15000um"},

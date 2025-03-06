@@ -36,7 +36,7 @@ def get_opt_targets_2qubits_resonator_coupler(
     # should be used in the design.py to adjust a component's geometry.
     if opt_target_coupler_freq:
         opt_target_coupler = OptTarget(
-            system_target_param=n.FREQ,
+            target_param_type=n.FREQ,
             involved_modes=[n.COUPLER_12],
             design_var=n.design_var_length(n.COUPLER_12),
             design_var_constraint={"larger_than": "50um", "smaller_than": "10000um"},
@@ -71,7 +71,7 @@ def get_opt_target_qubit_T1_limit_via_charge_posx(
 ) -> OptTarget:
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     return OptTarget(
-        system_target_param=n.PURCELL_LIMIT_T1,
+        target_param_type=n.PURCELL_LIMIT_T1,
         involved_modes=[qubit],
         design_var=n.design_var_cl_pos_x(qubit),
         design_var_constraint={"larger_than": "-4000um", "smaller_than": "-2400um"},
@@ -95,7 +95,7 @@ def get_opt_target_capacitance(
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
     return [
         OptTarget(
-            system_target_param=n.CAPACITANCE_MATRIX_ELEMENTS,
+            target_param_type=n.CAPACITANCE,
             involved_modes=["prime_cpw_name_tee1", "second_cpw_name_tee1"],
             design_var=n.design_var_length(f"{resonator}_capacitance"),
             design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},

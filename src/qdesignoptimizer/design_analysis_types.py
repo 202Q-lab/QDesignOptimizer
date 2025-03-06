@@ -34,9 +34,9 @@ class OptTarget:
     """Class for optimization target.
 
     Args:
-        system_target_param: system target parameter to be optimized,
-            "freq", "kappa", "nonlinearity"
-        involved_modes (list): mode freqs involved in target except when system_target_param is CAPACITANCE_MATRIX_ELEMENTS, involved_modes should be
+        target_param_type: system target parameter to be optimized,
+            "freq", "kappa", "nonlinearity", "capacitance"
+        involved_modes (list): mode freqs involved in target except when target_param_type is "capacitance", involved_modes should be
             the names of the TWO capacitive islands as optained from capacitance matrix simulation.
             Note that the capacitances can correspond to two islands on a split transmon, a charge lines etc.
             Example: ['capacitance_name_1', 'capacitance_name_2']
@@ -50,12 +50,12 @@ class OptTarget:
 
     def __init__(
         self,
-        system_target_param: Literal[
+        target_param_type: Literal[
             "freq",
             "kappa",
             "charge_line_limited_t1",
             "nonlinearity",
-            "CAPACITANCE_MATRIX_ELEMENTS",
+            "capacitance",
         ],
         involved_modes: List[Mode] | List[str],
         design_var: str,
@@ -66,7 +66,7 @@ class OptTarget:
         independent_target: bool = False,
     ):
 
-        self.system_target_param = system_target_param
+        self.target_param_type = target_param_type
         self.involved_modes = involved_modes
         self.design_var = design_var
         self.design_var_constraint = design_var_constraint
