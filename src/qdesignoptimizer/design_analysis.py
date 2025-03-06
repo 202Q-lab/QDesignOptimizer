@@ -25,10 +25,10 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 from qdesignoptimizer.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.names_parameters import (
     CAPACITANCE,
+    CHARGE_LINE_LIMITED_T1,
     FREQ,
     KAPPA,
     NONLIN,
-    PURCELL_LIMIT_T1,
     mode,
     param,
     param_capacitance,
@@ -55,11 +55,11 @@ class DesignAnalysis:
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
-        opt_targets: List[OptTarget] = None,
-        save_path: str = None,
+        opt_targets: List[OptTarget] = list(),
+        save_path: Optional[str] = None,
         update_design_variables: bool = True,
-        plot_settings: dict = None,
-        meshing_map: List[MeshingMap] = None,
+        plot_settings: Optional[dict] = None,
+        meshing_map: List[MeshingMap] = list(),
         minimization_tol=1e-12,
     ):
         self.design_analysis_version = get_version_from_pyproject()
@@ -101,7 +101,7 @@ class DesignAnalysis:
         self.meshing_map = meshing_map
         self.minimization_tol = minimization_tol
 
-        self.optimization_results = []
+        self.optimization_results: list[dict] = []
 
         self.renderer.start()
         self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
@@ -143,7 +143,7 @@ class DesignAnalysis:
                 assert (
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
-                if target.target_param_type == PURCELL_LIMIT_T1:
+                if target.target_param_type == CHARGE_LINE_LIMITED_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
@@ -437,7 +437,7 @@ class DesignAnalysis:
         log.info("Computing T1 limit from decay in charge line.")
         if isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
             self.system_optimized_params[
-                param(capacitance_study.mode, PURCELL_LIMIT_T1)
+                param(capacitance_study.mode, CHARGE_LINE_LIMITED_T1)
             ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod

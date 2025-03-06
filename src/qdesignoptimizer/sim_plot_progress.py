@@ -1,21 +1,24 @@
 import os
 from itertools import cycle
-from typing import Union, List
+from typing import List, Optional, Union
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from qdesignoptimizer.utils.names_design_variables import name_mode
-from qdesignoptimizer.utils.names_parameters import param, ITERATION
+from qdesignoptimizer.utils.names_parameters import ITERATION
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
+
 class OptPltSet:
-    def __init__(self, x: str, 
-                 y: Union[str, List[str]], 
-                 x_label: str = None, 
-                 y_label: str = None, 
-                 x_scale: str = 'linear', 
-                 y_scale: str = 'linear'):
+    def __init__(
+        self,
+        x: str,
+        y: Union[str, List[str]],
+        x_label: Optional[str] = None,
+        y_label: Optional[str] = None,
+        x_scale: str = "linear",
+        y_scale: str = "linear",
+    ):
         """Set the plot settings for a progress plots of the optimization framework
 
         Args:
@@ -31,7 +34,9 @@ class OptPltSet:
         self.x_scale = x_scale
         self.y_scale = y_scale
 
-    def _get_label(self, variable: str, x_label: str):
+    def _get_label(
+        self, variable: Union[str, List[str]], x_label: Optional[str] = None
+    ) -> Union[str, List[str]]:
         if x_label is not None:
             return x_label
         else:
@@ -39,7 +44,7 @@ class OptPltSet:
 
 
 def plot_progress(
-    opt_results: dict,
+    opt_results: list[dict],
     system_target_params: dict,
     plot_settings: dict,
     block_plots: bool = False,
@@ -66,7 +71,7 @@ def plot_progress(
         return data_opt
 
     def plot_figure(
-        opt_results: dict,
+        opt_results: list[dict],
         system_target_params: dict,
         panels: list,
         axs: list,
@@ -75,7 +80,7 @@ def plot_progress(
         """Plot all panels in the figure
 
         Args:
-            opt_results (dict): The optimization results
+            opt_results (list[dict]): The optimization results
             system_target_params (dict): The target system parameters
             panels (list): The list of OptPltSet objects
             axs (list): The list of axes, one for each panel in panels
@@ -89,7 +94,7 @@ def plot_progress(
         for idx, panel in enumerate(panels):
 
             if len(panels) == 1:
-                axes = axs
+                axes: plt.Axes = axs
             else:
                 axes = axs[idx]
             if axes.get_legend() is not None:
@@ -131,7 +136,13 @@ def plot_progress(
                     if all(element is not None for element in y_data_opt):
                         data_plotted = True
                     curr_color = color if y_idx == 0 else f"C{y_idx}"
-                    axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized {y_param}", color=curr_color)
+                    axes.plot(
+                        x_data_opt,
+                        y_data_opt,
+                        "o-",
+                        label=f"optimized {y_param}",
+                        color=curr_color,
+                    )
 
                     if (
                         y_param in system_target_params
@@ -159,18 +170,11 @@ def plot_progress(
 
     for plot_name, panels in plot_settings.items():
         fig, axs = plt.subplots(len(panels))
-        plot_figure(
-            opt_results,
-            system_target_params,
-            panels,
-            axs,
-            colors
-        )
+        plot_figure(opt_results, system_target_params, panels, axs, colors)
         fig.suptitle(plot_name)
         fig.subplots_adjust(hspace=0.5)
 
     plt.show(block=block_plots)
-
 
 
 if __name__ == "__main__":

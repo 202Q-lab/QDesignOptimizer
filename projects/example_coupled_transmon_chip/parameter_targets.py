@@ -8,7 +8,7 @@ from qdesignoptimizer.utils.names_parameters import (
 
 PARAM_TARGETS = {
     param(n.QUBIT_1, n.FREQ): 4e9,
-    param(n.QUBIT_1, n.PURCELL_LIMIT_T1): 20e-3,
+    param(n.QUBIT_1, n.CHARGE_LINE_LIMITED_T1): 20e-3,
     param(n.RESONATOR_1, n.FREQ): 6e9,
     param(n.RESONATOR_1, n.KAPPA): 1e6,
     param(n.QUBIT_2, n.FREQ): 5e9,
@@ -19,5 +19,5 @@ PARAM_TARGETS = {
     param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonaotr chi
     param_nonlin(n.QUBIT_2, n.QUBIT_2): 200e6,  # Qubit anharmonicity
     param_nonlin(n.QUBIT_2, n.RESONATOR_2): 1e6,  # Qubit resonaotr chi
-    param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"): -3, # fF
+    param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"): -3,  # fF
 }

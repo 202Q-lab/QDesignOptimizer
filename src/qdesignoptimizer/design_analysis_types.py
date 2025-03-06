@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Literal, Union
+from typing import Callable, Dict, List, Literal, Optional, Union
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -61,7 +61,10 @@ class OptTarget:
         design_var: str,
         design_var_constraint: dict[str, str],
         prop_to: Optional[
-            Callable[[Dict[str, Union[float, int]], Dict[str, Union[float, int]]], None]
+            Callable[
+                [Dict[str, Union[float, int]], Dict[str, Union[float, int]]],
+                float | int,
+            ]
         ] = None,
         independent_target: bool = False,
     ):

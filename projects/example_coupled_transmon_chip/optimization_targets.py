@@ -71,7 +71,7 @@ def get_opt_target_qubit_T1_limit_via_charge_posx(
 ) -> OptTarget:
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     return OptTarget(
-        target_param_type=n.PURCELL_LIMIT_T1,
+        target_param_type=n.CHARGE_LINE_LIMITED_T1,
         involved_modes=[qubit],
         design_var=n.design_var_cl_pos_x(qubit),
         design_var_constraint={"larger_than": "-4000um", "smaller_than": "-2400um"},

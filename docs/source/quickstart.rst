@@ -35,7 +35,7 @@ For the component names we suggest a nameing convention of the form ``NAME_RES``
 
 
 Design Variable Names and Values
-------------------------------
+--------------------------------
 Design variable names are string identifiers (for geometric lengths, Josephson junction inductances etc.) specified in the qiskit-metal design, which are varied during the optimization. For the design variable names we suggest a naming convention of the form ``design_var_res_length_`` followed by the branch index. A collection of common design variable names can be directly called from ``utils.utils_design_variable_names.py``. User specific component names can be added in and called from ``design_variable_names.py`` in the project folder.
 
 To render the qiskit-metal design, the user have to provide initial (sensible guess) values for all design variables, which by convention is written in ``design_variables.json`` in the project folder and provided to the optimizer.
@@ -178,6 +178,7 @@ The parameter targets are specified in a ``dict`` per target parameter. The targ
     param(n.RESONATOR_1, KAPPA): 1e6,
     param_nonlin(n.QUBIT_1, n.QUBIT_1): 200e6,  # Qubit anharmonicity
     param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonaotr chi
+
 }
 
 

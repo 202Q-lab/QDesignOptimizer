@@ -7,7 +7,7 @@ from qdesignoptimizer.utils.names_qiskit_components import name_mode
 
 
 def add_design_variables_to_design(
-    design: DesignPlanar, design_variables: dict[str:str]
+    design: DesignPlanar, design_variables: dict[str, str]
 ):
     """Add design variables to a Qiskit Metal design so that the variables can be used in render.
 

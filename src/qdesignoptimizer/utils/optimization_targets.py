@@ -135,15 +135,24 @@ def get_opt_targets_qb_res_transmission(
         qubit (Mode): The qubit mode.
         resonator (Mode): The resonator mode.
         resonator_coupled_identifier (str): The identifier of the resonator coupled to the qubit.
-        opt_target_qubit_freq (bool, optional): Whether to optimize the qubit frequency. Defaults to True.
-        opt_target_qubit_anharm (bool, optional): Whether to optimize the qubit anharmonicity. Defaults to True.
-        opt_target_resonator_freq (bool, optional): Whether to optimize the resonator frequency. Defaults to True.
-        opt_target_resonator_kappa (bool, optional): Whether to optimize the resonator linewidth. Defaults to True.
-        opt_target_resonator_qubit_chi (bool, optional): Whether to optimize the qubit-resonator coupling strength. Defaults to True.
-        design_var_qubit_lj (Callable, optional): The function to get the qubit inductance. Defaults to n.design_var_lj.
-        design_var_qubit_width (Callable, optional): The function to get the qubit width. Defaults to n.design_var_width.
-        design_var_res_length (Callable, optional): The function to get the resonator length. Defaults to n.design_var_length.
-        design_var_res_coupl_length (Callable, optional): The function to get the resonator coupling length. Defaults to n.design_var_coupl_length.
+        opt_target_qubit_freq (bool, optional): Whether to optimize the qubit frequency.
+                                                Defaults to True.
+        opt_target_qubit_anharm (bool, optional): Whether to optimize the qubit anharmonicity.
+                                                  Defaults to True.
+        opt_target_resonator_freq (bool, optional): Whether to optimize the resonator frequency.
+                                                    Defaults to True.
+        opt_target_resonator_kappa (bool, optional): Whether to optimize the resonator linewidth.
+                                                     Defaults to True.
+        opt_target_resonator_qubit_chi (bool, optional): Whether to optimize the qubit-resonator coupling strength.
+                                                         Defaults to True.
+        design_var_qubit_lj (Callable, optional): The function to get the qubit inductance.
+                                                  Defaults to n.design_var_lj.
+        design_var_qubit_width (Callable, optional): The function to get the qubit width.
+                                                     Defaults to n.design_var_width.
+        design_var_res_length (Callable, optional): The function to get the resonator length.
+                                                    Defaults to n.design_var_length.
+        design_var_res_coupl_length (Callable, optional): The function to get the resonator coupling length.
+                                                          Defaults to n.design_var_coupl_length.
 
     Returns:
         List[OptTarget]: The optimization targets.
