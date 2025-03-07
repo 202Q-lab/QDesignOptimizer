@@ -104,3 +104,30 @@ def get_opt_target_capacitance(
             independent_target=True,
         )
     ]
+
+def get_opt_target_scattering_analysis(
+        group: int,
+        )-> List[OptTarget]:
+    resonator = [n.RESONATOR_1,n.RESONATOR_2][group - 1]
+    return [
+        OptTarget(
+            target_param_type=n.KAPPA,
+            involved_modes=[resonator],
+            design_var=n.design_var_coupl_length(identifier_1=resonator, identifier_2="tee"),
+            design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
+            prop_to=lambda p, v: v[n.design_var_coupl_length(identifier_1=resonator, identifier_2="tee")],
+            independent_target=True,
+
+        ),
+        OptTarget(
+            target_param_type=n.FREQ,
+            involved_modes=[resonator],
+            design_var=n.design_var_length(resonator),
+            design_var_constraint={"larger_than": "1um", "smaller_than": "7000um"},
+            prop_to=lambda p, v: 1
+            / v[n.design_var_length(resonator)],
+            independent_target=True,
+
+        ),
+    ]
+

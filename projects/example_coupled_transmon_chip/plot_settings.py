@@ -94,3 +94,16 @@ PLOT_SETTINGS_CAPACITANCE = {
         )
     ],
 }
+
+PLOT_SETTINGS_SCATTERING = {
+    "RES": [
+        OptPltSet(
+            n.ITERATION,
+            [param(n.RESONATOR_1, n.FREQ)],
+            y_label="RES Freq (Hz)",
+        ),
+        OptPltSet(
+            n.ITERATION,
+            [param(n.RESONATOR_1, n.KAPPA)],
+            y_label="RES Kappa (Hz)",
+        ) ],}

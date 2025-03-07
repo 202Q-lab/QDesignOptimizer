@@ -9,8 +9,9 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
+from qdesignoptimizer.design_analysis_types import MiniStudy, ScatteringStudy
 
-CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
+CONVERGENCE = dict(nbr_passes=7, delta_f=0.003)
 
 
 def get_mini_study_qb_res(group: int):
@@ -140,5 +141,40 @@ def get_mini_study_resonator_capacitance(group: int):
         design_name="get_mini_study_capacitance",
         adjustment_rate=1,
         capacitance_matrix_studies=[cap_study],
+        **CONVERGENCE
+    )
+
+def get_mini_study_scattering_analysis(group :int):
+        resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+        qiskit_component_names = [n.name_mode(resonator), n.name_tee(group)]
+        design_name="get_mini_study_scattering_analysis",
+        scattering_studies =[ ScatteringStudy(nbr_passes = 40,
+                                             max_delta_s =0.005,
+                                             basis_order = 1,
+                                             qiskit_component_names=qiskit_component_names,
+                                              port_list=[
+                                                    (n.name_tee(group), "prime_end", 50),
+                                                    (n.name_tee(group), "prime_start", 50),
+                                                ],
+                                                open_pins=[],
+                                                mode=[resonator],
+                                                freq_span_ghz = 2,)]
+
+
+        
+
+        return MiniStudy(
+        qiskit_component_names=qiskit_component_names,
+        adjustment_rate=0.7,
+        port_list=[
+            (n.name_tee(group), "prime_end", 50),
+            (n.name_tee(group), "prime_start", 50),
+        ],
+        open_pins=[],
+        modes=[resonator],
+        jj_setup={},
+        design_name=design_name,
+        build_fine_mesh=True,
+        scattering_studies =scattering_studies,
         **CONVERGENCE
     )

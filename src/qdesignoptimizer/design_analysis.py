@@ -13,12 +13,13 @@ from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 from qiskit_metal.analyses.simulation import ScatteringImpedanceSim
 import matplotlib.pyplot as plt
-
+from qdesignoptimizer.utils.names_parameters import *
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
     MiniStudy,
     OptTarget,
+    ScatteringStudy,
 )
 from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import (
@@ -240,7 +241,7 @@ class DesignAnalysis:
         self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
         self.pinfo = self.renderer.pinfo
         self.setup = self.pinfo.setup
-        self.setup.n_modes = len(self.mini_study.mode_freqs)
+        self.setup.n_modes = len(self.mini_study.modes)
         self.setup.passes = self.mini_study.nbr_passes
         self.setup.delta_f = self.mini_study.delta_f
         self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
@@ -280,7 +281,7 @@ class DesignAnalysis:
                 for coord in self.design.components[
                     component_name
                 ].get_air_bridge_coordinates():
-                    hfss.modeler.create_bondwire(
+                    self.hfss.modeler.create_bondwire(
                         coord[0],
                         coord[1],
                         h1=0.005,
@@ -517,10 +518,10 @@ class DesignAnalysis:
         return direction
     
     
-    def run_scattering_analysis(self,setup,branch, freq_name,start_ghz,stop_ghz):
-        mode_freq = self.system_optimized_params[branch][freq_name]
+    def run_scattering_analysis(self,setup,component,start_ghz,stop_ghz,max_delta_s,nbr_passes,basis_order):
+        mode_freq = self.system_optimized_params[component+'_freq']
         GHz = 1e9
-        self.kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
+        self.kappa_target = self.system_target_params[component+'_kappa']
         setup.freq_ghz = mode_freq / GHz
         count = 25000#min(25000, 100*int(5 * (stop_ghz - start_ghz) / (self.kappa_target / GHz)))
         print(start_ghz, stop_ghz, count)
@@ -534,9 +535,10 @@ class DesignAnalysis:
         
         pinfo_setup = self.scattering_renderer.pinfo.setup
 
-        pinfo_setup.max_delta_s = self.mini_study.scattering_studies.max_delta_s
-        pinfo_setup.passes = self.mini_study.scattering_studies.nbr_passes
-        setup.basis_order =self.mini_study.scattering_studies.basis_order
+        pinfo_setup.passes = nbr_passes
+        pinfo_setup.delta_s = max_delta_s
+        setup.basis_order = basis_order
+
         print("pinfo_setup")
         pinfo_setup.solution_freq = f"{mode_freq/1e9}GHz"
         print("solution_freq default", pinfo_setup.solution_freq)
@@ -599,7 +601,7 @@ class DesignAnalysis:
 
 
 
-    def run_decay(self):
+    def run_decay(self, scatter_study: ScatteringStudy ):
         plt.close()
         self.scattering_solver = ScatteringImpedanceSim(self.design, "hfss")
         self.scattering_renderer = self.scattering_solver.renderer
@@ -607,83 +609,75 @@ class DesignAnalysis:
         self.scattering_renderer.start()
         self.scattering_renderer.activate_ansys_design(f"{self.mini_study.design_name}_drivenmodal", 'drivenmodal')
         self.scattering_renderer.options['keep_originals'] = True
-        for branch_freq_name in self.mini_study.mode_freqs:
-            self.scattering_renderer.clean_active_design()
-            self.scattering_renderer.render_design(
-                selection=self.mini_study.component_names,
-                open_pins=self.mini_study.open_pins,
-                port_list=self.mini_study.port_list,
-                box_plus_buffer = True
-            )
+        self.scattering_renderer.clean_active_design()
+        self.scattering_renderer.render_design(
+            selection=scatter_study.qiskit_component_names,
+            open_pins=scatter_study.open_pins,
+            port_list=scatter_study.port_list,
+            box_plus_buffer = True
+        )
 
-            branch = branch_freq_name[0]
-            freq_name = branch_freq_name[1]
-            assert freq_name in [dc.RES_FREQ], \
-                f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
+        max_delta_s = scatter_study.max_delta_s
+        nbr_passes = scatter_study.nbr_passes
+        basis_order = scatter_study.basis_order
 
-            nbr_ports = len(self.mini_study.port_list)
-            if nbr_ports == 1:
-                measurement = 'S11'
-                port = circuit.reflection_port()
-            elif nbr_ports == 2:
-                measurement = 'S21'
-                port  = circuit.notch_port()
-            else:
-                raise ValueError("Only 1 or 2 ports supported")
-            
-            start_freq = self.system_optimized_params[branch][dc.RES_FREQ] - 2e9
-            stop_freq = self.system_optimized_params[branch][dc.RES_FREQ] + 2e9
+        
+        
+        nbr_ports = len(scatter_study.port_list)
+        if nbr_ports == 1:
+            port = circuit.reflection_port()
+        elif nbr_ports == 2:
+            port  = circuit.notch_port()
+        else:
+            raise ValueError("Only 1 or 2 ports supported")
+        
+        for component in scatter_study.mode:
+            print("====================================")
+            print(f"Running scattering analysis for {component}")
+            print("====================================")
+
+            assert RESONATOR in component, \
+            f"Scattering analysis only support RES_KAPPA, please extend the functionality for {component}."
+
+            start_freq = self.system_optimized_params[component+'_freq'] - scatter_study.freq_span_ghz/2*1e9
+            stop_freq = self.system_optimized_params[component+'_freq'] + scatter_study.freq_span_ghz/2*1e9
 
             probe_freq, Sij_raw = self.run_scattering_analysis( setup,
-                                                                branch,
-                                                                freq_name,
+                                                                component=component,
                                                                 start_ghz=start_freq/1e9,
-                                                                stop_ghz=stop_freq/1e9)
+                                                                stop_ghz=stop_freq/1e9,
+                                                                max_delta_s=max_delta_s,
+                                                                nbr_passes=nbr_passes,
+                                                                basis_order=basis_order)
             
             
             Sij = 20*np.log10(np.absolute(Sij_raw))
             port.add_data(probe_freq, Sij_raw)
             port.autofit()
-            self.kappa_target = port.fitresults['fr']/port.fitresults['absQc']
 
-
-            start_freq = port.fitresults['fr'] - 30*self.kappa_target
-            stop_freq = port.fitresults['fr'] + 30*self.kappa_target
-
-            print(start_freq, stop_freq)
-            # self.plot_sij(probe_freq,Sij_raw,starting_freq,ending_freq,peak_freq)
+            start_freq, stop_freq, peak_freq, peak_idx = self.get_new_range(probe_freq, Sij,5)
 
 
             probe_freq, Sij_raw = self.run_scattering_analysis( setup,
-                                                                branch,
-                                                                freq_name,
+                                                                component=component,
                                                                 start_ghz=start_freq/1e9,
-                                                                stop_ghz=stop_freq/1e9)
-            # self.plot_sij(probe_freq,Sij_raw,starting_freq,ending_freq,peak_freq)
+                                                                stop_ghz=stop_freq/1e9,
+                                                                max_delta_s=max_delta_s,
+                                                                nbr_passes=nbr_passes,
+                                                                basis_order=basis_order)
 
             # Fit the scattering angle
             port.add_data(probe_freq, Sij_raw)
             port.autofit()
             
 
-            self.kappa_target = port.fitresults['fr']/port.fitresults['absQc']
+            kappa_target = port.fitresults['fr']/port.fitresults['absQc']
 
-            start_freq = port.fitresults['fr'] - 5*self.kappa_target
-            stop_freq = port.fitresults['fr'] + 5*self.kappa_target
-            clipped_freq = probe_freq[(probe_freq > start_freq) & (probe_freq < stop_freq)]
-            clipped_Sij = Sij_raw[(probe_freq > start_freq) & (probe_freq < stop_freq)]
-
-
-            # Fit the scattering angle
-            port.add_data(clipped_freq, clipped_Sij)
-            # port.autofit()
-            # port.plotall()
-
-            print(f'Kappa simualted is {self.kappa_target}')
+            print(f'Kappa simualted is {kappa_target}')
 
             scattering_results = {
                 "Freq. (Hz)": port.fitresults['fr'],
-                "Kappas (Hz)": self.kappa_target
+                "Kappa (Hz)": kappa_target
             }
             self.scattering_results = pd.DataFrame(scattering_results, index=[0])
             self._update_optimised_scattering_params(self.scattering_results)
@@ -713,6 +707,12 @@ class DesignAnalysis:
             freq = eig_result["Freq. (Hz)"][idx]
             decay = eig_result["Kappas (Hz)"][idx]
             self.system_optimized_params[param(mode, FREQ)] = freq
+            if param(mode, KAPPA) in self.system_target_params:
+                self.system_optimized_params[param(mode, KAPPA)] = decay
+
+    def _update_optimised_scattering_params(self, scattering_results: pd.DataFrame):
+        for idx, (mode, freq) in enumerate(self.get_simulated_modes_sorted()):
+            decay = scattering_results["Kappa (Hz)"][idx]
             if param(mode, KAPPA) in self.system_target_params:
                 self.system_optimized_params[param(mode, KAPPA)] = decay
 
@@ -1002,7 +1002,7 @@ class DesignAnalysis:
             self.hfss.save_project()
         except:
             pass
-        if self.mini_study is not None and len(self.mini_study.mode_freqs) > 0:
+        if self.mini_study is not None and len(self.mini_study.modes) > 0:
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
             iteration_result["eig_results"] = deepcopy(self.eig_result)
@@ -1034,6 +1034,12 @@ class DesignAnalysis:
         iteration_result["system_optimized_params"] = deepcopy(
             self.system_optimized_params
         )
+
+        if self.mini_study.scattering_studies is not None:
+            for scattering_study in self.mini_study.scattering_studies:
+                self.run_decay(scattering_study)
+                iteration_result["scattering_results"] = deepcopy(self.scattering_results)
+
 
         self.optimization_results.append(iteration_result)
         simulation = [
@@ -1128,6 +1134,7 @@ class DesignAnalysis:
     def screenshot(self, gui, run=None):
         if self.save_path is None:
             raise Exception("A path must be specified to save screenshot.")
-        gui.autoscale()
-        name = self.save_path + f"_{run+1}" if run is not None else self.save_path
-        gui.screenshot(name=name, display=False)
+        if gui is not None:
+            gui.autoscale()
+            name = self.save_path + f"_{run+1}" if run is not None else self.save_path
+            gui.screenshot(name=name, display=False)

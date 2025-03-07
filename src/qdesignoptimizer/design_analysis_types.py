@@ -79,7 +79,12 @@ class ScatteringStudy:
         self,
         nbr_passes: int = 18,
         max_delta_s: float = 0.005,
-        basis_order=-1,  # Mixed order
+        basis_order=-1,  # Mixed order,
+        qiskit_component_names: list = [],
+        open_pins: list = [],
+        port_list: list = [],
+        mode: Mode = [],
+        freq_span_ghz: float = 2,
     ):
         """Scattering study for DesignAnalysis.
 
@@ -88,12 +93,20 @@ class ScatteringStudy:
             nbr_passes (int): max nbr of passes in driven modal simulation
             max_delta_s (float): max delta s in driven modal simulation
             basis_order (int): basis order in driven modal simulation
-
+            qiskit_component_names (list(str)): List of names
+            open_pins (list): pins to be left open, example: [(comp_name, 'pin_name')],
+            port_list (list): component pins with ports, example with 50 Ohm: [(comp_name,'pin_name', 50
+            mode (str): Specific modee to simulate. Can take only one mode. Example: qubit_1
         """
 
         self.nbr_passes = nbr_passes
         self.max_delta_s = max_delta_s
         self.basis_order = basis_order
+        self.qiskit_component_names = qiskit_component_names
+        self.open_pins = open_pins
+        self.port_list = port_list
+        self.mode = mode
+        self.freq_span_ghz = freq_span_ghz
 
 
 class MiniStudy:
@@ -174,6 +187,7 @@ class MiniStudy:
             render_qiskit_metal_eigenmode_kw_args
         )
         self.capacitance_matrix_studies = capacitance_matrix_studies
+        self.scattering_studies = scattering_studies
 
 
 class DesignAnalysisState:
