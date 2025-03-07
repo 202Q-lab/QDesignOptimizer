@@ -714,6 +714,8 @@ class DesignAnalysis:
             decay = eig_result["Kappas (Hz)"][idx]
             self.system_optimized_params[param(mode, FREQ)] = freq
             if param(mode, KAPPA) in self.system_target_params:
+                self.system_optimized_params[param(mode, KAPPA)] = decay
+
 
     def _get_mode_idx_map(self):
         """Get mode index map.
