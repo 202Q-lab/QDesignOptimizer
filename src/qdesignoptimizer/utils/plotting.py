@@ -4,7 +4,7 @@ import os
 # plotting function
 from qdesignoptimizer.design_analysis_types import OptTarget
 from qdesignoptimizer.sim_plot_progress import plot_progress
-from typing import List, Literal, Union
+from typing import List, Literal, Optional, Union
 
 from pprint import pprint
 import json 
@@ -13,6 +13,14 @@ from datetime import datetime
 
 
 def load_data_by_date(folder_parent: str, name_experiment: str, experiment_beginning: str, experiment_end: str):
+    """
+    Loads file names with location for plotting with plot_optimization_results
+    Args:
+    folder_parent: str: Location of the parent folder from where to retrieve the files.
+    name_experiment: str: Name of the experiment (which is a string literal which will be used to sort out the files). eg: "multi_transmon_chip".
+    experiment_beginning: str: Name or datetime of the first result (YYYYMMDD-HHMMSS format). eg: "multi_transmon_chip_20250306-165308", "20250306-165308"
+    experiment_end: str: Name or datetime of the last result (YYYYMMDD-HHMMSS format)
+    """
 
     files_experiment = []
 
@@ -50,7 +58,25 @@ def load_data_by_date(folder_parent: str, name_experiment: str, experiment_begin
     return filtered_files
 
 
-def plot_optimization_results(files: List[str], plot_variance: bool = True,plot_design_variables: bool= False, plot_design_variables_sorted: bool = True, opt_target_list: Union[None, List[OptTarget]] = None ):
+def plot_optimization_results(files: List[str], 
+                              plot_variance: bool = True,
+                              plot_design_variables: Optional[Literal["chronological", "sorted"]]  = None, 
+                              opt_target_list: Union[None, List[OptTarget]] = None, 
+                              save_figures: bool = True):
+    """
+    This is a wrapper for plotting optimization results.
+    Args:
+        files: List[str]: List of file locations to be analysed.
+        plot_variance: bool = False: When there are multiple optimization results, whether to add individual lines for each or plot mean and std. deviation.
+        plot_design_variables: Optional[Literal["chronological", "sorted"]]  = None: Whether to plot design variables vs iteration and target parameters vs design variables (None if not to be plotted). 
+                                And whether to sort the design variables (x-axis) when plotting target parameters vs design variables ("sorted" for sorting otherwise "chronological"). 
+                                (Be mindful that some target parameters may depend on multiple design variables, so plotting target parameters vs design variables may not represent the complete physics)
+        opt_target_list: Union[None,List[OptTarget]] = None: List of optimization targets to be used when plotting design variables automatically (when plot_design_variables is set True) 
+                        for mapping target parameters to the respective design variables.
+        opt_results List[(dict)]: Takes a list of optimization results.
+        save_figures: bool = False: Whether to save the plots.
+
+    """
     results = []
     for file in files:
         results.append(np.load(file, allow_pickle= True)[0])
@@ -64,9 +90,8 @@ def plot_optimization_results(files: List[str], plot_variance: bool = True,plot_
                 [result["optimization_results"]for result in results],
                 results[0]["system_target_params"],
                 results[0]["plot_settings"],
-                save_figures=True,
+                save_figures=save_figures,
                 plot_variance=plot_variance,
                 plot_design_variables=plot_design_variables,
-                plot_design_variables_sorted=plot_design_variables_sorted,
                 opt_target_list=opt_target_list
     )

@@ -1,7 +1,7 @@
 import os
 import time
 from itertools import cycle
-from typing import Union, List, Literal
+from typing import Optional, Tuple, Union, List, Literal
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -51,19 +51,26 @@ def plot_progress(
     block_plots: bool = False,
     save_figures: bool = False,
     plot_variance: bool = False,
-    plot_design_variables: bool  = False,
-    plot_design_variables_sorted: bool= True,
+    plot_design_variables: Optional[Literal["chronological", "sorted"]]  = None,
     opt_target_list: Union[None,List[OptTarget]] = None
 ):
     """Plot the progress of the optimization framework
 
     Args:
-        opt_results (dict): The optimization results
+        opt_results List[(dict)]: Takes a list of optimization results
         system_target_params (dict): The target system parameters
         plot_settings (dict): The plot settings, example
             {"plt_name": [OptPltSet("panel1_x", "panel1_y"), OptPltSet("panel2_x", "panel2_y")], "plt_name2": ...}
-        plot_option (str, optional): 'linear', 'log', 'loglog'.
+        save_figures: bool = False: Whether to save the plots.
+        plot_variance: bool = False: When there are multiple optimization results, whether to add individual lines for each or plot mean and std. deviation.
+        plot_design_variables: Optional[Literal["chronological", "sorted"]]  = None: Whether to plot design variables vs iteration and target parameters vs design variables (None if not to be plotted). 
+                                And whether to sort the design variables (x-axis) when plotting target parameters vs design variables ("sorted" for sorting otherwise "chronological"). 
+                                (Be mindful that some target parameters may depend on multiple design variables, so plotting target parameters vs design variables may not represent the complete physics)
+        opt_target_list: Union[None,List[OptTarget]] = None: List of optimization targets to be used when plotting design variables automatically (when plot_design_variables is set True) 
+                        for mapping target parameters to the respective design variables.
     """
+
+    assert plot_design_variables in ["chronological", "sorted"] or plot_design_variables is None, "plot_design_variables can only be None, 'chronological', or 'sorted'"
 
     def get_data_from_parameter(axes_parameter: str, result: dict, ii: int):
         if axes_parameter == ITERATION:
@@ -91,7 +98,6 @@ def plot_progress(
             panels (list): The list of OptPltSet objects
             axs (list): The list of axes, one for each panel in panels
             colors (cycle): The cycle of colors
-            plot_option (str): 'linear', 'log', 'loglog'
 
         Returns:
             bool: True if data was plotted, used to delete empty figures
@@ -226,9 +232,10 @@ def plot_progress(
             opt_results (dict): The optimization results
             system_target_params (dict): The target system parameters
             panels (list): The list of OptPltSet objects
+            opt_target_list: Union[None,List[OptTarget]] = None: List of optimization targets for mapping target parameters to the respective design variables
             axs (list): The list of axes, one for each panel in panels
             colors (cycle): The cycle of colors
-            plot_option (str): 'linear', 'log', 'loglog'
+            plot_design_variables_sorted: bool= True: Whether to sort the design variables (x-axis)
 
         Returns:
             bool: True if data was plotted, used to delete empty figures
@@ -345,7 +352,6 @@ def plot_progress(
             panels (list): The list of OptPltSet objects
             axs (list): The list of axes, one for each panel in panels
             colors (cycle): The cycle of colors
-            plot_option (str): 'linear', 'log', 'loglog'
 
         Returns:
             bool: True if data was plotted, used to delete empty figures
@@ -433,7 +439,7 @@ def plot_progress(
         if save_figures == True:
             fig.savefig(f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png")
 
-        if plot_design_variables==True:
+        if plot_design_variables is not None:
             assert opt_target_list is not None, "To plot design variables as a function of target parameters, optimization target list cannot be None"
 
             fig, axs = plt.subplots(len(panels))
@@ -443,7 +449,7 @@ def plot_progress(
                                   opt_target_list,
                                   axs,
                                   colors,
-                                  plot_design_variables_sorted)
+                                  plot_design_variables_sorted = True if plot_design_variables=="chronological" else False)
             fig.suptitle(plot_name)
             fig.subplots_adjust(hspace=0.5)
             if save_figures == True:
