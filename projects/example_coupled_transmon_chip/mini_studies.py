@@ -20,10 +20,12 @@ def get_mini_study_res(group: int):
         qiskit_component_names=[
             n.name_mode(resonator),
             n.name_tee(group),
+            n.name_lp_to_tee(1,1),
+            n.name_tee_to_tee(1,2),
         ],
         port_list=[
-            (n.name_tee(group), "prime_end", 50),
-            (n.name_tee(group), "prime_start", 50),
+            (n.name_tee_to_tee(1,2), "end", 50),
+            (n.name_lp_to_tee(1,1), "start", 50),
         ],
         open_pins=[(n.name_mode(resonator), 'start')],
         modes=[resonator],
@@ -142,13 +144,13 @@ def get_mini_study_qb_charge_line(group: int):
 
 def get_mini_study_resonator_capacitance(group: int):
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
-    qiskit_component_names = [n.name_mode(resonator), n.name_tee(group)]
+    qiskit_component_names = [n.name_mode(resonator), n.name_tee(group), n.name_lp_to_tee(1,1), n.name_tee_to_tee(1,2)]
     cap_study = CapacitanceMatrixStudy(
         qiskit_component_names=qiskit_component_names,
         open_pins=[
             (n.name_mode(resonator), "start"),
-            (n.name_tee(group), "prime_end"),
-            (n.name_tee(group), "prime_start"),
+            (n.name_lp_to_tee(1,1), "start"),
+            (n.name_tee_to_tee(1,2), "end"),
         ],
         mode_freq_GHz=pt.PARAM_TARGETS[param(resonator, FREQ)] * 1e-9,
         nbr_passes=8,
