@@ -50,7 +50,7 @@ def load_data_by_date(folder_parent: str, name_experiment: str, experiment_begin
     return filtered_files
 
 
-def plot_optimization_results(files: List[str], plot_variance: bool = True,plot_type: Literal['target_vs_iterations', 'target_vs_variable', 'variable_vs_iteration']= 'target_vs_iterations', plot_design_variables_sorted: bool = True, opt_target_list: Union[None, List[OptTarget]] = None ):
+def plot_optimization_results(files: List[str], plot_variance: bool = True,plot_design_variables: bool= False, plot_design_variables_sorted: bool = True, opt_target_list: Union[None, List[OptTarget]] = None ):
     results = []
     for file in files:
         results.append(np.load(file, allow_pickle= True)[0])
@@ -66,7 +66,7 @@ def plot_optimization_results(files: List[str], plot_variance: bool = True,plot_
                 results[0]["plot_settings"],
                 save_figures=True,
                 plot_variance=plot_variance,
-                plot_type= plot_type,
+                plot_design_variables=plot_design_variables,
                 plot_design_variables_sorted=plot_design_variables_sorted,
                 opt_target_list=opt_target_list
     )

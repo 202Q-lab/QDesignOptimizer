@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 
 from qdesignoptimizer.design_analysis_types import OptTarget
 from qdesignoptimizer.utils.names_design_variables import name_mode
-from qdesignoptimizer.utils.names_parameters import NONLIN, get_modes_from_param_nonlin, param, ITERATION, param_nonlin
+from qdesignoptimizer.utils.names_parameters import CAPACITANCE, NONLIN, get_modes_from_param_nonlin, param, ITERATION, param_capacitance, param_nonlin
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
 class OptPltSet:
@@ -19,7 +19,7 @@ class OptPltSet:
                  y_label: str = None, 
                  x_scale: str = 'linear', 
                  y_scale: str = 'linear',
-                 unit: Literal['Hz', 'kHz', 'MHz','GHz']= 'Hz'):
+                 unit: Literal['Hz', 'kHz', 'MHz','GHz', 'fF']= 'Hz'):
         """Set the plot settings for a progress plots of the optimization framework
 
         Args:
@@ -35,7 +35,7 @@ class OptPltSet:
         self.x_scale = x_scale
         self.y_scale = y_scale
         self.unit = unit
-        self.normalization =  {'Hz': 1,'kHz': 1e3, 'MHz': 1e6,'GHz': 1e9}[unit]
+        self.normalization =  {'Hz': 1,'kHz': 1e3, 'MHz': 1e6,'GHz': 1e9, 'fF':1}[unit]
 
     def _get_label(self, variable: str, x_label: str):
         if x_label is not None:
@@ -51,7 +51,7 @@ def plot_progress(
     block_plots: bool = False,
     save_figures: bool = False,
     plot_variance: bool = False,
-    plot_type: Literal['target_vs_iterations', 'target_vs_variable', 'variable_vs_iteration']= 'target_vs_iterations',
+    plot_design_variables: bool  = False,
     plot_design_variables_sorted: bool= True,
     opt_target_list: Union[None,List[OptTarget]] = None
 ):
@@ -192,10 +192,12 @@ def plot_progress(
         for opt_target in opt_target_list:
             opt_target_variable = None
 
-            if opt_target.system_target_param != NONLIN:
-                opt_target_variable = param(opt_target.involved_modes[0],opt_target.system_target_param)
-            else:
+            if opt_target.target_param_type == NONLIN:
                 opt_target_variable = param_nonlin(*opt_target.involved_modes)
+            elif opt_target.target_param_type== CAPACITANCE:
+                opt_target_variable = param_capacitance(*opt_target.involved_modes)
+            else:
+                opt_target_variable = param(opt_target.involved_modes[0],opt_target.target_param_type)
             if target_parameter == opt_target_variable:
                 found = True
                 return opt_target.design_var
@@ -419,16 +421,22 @@ def plot_progress(
 
     for plot_name, panels in plot_settings.items():
         fig, axs = plt.subplots(len(panels))
-        if plot_type == 'target_vs_iterations':
-            plot_figure(
-                opt_results,
-                system_target_params,
-                panels,
-                axs,
-                colors
-            )
-        elif plot_type=='target_vs_variable':
+        plot_figure(
+            opt_results,
+            system_target_params,
+            panels,
+            axs,
+            colors
+        )
+        fig.suptitle(plot_name)
+        fig.subplots_adjust(hspace=0.5)
+        if save_figures == True:
+            fig.savefig(f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png")
+
+        if plot_design_variables==True:
             assert opt_target_list is not None, "To plot design variables as a function of target parameters, optimization target list cannot be None"
+
+            fig, axs = plt.subplots(len(panels))
             plot_target_parameters_vs_design_variables( opt_results,
                                   system_target_params,
                                   panels,
@@ -436,17 +444,23 @@ def plot_progress(
                                   axs,
                                   colors,
                                   plot_design_variables_sorted)
-        else:
+            fig.suptitle(plot_name)
+            fig.subplots_adjust(hspace=0.5)
+            if save_figures == True:
+                fig.savefig(f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png")
+
+            fig, axs = plt.subplots(len(panels))
             plot_design_variables_vs_iterations(
                 opt_results,
                 panels,
                 axs,
                 colors,
             )
-        fig.suptitle(plot_name)
-        fig.subplots_adjust(hspace=0.5)
-        if save_figures == True:
-            fig.savefig(f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png")
+            fig.suptitle(plot_name)
+            fig.subplots_adjust(hspace=0.5)
+            if save_figures == True:
+                fig.savefig(f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png")
+
     plt.show(block=block_plots)
 
 

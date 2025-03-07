@@ -19,8 +19,8 @@ def name_my_custom_qiskit_component(identifier: int):
 NBR_1 = 1
 NBR_2 = 2
 
-QUBIT_1 = mode(QUBIT, group=NBR_1)
-RESONATOR_1 = mode(RESONATOR, group=NBR_1)
-QUBIT_2 = mode(QUBIT, group=NBR_2)
-RESONATOR_2 = mode(RESONATOR, group=NBR_2)
-COUPLER_12 = mode(COUPLER, group="1to2")  # Coupler between qubit 1 and qubit 2
+QUBIT_1 = mode(QUBIT, identifier=NBR_1)
+RESONATOR_1 = mode(RESONATOR, identifier=NBR_1)
+QUBIT_2 = mode(QUBIT, identifier=NBR_2)
+RESONATOR_2 = mode(RESONATOR, identifier=NBR_2)
+COUPLER_12 = mode(COUPLER, identifier="1to2")  # Coupler between qubit 1 and qubit 2
