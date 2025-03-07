@@ -1,12 +1,19 @@
+============================================
 Welcome to qdesignoptimizer's documentation!
 ============================================
 
-``qdesignoptimizer`` is an open-source library.
+| The quantum design optimization package ``qdesignoptimizer`` is an open-source library developed by researchers in the `202Q-lab <https://202q-lab.se/>`_ at Chalmers, Gothenburg, Sweden. Further information on the development, references, and events can be found on `202Q-lab research page <https://202q-lab.se/research/quantum-design-optimizer/>`_. 
+| To get started, please check the :ref:`userguide`. 
 
-.. caution:: Please note that ``qdesignoptimizer`` is currently in a very early development stage. This means that the API is subject to significant changes.
+Reference
+=========
+
+| A technical paper describing the functionality and giving examples is in preparation. 
+| Eriksson, et al., *"Automatic multi-parameter design optimization for superconducting devices"*, in preparation.
+| Please refer to this publication when citing the ``qdesignoptimizer``.
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
    :caption: Content:
    
    installation
@@ -15,15 +22,13 @@ Welcome to qdesignoptimizer's documentation!
    development
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Api reference
+    :maxdepth: 1
+    :caption: API reference
 
     api-reference/modules
 
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. figure:: 202Q_lab_logo.png
+   :width: 200px
+   :align: left
+   :target: https://202q-lab.se/
