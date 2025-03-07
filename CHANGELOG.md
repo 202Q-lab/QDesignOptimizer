@@ -2,14 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.1]
 
 ### Added
-
-### Changed
-
-### Improved
-
-### Fixed
-
-### Removed
+This is the initial public version of the qdesignoptimizer.
