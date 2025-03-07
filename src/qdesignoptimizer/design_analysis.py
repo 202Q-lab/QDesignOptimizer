@@ -710,7 +710,7 @@ class DesignAnalysis:
 
         if self.plot_settings is not None:
             plot_progress(
-                self.optimization_results,
+                [self.optimization_results],
                 self.system_target_params,
                 self.plot_settings,
             )

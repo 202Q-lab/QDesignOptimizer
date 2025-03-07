@@ -9,25 +9,21 @@ from qdesignoptimizer.utils.names_parameters import (
 
 PLOT_SETTINGS = {
     "RES": [
-        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.FREQ), y_label="RES Freq (Hz)"),
-        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa (Hz)"),
-        OptPltSet(
-            n.ITERATION,
-            param_nonlin(n.RESONATOR_1, n.RESONATOR_1),
-            y_label="RES Kerr (Hz)",
-        ),
+        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.FREQ), y_label="RES Freq",unit='GHz'),
+        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa",unit='MHz'),
+        OptPltSet(n.design_var_length(n.RESONATOR_1), param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa",unit='MHz'), # As an example that design variables can also be plotted for the results
     ],
     "QUBIT": [
-        OptPltSet(n.ITERATION, param(n.QUBIT_1, n.FREQ), y_label="QB Freq (Hz)"),
+        OptPltSet(n.ITERATION, param(n.QUBIT_1, n.FREQ), y_label="QB Freq",unit='GHz'),
         OptPltSet(
-            n.ITERATION, param_nonlin(n.QUBIT_1, n.QUBIT_1), y_label="QB Anharm. (Hz)"
+            n.ITERATION, param_nonlin(n.QUBIT_1, n.QUBIT_1), y_label="QB Anharm.",unit='MHz'
         ),
     ],
     "COUPLINGS": [
         OptPltSet(
             n.ITERATION,
             param_nonlin(n.RESONATOR_1, n.QUBIT_1),
-            y_label="RES-QB Chi (Hz)",
+            y_label="RES-QB Chi",unit='kHz'
         ),
     ],
 }
@@ -90,7 +86,8 @@ PLOT_SETTINGS_CAPACITANCE = {
         OptPltSet(
             n.ITERATION,
             param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"),
-            y_label="Capacitance (fF)"
+            y_label="Capacitance",
+            unit='fF'
         )
     ],
 }

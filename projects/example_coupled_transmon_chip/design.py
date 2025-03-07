@@ -74,7 +74,6 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
         prime_gap=c.LINE_50_OHM_GAP,
         coupling_space=n.design_var_length(f"{resonator}_capacitance"),
         fillet=c.BEND_RADIUS,
-        prime_length_factor=5,
         coupling_length=n.design_var_coupl_length(resonator, "tee"),
     )
 

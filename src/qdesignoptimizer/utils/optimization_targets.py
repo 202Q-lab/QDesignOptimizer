@@ -78,7 +78,7 @@ def get_opt_target_res_kappa_via_coupl_length(
         target_param_type=KAPPA,
         involved_modes=[resonator],
         design_var=design_var_res_coupl_length(resonator, resonator_coupled_identifier),
-        design_var_constraint={"larger_than": "20um", "smaller_than": "1000um"},
+        design_var_constraint={"larger_than": "20um", "smaller_than": "2000um"},
         prop_to=lambda p, v: v[
             design_var_res_coupl_length(resonator, resonator_coupled_identifier)
         ]
