@@ -109,6 +109,12 @@ Optimization Target
         independent_target=True,
     )
 
+More involved and dependent physical relations can be formulated using parameters ``p`` and design variables ``v`` in the propotionality statement of the ``OptTarget``. An example for a more detailed relation can be formulated for the nonlinear parameter :math:`\chi`:
+
+.. code:: python
+
+    prop_to = lambda p, v: np.abs(v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)] * p[param_nonlin(qubit, qubit)] / (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)] ))
+
 .. caution:: Ensure that the units of the design variable match the unit of the contraint in the optimization target and the parameters in the propotionality statement prop_to. For consistency we suggest to use the units :math:`um` for measures of length, :math:`nH` for inductances and :math:`fF` for capacitances.
 
 .. _relationtable:
@@ -116,7 +122,7 @@ Optimization Target
 Physical relation
 -----------------
 
-One strength of the qdesignoptimizer arises from the integration of physical relations between the design variable and the parameter targets, which boosts the efficiency of the optimization. Note that the ``OptTarget`` only requires an expression which is proportional to the target quantity, since it only uses relative values in the update step. Hence, the user only need to provide the part of the function which vaies and to the level of detail which is known to the user. The more accurate the user specified model is, the faster and more robust the optimizer will be. The table below contains an example set of suggested physical relations for the optimization targets for Hamiltonian and dissipative parameters in a dispersively coupled qubit-resonator cQED system.:
+One strength of the qdesignoptimizer arises from the integration of physical relations between the design variable and the parameter targets, which boosts the efficiency of the optimization. Note that the ``OptTarget`` only requires an expression which is proportional to the target quantity, since it only uses relative values in the update step. Hence, the user only need to provide the part of the function which varies and to the level of detail which is known to the user. The more accurate the user specified model is, the faster and more robust the optimizer will be. The table below contains an example set of suggested physical relations for the optimization targets for Hamiltonian and dissipative parameters in a dispersively coupled qubit-resonator cQED system.:
 
 .. list-table::
    :header-rows: 1
@@ -157,7 +163,7 @@ One strength of the qdesignoptimizer arises from the integration of physical rel
 
 Parameter Targets
 -----------------
-| The parameter targets are specified in a ``dict`` per target parameter. Three types of of parameter targets can be defined, (1) parameters ``param`` with mode and parameter type, (2) nonlinear parameters ``param_nonlin`` between two modes, and (3) capacitance targets ``param_capacitance`` between two component names. 
+| The parameter targets are specified in a ``dict`` per target parameter. Three types of of parameter targets can be defined, (1) parameters ``param`` with mode and parameter type, (2) nonlinear parameters ``param_nonlin`` between two modes, and (3) capacitance targets ``param_capacitance`` between two component names. Note that the nonlinear parameters are self-Kerr or anharmonicity :math:`\alpha` and cross-Kerr or :math:`\chi` parameters. They follow the bosonic definition of qiskit-metal. 
 | A minimal example for a single qubit-resonator system may look like this:
 
 .. code-block:: python
@@ -215,8 +221,7 @@ Mini Studies
         **CONVERGENCE
         )
 
-.. caution:: The modes must be ordered from lowest to highest frequency, and the mode order in teh definition of the MiniStudy must match the resulting order of the modes in the HFSS eigenmode simulation.
-
+.. caution:: The order of modes defined in the MiniStudy must match the order of modes resulting from the HFSS eigenmode simulation, which goes from lowest to highest frequency.
 
 Plot Settings
 -------------
