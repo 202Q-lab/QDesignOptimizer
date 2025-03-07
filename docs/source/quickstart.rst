@@ -1,7 +1,9 @@
+.. _qickstart:
+
 ==============
-QDO quickstart
+QDO QuickStart
 ==============
-This quickstart guide takes the example of a single transmon-resonator system to examplify the setup of the optimization project. Based on this concept more complex optimization problems can be constructed. 
+This quick start guide takes the example of a single transmon-resonator system to exemplify the setup of the optimization project. Based on this concept more complex optimization problems can be constructed. 
 
 Installation
 ============
@@ -24,26 +26,26 @@ Every optimization project requires a set of files defined the optimization prob
     ├── plot_settings.py
     ├── parameter_targets.py
 
-Hereafter, we will refer to each file individually and highlight the important concepts to setup the project.
+Hereafter, we will refer to each file individually and highlight the important concepts to set up the project.
 
 Project setup
 =============
 
 Mode Names and Component Names
 ------------------------------
-| For mode names we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``, for example ``qubit_1``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As identifier we suggest a count of the component group or of the component in a group of components. 
-| For qiskit-metal component names we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``. A collection of common qiskit-metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. 
+| For mode names we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``, for example ``qubit_1``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As an identifier we suggest a count of the component group or of the component in a group of components. 
+| For Qiskit Metal component names we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``. A collection of common Qiskit Metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. 
 
 
 Design Variable Names and Values
 --------------------------------
-| Design variable names are string identifiers (for geometric lengths, Josephson junction inductances etc.) specified in the qiskit-metal design. The design variables can be varied by the optimizer during the optimization to reach the target parameters. For the design variable names we suggest a naming convention of the form ``design_var_`` followed by an identifier which indicates what the design variable controls, for example ``design_var_length_resonator_1``. A collection of common design variable names can be directly called from ``utils.names_design_variables.py``. User specific component names can be added in and called from ``names.py`` in the project folder.
-| To render the qiskit-metal design, the user must provide initial values based on a sensible guess for all design variables, which by convention are written in ``design_variables.json`` in the project folder and provided to the optimizer.
+| Design variable names are string identifiers (for geometric lengths, Josephson junction inductances etc.) specified in the Qiskit Metal design. The design variables can be varied by the optimizer during the optimization to reach the target parameters. For the design variable names we suggest a naming convention of the form ``design_var_`` followed by an identifier which indicates what the design variable controls, for example ``design_var_length_resonator_1``. A collection of common design variable names can be directly called from ``utils.names_design_variables.py``. User specific component names can be added in and called from ``names.py`` in the project folder.
+| To render the Qiskit Metal design, the user must provide initial values based on a sensible guess for all design variables, which by convention are written in ``design_variables.json`` in the project folder and provided to the optimizer.
 
 Design
 ------
-| The user-specified qiskit-metal design can be created as usual following the qiskit-metal guide line using general or custom-made circuit components. Any dimension of a component which should be varied during the optimization must be provided as a design variable identifier.
-| As a minimal example we can look at the definition of a ``RouteMeander`` resonator. In this example, we show that the design variable substitues the otherwise commonly static design definition for the total resonator length.
+| The user-specified Qiskit Metal design can be created as usual following the Qiskit Metal guideline using general or custom-made circuit components. Any dimension of a component which should be varied during the optimization must be provided as a design variable identifier.
+| As a minimal example we can look at the definition of a ``RouteMeander`` resonator. In this example, we show that the design variable substitutes the otherwise commonly static design definition for the total resonator length.
 
 .. code-block:: python
 
@@ -86,7 +88,7 @@ Finally, the design can be instantiated by the ``create_chip_base`` method and r
 Optimization Target
 --------------------
 | The optimization target ``OptTarget`` is a required core component of the qdesignoptimizer. It relates the parameter target (e.g. frequency, kappa, capacitance, or Purcell limited T1) with the involved modes (e.g. ``resonator`` or ``qubit``), the design variable (e.g. ``design_var_length_resonator_1``) and the physical relation used during optimization (e.g. ``1/design_var_length_resonator_1`` in case of the resonator frequency). 
-| One ``OptTarget`` must be created for each target parameter the user wants to optimize for. The names of the involved eigenmodes and parameter names is by convention called from ``names.py`` in the project folder. 
+| One ``OptTarget`` must be created for each target parameter the user wants to optimize for. The names of the involved eigenmodes and parameter names are by convention called from ``names.py`` in the project folder. 
 | The full class documentation can be found in src/qdesignoptimizer/design_analysis_types.py.
 | A minimal example for the resonator length can look like this:
 
@@ -109,20 +111,20 @@ Optimization Target
         independent_target=True,
     )
 
-More involved and dependent physical relations can be formulated using parameters ``p`` and design variables ``v`` in the propotionality statement of the ``OptTarget``. An example for a more detailed relation can be formulated for the nonlinear parameter :math:`\chi`:
+More involved and dependent physical relations can be formulated using parameters ``p`` and design variables ``v`` in the proportionality statement of the ``OptTarget``. An example for a more detailed relation can be formulated for the nonlinear parameter :math:`\chi`:
 
 .. code:: python
 
     prop_to = lambda p, v: np.abs(v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)] * p[param_nonlin(qubit, qubit)] / (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)] ))
 
-.. caution:: Ensure that the units of the design variable match the unit of the contraint in the optimization target and the parameters in the propotionality statement prop_to. For consistency we suggest to use the units :math:`um` for measures of length, :math:`nH` for inductances and :math:`fF` for capacitances.
+.. caution:: Ensure that the units of the design variable match the unit of the constraint in the optimization target and the parameters in the proportionality statement prop_to. For consistency we suggest to use the units :math:`um` for measures of length, :math:`nH` for inductances and :math:`fF` for capacitances.
 
 .. _relationtable:
 
 Physical relation
 -----------------
 
-One strength of the qdesignoptimizer arises from the integration of physical relations between the design variable and the parameter targets, which boosts the efficiency of the optimization. Note that the ``OptTarget`` only requires an expression which is proportional to the target quantity, since it only uses relative values in the update step. Hence, the user only need to provide the part of the function which varies and to the level of detail which is known to the user. The more accurate the user specified model is, the faster and more robust the optimizer will be. The table below contains an example set of suggested physical relations for the optimization targets for Hamiltonian and dissipative parameters in a dispersively coupled qubit-resonator cQED system.:
+One strength of the qdesignoptimizer arises from the integration of physical relations between the design variable and the parameter targets, which boosts the efficiency of the optimization. Note that the ``OptTarget`` only requires an expression which is proportional to the target quantity, since it only uses relative values in the update step. Hence, the user only needs to provide the part of the function which varies and to the level of detail which is known to the user. The more accurate the user specified model is, the faster and more robust the optimizer will be. The table below contains an example set of suggested physical relations for the optimization targets for Hamiltonian and dissipative parameters in a dispersively coupled qubit-resonator cQED system.:
 
 .. list-table::
    :header-rows: 1
@@ -159,12 +161,12 @@ One strength of the qdesignoptimizer arises from the integration of physical rel
      - :math:`l_{res-tl}`
      - True
 
-.. caution::  An OptTarget can be marked as independent_target=True if the target only depends on a single design variable and not on any system parameter. This allows the optimizer to solve this OptTarget independently, making it faster and more robust. If a criteria of independence is not fulfilled, the OptTarget must be independent_target=False (as the default).
+.. caution::  An OptTarget can be marked as independent_target=True if the target only depends on a single design variable and not on any system parameter. This allows the optimizer to solve this OptTarget independently, making it faster and more robust. If the criterion of independence is not fulfilled, the OptTarget must be independent_target=False (as the default).
 
 Parameter Targets
 -----------------
-| The parameter targets are specified in a ``dict`` per target parameter. Three types of of parameter targets can be defined, (1) parameters ``param`` with mode and parameter type, (2) nonlinear parameters ``param_nonlin`` between two modes, and (3) capacitance targets ``param_capacitance`` between two component names. Note that the nonlinear parameters are self-Kerr or anharmonicity :math:`\alpha` and cross-Kerr or :math:`\chi` parameters. They follow the bosonic definition of qiskit-metal. 
-| A minimal example for a single qubit-resonator system may look like this:
+| The parameter targets are specified in a ``dict`` per target parameter. Three types of parameter targets can be defined, (1) parameters ``param`` with mode and parameter type, (2) nonlinear parameters ``param_nonlin`` between two modes, and (3) capacitance targets ``param_capacitance`` between two component names. Note that the nonlinear parameters are self-Kerr or anharmonicity :math:`\alpha` and cross-Kerr or :math:`\chi` parameters. They follow the bosonic definition of Qiskit Metal. 
+| A minimal example of a single qubit-resonator system may look like this:
 
 .. code-block:: python
 
@@ -257,7 +259,7 @@ Plot Settings
 
 Optimization Workflow
 ---------------------
-| Once the optimization problem has been set up, the user can start the optimization. We suggest to break the entire optimization problem down into smaller optimization problems defined as mini studies of groups of qiskit-metal components (e.g. a set of ``resonator``, ``qubit``, and ``feedline`` as a tile of a larger chip design). Subsequently, the user can optimize linking qiskit-metal components between the groups that have been studied initially (e.g. ``qubit_1``, ``coupler``, ``qubit_2``). 
+| Once the optimization problem has been set up, the user can start the optimization. We suggest breaking the entire optimization problem down into smaller optimization problems defined as mini studies of groups of Qiskit Metal components (e.g. a set of ``resonator``, ``qubit``, and ``feedline`` as a tile of a larger chip design). Subsequently, the user can optimize linking Qiskit Metal components between the groups that have been studied initially (e.g. ``qubit_1``, ``coupler``, ``qubit_2``). 
 | A minimal example can look like this:
 
 .. code-block:: python
@@ -294,4 +296,4 @@ Optimization Workflow
         design_analysis.screenshot(gui=gui, run=i)
 
 
-The optimizer outputs a ``.npy`` file with the target parameters and design variables evaluated after each iteration. In addition, the optimizer can output a new ``.json`` file with the updated design parameters and a snapshot of the qiskit-metal gui to visually follow the progress. The user can also choose to update the initial ``design_variables.json`` file by running ``design_analysis.overwrite_parameters()``.
+The optimizer outputs a ``.npy`` file with the target parameters and design variables evaluated after each iteration. In addition, the optimizer can output a new ``.json`` file with the updated design parameters and a snapshot of the Qiskit Metal gui to visually follow the progress. The user can also choose to update the initial ``design_variables.json`` file by running ``design_analysis.overwrite_parameters()``.
