@@ -9,7 +9,7 @@ from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_floating_lumped_mode_decay_into_chargeline,
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
-from qdesignoptimizer.logging import dict_log_format, log
+from qdesignoptimizer.logger import dict_log_format, log
 
 
 class CapacitanceMatrixStudy:

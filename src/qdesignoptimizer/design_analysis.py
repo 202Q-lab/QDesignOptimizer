@@ -17,7 +17,7 @@ from qdesignoptimizer.design_analysis_types import (
     MiniStudy,
     OptTarget,
 )
-from qdesignoptimizer.logging import dict_log_format, log
+from qdesignoptimizer.logger import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import (
     CapacitanceMatrixStudy,
     ModeDecayIntoChargeLineStudy,
