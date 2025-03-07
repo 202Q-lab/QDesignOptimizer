@@ -10,6 +10,7 @@ from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_floating_lumped_mode_decay_into_chargeline,
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
+from qdesignoptimizer.logging import dict_log_format, log
 
 
 class CapacitanceMatrixStudy:
@@ -23,8 +24,8 @@ class CapacitanceMatrixStudy:
     Note that the capacitance name typically change if you change which components are included in the analysis.
 
     Args:
-        component_names (list):         list of Qiskit component names to be included in the capacitance simulation
-        freq_GHz (float):               Sets the frequency in GHz of the capacitance matrix. Or (ot supported yet): If tuple, the simulation will use the frquency from corresponding mode in the EPR analysis.n
+        qiskit_component_names (list):         list of Qiskit component names to be included in the capacitance simulation
+        freq_GHz (float):               Sets the frequency in GHz of the capacitance matrix. Or (not supported yet): If tuple, the simulation will use the frequency from corresponding mode in the EPR analysis.n
                                         Example1: 5e9, Example2: ('BRANCH_1', 'qubit_freq')
         open_pins (list):               pins to be left open (called open_terminations in the capacitance matrix simulation),
                                         Example: [('comp_name', 'pin_name')]
@@ -38,13 +39,13 @@ class CapacitanceMatrixStudy:
         render_qiskit_metal_kwargs (dict): kwargs for render_qiskit_metal
 
         percent_error (float):          percent error in capacitance simulation
-        nbr_passes (int):               nbr of passes in capacitance simulation
+        nbr_passes (int):               group of passes in capacitance simulation
     """
 
     def __init__(
         self,
-        component_names: list,
-        freq_GHz: Union[float],
+        qiskit_component_names: list,
+        mode_freq_GHz: Union[float],
         open_pins: list = [],
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
@@ -53,8 +54,8 @@ class CapacitanceMatrixStudy:
         percent_error: Optional[float] = 0.5,
         nbr_passes: Optional[int] = 10,
     ):
-        self.component_names = component_names
-        self.freq_GHz = freq_GHz
+        self.qiskit_component_names = qiskit_component_names
+        self.mode_freq_GHz = mode_freq_GHz
         self.open_pins = open_pins
         self.x_buffer_width_mm = x_buffer_width_mm
         self.y_buffer_width_mm = y_buffer_width_mm
@@ -100,13 +101,13 @@ class CapacitanceMatrixStudy:
 
         lom_analysis = LOManalysis(design, "q3d")
         lom_analysis.sim.setup.max_passes = self.nbr_passes
-        lom_analysis.sim.setup.freq_ghz = self.freq_GHz
+        # lom_analysis.sim.setup.freq_ghz = self.freq_GHz
         lom_analysis.sim.setup.percent_error = self.percent_error
         lom_analysis.sim.renderer.options["x_buffer_width_mm"] = self.x_buffer_width_mm
         lom_analysis.sim.renderer.options["y_buffer_width_mm"] = self.y_buffer_width_mm
 
         lom_analysis.sim.run(
-            components=self.component_names, open_terminations=self.open_pins
+            components=self.qiskit_component_names, open_terminations=self.open_pins
         )
         self.capacitance_matrix_fF = lom_analysis.sim.capacitance_matrix
         return self.capacitance_matrix_fF
@@ -119,8 +120,6 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
     each decay analysis should be done in a separate ModeDecayIntoChargeLineStudy.
 
     Args:
-        branch_name (str): branch name
-        freq_name (str): freq_GHz name
         mode_capacitance_name (str): capacitance name of mode, if grounded: 1 string of island name, if floating: list of 2 strings of respective island name
         charge_line_capacitance_name (str): capacitance name of charge line
         charge_line_impedance_Ohm (float): charge line impedance in Ohm
@@ -130,13 +129,12 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
     def __init__(
         self,
-        branch_name: str,
-        freq_name: str,
+        mode: Union[str],
+        mode_freq_GHz: Union[float],
         mode_capacitance_name: Union[str, List[str]],
         charge_line_capacitance_name: str,
         charge_line_impedance_Ohm: float,
-        component_names: list,
-        freq_GHz: Union[float],
+        qiskit_component_names: list,
         open_pins: list = [],
         ground_plane_capacitance_name: str = None,
         x_buffer_width_mm: float = 2,
@@ -145,22 +143,22 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         nbr_passes: int = 10,
     ):
         super().__init__(
-            component_names=component_names,
-            freq_GHz=freq_GHz,
+            qiskit_component_names=qiskit_component_names,
+            mode_freq_GHz=mode_freq_GHz,
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
             y_buffer_width_mm=y_buffer_width_mm,
             percent_error=percent_error,
             nbr_passes=nbr_passes,
         )
-        self.branch_name = branch_name
-        self.freq_name = freq_name
+        self.mode = mode
         self.mode_capacitance_name = mode_capacitance_name
         self.ground_plane_capacitance_name = ground_plane_capacitance_name
         self.charge_line_capacitance_name = charge_line_capacitance_name
         self.charge_line_impedance_Ohm = charge_line_impedance_Ohm
+        self.freq_GHz = mode_freq_GHz
 
-    def get_t1_limit_due_to_decay_into_charge_line(self):
+    def get_t1_limit_due_to_decay_into_charge_line(self) -> float:
         """Get the T1 limit due to decay into charge line decay
         and populates the t1_limit_due_to_decay_into_charge_line attribute.
 
@@ -196,7 +194,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
                     mode_capacitance_fF=Csum,
                     mode_capacitance_to_charge_line_fF=Ccoupling,
                     mode_freq_GHz=self.freq_GHz,
-                    charge_line_impedance=50.0,
+                    charge_line_impedance=self.charge_line_impedance_Ohm,
                 )
             )
 
@@ -221,13 +219,13 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
             self.t1_limit_due_to_decay_into_charge_line = (
                 calculate_t1_limit_floating_lumped_mode_decay_into_chargeline(
+                    mode_freq_GHz=self.freq_GHz,
                     cap_island_a_island_b_fF=CJ,
                     cap_island_a_ground_fF=Ca0,
                     cap_island_a_line_fF=Ca1,
                     cap_island_b_ground_fF=Cb0,
                     cap_island_b_line_fF=Cb1,
-                    mode_freq_GHz=self.freq_GHz,
-                    charge_line_impedance=50.0,
+                    charge_line_impedance=self.charge_line_impedance_Ohm,
                 )
             )
 
@@ -241,7 +239,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
 def sim_capacitance_matrix(
     design: QDesign,
-    component_names: list,
+    qiskit_component_names: list,
     open_terminations: list,
     freq_ghz: float = 4,
     nbr_passes: int = 16,
@@ -253,32 +251,11 @@ def sim_capacitance_matrix(
     lom_analysis.sim.setup.percent_error = 0.1
     lom_analysis.sim.renderer.options["x_buffer_width_mm"] = 2
     lom_analysis.sim.renderer.options["y_buffer_width_mm"] = 2
-    print(lom_analysis.sim.setup)
+    log.info("lom_analysis.sim.setup %s", dict_log_format(lom_analysis.sim.setup))
 
     lom_analysis.sim.run(
-        components=component_names, open_terminations=open_terminations
+        components=qiskit_component_names, open_terminations=open_terminations
     )
     capacitance_matrix = lom_analysis.sim.capacitance_matrix
 
     return capacitance_matrix
-
-
-# c1.sim.setup
-# {'name': 'Setup',
-#  'reuse_selected_design': True,
-#  'freq_ghz': 5.0,
-#  'save_fields': False,
-#  'enabled': True,
-#  'max_passes': 15,
-#  'min_passes': 2,
-#  'min_converged_passes': 2,
-#  'percent_error': 0.5,
-#  'percent_refinement': 30,
-#  'auto_increase_solution_order': True,
-#  'solution_order': 'High',
-#  'solver_type': 'Iterative'}
-
-
-# c1.plot_convergence();
-# c1.plot_convergence_chi()
-# c1.sim.close()
