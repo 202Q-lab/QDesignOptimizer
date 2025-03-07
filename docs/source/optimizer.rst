@@ -77,6 +77,12 @@ These relations for :math:`\tilde Q_i^{k+1}` simplify parameter updates to only 
 
 One of the main assumptions, which the QDesignOptimizer takes advantage of is that, if the approximate model incorporates the correct general trends of the physical relationships, the optimization will converge to the target. Hence, there is no need for the user to specify a very precise physical model, but the more the user knows about the physics, the faster and more robust the optimizer will be.
 
+Separating physical dependencies by design
+-------------------------------------------
+
+| We recommend to create a design which separates the physical dependence between parameter targets and their intendet design variables. As a result, the user can specify more easily a nonlinear model that approximates the physical dependences of the design well. This nonlinear model is the input to the :ref:`opttarget`. Note that, the user does not need to decouple the physics of the system as long as the user can model the coupled system by nonlinear equations well. In many cases, it might not even be necessary to develop a very precise mode. An inaccurate model capturing the gradient is often sufficient, if the optimizer takes small update steps, which can be set by the update rate of the optimizer. However, the user might compromise on convergence.  
+| For example, if we define the :math:`l_{res-tl}` coupling length such that it does not affect the total length of the resonator, we approximately decouple the optimization of :math:`f_{res}` and :math:`\kappa_{res}`. In this example, given that we decoupled the physical relation between coupling strenght and frequency, a simple decoupled nonlinear model is a good approximation of the system.
+
 
 Independent Variables
 -----------------------
@@ -92,7 +98,6 @@ The number of independent design variables :math:`N` must match the number of pa
 
 Factorization of Update Step
 ----------------------------
-
 
 | The nonlinear minimization step is simplified by exploiting the independence of some design variables in the physical relations. Involving this factorization, we can decompose the original N-dimensional optimization problem into a sequence of lower-dimensional subproblems, which significantly reduces the computational complexity and can be solved faster.
 | Specifically in the example discussed in :ref:`qickstart` we observe that: 
@@ -112,7 +117,8 @@ Once these one-dimensional optimizations are complete, we solve the remaining tw
 - Determine :math:`\chi_{qb-res}^{k+1}` by solving for :math:`(f_{qb}, \chi, L_{qb}, w_{res-qb})`
 
 | Instead of solving a full five-dimensional problem at once, we handle subproblems of dimensions 1, 1, 1, and 2, which are computationally more efficient. 
-| Whenever possible, we advise to define design variables that affect only a single parameter independently. For example, if we define the :math:`l_{res-tl}` coupling length such that it does not affect the total length of the resonator, we (approximately) decouple the optimization of :math:`f_{res}` and :math:`\kappa_{res}`.
+
+
 
 .. rubric:: Footnotes
 
