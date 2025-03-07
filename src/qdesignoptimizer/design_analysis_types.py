@@ -96,7 +96,6 @@ class OptTarget:
 class ScatteringStudy:
     def __init__(
         self,
-        mode_freqs: list,
         nbr_passes: int = 18,
         max_delta_s: float = 0.005,
         basis_order=-1,  # Mixed order
@@ -110,7 +109,7 @@ class ScatteringStudy:
             basis_order (int): basis order in driven modal simulation
 
         """
-        self.mode_freqs = mode_freqs
+
         self.nbr_passes = nbr_passes
         self.max_delta_s = max_delta_s
         self.basis_order = basis_order
@@ -136,7 +135,7 @@ class MiniStudy:
         allow_crude_decay_estimates=True,
         adjustment_rate: float = 1.0,
         render_qiskit_metal_eigenmode_kw_args: dict = {},
-        scattering_studies: List[ScatteringStudy] = [],
+        scattering_studies: List[ScatteringStudy] = None,
         capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],
     ):
         """Mini_study for eigenmode simulation and energy participation (EPR) analysis in DesignAnalysis.
@@ -187,17 +186,17 @@ class MiniStudy:
         self.scattering_studies = scattering_studies
         self.capacitance_matrix_studies = capacitance_matrix_studies
 
-        self._validate_scattering_studies()
+    #     self._validate_scattering_studies()
 
-    def _validate_scattering_studies(self):
-        """Validate scattering_studies."""
-        if self.scattering_studies is None:
-            return
-        for scatteringStudy in self.scattering_studies:
-            for scat_mode_freq in scatteringStudy.mode_freqs:
-                assert (
-                    scat_mode_freq in self.mode_freqs
-                ), f"ScatteringStudy mode {scat_mode_freq} not found in MiniStudy mode_freqs {self.mode_freqs}"
+    # def _validate_scattering_studies(self):
+    #     """Validate scattering_studies."""
+    #     if self.scattering_studies is None:
+    #         return
+    #     for scatteringStudy in self.scattering_studies:
+    #         for scat_mode_freq in scatteringStudy.mode_freqs:
+    #             assert (
+    #                 scat_mode_freq in self.mode_freqs
+    #             ), f"ScatteringStudy mode {scat_mode_freq} not found in MiniStudy mode_freqs {self.mode_freqs}"
 
 
 class DesignAnalysisState:

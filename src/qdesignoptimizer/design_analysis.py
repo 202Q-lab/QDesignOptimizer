@@ -7,9 +7,12 @@ import pandas as pd
 import pyEPR as epr
 import scipy
 import scipy.optimize
+from scipy.signal import find_peaks
 from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
+from qiskit_metal.analyses.simulation import ScatteringImpedanceSim
+import matplotlib.pyplot as plt
 
 import qdesignoptimizer.utils.constants as dc
 from qdesignoptimizer.design_analysis_types import (
@@ -27,7 +30,9 @@ from qdesignoptimizer.designlib_temp.qt_coupled_line_tee import QTCoupledLineTee
 from qdesignoptimizer.designlib_temp.qt_flux_line_double import QTFluxLineDouble
 from qdesignoptimizer.utils.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.utils import get_value_and_unit
+from scipy.optimize import curve_fit
 
+from resonator_tools import circuit
 
 class DesignAnalysis:
     def __init__(
@@ -58,13 +63,6 @@ class DesignAnalysis:
         1.0.1 at 2024-08-17 SideEffectCompensation in OptTarget
         """
         self.design = state.design
-        self.eig_solver = EPRanalysis(self.design, "hfss")
-        self.eig_solver.sim.setup.name = "Resonator_setup"
-        self.renderer = self.eig_solver.sim.renderer
-        print("self.eig_solver.sim.setup")
-        print(self.eig_solver.sim.setup)
-        self.eig_solver.setup.sweep_variable = "dummy"
-        self.renderer = self.eig_solver.sim.renderer
         self.mini_study = mini_study
         self.opt_targets = opt_targets
         self.all_design_vars = [target.design_var for target in opt_targets]
@@ -95,37 +93,29 @@ class DesignAnalysis:
 
         self.optimization_results = []
 
-        self.renderer.start()
-        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
 
-        self.pinfo = self.renderer.pinfo
-        self.setup = self.pinfo.setup
-        self.setup.n_modes = len(self.mini_study.mode_freqs)
-        self.setup.passes = self.mini_study.nbr_passes
-        self.setup.delta_f = self.mini_study.delta_f
-        self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
-        self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
-        self.renderer.options["max_mesh_length_port"] = (
-            self.mini_study.max_mesh_length_port
-        )
-        self.renderer.options["keep_originals"] = True
-
+        self.hfss = Hfss()
         self._validate_opt_targets()
         assert (
             not self.system_target_params is self.system_optimized_params
         ), "system_target_params and system_optimized_params may not be references to the same object"
-
+        self.setup_eigenmode()
     def update_nbr_passes(self, nbr_passes):
         self.mini_study.nbr_passes = nbr_passes
-        self.setup.passes = nbr_passes
+        try :
+            self.setup.passes = nbr_passes
+        except :
+            pass
         print(
             "WARNING, does not update passes in Scattering simulation not in Capacitance matrix simulation."
         )
 
     def update_delta_f(self, delta_f):
         self.mini_study.delta_f = delta_f
-        self.setup.delta_f = delta_f
-
+        try:
+            self.setup.delta_f = delta_f
+        except:
+            pass
     def _validate_opt_targets(self):
         """Validate opt_targets."""
         if not self.opt_targets is None:
@@ -241,12 +231,35 @@ class DesignAnalysis:
     def get_port_gap_names(self):
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
 
+    def setup_eigenmode(self):
+
+        self.eig_solver = EPRanalysis(self.design, "hfss")
+        self.eig_solver.sim.setup.name = "Resonator_setup"
+        self.renderer = self.eig_solver.sim.renderer
+        print("self.eig_solver.sim.setup")
+        print(self.eig_solver.sim.setup)
+        self.eig_solver.setup.sweep_variable = "dummy"
+        self.renderer = self.eig_solver.sim.renderer
+        self.renderer.start()
+        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
+        self.pinfo = self.renderer.pinfo
+        self.setup = self.pinfo.setup
+        self.setup.n_modes = len(self.mini_study.mode_freqs)
+        self.setup.passes = self.mini_study.nbr_passes
+        self.setup.delta_f = self.mini_study.delta_f
+        self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
+        self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
+        self.renderer.options["max_mesh_length_port"] = (
+            self.mini_study.max_mesh_length_port
+        )
+        self.renderer.options["keep_originals"] = True
+        
     def run_eigenmodes(self):
         """Simulate eigenmodes and calculate EPR."""
+        self.setup_eigenmode()
         self.update_var({}, {})
         self.pinfo.validate_junction_info()
 
-        hfss = Hfss()
         self.renderer.clean_active_design()
         self.render_qiskit_metal(
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
@@ -289,7 +302,7 @@ class DesignAnalysis:
                 # TODO map linear freq and kappa
                 # self._update_optimized_params_for_eigenmode_target(target, eig_results)  # TODO what is this?
         self._update_optimized_params(eig_results)
-
+        self.eigmode_pinfo = self.pinfo
         return eig_results
 
     def run_epr(self):
@@ -339,252 +352,323 @@ class DesignAnalysis:
             if linear_element_found:
                 print("However, a linear element was found.")
             return
+        
+    def scattering_angle_transmission(self,f, fr, Qc, phi, angle_offset):
+        """Sij for a reflection S11 (nbr_ports=1) or transmission S21 (nbr_ports=2) measurement.
+        Assumes a lossless simulation, i.e. internal Q_i=inf.
 
-    # def run_decay(self, scattering_study: ScatteringStudy):
-    #     self.scattering_solver = ScatteringImpedanceSim(self.design, "hfss")
-    #     scattering_renderer = self.scattering_solver.renderer
-    #     setup = self.scattering_solver.setup
-    #     #setup.name = "Sweep_DrivenModal_setup"
+        Args:
+            f (float): probe frequencies
+            fr (float): resonance frequency
+            Qc (float): external quality factor
+            phi (float): phase due to impedance mismatch
+            angle_offset (float): angle delay
+        
+        Returns:   
+            float: angle of Sij
+        """
+        # print("f, fr, Qc, phi, nbr_ports", fr, Qc, phi, nbr_ports)
+        # print("(nbr_ports * Qc * np.cos(phi) * np.exp(-1j*phi) * (f/fr-1) ", (nbr_ports * Qc * np.cos(phi) * np.exp(-1j*phi) * (f/fr-1) ))
+        sij = []
 
-    #     # scattering_pinfo = scattering_renderer.pinfo.setup
-    #     scattering_renderer.start()
-    #     scattering_renderer.activate_ansys_design(f"{self.mini_study.design_name}_drivenmodal", 'drivenmodal')
-    #     # setup_args = Dict(
-    #     #     max_delta_s=scattering_study.max_delta_s
-    #     #     )
-    #     # setup_args.name = 'Setup'
-    #     # scattering_renderer.edit_drivenmodal_setup(setup_args)
-    #     scattering_renderer.options['x_buffer_width_mm'] = self.mini_study.x_buffer_width_mm
-    #     scattering_renderer.options['y_buffer_width_mm'] = self.mini_study.y_buffer_width_mm
-    #     scattering_renderer.options['keep_originals'] = True
+        for f in f:
+            if np.abs((2 * Qc * np.cos(phi) * np.exp(-1j*phi) * (f/fr-1) )) > 1e-9:
+                s = 1. + 1j / (2 * Qc * np.cos(phi) * np.exp(-1j*phi) * (f/fr-1) )
+            else:
+                 s =1j
+            sij.append(s)
+        return sij , angle_offset
 
-    #     for branch_freq_name in scattering_study.mode_freqs:
-    #         scattering_renderer.clean_active_design()
-    #         scattering_renderer.render_design(
-    #             selection=self.mini_study.component_names,
-    #             # solution_type='drivenmodal',
-    #             # vars_to_initialize=setup.vars,
-    #             open_pins=self.mini_study.open_pins,
-    #             port_list=self.mini_study.port_list,
-    #             box_plus_buffer = True
-    #         )
+    def scattering_angle_reflection(self,f, fr, Qc, angle_offset):
+            """Sij for a reflection S11 (nbr_ports=1) measurement.
+            Assumes a lossless simulation, i.e. internal Q_i=inf.
 
-    #         # # TODO check if this is reasonable
-    #         # TODO does this support several readouts?
-    #         def _is_meander(component: str):
-    #             return any([isinstance(self.design.components[component], meander_class) for meander_class in [
-    #                 QTRouteMeander,
-    #                 RouteMeander
-    #                 ]])
-    #         def _is_tee_coupling(component: str):
-    #             return any([isinstance(self.design.components[component], meander_class) for meander_class in [
-    #                 QTCoupledLineTee,
-    #                 ]])
+            Args:
+                f (float): probe frequencies
+                fr (float): resonance frequency
+                Qc (float): external quality factor
+                angle_offset (float): angle offset
+            
+            Returns:   
+                float: angle of Sij
+            """
+            sij = []
 
-    #         resonator_components = [f"trace_{component}" for component in self.mini_study.component_names if _is_meander(component)]
-    #         tee_components = [f"second_cpw_{component}" for component in self.mini_study.component_names if _is_tee_coupling(component)]
-    #         scattering_renderer.modeler.mesh_length(
-    #             'cpw_mesh',
-    #             [*resonator_components, *tee_components],
-    #             MaxLength='0.005mm')
-    #         # print("desing")
-    #         # pprint(dir(self.design))
-    #         branch = branch_freq_name[0]
-    #         freq_name = branch_freq_name[1]
-    #         assert freq_name in [dc.RES_FREQ], \
-    #             f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
-    #         #mode_freq = self._get_simulated_mode_freq(branch, freq_name) # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         mode_freq = self.system_optimized_params[branch][freq_name] # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         print("mode_freq", mode_freq)
-    #         GHz = 1e9
-    #         kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
-    #         start_ghz = (mode_freq - 150 * kappa_target) / GHz
-    #         stop_ghz = (mode_freq + 150 * kappa_target) / GHz
-    #         setup.freq_ghz = mode_freq / GHz
-    #         count = min(25000, int(5 * (stop_ghz - start_ghz) / (kappa_target / GHz)))
-    #         print("count", count)
-    #         sweep = scattering_renderer.add_sweep(
-    #             setup_name="Setup",
-    #             start_ghz=start_ghz,
-    #             stop_ghz=stop_ghz,
-    #             name="Sweep",
-    #             count=count,
-    #             type="Fast")
-    #         pinfo_setup = scattering_renderer.pinfo.setup
-    #         pinfo_setup.max_delta_s = scattering_study.max_delta_s
-    #         pinfo_setup.passes = scattering_study.nbr_passes
-    #         # pinfo_setup.min_passes = scattering_study.nbr_passes_min
-    #         # pinfo_setup.basis_order = scattering_study.basis_order
-    #         setup.basis_order = scattering_study.basis_order
-    #         pinfo_setup.delta_s = scattering_study.max_delta_s
-    #         print("pinfo_setup")
-    #         print("solution_freq default", pinfo_setup.solution_freq)
-    #         print(dir(pinfo_setup))
-    #         pinfo_setup.solution_freq = f"{stop_ghz}GHz"
-    #         print(pinfo_setup)
-    #         print(mode_freq)
-    #         scattering_renderer.analyze_sweep(sweep.name, 'Setup')
-    #         nbr_ports = len(self.mini_study.port_list)
-    #         if nbr_ports == 1:
-    #             measurement = 'S11'
-    #         elif nbr_ports == 2:
-    #             measurement = 'S21'
-    #         else:
-    #             raise ValueError("Only 1 or 2 ports supported")
-    #         scattering_renderer.plot_params([measurement])
-    #         # scattering_renderer.get_convergences()
-    #         # print("DONE WITH IT")
-    #         # print(f"scattering_renderer.plot_params([{measurement}])", scattering_renderer.plot_params([measurement]))
-    #         np.save(f"scattering_{branch}_{freq_name}_passes_12_length2_800um.npy", [scattering_renderer.plot_params([measurement])], allow_pickle=True)
+            for f in f:
+                if np.abs(( 1. - 2j*Qc*(fr-f)/fr )) > 1e-9:
+                    s = np.exp(1j * angle_offset) * ( 1 + 2j*Qc*(fr-f)/fr ) / ( 1. - 2j*Qc*(fr-f)/fr )
+                else:
+                    s =1j
+                sij.append(s)
+            return sij
+        
+    def _fit_scattering_angle(self, probe_freqs, s_ij, freq_est, kappa_est,  nbr_ports, angle_offset=0):
+        """Fit scattering angle.
+        
+        Args:
+            probe_freqs (list): probe frequencies
+            s_ij (complex): s_ij complex scattering values
+            freq_est (float): est frequency used as initial guess
+            kappa_est (float): est kappa used as initial guess
+            nbr_ports (int): number of ports (1=reflection, 2=transmission)
+            angle_offset (float): angle offset
+        """
+        if nbr_ports == 2:
+            # For transmission
+            def func(f, fr, Qc, phi, angle_offset):
+                s21, angle_offset = self.scattering_angle_transmission(f, fr, Qc, phi, angle_offset)
+                return 20*np.log10(np.abs(s21))
 
-    #         s21_values = scattering_renderer.plot_params([measurement]).values
-    #         probe_freqs = scattering_renderer.plot_params(['Freq']).values
+            # Initial guess for phi (you need to provide this)
+            phi_guess = 0
+            
+            p0 = [
+                freq_est,
+                freq_est / kappa_est,
+                phi_guess,
+                angle_offset
+            ]
+            
+            popt, pcov = curve_fit(lambda f, *args: func(f, *args), probe_freqs, np.angle(s_ij), p0=p0)
+            
+        else:
+            # For reflection
+            def func(f, fr, Qc, angle_offset):
+                return np.angle(self.scattering_angle_reflection(f, fr, Qc, angle_offset))
+            
+            p0 = [
+                freq_est,
+                freq_est / kappa_est,
+                angle_offset
+            ]
+            
+            popt, pcov = curve_fit(lambda f, *args: func(f, *args), probe_freqs, np.angle(s_ij), p0=p0)
+        
+        return popt
 
-    #         self._fit_scattering_angle(probe_freqs, s21_values, mode_freq, kappa_target, nbr_ports)
-    #     self.system_optimized_params[branch][dc.RES_KAPPA] = kappa_target
+    def _linear_baseline_correction(self,data, x):
+        """
+        Corrects a slanting baseline by fitting a linear line to it.
 
-    #         #probe_freq = np.linspace(8.202846e9, 8.292846e9, 1499)
+        Parameters:
+        - data: The input data (y-values).
+        - x: The corresponding x-values.
 
-    #         # df = np.load(f"scattering_{branch}_{freq_name}_passes_12_length2_200um.npy", allow_pickle=True)
-    #         # df = np.load(f"scattering_{branch}_{freq_name}_passes_12_length2_{design.components[c.NAME_INDUCTIVE_TEE].options.prime_length_2}.npy", allow_pickle=True)
-    #         # pprint(dir(df))
-    #         s11_raw = scattering_renderer.plot_params([measurement])[0]['S11'].values
-    #         # pprint(s11)
+        Returns:
+        - corrected_data: The data with the baseline corrected.
+        - baseline: The fitted baseline.
+        """
+        # Define a linear function for fitting
+        def linear_func(x, a, b):
+            return a * x + b
 
-    #         # vals = df['S11'].values
-    #         # plt.figure()
-    #         # plt.plot(vals)
-    #         # plt.show()
-    #         angle_offset = np.mean([np.angle(s11_raw)[0], np.angle(s11_raw)[-1]]) # - np.pi/2
-    #         s11 = s11_raw * np.exp(-1j * angle_offset)
-    #         s11_abs = np.abs(s11)
-    #         func = np.argmin if abs(min(s11_abs) - np.mean(s11_abs)) > abs(max(s11_abs) - np.mean(s11_abs)) else np.argmax
-    #         argmin = func(s11_abs) #if np.mean(np.abs(s11)) >
-    #         freq_guess = probe_freqs[argmin]
-    #         print("freq_guess", freq_guess)
-    #         argmin_kappa = np.argmin(abs(np.angle(s11) - np.pi/2))
-    #         # print("freq_guess_kappa_cut", probe_freq[argmin_kappa])
-    #         kappa_est = 2 * (probe_freqs[argmin_kappa] - freq_guess)
-    #         self.system_optimized_params[branch][dc.RES_KAPPA] = kappa_est
+        # Fit the linear function to the data
+        popt, _ = curve_fit(linear_func, x, data)
 
-    #         resonator_components = [f"trace_{component}" for component in self.mini_study.component_names if _is_meander(component)]
-    #         tee_components = [f"second_cpw_{component}" for component in self.mini_study.component_names if _is_tee_coupling(component)]
-    #         scattering_renderer.modeler.mesh_length(
-    #             'cpw_mesh',
-    #             [*resonator_components, *tee_components],
-    #             MaxLength='0.005mm')
-    #         # print("desing")
-    #         # pprint(dir(self.design))
-    #         branch = branch_freq_name[0]
-    #         freq_name = branch_freq_name[1]
-    #         assert freq_name in [dc.RES_FREQ], \
-    #             f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
-    #         #mode_freq = self._get_simulated_mode_freq(branch, freq_name) # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         mode_freq = self.system_optimized_params[branch][freq_name] # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         print("mode_freq", mode_freq)
-    #         GHz = 1e9
-    #         kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
-    #         start_ghz = (mode_freq - 150 * kappa_target) / GHz
-    #         stop_ghz = (mode_freq + 150 * kappa_target) / GHz
-    #         setup.freq_ghz = mode_freq / GHz
-    #         count = min(25000, int(5 * (stop_ghz - start_ghz) / (kappa_target / GHz)))
-    #         print("count", count)
-    #         sweep = scattering_renderer.add_sweep(
-    #             setup_name="Setup",
-    #             start_ghz=start_ghz,
-    #             stop_ghz=stop_ghz,
-    #             name="Sweep",
-    #             count=count,
-    #             type="Fast")
-    #         pinfo_setup = scattering_renderer.pinfo.setup
-    #         pinfo_setup.max_delta_s = scattering_study.max_delta_s
-    #         pinfo_setup.passes = scattering_study.nbr_passes
-    #         # pinfo_setup.min_passes = scattering_study.nbr_passes_min
-    #         # pinfo_setup.basis_order = scattering_study.basis_order
-    #         setup.basis_order = scattering_study.basis_order
-    #         pinfo_setup.delta_s = scattering_study.max_delta_s
-    #         print("pinfo_setup")
-    #         print("solution_freq default", pinfo_setup.solution_freq)
-    #         print(dir(pinfo_setup))
-    #         pinfo_setup.solution_freq = f"{stop_ghz}GHz"
-    #         print(pinfo_setup)
-    #         print(mode_freq)
-    #         scattering_renderer.analyze_sweep(sweep.name, 'Setup')
-    #         nbr_ports = len(self.mini_study.port_list)
-    #         if nbr_ports == 1:
-    #             measurement = 'S11'
-    #         elif nbr_ports == 2:
-    #             measurement = 'S21'
-    #         else:
-    #             raise ValueError("Only 1 or 2 ports supported")
-    #         scattering_renderer.plot_params([measurement])
-    #         # scattering_renderer.get_convergences()
-    #         # print("DONE WITH IT")
-    #         # print(f"scattering_renderer.plot_params([{measurement}])", scattering_renderer.plot_params([measurement]))
-    #         np.save(f"scattering_{branch}_{freq_name}_passes_12_length2_800um.npy", [scattering_renderer.plot_params([measurement])], allow_pickle=True)
+        # Generate the baseline using the fitted parameters
+        baseline = linear_func(x, *popt)
 
-    #         resonator_components = [f"trace_{component}" for component in self.mini_study.component_names if _is_meander(component)]
-    #         tee_components = [f"second_cpw_{component}" for component in self.mini_study.component_names if _is_tee_coupling(component)]
-    #         scattering_renderer.modeler.mesh_length(
-    #             'cpw_mesh',
-    #             [*resonator_components, *tee_components],
-    #             MaxLength='0.005mm')
-    #         # print("desing")
-    #         # pprint(dir(self.design))
-    #         branch = branch_freq_name[0]
-    #         freq_name = branch_freq_name[1]
-    #         assert freq_name in [dc.RES_FREQ], \
-    #             f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
-    #         #mode_freq = self._get_simulated_mode_freq(branch, freq_name) # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         mode_freq = self.system_optimized_params[branch][freq_name] # Try to keep this at the center of the swept frequency range for 'fast' sweeps and at the largest frequency for interpolating sweep for the best results
-    #         print("mode_freq", mode_freq)
-    #         GHz = 1e9
-    #         kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
-    #         start_ghz = (mode_freq - 150 * kappa_target) / GHz
-    #         stop_ghz = (mode_freq + 150 * kappa_target) / GHz
-    #         setup.freq_ghz = mode_freq / GHz
-    #         count = min(25000, int(5 * (stop_ghz - start_ghz) / (kappa_target / GHz)))
-    #         print("count", count)
-    #         sweep = scattering_renderer.add_sweep(
-    #             setup_name="Setup",
-    #             start_ghz=start_ghz,
-    #             stop_ghz=stop_ghz,
-    #             name="Sweep",
-    #             count=count,
-    #             type="Fast")
-    #         pinfo_setup = scattering_renderer.pinfo.setup
-    #         pinfo_setup.max_delta_s = scattering_study.max_delta_s
-    #         pinfo_setup.passes = scattering_study.nbr_passes
-    #         # pinfo_setup.min_passes = scattering_study.nbr_passes_min
-    #         # pinfo_setup.basis_order = scattering_study.basis_order
-    #         setup.basis_order = scattering_study.basis_order
-    #         pinfo_setup.delta_s = scattering_study.max_delta_s
-    #         print("pinfo_setup")
-    #         print("solution_freq default", pinfo_setup.solution_freq)
-    #         print(dir(pinfo_setup))
-    #         pinfo_setup.solution_freq = f"{stop_ghz}GHz"
-    #         print(pinfo_setup)
-    #         print(mode_freq)
-    #         scattering_renderer.analyze_sweep(sweep.name, 'Setup')
-    #         nbr_ports = len(self.mini_study.port_list)
-    #         if nbr_ports == 1:
-    #             measurement = 'S11'
-    #         elif nbr_ports == 2:
-    #             measurement = 'S21'
-    #         else:
-    #             raise ValueError("Only 1 or 2 ports supported")
-    #         scattering_renderer.plot_params([measurement])
-    #         # scattering_renderer.get_convergences()
-    #         # print("DONE WITH IT")
-    #         # print(f"scattering_renderer.plot_params([{measurement}])", scattering_renderer.plot_params([measurement]))
-    #         np.save(f"scattering_{branch}_{freq_name}_passes_12_length2_800um.npy", [scattering_renderer.plot_params([measurement])], allow_pickle=True)
+        # Correct the data by subtracting the baseline
+        corrected_data = data - baseline
 
-    #         s21_values = scattering_renderer.plot_params([measurement]).values
-    #         probe_freqs = scattering_renderer.plot_params(['Freq']).values
+        return corrected_data, baseline
+    
+    def _find_peak_direction(self,signal):
+        """
+        Finds the direction of the peak in a signal.
 
-    #         s21_values = scattering_renderer.plot_params([measurement]).values
-    #         probe_freqs = scattering_renderer.plot_params(['Freq']).values
+        Parameters:
+        - signal: The signal to find the peak direction of.
 
+        Returns:
+        - direction: The direction of the peak (either 1 for 'up' or -1 for 'down').
+        """
+        signal_mean = np.mean(signal)
+        signal_max = np.max(signal)
+        signal_min = np.min(signal)
+
+        if signal_max-signal_mean > signal_mean-signal_min:
+            direction = 1
+        else:
+            direction = -1
+
+        return direction
+    
+    
+    def run_scattering_analysis(self,setup,branch, freq_name,start_ghz,stop_ghz):
+        mode_freq = self.system_optimized_params[branch][freq_name]
+        GHz = 1e9
+        self.kappa_target = self.system_target_params[branch][dc.RES_KAPPA]
+        setup.freq_ghz = mode_freq / GHz
+        count = 25000#min(25000, 100*int(5 * (stop_ghz - start_ghz) / (self.kappa_target / GHz)))
+        print(start_ghz, stop_ghz, count)
+        sweep = self.scattering_renderer.add_sweep(
+            setup_name=self.scattering_renderer.pinfo.setup.name,
+            start_ghz=start_ghz,
+            stop_ghz=stop_ghz,
+            name="Sweep",
+            count=count,
+            type="Fast")
+        
+        pinfo_setup = self.scattering_renderer.pinfo.setup
+
+        pinfo_setup.max_delta_s = self.mini_study.scattering_studies.max_delta_s
+        pinfo_setup.passes = self.mini_study.scattering_studies.nbr_passes
+        setup.basis_order =self.mini_study.scattering_studies.basis_order
+        print("pinfo_setup")
+        pinfo_setup.solution_freq = f"{mode_freq/1e9}GHz"
+        print("solution_freq default", pinfo_setup.solution_freq)
+        self.scattering_renderer.analyze_sweep(sweep.name, 'Setup')
+
+        nbr_ports = len(self.mini_study.port_list)
+        if nbr_ports == 1:
+            measurement = 'S11'
+        elif nbr_ports == 2:
+            measurement = 'S21'
+        else:
+            raise ValueError("Only 1 or 2 ports supported")
+        
+        Data = self.scattering_solver.get_scattering([measurement])
+        probe_freq = Data[0].index*1e9
+        probe_freq = np.array(probe_freq).flatten()
+        Sij_raw = Data[0].values
+        Sij_raw = np.array(Sij_raw).flatten()
+
+        return probe_freq, Sij_raw
+
+    def get_new_range(self,probe_freq, Sij,range_factor):
+        
+        # finding the direction of the peak
+        direction = self._find_peak_direction(Sij)
+        print(f'Peak direction is {direction}')
+        # find the index of maximum Sij
+        peak_idx = np.argmax(direction*Sij)
+        peak_freq = probe_freq[peak_idx]
+        print(f'Peak at {peak_freq/1e9} GHz')
+        starting_freq = peak_freq -range_factor*self.kappa_target
+        ending_freq = peak_freq + range_factor*self.kappa_target
+
+        return starting_freq, ending_freq, peak_freq, peak_idx
+
+    def plot_sij(self, probe_freq,Sij_raw,starting_freq,ending_freq,mode_freq):
+        fig,ax = plt.subplots(1,3)
+        ax[0].plot(probe_freq,20*np.log10(np.abs(Sij_raw)))
+        ax[0].set_title('Sij vs Frequency')
+        ax[0].axvline(x=mode_freq, color='g', linestyle='--')
+        ax[0].axvline(x=starting_freq, color='r', linestyle='--')
+        ax[0].axvline(x=ending_freq, color='r', linestyle='--')
+        ax[0].set_xlabel('Frequency (Hz)')
+        ax[0].set_ylabel('Sij')
+
+        ax[1].plot(probe_freq,np.angle(Sij_raw))
+        ax[1].set_title('Phase of Sij vs Frequency')
+        ax[1].set_xlabel('Frequency (Hz)')
+        ax[1].set_ylabel('Phase of Sij')
+
+        ax[2].plot(np.real(Sij_raw),np.imag(Sij_raw))
+        ax[2].set_title('Real vs Imaginary part of Sij')
+        ax[2].set_xlabel('Real part of Sij')
+        ax[2].set_ylabel('Imaginary part of Sij')
+
+        fig.tight_layout()
+        plt.show()
+
+
+
+
+
+    def run_decay(self):
+        plt.close()
+        self.scattering_solver = ScatteringImpedanceSim(self.design, "hfss")
+        self.scattering_renderer = self.scattering_solver.renderer
+        setup = self.scattering_solver.setup
+        self.scattering_renderer.start()
+        self.scattering_renderer.activate_ansys_design(f"{self.mini_study.design_name}_drivenmodal", 'drivenmodal')
+        self.scattering_renderer.options['keep_originals'] = True
+        for branch_freq_name in self.mini_study.mode_freqs:
+            self.scattering_renderer.clean_active_design()
+            self.scattering_renderer.render_design(
+                selection=self.mini_study.component_names,
+                open_pins=self.mini_study.open_pins,
+                port_list=self.mini_study.port_list,
+                box_plus_buffer = True
+            )
+
+            branch = branch_freq_name[0]
+            freq_name = branch_freq_name[1]
+            assert freq_name in [dc.RES_FREQ], \
+                f"Scattering analysis only support RES_KAPPA, please extend the functionality for {freq_name}."
+
+            nbr_ports = len(self.mini_study.port_list)
+            if nbr_ports == 1:
+                measurement = 'S11'
+                port = circuit.reflection_port()
+            elif nbr_ports == 2:
+                measurement = 'S21'
+                port  = circuit.notch_port()
+            else:
+                raise ValueError("Only 1 or 2 ports supported")
+            
+            start_freq = self.system_optimized_params[branch][dc.RES_FREQ] - 2e9
+            stop_freq = self.system_optimized_params[branch][dc.RES_FREQ] + 2e9
+
+            probe_freq, Sij_raw = self.run_scattering_analysis( setup,
+                                                                branch,
+                                                                freq_name,
+                                                                start_ghz=start_freq/1e9,
+                                                                stop_ghz=stop_freq/1e9)
+            
+            
+            Sij = 20*np.log10(np.absolute(Sij_raw))
+            port.add_data(probe_freq, Sij_raw)
+            port.autofit()
+            self.kappa_target = port.fitresults['fr']/port.fitresults['absQc']
+
+
+            start_freq = port.fitresults['fr'] - 30*self.kappa_target
+            stop_freq = port.fitresults['fr'] + 30*self.kappa_target
+
+            print(start_freq, stop_freq)
+            # self.plot_sij(probe_freq,Sij_raw,starting_freq,ending_freq,peak_freq)
+
+
+            probe_freq, Sij_raw = self.run_scattering_analysis( setup,
+                                                                branch,
+                                                                freq_name,
+                                                                start_ghz=start_freq/1e9,
+                                                                stop_ghz=stop_freq/1e9)
+            # self.plot_sij(probe_freq,Sij_raw,starting_freq,ending_freq,peak_freq)
+
+            # Fit the scattering angle
+            port.add_data(probe_freq, Sij_raw)
+            port.autofit()
+            
+
+            self.kappa_target = port.fitresults['fr']/port.fitresults['absQc']
+
+            start_freq = port.fitresults['fr'] - 5*self.kappa_target
+            stop_freq = port.fitresults['fr'] + 5*self.kappa_target
+            clipped_freq = probe_freq[(probe_freq > start_freq) & (probe_freq < stop_freq)]
+            clipped_Sij = Sij_raw[(probe_freq > start_freq) & (probe_freq < stop_freq)]
+
+
+            # Fit the scattering angle
+            port.add_data(clipped_freq, clipped_Sij)
+            # port.autofit()
+            # port.plotall()
+
+            print(f'Kappa simualted is {self.kappa_target}')
+
+            scattering_results = {
+                "Freq. (Hz)": port.fitresults['fr'],
+                "Kappas (Hz)": self.kappa_target
+            }
+            self.scattering_results = pd.DataFrame(scattering_results, index=[0])
+            self._update_optimised_scattering_params(self.scattering_results)
+            self.renderer.clean_active_design()
+
+            
+            
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
 
@@ -674,6 +758,20 @@ class DesignAnalysis:
                 self.system_optimized_params[branch][dc.COUPLER_FREQ] = freq
                 self.system_optimized_params[branch][dc.COUPLER_KAPPA] = decay
 
+    def _update_optimised_scattering_params(self,scatterting_result: pd.DataFrame):
+        for idx, (branch, freq_name, value) in enumerate(
+            self.get_simulated_modes_sorted()
+        ):
+            # print(f"Mode {branch}, {freq_name}: {value}")
+            freq = scatterting_result["Freq. (Hz)"][idx]
+            decay = scatterting_result["Kappas (Hz)"][idx]
+            if freq_name == dc.RES_FREQ:
+                self.system_optimized_params[branch][dc.RES_KAPPA] = decay
+            elif freq_name == dc.COUPLER_FREQ:
+                self.system_optimized_params[branch][dc.COUPLER_KAPPA] = decay
+        
+
+    
     def _get_mode_idx_map(self):
         """Get mode index map.
 
@@ -1023,6 +1121,13 @@ class DesignAnalysis:
 
         iteration_result = {}
 
+        try : 
+
+            self.hfss.delete_design(f"{self.mini_study.design_name}_drivenmodal")
+            self.hfss.delete_design(f"{self.mini_study.design_name}")
+            self.hfss.save_project()
+        except:
+            pass
         if self.mini_study is not None and len(self.mini_study.mode_freqs) > 0:
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
@@ -1031,8 +1136,9 @@ class DesignAnalysis:
             # EPR analysis for nonlinearities
             self.cross_kerrs = self.run_epr()
             iteration_result["cross_kerrs"] = deepcopy(self.cross_kerrs)
-
+            print(self.mini_study.capacitance_matrix_studies)
         if self.mini_study.capacitance_matrix_studies is not None:
+
             iteration_result["capacitance_matrix"] = []
             for capacitance_study in self.mini_study.capacitance_matrix_studies:
                 capacitance_study.set_render_qiskit_metal(self.render_qiskit_metal)
@@ -1045,6 +1151,10 @@ class DesignAnalysis:
                 iteration_result["capacitance_matrix"].append(
                     deepcopy(capacitance_matrix)
                 )
+        
+        if self.mini_study.scattering_studies is not None:
+            self.run_decay()
+            iteration_result["scattering_results"] = deepcopy(self.scattering_results)
 
         if self.print_progress:
             print("------------------ Design variables -----------------")
@@ -1078,6 +1188,8 @@ class DesignAnalysis:
                 self.plot_settings,
                 plot_branches_separately=self.plot_branches_separately,
             )
+
+        
 
         # # Scattering analysis for decay rates
         # for scattering_study in self.mini_study.scattering_studies:
