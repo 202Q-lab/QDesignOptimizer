@@ -20,12 +20,10 @@ def get_mini_study_res(group: int):
         qiskit_component_names=[
             n.name_mode(resonator),
             n.name_tee(group),
-            n.name_lp_to_tee(1,1),
-            n.name_tee_to_tee(1,2),
         ],
         port_list=[
-            (n.name_tee_to_tee(1,2), "end", 50),
-            (n.name_lp_to_tee(1,1), "start", 50),
+            (n.name_tee(group), "prime_end", 50),
+            (n.name_tee(group), "prime_start", 50),
         ],
         open_pins=[(n.name_mode(resonator), 'start')],
         modes=[resonator],
@@ -35,6 +33,30 @@ def get_mini_study_res(group: int):
         build_fine_mesh=True,
         **CONVERGENCE
     )
+
+# def get_mini_study_res(group: int):
+#     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+
+#     return MiniStudy(
+#         qiskit_component_names=[
+#             n.name_mode(resonator),
+#             n.name_tee(group),
+#             n.name_lp_to_tee(1,1),
+#             n.name_tee_to_tee(1,2),
+#         ],
+#         port_list=[
+#             (n.name_tee_to_tee(1,2), "end", 50),
+#             (n.name_lp_to_tee(1,1), "start", 50),
+#         ],
+#         open_pins=[(n.name_mode(resonator), 'start')],
+#         modes=[resonator],
+#         jj_setup={},
+#         design_name="get_mini_study_res",
+#         adjustment_rate=1,
+#         build_fine_mesh=True,
+#         **CONVERGENCE
+#     )
+
 
 
 def get_mini_study_qb_res(group: int):
