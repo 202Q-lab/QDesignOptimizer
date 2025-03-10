@@ -1,4 +1,3 @@
-import design_constants as c
 import names as n
 from qiskit_metal.designs.design_planar import DesignPlanar
 from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
@@ -9,6 +8,15 @@ from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
 from qdesignoptimizer.utils.utils import get_value_and_unit
+
+# Fixed design constants
+LINE_50_OHM_WIDTH = "16.51um"
+LINE_50_OHM_GAP = "10um"
+
+RESONATOR_WIDTH = "20um"
+RESONATOR_GAP = "20um"
+
+BEND_RADIUS = "99um"
 
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     nbr_idx = group - 1  # zero indexed
@@ -38,8 +46,8 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
                 pad_gap_w="0um",
                 pad_width=n.design_var_coupl_length(resonator, qubit),
                 pad_height="40um",
-                cpw_width=c.RESONATOR_WIDTH,
-                cpw_gap=c.RESONATOR_GAP,
+                cpw_width=RESONATOR_WIDTH,
+                cpw_gap=RESONATOR_GAP,
                 cpw_extend="300um",
                 pocket_extent="5um",
             ),
@@ -50,8 +58,8 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
                 pad_gap_w="0um",
                 pad_width="40um",
                 pad_height="170um",
-                cpw_width=c.RESONATOR_WIDTH,
-                cpw_gap=c.RESONATOR_GAP,
+                cpw_width=RESONATOR_WIDTH,
+                cpw_gap=RESONATOR_GAP,
                 cpw_extend="0.0um",
                 pocket_extent="5um",
             ),
@@ -68,12 +76,12 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
         pos_x="0mm",
         pos_y=["-2.9mm", "2.9mm"][nbr_idx],
         orientation=["-90", "-90"][nbr_idx],
-        second_width=c.RESONATOR_WIDTH,
-        second_gap=c.RESONATOR_GAP,
-        prime_width=c.LINE_50_OHM_WIDTH,
-        prime_gap=c.LINE_50_OHM_GAP,
+        second_width=RESONATOR_WIDTH,
+        second_gap=RESONATOR_GAP,
+        prime_width=LINE_50_OHM_WIDTH,
+        prime_gap=LINE_50_OHM_GAP,
         coupling_space=n.design_var_length(f"{resonator}_capacitance"),
-        fillet=c.BEND_RADIUS,
+        fillet=BEND_RADIUS,
         coupling_length=n.design_var_coupl_length(resonator, "tee"),
     )
 
@@ -85,12 +93,12 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
             start_pin=dict(component=qub.name, pin="readout"),
             end_pin=dict(component=cltee.name, pin="second_end"),
         ),
-        fillet=c.BEND_RADIUS,
+        fillet=BEND_RADIUS,
         hfss_wire_bonds=False,
         total_length=n.design_var_length(resonator),
         lead=dict(start_straight="600um", end_straight="100um"),
-        trace_width=c.RESONATOR_WIDTH,
-        trace_gap=c.RESONATOR_GAP,
+        trace_width=RESONATOR_WIDTH,
+        trace_gap=RESONATOR_GAP,
         meander=dict(spacing="200um"),
     )
 
@@ -107,8 +115,8 @@ def add_route_interconnects(design: DesignPlanar):
     options_rpf = dict(
         fillet="49um",
         hfss_wire_bonds=False,
-        trace_width=c.LINE_50_OHM_WIDTH,
-        trace_gap=c.LINE_50_OHM_GAP,
+        trace_width=LINE_50_OHM_WIDTH,
+        trace_gap=LINE_50_OHM_GAP,
         pin_inputs=pins,
     )
     RoutePathfinder(design, n.name_tee_to_tee(1, 2), options=options_rpf)
@@ -118,8 +126,8 @@ def add_launch_pads(design: DesignPlanar):
 
     launch_options = dict(
         chip="main",
-        trace_width=c.LINE_50_OHM_WIDTH,
-        trace_gap=c.LINE_50_OHM_GAP,
+        trace_width=LINE_50_OHM_WIDTH,
+        trace_gap=LINE_50_OHM_GAP,
         lead_length="30um",
         pad_gap="125um",
         pad_width="260um",
@@ -147,8 +155,8 @@ def add_launch_pads(design: DesignPlanar):
     options_top = dict(
         fillet="49um",
         hfss_wire_bonds=False,
-        trace_width=c.LINE_50_OHM_WIDTH,
-        trace_gap=c.LINE_50_OHM_GAP,
+        trace_width=LINE_50_OHM_WIDTH,
+        trace_gap=LINE_50_OHM_GAP,
         pin_inputs=pins_top,
     )
 
@@ -160,8 +168,8 @@ def add_launch_pads(design: DesignPlanar):
     options_bottom = dict(
         fillet="49um",
         hfss_wire_bonds=False,
-        trace_width=c.LINE_50_OHM_WIDTH,
-        trace_gap=c.LINE_50_OHM_GAP,
+        trace_width=LINE_50_OHM_WIDTH,
+        trace_gap=LINE_50_OHM_GAP,
         pin_inputs=pins_bottom,
     )
     RoutePathfinder(design, n.name_lp_to_tee(0, 2), options=options_top)
@@ -174,12 +182,12 @@ def add_coupler(design: DesignPlanar):
             start_pin=dict(component=n.name_mode(n.QUBIT_1), pin="coupler"),
             end_pin=dict(component=n.name_mode(n.QUBIT_2), pin="coupler"),
         ),
-        fillet=c.BEND_RADIUS,
+        fillet=BEND_RADIUS,
         hfss_wire_bonds=True,
         total_length=n.design_var_length(n.COUPLER_12),
         lead=dict(start_straight="200um", end_straight="200um"),
-        trace_width=c.RESONATOR_WIDTH,
-        trace_gap=c.RESONATOR_GAP,
+        trace_width=RESONATOR_WIDTH,
+        trace_gap=RESONATOR_GAP,
         meander=dict(spacing="200um"),
     )
 
@@ -193,8 +201,8 @@ def add_chargeline(design: DesignPlanar, group: int):
 
     launch_options = dict(
         chip="main",
-        trace_width=c.LINE_50_OHM_WIDTH,
-        trace_gap=c.LINE_50_OHM_GAP,
+        trace_width=LINE_50_OHM_WIDTH,
+        trace_gap=LINE_50_OHM_GAP,
         lead_length="30um",
         pad_gap="125um",
         pad_width="260um",
@@ -210,9 +218,9 @@ def add_chargeline(design: DesignPlanar, group: int):
         pos_x=n.design_var_cl_pos_x(qubit),
         pos_y=n.design_var_cl_pos_y(qubit),
         orientation='0',
-        width=c.LINE_50_OHM_WIDTH,
-        gap=c.LINE_50_OHM_GAP,
-        termination_gap=c.LINE_50_OHM_GAP,
+        width=LINE_50_OHM_WIDTH,
+        gap=LINE_50_OHM_GAP,
+        termination_gap=LINE_50_OHM_GAP,
     )
     
     OpenToGround(design, n.name_('otg_'+qubit), options=otg_options)
@@ -225,8 +233,8 @@ def add_chargeline(design: DesignPlanar, group: int):
     options_chargeline = dict(
         fillet="90um",
         hfss_wire_bonds=False,
-        trace_width=c.LINE_50_OHM_WIDTH,
-        trace_gap=c.LINE_50_OHM_GAP,
+        trace_width=LINE_50_OHM_WIDTH,
+        trace_gap=LINE_50_OHM_GAP,
         pin_inputs=pins_top,
         step_size="20um",
         lead=dict(start_straight="100um", end_straight="1600um"),
