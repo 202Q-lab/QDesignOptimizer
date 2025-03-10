@@ -122,17 +122,17 @@ class DesignAnalysis:
             not self.system_target_params is self.system_optimized_params
         ), "system_target_params and system_optimized_params may not be references to the same object"
 
-    def update_nbr_passes(self, nbr_passes):
+    def update_nbr_passes(self, nbr_passes: int):
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
 
-    def update_nbr_passes_capacitance_ministudies(self, nbr_passes):
+    def update_nbr_passes_capacitance_ministudies(self, nbr_passes: int):
         """Updates the number of passes for capacitance matrix studies."""
         if self.mini_study.capacitance_matrix_studies:
             for cap_study in self.mini_study.capacitance_matrix_studies:
                 cap_study.nbr_passes = nbr_passes
 
-    def update_delta_f(self, delta_f):
+    def update_delta_f(self, delta_f: float):
         self.mini_study.delta_f = delta_f
         self.setup.delta_f = delta_f
 
@@ -441,7 +441,9 @@ class DesignAnalysis:
             ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
 
     @staticmethod
-    def _apply_adjustment_rate(new_val, old_val, rate):
+    def _apply_adjustment_rate(
+        new_val: float | int, old_val: float | int, rate: float | int
+    ) -> float:
         """Low pass filter for adjustment rate.
 
         Args:
@@ -456,7 +458,7 @@ class DesignAnalysis:
         design_value_old: str,
         design_value_new: str,
         design_var_constraint: dict[str, str],
-    ):
+    ) -> str:
         """Constrain design value.
 
         Args:
@@ -487,7 +489,7 @@ class DesignAnalysis:
         return f"{design_value} {d_unit}"
 
     @staticmethod
-    def get_parameter_value(target: OptTarget, system_params: dict):
+    def get_parameter_value(target: OptTarget, system_params: dict) -> float:
         if target.target_param_type == NONLIN:
             mode1, mode2 = target.involved_modes
             current_value = system_params[param_nonlin(mode1, mode2)]
@@ -550,7 +552,7 @@ class DesignAnalysis:
             cost_function, init_design_var, tol=self.minimization_tol
         )
 
-    def get_system_params_targets_met(self):
+    def get_system_params_targets_met(self) -> dict[str, float]:
         system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
             if target.target_param_type == NONLIN:

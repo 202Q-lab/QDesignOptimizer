@@ -114,7 +114,8 @@ def plot_progress(
                     data_plotted = True
                 axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized", color=color)
                 if (
-                    panel.y in system_target_params
+                    x_data_opt
+                    and panel.y in system_target_params
                     and (not None in x_data_opt)
                     and (not None in y_data_opt)
                 ):
@@ -145,7 +146,8 @@ def plot_progress(
                     )
 
                     if (
-                        y_param in system_target_params
+                        x_data_opt
+                        and y_param in system_target_params
                         and (not None in x_data_opt)
                         and (not None in y_data_opt)
                     ):

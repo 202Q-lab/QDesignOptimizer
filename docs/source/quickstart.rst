@@ -178,7 +178,7 @@ Parameter Targets
 
     PARAM_TARGETS = {
         param(n.QUBIT_1, n.FREQ): 4e9,
-        param(n.QUBIT_1, n.PURCELL_LIMIT_T1): 20e-3,
+        param(n.QUBIT_1, n.CHARGE_LINE_LIMITED_T1): 20e-3,
         param(n.RESONATOR_1, n.FREQ): 6e9,
         param(n.RESONATOR_1, n.KAPPA): 1e6,
         param_nonlin(n.QUBIT_1, n.QUBIT_1): 200e6,  # Qubit anharmonicity
