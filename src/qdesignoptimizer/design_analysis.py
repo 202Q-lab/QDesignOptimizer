@@ -20,7 +20,8 @@ from qdesignoptimizer.design_analysis_types import (
 from qdesignoptimizer.logging import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import (
     CapacitanceMatrixStudy,
-    ModeDecayIntoChargeLineStudy,
+    ModeDecayStudy,
+    ResonatorDecayIntoWaveguideStudy,
 )
 from qdesignoptimizer.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.names_parameters import (
@@ -55,11 +56,11 @@ class DesignAnalysis:
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
-        opt_targets: List[OptTarget] = None,
-        save_path: str = None,
+        opt_targets: List[OptTarget] = list(),
+        save_path: Optional[str] = None,
         update_design_variables: bool = True,
-        plot_settings: dict = None,
-        meshing_map: List[MeshingMap] = None,
+        plot_settings: Optional[dict] = None,
+        meshing_map: List[MeshingMap] = list(),
         minimization_tol=1e-12,
     ):
         self.design_analysis_version = get_version_from_pyproject()
@@ -101,7 +102,7 @@ class DesignAnalysis:
         self.meshing_map = meshing_map
         self.minimization_tol = minimization_tol
 
-        self.optimization_results = []
+        self.optimization_results: list[dict] = []
 
         self.renderer.start()
         self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
@@ -122,23 +123,23 @@ class DesignAnalysis:
             not self.system_target_params is self.system_optimized_params
         ), "system_target_params and system_optimized_params may not be references to the same object"
 
-    def update_nbr_passes(self, nbr_passes):
+    def update_nbr_passes(self, nbr_passes: int):
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
 
-    def update_nbr_passes_capacitance_ministudies(self, nbr_passes):
+    def update_nbr_passes_capacitance_ministudies(self, nbr_passes: int):
         """Updates the number of passes for capacitance matrix studies."""
         if self.mini_study.capacitance_matrix_studies:
             for cap_study in self.mini_study.capacitance_matrix_studies:
                 cap_study.nbr_passes = nbr_passes
 
-    def update_delta_f(self, delta_f):
+    def update_delta_f(self, delta_f: float):
         self.mini_study.delta_f = delta_f
         self.setup.delta_f = delta_f
 
     def _validate_opt_targets(self):
         """Validate opt_targets."""
-        if not self.opt_targets is None:
+        if self.opt_targets:
             for target in self.opt_targets:
                 assert (
                     target.design_var in self.design.variables
@@ -147,6 +148,15 @@ class DesignAnalysis:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
+                elif target.target_param_type == KAPPA:
+                    if not any(
+                        isinstance(study, ResonatorDecayIntoWaveguideStudy)
+                        for study in self.mini_study.capacitance_matrix_studies
+                    ):
+                        assert len(self.mini_study.modes) >= len(
+                            target.involved_modes
+                        ), f"Target for {target.target_param_type} expects \
+                        {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                 elif target.target_param_type == CAPACITANCE:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
@@ -434,14 +444,24 @@ class DesignAnalysis:
                     f"Warning: capacitance {capacitance_names} not found in capacitance matrix with names {capacitance_matrix.columns}"
                 )
 
-        log.info("Computing T1 limit from decay in charge line.")
-        if isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
-            self.system_optimized_params[
-                param(capacitance_study.mode, PURCELL_LIMIT_T1)
-            ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
+        # Check if this is a ModeDecayStudy and update the appropriate parameter
+        if isinstance(capacitance_study, ModeDecayStudy):
+            param_type = capacitance_study.get_decay_parameter_name()
+            log.info(f"Computing {param_type} from decay study.")
+            if param_type == KAPPA:
+                log.warning(
+                    "Parameter KAPPA from capacitance matrix simulation will overwrite eigenmode result."
+                )
+            param_value = capacitance_study.get_decay_parameter_value()
+            log.info(f"Computed {param_type} value: {param_value}")
+            self.system_optimized_params[param(capacitance_study.mode, param_type)] = (
+                param_value
+            )
 
     @staticmethod
-    def _apply_adjustment_rate(new_val, old_val, rate):
+    def _apply_adjustment_rate(
+        new_val: float | int, old_val: float | int, rate: float | int
+    ) -> float:
         """Low pass filter for adjustment rate.
 
         Args:
@@ -455,13 +475,13 @@ class DesignAnalysis:
         self,
         design_value_old: str,
         design_value_new: str,
-        design_var_constraint: object,
-    ):
+        design_var_constraint: dict[str, str],
+    ) -> str:
         """Constrain design value.
 
         Args:
             design_value (str): design value to be constrained
-            design_var_constraint (object): design variable constraint, example {'min': '10 um', 'max': '100 um'}
+            design_var_constraint (dict[str, str]): design variable constraint, example {'min': '10 um', 'max': '100 um'}
         """
         d_val_o, d_unit = get_value_and_unit(design_value_old)
         d_val_n, d_unit = get_value_and_unit(design_value_new)
@@ -487,7 +507,7 @@ class DesignAnalysis:
         return f"{design_value} {d_unit}"
 
     @staticmethod
-    def get_parameter_value(target: OptTarget, system_params: dict):
+    def get_parameter_value(target: OptTarget, system_params: dict) -> float:
         if target.target_param_type == NONLIN:
             mode1, mode2 = target.involved_modes
             current_value = system_params[param_nonlin(mode1, mode2)]
@@ -550,7 +570,7 @@ class DesignAnalysis:
             cost_function, init_design_var, tol=self.minimization_tol
         )
 
-    def get_system_params_targets_met(self):
+    def get_system_params_targets_met(self) -> dict[str, float]:
         system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
             if target.target_param_type == NONLIN:
@@ -658,7 +678,11 @@ class DesignAnalysis:
         self.update_var(updated_design_vars, {})
 
         iteration_result = {}
-        if self.mini_study is not None and len(self.mini_study.modes) > 0:
+        if (
+            self.mini_study is not None
+            and len(self.mini_study.modes) > 0
+            and not self.mini_study.run_capacitance_studies_only
+        ):
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
             iteration_result["eig_results"] = deepcopy(self.eig_result)
@@ -700,7 +724,7 @@ class DesignAnalysis:
             }
         ]
         if self.save_path is not None:
-            np.save(self.save_path, simulation, allow_pickle=True)
+            np.save(self.save_path, np.array(simulation), allow_pickle=True)
 
             with open(self.save_path + "_design_variables.json", "w") as outfile:
                 json.dump(updated_design_vars, outfile, indent=4)
@@ -734,7 +758,7 @@ class DesignAnalysis:
 
         log.info("Overwritten parameters%s", dict_log_format(updated_design_vars))
 
-    def get_cross_kerr_matrix(self, iteration: int = -1) -> pd.DataFrame:
+    def get_cross_kerr_matrix(self, iteration: int = -1) -> Optional[pd.DataFrame]:
         """Get cross kerr matrix from EPR analysis.
 
         Args:
@@ -745,8 +769,10 @@ class DesignAnalysis:
         """
         if "cross_kerrs" in self.optimization_results[iteration]:
             return self.optimization_results[iteration]["cross_kerrs"]
+        log.warning("No cross kerr matrix in optimization results.")
+        return None
 
-    def get_eigenmode_results(self, iteration: int = -1) -> pd.DataFrame:
+    def get_eigenmode_results(self, iteration: int = -1) -> Optional[pd.DataFrame]:
         """Get eigenmode results.
 
         Args:
@@ -757,6 +783,8 @@ class DesignAnalysis:
         """
         if "eig_results" in self.optimization_results[iteration]:
             return self.optimization_results[iteration]["eig_results"]
+        log.warning("No eigenmode matrix in optimization results.")
+        return None
 
     def get_capacitance_matrix(
         self, capacitance_study_number: int, iteration: int = -1
