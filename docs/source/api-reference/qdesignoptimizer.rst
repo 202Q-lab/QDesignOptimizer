@@ -23,6 +23,6 @@ Submodules
 
    qdesignoptimizer.design_analysis
    qdesignoptimizer.design_analysis_types
-   qdesignoptimizer.logging
+   qdesignoptimizer.logger
    qdesignoptimizer.sim_capacitance_matrix
    qdesignoptimizer.sim_plot_progress

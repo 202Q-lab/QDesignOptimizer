@@ -1,3 +1,5 @@
+"""Manages configuration and creation and base chip for design."""
+
 from dataclasses import dataclass
 
 from qiskit_metal import MetalGUI
@@ -6,6 +8,8 @@ from qiskit_metal.designs.design_planar import DesignPlanar
 
 @dataclass
 class ChipType:
+    """Define sizes for designed chip."""
+
     size_x: str
     size_y: str
     size_z: str
@@ -14,6 +18,7 @@ class ChipType:
 def create_chip_base(
     chip_name: str, chip_type: ChipType, open_gui: bool = True
 ) -> tuple[DesignPlanar, MetalGUI]:
+    """Return basic qiskit-metal chip design."""
     design = DesignPlanar({}, True)
     design.chip_name = chip_name
     design.chips.main.material = "silicon"

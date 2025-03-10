@@ -1,3 +1,5 @@
+"""Definitions of common optimization targets for qubit/resonators/couplers systems."""
+
 from typing import Callable, List
 
 import numpy as np
@@ -13,20 +15,13 @@ from qdesignoptimizer.utils.names_parameters import (
     param_nonlin,
 )
 
-discard_design_var_single = lambda x: 1
-"""Used to discard the design variable dependency in the prop_to function of the OptTarget
-for a design_var defined by a single input ."""
-discard_design_var_double = lambda x, y: 1
-"""Used to discard the design variable dependency in the prop_to function of the OptTarget
-for a design_var defined by two inputs ."""
-
 
 def get_opt_target_qubit_freq_via_lj(
     qubit: Mode,
     design_var_qubit_lj: Callable = n.design_var_lj,
     design_var_qubit_width: Callable = n.design_var_width,
 ) -> OptTarget:
-
+    """Get target for qubit frequency vs Josephson"""
     return OptTarget(
         target_param_type=FREQ,
         involved_modes=[qubit],
@@ -42,7 +37,7 @@ def get_opt_target_qubit_anharmonicity_via_capacitance_width(
     qubit: Mode,
     design_var_qubit_width: Callable = n.design_var_width,
 ) -> OptTarget:
-
+    """Get target for qubit anharmonicity vs its capacitive pad(s) size."""
     return OptTarget(
         target_param_type=NONLIN,
         involved_modes=[qubit, qubit],
@@ -57,7 +52,7 @@ def get_opt_target_res_freq_via_length(
     resonator: Mode,
     design_var_res_length: Callable = n.design_var_length,
 ) -> OptTarget:
-
+    """Get target for resonator frequency vs its length."""
     return OptTarget(
         target_param_type=FREQ,
         involved_modes=[resonator],
@@ -73,7 +68,7 @@ def get_opt_target_res_kappa_via_coupl_length(
     resonator_coupled_identifier: str,
     design_var_res_coupl_length: Callable = n.design_var_coupl_length,
 ) -> OptTarget:
-
+    """Get target for resonator's kappa vs. length of the coupler to a feedline."""
     return OptTarget(
         target_param_type=KAPPA,
         involved_modes=[resonator],
@@ -93,7 +88,7 @@ def get_opt_target_res_qub_chi_via_coupl_length(
     design_var_res_qb_coupl_length: Callable = n.design_var_coupl_length,
     design_var_qubit_width: Callable = n.design_var_width,
 ) -> OptTarget:
-
+    """Get optimization target for qubit-resonator dispersive shift."""
     return OptTarget(
         target_param_type=NONLIN,
         involved_modes=[qubit, resonator],
@@ -128,8 +123,6 @@ def get_opt_targets_qb_res_transmission(
     design_var_res_coupl_length: Callable[[str, str], str] = n.design_var_coupl_length,
 ) -> List[OptTarget]:
     """Get the optimization targets for a qubit-resonator system.
-    If you want to not include any of the design_var in the prop_to expressions
-    you can overwrite the defaults with the function discard_design_var_single or discard_design_var_double.
 
     Args:
         qubit (Mode): The qubit mode.

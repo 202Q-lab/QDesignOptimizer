@@ -1,3 +1,5 @@
+"""Definitions of data structures organizing specific aspects of the analysis such as meshing and optimization targets."""
+
 from typing import Callable, Dict, List, Literal, Optional, Union
 
 from qiskit_metal.designs.design_base import QDesign
@@ -113,7 +115,7 @@ class MiniStudy:
         modes: List[Mode],
         nbr_passes: int = 10,
         delta_f: float = 0.1,
-        jj_setup: object = {},
+        jj_setup: Optional[dict] = None,
         design_name: str = "mini_study",
         project_name: str = "dummy_project",
         x_buffer_width_mm=0.5,
@@ -127,8 +129,8 @@ class MiniStudy:
         adjustment_rate: float = 1.0,
         cos_trunc=8,
         fock_trunc=7,
-        render_qiskit_metal_eigenmode_kw_args: dict = {},
-        capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],
+        render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
+        capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
     ):
         self.qiskit_component_names = qiskit_component_names
         self.port_list = port_list
@@ -136,7 +138,7 @@ class MiniStudy:
         self.modes = modes
         self.nbr_passes = nbr_passes
         self.delta_f = delta_f
-        self.jj_setup = jj_setup
+        self.jj_setup: dict = jj_setup or {}
         self.design_name = design_name
         self.project_name = project_name
         self.x_buffer_width_mm = x_buffer_width_mm
@@ -150,10 +152,12 @@ class MiniStudy:
         self.adjustment_rate = adjustment_rate
         self.cos_trunc = cos_trunc
         self.fock_trunc = fock_trunc
-        self.render_qiskit_metal_eigenmode_kw_args = (
-            render_qiskit_metal_eigenmode_kw_args
+        self.render_qiskit_metal_eigenmode_kw_args: dict = (
+            render_qiskit_metal_eigenmode_kw_args or {}
         )
-        self.capacitance_matrix_studies = capacitance_matrix_studies
+        self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
+            capacitance_matrix_studies or []
+        )
 
 
 class DesignAnalysisState:

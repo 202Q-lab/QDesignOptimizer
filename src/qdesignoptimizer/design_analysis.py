@@ -1,3 +1,5 @@
+"""Definition of DesignAnalysis class, central class for managing optimization of designs."""
+
 import json
 from copy import deepcopy
 from typing import List, Optional
@@ -11,6 +13,7 @@ from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 
+import qdesignoptimizer
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
@@ -29,12 +32,11 @@ from qdesignoptimizer.utils.names_parameters import (
     FREQ,
     KAPPA,
     NONLIN,
-    mode,
     param,
     param_capacitance,
     param_nonlin,
 )
-from qdesignoptimizer.utils.utils import get_value_and_unit, get_version_from_pyproject
+from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class DesignAnalysis:
@@ -55,14 +57,14 @@ class DesignAnalysis:
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
-        opt_targets: List[OptTarget] = list(),
+        opt_targets: Optional[List[OptTarget]] = None,
         save_path: Optional[str] = None,
         update_design_variables: bool = True,
         plot_settings: Optional[dict] = None,
-        meshing_map: List[MeshingMap] = list(),
+        meshing_map: Optional[List[MeshingMap]] = None,
         minimization_tol=1e-12,
     ):
-        self.design_analysis_version = get_version_from_pyproject()
+        self.design_analysis_version = qdesignoptimizer.__version__
         self.design = state.design
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
@@ -73,8 +75,8 @@ class DesignAnalysis:
         self.eig_solver.setup.sweep_variable = "dummy"
 
         self.mini_study = mini_study
-        self.opt_targets = opt_targets
-        self.all_design_vars = [target.design_var for target in opt_targets]
+        self.opt_targets: List[OptTarget] = opt_targets or []
+        self.all_design_vars = [target.design_var for target in self.opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
 
@@ -98,7 +100,7 @@ class DesignAnalysis:
         self.save_path = save_path
         self.update_design_variables = update_design_variables
         self.plot_settings = plot_settings
-        self.meshing_map = meshing_map
+        self.meshing_map: List[MeshingMap] = meshing_map or []
         self.minimization_tol = minimization_tol
 
         self.optimization_results: list[dict] = []
@@ -635,8 +637,6 @@ class DesignAnalysis:
             design_vars_updated_constrained_str[design_var_name] = (
                 constrained_val_and_unit
             )
-
-        # TODO AXEL document that the user must make sure that if they use e.g. sums or differences of design variables, they must make sure they are the same dimensions
         return design_vars_updated_constrained_str
 
     def optimize_target(
@@ -719,7 +719,7 @@ class DesignAnalysis:
 
     def overwrite_parameters(self):
         if self.save_path is None:
-            raise Exception("A path must be specified to fetch results.")
+            raise ValueError("A path must be specified to fetch results.")
 
         with open(self.save_path + "_design_variables.json") as in_file:
             updated_design_vars = json.load(in_file)
@@ -780,15 +780,14 @@ class DesignAnalysis:
             capacitance_matrices = self.optimization_results[iteration][
                 "capacitance_matrix"
             ]
-
-        if 0 <= capacitance_study_number - 1 < len(capacitance_matrices):
-            return capacitance_matrices[capacitance_study_number - 1]
+            if 0 <= capacitance_study_number - 1 < len(capacitance_matrices):
+                return capacitance_matrices[capacitance_study_number - 1]
 
         return None
 
     def screenshot(self, gui, run=None):
         if self.save_path is None:
-            raise Exception("A path must be specified to save screenshot.")
+            raise ValueError("A path must be specified to save screenshot.")
         gui.autoscale()
         name = self.save_path + f"_{run+1}" if run is not None else self.save_path
         gui.screenshot(name=name, display=False)

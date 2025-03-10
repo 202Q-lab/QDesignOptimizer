@@ -5,13 +5,14 @@ Installation
 ============
 This installation guide will help you install the package QDesignOptimizer on your system.
 
-Installation with pypip
-========================
-The user can install the package QDesignOptimizer via the python package manager pip. 
+Installation with pip
+=====================
+The user can install the package QDesignOptimizer via the python package manager pip. After that, install qiskit-metal on top without dependencies to avoid conflicts.
 
 .. code-block:: bash
 
     pip install qdesignoptimizer
+    pip install --no-deps qiskit-metal==0.1.5
 
 Installation from github repository
 ===================================

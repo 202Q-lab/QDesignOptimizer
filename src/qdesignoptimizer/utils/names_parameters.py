@@ -1,3 +1,5 @@
+"""Definition of standard names for parameters and modes."""
+
 from typing import Literal
 
 # Standard mode types
@@ -76,7 +78,7 @@ def mode(
 
 
 def param(
-    mode: Mode,
+    current_mode: Mode,
     param_type: Literal["freq", "kappa", "charge_line_limited_t1", "capacitance"],
 ) -> Parameter:
     """Construct a parameter name from the mode and parameter type.
@@ -90,7 +92,7 @@ def param(
         "kappa",
         "charge_line_limited_t1",
     ], "param_type must be 'freq' or 'kappa' or 'charge_line_limited_t1"
-    return f"{mode}_{param_type}"
+    return f"{current_mode}_{param_type}"
 
 
 def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:
@@ -120,10 +122,12 @@ def param_capacitance(capacitance_name_1: str, capacitance_name_2: str) -> Param
     return f"{capacitance_names[0]}_to_{capacitance_names[1]}_capacitance"
 
 
-def get_mode_from_param(param: Parameter) -> Mode:
-    return "_".join(param.split("_")[:-1])
+def get_mode_from_param(parameter: Parameter) -> Mode:
+    """Get the mode identifier from parameter identifier."""
+    return "_".join(parameter.split("_")[:-1])
 
 
-def get_modes_from_param_nonlin(param: Parameter) -> tuple[Mode, ...]:
-    assert param.endswith("_nonlin"), "param must end with '_nonlin'"
-    return tuple(param.split("_nonlin")[0].split("_to_")[:2])
+def get_modes_from_param_nonlin(parameter: Parameter) -> tuple[Mode, ...]:
+    """Get identifiers of modes included in nonlinear parameter."""
+    assert parameter.endswith("_nonlin"), "param must end with '_nonlin'"
+    return tuple(parameter.split("_nonlin")[0].split("_to_")[:2])

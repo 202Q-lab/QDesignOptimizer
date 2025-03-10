@@ -1,9 +1,11 @@
+"""Definitions of common names for variables in the design of qubit/resonator/coupler systems."""
+
 from typing import Literal, Union
 
 from qiskit_metal.designs.design_planar import DesignPlanar
 
 from qdesignoptimizer.utils.names_parameters import Mode
-from qdesignoptimizer.utils.names_qiskit_components import name_mode
+from qdesignoptimizer.utils.names_qiskit_components import name_from_mode
 
 
 def add_design_variables_to_design(
@@ -53,25 +55,25 @@ def design_var_cl_pos_y(identifier: Union[str, int]):
     return f"design_var_cl_pos_y_{identifier}"
 
 
-def junction_setup(mode: Mode, type: Literal[None, "linear"] = None):
+def junction_setup(mode: Mode, mode_type: Literal[None, "linear"] = None):
     """Generate jj setup for
 
     Args:
         component_name (str): component name
-        type (str): type of JJ, e.g. 'linear' for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.
+        mode_type (str): mode_type of JJ, e.g. 'linear' for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.
 
     Returns:
         Dict: jj setup
     """
-    jj_name = f"jj_{name_mode(mode)}"
+    jj_name = f"jj_{name_from_mode(mode)}"
     setup = {
-        jj_name: dict(
-            rect=f"JJ_rect_Lj_{name_mode(mode)}_rect_jj",
-            line=f"JJ_Lj_{name_mode(mode)}_rect_jj_",
-            Lj_variable=design_var_lj(mode),
-            Cj_variable=design_var_cj(mode),
-        )
+        jj_name: {
+            "rect": f"JJ_rect_Lj_{name_from_mode(mode)}_rect_jj",
+            "line": f"JJ_Lj_{name_from_mode(mode)}_rect_jj_",
+            "Lj_variable": design_var_lj(mode),
+            "Cj_variable": design_var_cj(mode),
+        }
     }
-    if type is not None:
-        setup[jj_name]["type"] = type
+    if mode_type is not None:
+        setup[jj_name]["mode_type"] = mode_type
     return setup

@@ -1,3 +1,5 @@
+"""Utilities for generating plots showing the progress in the optimization."""
+
 import os
 from itertools import cycle
 from typing import List, Optional, Union
@@ -10,6 +12,8 @@ from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class OptPltSet:
+    """Manages the configuration of plots showing the optimization progress."""
+
     def __init__(
         self,
         x: str,
@@ -39,8 +43,7 @@ class OptPltSet:
     ) -> Union[str, List[str]]:
         if x_label is not None:
             return x_label
-        else:
-            return variable
+        return variable
 
 
 def plot_progress(
@@ -112,7 +115,7 @@ def plot_progress(
                 ]
                 if all(element is not None for element in y_data_opt):
                     data_plotted = True
-                axes.plot(x_data_opt, y_data_opt, "o-", label=f"optimized", color=color)
+                axes.plot(x_data_opt, y_data_opt, "o-", label="optimized", color=color)
                 if (
                     x_data_opt
                     and panel.y in system_target_params
@@ -125,7 +128,7 @@ def plot_progress(
                         [y_data_target, y_data_target],
                         "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
                         color=color,
-                        label=f"target",
+                        label="target",
                     )
             else:
                 # Handle multiple y parameters (list of strings)

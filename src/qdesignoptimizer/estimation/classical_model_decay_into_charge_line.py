@@ -1,3 +1,5 @@
+"""Analytical models for computing the decay of a mode in a tranmsission line from the capacitance matrix."""
+
 import numpy as np
 
 
@@ -84,13 +86,13 @@ def calculate_t1_limit_floating_lumped_mode_decay_into_chargeline(
 
     cap_a = cap_island_a_ground_fF + cap_island_a_line_fF
     cap_b = cap_island_b_ground_fF + cap_island_b_line_fF
-    Csum = (cap_a * cap_b) / (cap_a + cap_b) + cap_island_a_island_b_fF
+    cap_sum = (cap_a * cap_b) / (cap_a + cap_b) + cap_island_a_island_b_fF
     coupling_capacitance = np.abs(
         (cap_a * cap_island_b_line_fF - cap_b * cap_island_a_line_fF) / (cap_a + cap_b)
     )
 
     gamma = mode_decay_rate_into_transmissionline(
-        mode_freq_GHz, Csum, coupling_capacitance, charge_line_impedance
+        mode_freq_GHz, cap_sum, coupling_capacitance, charge_line_impedance
     )
 
     return 1 / gamma

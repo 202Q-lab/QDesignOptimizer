@@ -1,4 +1,5 @@
-from collections import defaultdict
+"""Study classes for capacitance matrix based simulations."""
+
 from typing import Callable, List, Optional, Union
 
 import numpy as np
@@ -45,22 +46,22 @@ class CapacitanceMatrixStudy:
         self,
         qiskit_component_names: list,
         mode_freq_GHz: Union[float],
-        open_pins: list = [],
+        open_pins: Optional[list] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
         render_qiskit_metal: Optional[Callable] = None,
-        render_qiskit_metal_kwargs: dict = defaultdict(),
+        render_qiskit_metal_kwargs: Optional[dict] = None,
         percent_error: Optional[float] = 0.5,
         nbr_passes: Optional[int] = 10,
     ):
         self.qiskit_component_names = qiskit_component_names
         self.mode_freq_GHz = mode_freq_GHz
-        self.open_pins = open_pins
+        self.open_pins: list = open_pins or []
         self.x_buffer_width_mm = x_buffer_width_mm
         self.y_buffer_width_mm = y_buffer_width_mm
 
         self.render_qiskit_metal = render_qiskit_metal
-        self.render_qiskit_metal_kwargs = render_qiskit_metal_kwargs
+        self.render_qiskit_metal_kwargs: dict = render_qiskit_metal_kwargs or {}
 
         self.percent_error = percent_error
         self.nbr_passes = nbr_passes
@@ -113,8 +114,7 @@ class CapacitanceMatrixStudy:
 
 
 class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
-    (
-        """ Mode decay into charge line study by capacitance matrix simulation.
+    """Mode decay into charge line study by capacitance matrix simulation.
     Since the capacitance should be evaluated at the frequency of the mode,
     each decay analysis should be done in a separate ModeDecayIntoChargeLineStudy.
 
@@ -123,8 +123,6 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         charge_line_capacitance_name (str): capacitance name of charge line
         charge_line_impedance_Ohm (float): charge line impedance in Ohm
     """
-        + str(CapacitanceMatrixStudy.__doc__)
-    )
 
     def __init__(
         self,
@@ -134,7 +132,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         charge_line_capacitance_name: str,
         charge_line_impedance_Ohm: float,
         qiskit_component_names: list,
-        open_pins: list = [],
+        open_pins: Optional[list] = None,
         ground_plane_capacitance_name: Optional[str] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
@@ -156,6 +154,7 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
         self.charge_line_capacitance_name = charge_line_capacitance_name
         self.charge_line_impedance_Ohm = charge_line_impedance_Ohm
         self.freq_GHz = mode_freq_GHz
+        self.t1_limit_due_to_decay_into_charge_line = None
 
     def get_t1_limit_due_to_decay_into_charge_line(self) -> float:
         """Get the T1 limit due to decay into charge line decay
@@ -243,7 +242,7 @@ def sim_capacitance_matrix(
     freq_ghz: float = 4,
     nbr_passes: int = 16,
 ):
-
+    """Run a LOManalisys and return the simulated capacitance matrix."""
     lom_analysis = LOManalysis(design, "q3d")
     lom_analysis.sim.setup.max_passes = nbr_passes
     lom_analysis.sim.setup.freq_ghz = freq_ghz

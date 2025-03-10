@@ -56,7 +56,7 @@ Design
         trace_gap='20um',
     )
 
-    RouteMeander(design, n.name_mode(resonator), options=resonator_options)
+    RouteMeander(design, n.name_from_mode(resonator), options=resonator_options)
 
 Finally, the design can be instantiated by the ``create_chip_base`` method and rendered with the components and the design variables. A wrapper function (by convention called ``render_qiskit_metal_design``), must be created such that it can be passed into the optimizer. A minimal example looks like this:
 
@@ -178,7 +178,7 @@ Parameter Targets
 
     PARAM_TARGETS = {
         param(n.QUBIT_1, n.FREQ): 4e9,
-        param(n.QUBIT_1, n.CHARGE_LINE_LIMITED_T1): 20e-3,
+        param(n.QUBIT_1, n.PURCELL_LIMIT_T1): 20e-3,
         param(n.RESONATOR_1, n.FREQ): 6e9,
         param(n.RESONATOR_1, n.KAPPA): 1e6,
         param_nonlin(n.QUBIT_1, n.QUBIT_1): 200e6,  # Qubit anharmonicity
@@ -204,8 +204,8 @@ Mini Studies
 
     MiniStudy(
         qiskit_component_names=[
-            n.name_mode(n.QUBIT_1),
-            n.name_mode(n.RESONATOR_1),
+            n.name_from_mode(n.QUBIT_1),
+            n.name_from_mode(n.RESONATOR_1),
             n.name_tee(n.NBR_1),
         ],
         port_list=[

@@ -1,3 +1,5 @@
+"""Definitions for mappings between modes and names of qiskit-metal components."""
+
 from typing import Union
 
 from qdesignoptimizer.utils.names_parameters import Mode
@@ -11,11 +13,11 @@ Examples:
 """
 
 
-def name_(identifier: Union[str, int]) -> QiskitComponentName:
+def name_from_id(identifier: Union[str, int]) -> QiskitComponentName:
     return f"name_{identifier}"
 
 
-def name_mode(identifier: Mode):
+def name_from_mode(identifier: Mode):
     return f"name_{identifier}"
 
 
