@@ -87,7 +87,7 @@ class MiniStudy:
         port_list (list): component pins with ports, example with 50 Ohm: [(comp_name,'pin_name', 50)],
         open_pins (list): pins to be left open, example: [(comp_name, 'pin_name')],
         modes (list): list of modes to simulate in increasing frequency order, simulated group of modes = len(modes)
-                           If the mode_freqs is empty, eigenmode and EPR analysis will be skipped.
+                           If modes is not empty and run_capacitance_studies_only is False, eigenmode and EPR analysis will run.
                            Example: [qubit_1, resonator_1]
         nbr_passes (int): group of passes in eigenmode simulation
         delta_f (float): Absolute frequency tolerance determining the convergence of eigenmode simulations.
@@ -104,6 +104,7 @@ class MiniStudy:
         adjustment_rate (float): rate of adjustment of design variable w.r.t. to calculated optimal values. Example 0.7 is slower but might be more robust.
         render_qiskit_metal_eigenmode_kw_args (dict): kw_args for render_qiskit_metal used during eigenmode and EPR analysis,
                                                       Example: {'include_charge_line': True}
+        run_capacitance_studies_only (bool): whether to only run the capacitance matrix studies and skip the eigenmode simulations.
         capacitance_matrix_studies (List[CapacitanceMatrixStudy]): list of CapacitanceMatrixStudy objects
     """
 
@@ -130,6 +131,7 @@ class MiniStudy:
         cos_trunc=8,
         fock_trunc=7,
         render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
+        run_capacitance_studies_only: bool = False,
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
     ):
         self.qiskit_component_names = qiskit_component_names
@@ -155,6 +157,7 @@ class MiniStudy:
         self.render_qiskit_metal_eigenmode_kw_args: dict = (
             render_qiskit_metal_eigenmode_kw_args or {}
         )
+        self.run_capacitance_studies_only = run_capacitance_studies_only
         self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
             capacitance_matrix_studies or []
         )

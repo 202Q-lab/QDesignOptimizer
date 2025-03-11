@@ -1,8 +1,8 @@
-============================================
-Welcome to qdesignoptimizer's documentation!
-============================================
+==================================================
+Welcome to the qdesignoptimizer's documentation!
+==================================================
 
-| The quantum design optimization package ``qdesignoptimizer`` is an open-source library developed by researchers in the `202Q-lab <https://202q-lab.se/>`_ at Chalmers, Gothenburg, Sweden. Further information on the development, references, and events can be found on `202Q-lab research page <https://202q-lab.se/research/quantum-design-optimizer/>`_. 
+| The quantum design optimization package ``qdesignoptimizer`` is an open-source library developed by researchers of the `202Q-lab <https://202q-lab.se/>`_ at Chalmers, Gothenburg, Sweden. Further information on the development, references, and events can be found on `202Q-lab research page <https://202q-lab.se/q-design-optimizer/>`_. 
 | To get started, please check the :ref:`userguide`. 
 
 Reference

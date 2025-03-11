@@ -10,6 +10,7 @@ from qiskit_metal.designs.design_planar import DesignPlanar
 class ChipType:
     """Define sizes for designed chip."""
 
+    material: str
     size_x: str
     size_y: str
     size_z: str
@@ -21,7 +22,7 @@ def create_chip_base(
     """Return basic qiskit-metal chip design."""
     design = DesignPlanar({}, True)
     design.chip_name = chip_name
-    design.chips.main.material = "silicon"
+    design.chips.main.material = chip_type.material
     design.chips.main.size.size_x = chip_type.size_x
     design.chips.main.size.size_y = chip_type.size_y
     design.chips.main.size.size_z = chip_type.size_z

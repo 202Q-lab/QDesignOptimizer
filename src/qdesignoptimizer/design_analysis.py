@@ -22,7 +22,8 @@ from qdesignoptimizer.design_analysis_types import (
 from qdesignoptimizer.logger import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import (
     CapacitanceMatrixStudy,
-    ModeDecayIntoChargeLineStudy,
+    ModeDecayStudy,
+    ResonatorDecayIntoWaveguideStudy,
 )
 from qdesignoptimizer.sim_plot_progress import plot_progress
 from qdesignoptimizer.utils.names_parameters import (
@@ -49,6 +50,7 @@ class DesignAnalysis:
         update_design_variables (bool): update parameters
         plot_settings (dict): plot settings for progress plots
         meshing_map (List[MeshingMap]): meshing map
+        minimization_tol (float): tolerance used to terminate the solution of an optimization step.
 
     """
 
@@ -57,7 +59,7 @@ class DesignAnalysis:
         state: DesignAnalysisState,
         mini_study: MiniStudy,
         opt_targets: Optional[List[OptTarget]] = None,
-        save_path: Optional[str] = None,
+        save_path: str = "analysis_result",
         update_design_variables: bool = True,
         plot_settings: Optional[dict] = None,
         meshing_map: Optional[List[MeshingMap]] = None,
@@ -149,7 +151,16 @@ class DesignAnalysis:
                 if target.target_param_type == CHARGE_LINE_LIMITED_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
-                    ), "capacitance_matrix_studies in ministudy are required for Charge line T1 decay study."
+                    ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
+                elif target.target_param_type == KAPPA:
+                    if not any(
+                        isinstance(study, ResonatorDecayIntoWaveguideStudy)
+                        for study in self.mini_study.capacitance_matrix_studies
+                    ):
+                        assert len(self.mini_study.modes) >= len(
+                            target.involved_modes
+                        ), f"Target for {target.target_param_type} expects \
+                        {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                 elif target.target_param_type == CAPACITANCE:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
@@ -439,11 +450,19 @@ class DesignAnalysis:
                     capacitance_matrix.columns,
                 )
 
-        log.info("Computing T1 limit from decay in charge line.")
-        if isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
-            self.system_optimized_params[
-                param(capacitance_study.mode, CHARGE_LINE_LIMITED_T1)
-            ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
+        # Check if this is a ModeDecayStudy and update the appropriate parameter
+        if isinstance(capacitance_study, ModeDecayStudy):
+            param_type = capacitance_study.get_decay_parameter_type()
+            log.info(f"Computing {param_type} from decay study.")
+            if param_type == KAPPA:
+                log.warning(
+                    "Parameter KAPPA from capacitance matrix simulation will overwrite eigenmode result."
+                )
+            param_value = capacitance_study.get_decay_parameter_value()
+            log.info(f"Computed {param_type} value: {param_value}")
+            self.system_optimized_params[param(capacitance_study.mode, param_type)] = (
+                param_value
+            )
 
     @staticmethod
     def _apply_adjustment_rate(
@@ -665,7 +684,11 @@ class DesignAnalysis:
         self.update_var(updated_design_vars, {})
 
         iteration_result = {}
-        if self.mini_study is not None and len(self.mini_study.modes) > 0:
+        if (
+            self.mini_study is not None
+            and len(self.mini_study.modes) > 0
+            and not self.mini_study.run_capacitance_studies_only
+        ):
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
             iteration_result["eig_results"] = deepcopy(self.eig_result)
@@ -717,7 +740,7 @@ class DesignAnalysis:
 
         if self.plot_settings is not None:
             plot_progress(
-                self.optimization_results,
+                [self.optimization_results],
                 self.system_target_params,
                 self.plot_settings,
             )

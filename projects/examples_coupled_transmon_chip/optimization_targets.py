@@ -5,8 +5,17 @@ import numpy as np
 
 from qdesignoptimizer.design_analysis_types import OptTarget
 from qdesignoptimizer.utils.optimization_targets import (
+    get_opt_target_res_kappa_via_coupl_length,
     get_opt_targets_qb_res_transmission,
 )
+
+
+def get_opt_target_res_kappa_feedline(group: int) -> list[OptTarget]:
+    resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+    target = get_opt_target_res_kappa_via_coupl_length(
+        resonator=resonator, resonator_coupled_identifier="tee"
+    )
+    return [target]
 
 
 def get_opt_targets_2qubits_resonator_coupler(
@@ -16,6 +25,7 @@ def get_opt_targets_2qubits_resonator_coupler(
     opt_target_resonator_freq=False,
     opt_target_resonator_kappa=False,
     opt_target_resonator_qubit_chi=False,
+    use_simple_resonator_qubit_chi=False,
     opt_target_coupler_freq=False,
 ) -> List[OptTarget]:
     """Get the optimization targets for a 2 qubit-resonator system with a coupler.
@@ -60,6 +70,7 @@ def get_opt_targets_2qubits_resonator_coupler(
                 opt_target_resonator_freq=opt_target_resonator_freq,
                 opt_target_resonator_kappa=opt_target_resonator_kappa,
                 opt_target_resonator_qubit_chi=opt_target_resonator_qubit_chi,
+                use_simple_resonator_qubit_chi=use_simple_resonator_qubit_chi,
             )
         )
 

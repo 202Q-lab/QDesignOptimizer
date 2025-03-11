@@ -17,4 +17,5 @@ Submodules
    qdesignoptimizer.utils.names_parameters
    qdesignoptimizer.utils.names_qiskit_components
    qdesignoptimizer.utils.optimization_targets
+   qdesignoptimizer.utils.plotting
    qdesignoptimizer.utils.utils
