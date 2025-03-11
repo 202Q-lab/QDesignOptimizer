@@ -90,7 +90,7 @@ class MiniStudy:
                            If the mode_freqs is empty, eigenmode and EPR analysis will be skipped.
                            Example: [qubit_1, resonator_1]
         nbr_passes (int): group of passes in eigenmode simulation
-        delta_f (float): Convergence freq max delta percent diff
+        delta_f (float): Absolute frequency tolerance determining the convergence of eigenmode simulations.
         jj_setup (object): junction setup, example: {'Lj_variable': 'Lj', 'rect': 'JJ_rect_Lj_Q1_rect_jj', 'line': 'JJ_Lj_Q1_rect_jj', 'Cj_variable': 'Cj'}
         design_name (str): name of design
         project_name (str): name of project (default: dummy_project

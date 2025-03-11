@@ -1,4 +1,4 @@
-"""Definition of DesignAnalysis class, central class for managing optimization of designs."""
+"""Definition of DesignAnalysis, central class for managing optimization of designs."""
 
 import json
 from copy import deepcopy
@@ -10,7 +10,6 @@ import pyEPR as epr
 import scipy
 import scipy.optimize
 from pyaedt import Hfss
-from qiskit_metal.analyses.quantization import EPRanalysis
 from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 
 import qdesignoptimizer
@@ -122,9 +121,10 @@ class DesignAnalysis:
 
         assert (
             not self.system_target_params is self.system_optimized_params
-        ), "system_target_params and system_optimized_params may not be references to the same object"
+        ), "system_target_params and system_optimized_params cannot be references to the same object"
 
     def update_nbr_passes(self, nbr_passes: int):
+        """Update the number of simulation passes."""
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
 
@@ -135,6 +135,7 @@ class DesignAnalysis:
                 cap_study.nbr_passes = nbr_passes
 
     def update_delta_f(self, delta_f: float):
+        """Update eigenmode convergence tolerance."""
         self.mini_study.delta_f = delta_f
         self.setup.delta_f = delta_f
 
@@ -148,7 +149,7 @@ class DesignAnalysis:
                 if target.target_param_type == CHARGE_LINE_LIMITED_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
-                    ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
+                    ), "capacitance_matrix_studies in ministudy are required for Charge line T1 decay study."
                 elif target.target_param_type == CAPACITANCE:
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
@@ -218,18 +219,19 @@ class DesignAnalysis:
                 finer_mesh_names += self.design.components[
                     component
                 ].get_meshing_names()
-            elif self.meshing_map != None:
-                for map in self.meshing_map:
+            elif self.meshing_map is not None:
+                for m_map in self.meshing_map:
                     if isinstance(
-                        self.design.components[component], map.component_class
+                        self.design.components[component], m_map.component_class
                     ):
-                        finer_mesh_names += map.mesh_names(component)
+                        finer_mesh_names += m_map.mesh_names(component)
             else:
-                log.info("No fine mesh map was found for " + component)
+                log.info("No fine mesh map was found for %s", component)
 
         return finer_mesh_names
 
     def get_port_gap_names(self):
+        """Get names of all endcap ports in the design."""
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
 
     def run_eigenmodes(self):
@@ -278,7 +280,7 @@ class DesignAnalysis:
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
-            (not not fine_mesh_names)
+            fine_mesh_names
             and self.mini_study.build_fine_mesh
             and len(self.mini_study.port_list) > 0
         )
@@ -339,6 +341,7 @@ class DesignAnalysis:
                     self.epra.plot_hamiltonian_results()
                     freqs = self.epra.get_frequencies(numeric=True)
                     chis = self.epra.get_chis(numeric=True)
+                    self._update_optimized_params_epr(freqs, chis)
                 except AttributeError:
                     log.error(
                         "Please install a more recent version of pyEPR (>=0.8.5.3)"
@@ -348,14 +351,12 @@ class DesignAnalysis:
                 self.mini_study.jj_setup
             )  # reset jj_setup for linear HFSS simulation
 
-            self._update_optimized_params_epr(freqs, chis)
             return chis
-        else:
-            add_msg = ""
-            if linear_element_found:
-                add_msg = " However, a linear element was found."
-            log.warning("No junctions found, skipping EPR analysis." + add_msg)
-            return
+        add_msg = ""
+        if linear_element_found:
+            add_msg = " However, a linear element was found."
+        log.warning("No junctions found, skipping EPR analysis.%s", add_msg)
+        return None
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -433,7 +434,9 @@ class DesignAnalysis:
                 )
             except KeyError:
                 log.warning(
-                    f"Warning: capacitance {capacitance_names} not found in capacitance matrix with names {capacitance_matrix.columns}"
+                    f"Warning: capacitance %s not found in capacitance matrix with names %s",
+                    capacitance_names,
+                    capacitance_matrix.columns,
                 )
 
         log.info("Computing T1 limit from decay in charge line.")
@@ -492,6 +495,7 @@ class DesignAnalysis:
 
     @staticmethod
     def get_parameter_value(target: OptTarget, system_params: dict) -> float:
+        """Return value of parameter from target specification."""
         if target.target_param_type == NONLIN:
             mode1, mode2 = target.involved_modes
             current_value = system_params[param_nonlin(mode1, mode2)]
@@ -555,6 +559,7 @@ class DesignAnalysis:
         )
 
     def get_system_params_targets_met(self) -> dict[str, float]:
+        """Return organized dictionary of parameters given target specifications and current status."""
         system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
             if target.target_param_type == NONLIN:
@@ -600,7 +605,7 @@ class DesignAnalysis:
             target for target in self.opt_targets if target.independent_target
         ]
 
-        if independent_targets is not []:
+        if independent_targets != []:
             for independent_target in independent_targets:
                 self._minimize_for_design_vars(
                     [independent_target],
@@ -718,6 +723,7 @@ class DesignAnalysis:
             )
 
     def overwrite_parameters(self):
+        """Overwirte the original design_variables.json file with new values."""
         if self.save_path is None:
             raise ValueError("A path must be specified to fetch results.")
 
@@ -786,6 +792,10 @@ class DesignAnalysis:
         return None
 
     def screenshot(self, gui, run=None):
+        """Take and save a screenshot of the current qiskit-metal design.
+
+        Useful for tracking how the geometry is updated during optimization.
+        """
         if self.save_path is None:
             raise ValueError("A path must be specified to save screenshot.")
         gui.autoscale()
