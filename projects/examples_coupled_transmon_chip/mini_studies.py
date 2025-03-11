@@ -6,6 +6,7 @@ from qdesignoptimizer.design_analysis_types import MiniStudy
 from qdesignoptimizer.sim_capacitance_matrix import (
     CapacitanceMatrixStudy,
     ModeDecayIntoChargeLineStudy,
+    ResonatorDecayIntoWaveguideStudy,
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
@@ -33,7 +34,7 @@ def get_mini_study_qb_res(group: int):
         design_name="get_mini_study_qb_res",
         adjustment_rate=1,
         build_fine_mesh=True,
-        **CONVERGENCE
+        **CONVERGENCE,
     )
 
 
@@ -76,7 +77,7 @@ def get_mini_study_2qb_resonator_coupler():
         cos_trunc=6,
         fock_trunc=5,
         build_fine_mesh=False,
-        **CONVERGENCE
+        **CONVERGENCE,
     )
 
 
@@ -109,12 +110,53 @@ def get_mini_study_qb_charge_line(group: int):
         qiskit_component_names=qiskit_component_names,
         port_list=[],
         open_pins=[],
-        modes=[],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
+        modes=[
+            qubit
+        ],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
         jj_setup={**junction_setup(n.name_mode(qubit))},
         design_name="get_mini_study_qb_charge_line",
         adjustment_rate=0.1,
         capacitance_matrix_studies=[charge_decay_study],
-        **CONVERGENCE
+        run_capacitance_studies_only=True,
+        **CONVERGENCE,
+    )
+
+
+def get_mini_study_res_feedline(group: int):
+    resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+    qiskit_component_names = [
+        n.name_mode(resonator),
+        n.name_tee(group),
+    ]
+    resonator_decay_study = ResonatorDecayIntoWaveguideStudy(
+        mode=resonator,
+        mode_freq_GHz=pt.PARAM_TARGETS[param(resonator, FREQ)] / 1e9,
+        resonator_name=f"second_cpw_name_tee{group}",  # These names must be found from the model list in Ansys
+        waveguide_name=f"prime_cpw_name_tee{group}",
+        waveguide_impedance_Ohm=50,
+        qiskit_component_names=qiskit_component_names,
+        open_pins=[
+            (n.name_mode(resonator), "start"),
+            (n.name_mode(resonator), "end"),
+            (n.name_tee(group), "prime_end"),
+            (n.name_tee(group), "prime_start"),
+        ],
+        nbr_passes=8,
+        resonator_type="lambda_4",
+    )
+    return MiniStudy(
+        qiskit_component_names=qiskit_component_names,
+        port_list=[],
+        open_pins=[],
+        modes=[
+            resonator
+        ],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
+        jj_setup={},
+        design_name="get_mini_study_res_feedline",
+        adjustment_rate=0.7,
+        capacitance_matrix_studies=[resonator_decay_study],
+        run_capacitance_studies_only=True,
+        **CONVERGENCE,
     )
 
 
@@ -124,6 +166,7 @@ def get_mini_study_resonator_capacitance(group: int):
     cap_study = CapacitanceMatrixStudy(
         qiskit_component_names=qiskit_component_names,
         open_pins=[
+            (n.name_mode(resonator), "end"),
             (n.name_mode(resonator), "start"),
             (n.name_tee(group), "prime_end"),
             (n.name_tee(group), "prime_start"),
@@ -140,5 +183,5 @@ def get_mini_study_resonator_capacitance(group: int):
         design_name="get_mini_study_capacitance",
         adjustment_rate=1,
         capacitance_matrix_studies=[cap_study],
-        **CONVERGENCE
+        **CONVERGENCE,
     )

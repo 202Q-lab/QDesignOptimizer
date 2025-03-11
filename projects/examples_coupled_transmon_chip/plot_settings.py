@@ -97,6 +97,17 @@ PLOT_SETTINGS_CHARGE_LINE_DECAY = {
     ],
 }
 
+PLOT_SETTINGS_RESONATOR_KAPPA = {
+    "RESONATOR": [
+        OptPltSet(
+            n.ITERATION,
+            param(n.RESONATOR_1, n.KAPPA),
+            y_label="RES Kappa (Hz)",
+            y_scale="log",
+        )
+    ],
+}
+
 PLOT_SETTINGS_CAPACITANCE = {
     "CAP": [
         OptPltSet(
