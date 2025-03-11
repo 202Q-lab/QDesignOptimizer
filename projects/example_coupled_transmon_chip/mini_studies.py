@@ -31,7 +31,7 @@ def get_mini_study_qb_res(group: int):
         modes=[qubit, resonator],
         jj_setup={**junction_setup(qubit)},
         design_name="get_mini_study_qb_res",
-        adjustment_rate=1,
+        adjustment_rate=0.8,
         build_fine_mesh=True,
         **CONVERGENCE
     )
