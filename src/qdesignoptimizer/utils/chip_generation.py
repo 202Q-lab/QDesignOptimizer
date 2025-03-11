@@ -8,7 +8,7 @@ def create_chip_base(
 ) -> tuple[DesignPlanar, MetalGUI]:
     design = DesignPlanar({}, True)
     design.chip_name = chip_name
-    design.chips.main.material = "silicon"
+    design.chips.main.material = chip_type.material
     design.chips.main.size.size_x = chip_type.size_x
     design.chips.main.size.size_y = chip_type.size_y
     design.chips.main.size.size_z = chip_type.size_z
@@ -29,3 +29,4 @@ class ChipType:
     size_x: str
     size_y: str
     size_z: str
+    material: str
