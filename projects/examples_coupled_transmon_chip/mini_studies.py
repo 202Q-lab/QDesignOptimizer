@@ -20,8 +20,8 @@ def get_mini_study_qb_res(group: int):
 
     return MiniStudy(
         qiskit_component_names=[
-            n.name_from_mode(qubit),
-            n.name_from_mode(resonator),
+            n.name_mode(qubit),
+            n.name_mode(resonator),
             n.name_tee(group),
         ],
         port_list=[
@@ -48,8 +48,8 @@ def get_mini_study_2qb_resonator_coupler():
         resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
         all_comps.extend(
             [
-                n.name_from_mode(qubit),
-                n.name_from_mode(resonator),
+                n.name_mode(qubit),
+                n.name_mode(resonator),
                 n.name_tee(group),
             ]
         )
@@ -62,7 +62,7 @@ def get_mini_study_2qb_resonator_coupler():
         all_modes.extend([qubit, resonator])
         all_jjs.update(junction_setup(qubit))
 
-    all_comps.append(n.name_from_mode(n.COUPLER_12))
+    all_comps.append(n.name_mode(n.COUPLER_12))
     all_modes.append(n.COUPLER_12)
 
     all_mode_freq = []
@@ -88,7 +88,7 @@ def get_mini_study_2qb_resonator_coupler():
 def get_mini_study_qb_charge_line(group: int):
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     qiskit_component_names = [
-        n.name_from_mode(qubit),
+        n.name_mode(qubit),
         n.name_charge_line(group),
     ]
     charge_decay_study = ModeDecayIntoChargeLineStudy(
@@ -102,8 +102,8 @@ def get_mini_study_qb_charge_line(group: int):
         charge_line_impedance_Ohm=50,
         qiskit_component_names=qiskit_component_names,
         open_pins=[
-            (n.name_from_mode(qubit), "readout"),
-            (n.name_from_mode(qubit), "coupler"),
+            (n.name_mode(qubit), "readout"),
+            (n.name_mode(qubit), "coupler"),
             (n.name_charge_line(group), "start"),
             (n.name_charge_line(group), "end"),
         ],
@@ -166,7 +166,7 @@ def get_mini_study_res_feedline(group: int):
 
 def get_mini_study_resonator_capacitance(group: int):
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
-    qiskit_component_names = [n.name_from_mode(resonator), n.name_tee(group)]
+    qiskit_component_names = [n.name_mode(resonator), n.name_tee(group)]
     cap_study = CapacitanceMatrixStudy(
         qiskit_component_names=qiskit_component_names,
         open_pins=[

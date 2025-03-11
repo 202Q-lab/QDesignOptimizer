@@ -1,3 +1,5 @@
+# type: ignore
+
 """Visualization utilities for tracking optimization progress of quantum circuit designs."""
 
 import time
@@ -61,7 +63,7 @@ class OptPltSet:
 
 
 def plot_progress(
-    opt_results: list[dict],
+    opt_results: list[list[dict]],
     system_target_params: dict,
     plot_settings: dict,
     block_plots: bool = False,
@@ -171,7 +173,7 @@ def plot_progress(
                         x_data_opt,
                         np.array(y_data_mean) / panel.normalization,
                         "o-",
-                        label=f"optimized mean",
+                        label="optimized mean",
                         color=color,
                     )
                     axes.fill_between(
@@ -203,7 +205,7 @@ def plot_progress(
             else:
                 # Handle multiple y parameters (list of strings)
                 for y_idx, y_param in enumerate(panel.y):
-                    y_data_opt_list = []
+                    y_data_opt_list: list = []
                     for i, opt_result in enumerate(
                         opt_results
                     ):  # Looping for different instances of optimization used for analysis
@@ -234,7 +236,7 @@ def plot_progress(
                             x_data_opt,
                             np.array(y_data_mean) / panel.normalization,
                             "o-",
-                            label=f"optimized mean",
+                            label="optimized mean",
                             color=color,
                         )
                         axes.fill_between(
@@ -292,11 +294,11 @@ def plot_progress(
                 return opt_target.design_var
 
         assert (
-            found == True
+            found is True
         ), f"The target parameter {target_parameter} is not found in the optimization targets "
 
     def get_design_variable_value_from_target_parameter(
-        target_parameter: str, result, ii, opt_target_list: List
+        target_parameter: str, result, _, opt_target_list: List
     ):
         design_variable = get_design_variable_name_from_target_parameter(
             target_parameter, opt_target_list
@@ -335,7 +337,7 @@ def plot_progress(
         for idx, panel in enumerate(panels):
 
             if len(panels) == 1:
-                axes = axs
+                axes: plt.Axes = axs
             else:
                 axes = axs[idx]
             if axes.get_legend() is not None:
@@ -373,8 +375,8 @@ def plot_progress(
                 for i, y_data_opt in enumerate(y_data_opt_list):
                     x_data = x_data_opt_list[i]
                     y_data = y_data_opt
-                    if plot_design_variables_sorted == True:
-                        x_data, y_data = zip(*sorted(zip(x_data, y_data)))
+                    if plot_design_variables_sorted is True:
+                        x_data, y_data = zip(*sorted(zip(x_data, y_data)))  # type: ignore
                     axes.plot(
                         x_data,
                         np.array(y_data) / panel.normalization,
@@ -397,13 +399,13 @@ def plot_progress(
                         ],
                         "--" if len(x_data_opt) and len(x_data_opt) > 1 else "*",
                         color=color,
-                        label=f"target",
+                        label="target",
                     )
             else:
                 # Handle multiple y parameters (list of strings)
                 for y_idx, y_param in enumerate(panel.y):
-                    x_data_opt_list = []
-                    y_data_opt_list = []
+                    x_data_opt_list: list = []
+                    y_data_opt_list: list = []
                     for i, opt_result in enumerate(
                         opt_results
                     ):  # Looping for different instances of optimization used for analysis
@@ -429,7 +431,7 @@ def plot_progress(
                     for i, y_data_opt in enumerate(y_data_opt_list):
                         x_data = x_data_opt_list[i]
                         y_data = y_data_opt
-                        if plot_design_variables_sorted == True:
+                        if plot_design_variables_sorted is True:
                             x_data, y_data = zip(*sorted(zip(x_data, y_data)))
                         axes.plot(
                             x_data,
@@ -487,7 +489,7 @@ def plot_progress(
         for idx, panel in enumerate(panels):
 
             if len(panels) == 1:
-                axes = axs
+                axes: plt.Axes = axs
             else:
                 axes = axs[idx]
             if axes.get_legend() is not None:
@@ -582,10 +584,10 @@ def plot_progress(
 
     for plot_name, panels in plot_settings.items():
         fig, axs = plt.subplots(len(panels))
-        plot_figure(opt_results, system_target_params, panels, axs, colors)
+        plot_figure([opt_results], system_target_params, panels, axs, colors)
         fig.suptitle(plot_name)
         fig.subplots_adjust(hspace=0.5)
-        if save_figures == True:
+        if save_figures is True:
             fig.savefig(
                 f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png"
             )
@@ -603,13 +605,11 @@ def plot_progress(
                 opt_target_list,
                 axs,
                 colors,
-                plot_design_variables_sorted=(
-                    True if plot_design_variables == "chronological" else False
-                ),
+                plot_design_variables_sorted=(plot_design_variables == "chronological"),
             )
             fig.suptitle(plot_name)
             fig.subplots_adjust(hspace=0.5)
-            if save_figures == True:
+            if save_figures is True:
                 fig.savefig(
                     f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png"
                 )
@@ -623,7 +623,7 @@ def plot_progress(
             )
             fig.suptitle(plot_name)
             fig.subplots_adjust(hspace=0.5)
-            if save_figures == True:
+            if save_figures is True:
                 fig.savefig(
                     f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png"
                 )

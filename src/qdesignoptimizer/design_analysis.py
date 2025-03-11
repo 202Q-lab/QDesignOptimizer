@@ -25,7 +25,7 @@ from qdesignoptimizer.sim_capacitance_matrix import (
     ModeDecayStudy,
     ResonatorDecayIntoWaveguideStudy,
 )
-from qdesignoptimizer.sim_plot_progress import plot_progress
+from qdesignoptimizer.sim_plot_progress import plot_progress  # type: ignore
 from qdesignoptimizer.utils.names_parameters import (
     CAPACITANCE,
     CHARGE_LINE_LIMITED_T1,

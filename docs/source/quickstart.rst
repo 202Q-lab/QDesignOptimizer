@@ -58,7 +58,7 @@ Design
         trace_gap='20um',
     )
 
-    RouteMeander(design, n.name_from_mode(resonator), options=resonator_options)
+    RouteMeander(design, n.name_mode(resonator), options=resonator_options)
 
 Finally, the design can be instantiated by the ``create_chip_base`` method and rendered with the components and the design variables. A wrapper function (by convention called ``render_qiskit_metal_design``), must be created such that it can be passed into the optimizer. A minimal example looks like this:
 
@@ -206,8 +206,8 @@ Mini Studies
 
     MiniStudy(
         qiskit_component_names=[
-            n.name_from_mode(n.QUBIT_1),
-            n.name_from_mode(n.RESONATOR_1),
+            n.name_mode(n.QUBIT_1),
+            n.name_mode(n.RESONATOR_1),
             n.name_tee(n.NBR_1),
         ],
         port_list=[

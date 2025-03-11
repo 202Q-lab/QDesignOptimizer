@@ -185,7 +185,7 @@ class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
         ground_plane_capacitance_name (str, optional): capacitance name of ground plane
     """
 
-    _decay_parameter_type: Literal["charge_line_limited_T1"] = CHARGE_LINE_LIMITED_T1
+    _decay_parameter_type = CHARGE_LINE_LIMITED_T1  # type: ignore
 
     def __init__(
         self,
@@ -320,7 +320,7 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         resonator_type (Literal["lambda_4", "lambda_2"]): type of resonator
     """
 
-    _decay_parameter_type: Literal["kappa"] = KAPPA
+    _decay_parameter_type = KAPPA  # type: ignore
 
     def __init__(
         self,

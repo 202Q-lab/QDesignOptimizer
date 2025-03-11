@@ -114,7 +114,7 @@ def get_opt_target_res_qub_chi_via_coupl_length_simple(
     design_var_res_qb_coupl_length: Callable = n.design_var_coupl_length,
     design_var_qubit_width: Callable = n.design_var_width,
 ) -> OptTarget:
-
+    """Get optimization target for qubit-resonator dispersive shift with simplified formula."""
     return OptTarget(
         target_param_type=NONLIN,
         involved_modes=[qubit, resonator],
@@ -203,7 +203,7 @@ def get_opt_targets_qb_res_transmission(
             )
         )
     if opt_target_resonator_qubit_chi:
-        if use_simple_resonator_qubit_chi == True:
+        if use_simple_resonator_qubit_chi is True:
             opt_targets.append(
                 get_opt_target_res_qub_chi_via_coupl_length_simple(
                     qubit,

@@ -70,7 +70,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
         hfss_capacitance=n.design_var_cj(qubit),
     )
 
-    qub = TransmonPocketTeeth(design, n.name_from_mode(qubit), options=transmon_options)
+    qub = TransmonPocketTeeth(design, n.name_mode(qubit), options=transmon_options)
 
     # make open end of resonator
     cltee_options = dict(
@@ -103,7 +103,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
         meander=dict(spacing="200um"),
     )
 
-    RouteMeander(design, n.name_from_mode(resonator), options=resonator_options)
+    RouteMeander(design, n.name_mode(resonator), options=resonator_options)
 
 
 def add_route_interconnects(design: DesignPlanar):
@@ -180,8 +180,8 @@ def add_launch_pads(design: DesignPlanar):
 def add_coupler(design: DesignPlanar):
     resonator_options = dict(
         pin_inputs=dict(
-            start_pin=dict(component=n.name_from_mode(n.QUBIT_1), pin="coupler"),
-            end_pin=dict(component=n.name_from_mode(n.QUBIT_2), pin="coupler"),
+            start_pin=dict(component=n.name_mode(n.QUBIT_1), pin="coupler"),
+            end_pin=dict(component=n.name_mode(n.QUBIT_2), pin="coupler"),
         ),
         fillet=BEND_RADIUS,
         hfss_wire_bonds=True,
@@ -192,7 +192,7 @@ def add_coupler(design: DesignPlanar):
         meander=dict(spacing="200um"),
     )
 
-    RouteMeander(design, n.name_from_mode(n.COUPLER_12), options=resonator_options)
+    RouteMeander(design, n.name_mode(n.COUPLER_12), options=resonator_options)
 
 
 def add_chargeline(design: DesignPlanar, group: int):
@@ -224,11 +224,11 @@ def add_chargeline(design: DesignPlanar, group: int):
         termination_gap=LINE_50_OHM_GAP,
     )
 
-    OpenToGround(design, n.name_from_id("otg_" + qubit), options=otg_options)
+    OpenToGround(design, n.name_id("otg_" + qubit), options=otg_options)
 
     pins_top = dict(
         start_pin=dict(component=n.name_lp(lp_nbr), pin="tie"),
-        end_pin=dict(component=n.name_from_id("otg_" + qubit), pin="open"),
+        end_pin=dict(component=n.name_id("otg_" + qubit), pin="open"),
     )
 
     options_chargeline = dict(

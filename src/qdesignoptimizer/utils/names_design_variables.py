@@ -5,7 +5,7 @@ from typing import Literal, Union
 from qiskit_metal.designs.design_planar import DesignPlanar
 
 from qdesignoptimizer.utils.names_parameters import Mode
-from qdesignoptimizer.utils.names_qiskit_components import name_from_mode
+from qdesignoptimizer.utils.names_qiskit_components import name_mode
 
 
 def add_design_variables_to_design(
@@ -73,11 +73,11 @@ def junction_setup(mode: Mode, mode_type: Literal[None, "linear"] = None):
     Returns:
         Dict: jj setup
     """
-    jj_name = f"jj_{name_from_mode(mode)}"
+    jj_name = f"jj_{name_mode(mode)}"
     setup = {
         jj_name: {
-            "rect": f"JJ_rect_Lj_{name_from_mode(mode)}_rect_jj",
-            "line": f"JJ_Lj_{name_from_mode(mode)}_rect_jj_",
+            "rect": f"JJ_rect_Lj_{name_mode(mode)}_rect_jj",
+            "line": f"JJ_Lj_{name_mode(mode)}_rect_jj_",
             "Lj_variable": design_var_lj(mode),
             "Cj_variable": design_var_cj(mode),
         }

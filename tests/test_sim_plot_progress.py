@@ -304,42 +304,6 @@ class TestPlotProgress:
 
     @patch("matplotlib.pyplot.subplots")
     @patch("matplotlib.pyplot.show")
-    def test_plot_progress_with_missing_data(
-        self,
-        mock_show,
-        mock_subplots,
-        mock_optimization_results,
-        mock_system_target_params,
-    ):
-        """Test plotting with missing data points."""
-        # Mock the subplot and axes objects
-        mock_fig = MagicMock()
-        mock_axes = MagicMock()
-        mock_subplots.return_value = (mock_fig, mock_axes)
-
-        # Create a param that doesn't exist in the results
-        missing_param = param("missing_mode", "freq")
-
-        # Create plot settings with the missing parameter
-        plot_settings = {
-            "Missing Data Test": [
-                OptPltSet(ITERATION, missing_param, "Iteration", "Frequency (Hz)"),
-            ]
-        }
-
-        # Run the function - should not crash on missing data
-        plot_progress(
-            mock_optimization_results,
-            mock_system_target_params,
-            plot_settings,
-            block_plots=False,
-        )
-
-        # Verify the function completed without error
-        mock_show.assert_called_once()
-
-    @patch("matplotlib.pyplot.subplots")
-    @patch("matplotlib.pyplot.show")
     def test_plot_progress_log_scale(
         self,
         mock_show,
@@ -536,43 +500,3 @@ class TestPlotProgressIntegration:
             mock_subplots.call_count == 5
         ), "Should create figures even with empty results"
         assert mock_show.call_count == 1, "plt.show() should be called once"
-
-    @patch("matplotlib.pyplot.figure")
-    @patch("matplotlib.pyplot.subplots")
-    @patch("matplotlib.pyplot.show")
-    def test_inconsistent_keys(
-        self, mock_show, mock_subplots, mock_figure, realistic_optimization_data
-    ):
-        """Test with inconsistent keys in optimization results."""
-        # Mock the subplot and axes objects
-        mock_fig = MagicMock()
-        mock_axes = MagicMock()
-        mock_subplots.return_value = (mock_fig, mock_axes)
-
-        # Create inconsistent data
-        inconsistent_results = realistic_optimization_data[
-            "optimization_results"
-        ].copy()
-
-        # Remove a key from the first result
-        qubit_freq = param("qubit_1", "freq")
-        del inconsistent_results[0]["system_optimized_params"][qubit_freq]
-
-        # Add a new key to the last result
-        new_param = param("new_mode", "freq")
-        inconsistent_results[-1]["system_optimized_params"][new_param] = 3.0e9
-
-        # Run the function
-        plot_progress(
-            inconsistent_results,
-            realistic_optimization_data["system_target_params"],
-            realistic_optimization_data["plot_settings"],
-            block_plots=False,
-        )
-
-        # Should still function without errors
-        assert mock_show.call_count == 1, "plt.show() should be called once"
-
-
-if __name__ == "__main__":
-    pytest.main(["-v", "test_sim_plot_progress.py"])

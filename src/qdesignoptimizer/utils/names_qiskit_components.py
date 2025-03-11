@@ -14,12 +14,12 @@ r""" A string representing the name of a Qiskit Metal component, by convention s
 """
 
 
-def name_from_id(identifier: Union[str, int]) -> QiskitComponentName:
+def name_id(identifier: Union[str, int]) -> QiskitComponentName:
     """Create a component name from a generic identifier."""
     return f"name_{identifier}"
 
 
-def name_from_mode(identifier: Mode):
+def name_mode(identifier: Mode):
     """Create a component name from a mode identifier."""
     return f"name_{identifier}"
 
