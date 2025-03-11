@@ -125,7 +125,7 @@ class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
         mode_freq_GHz (float): The mode frequency in GHz
     """
 
-    _decay_parameter_name = None  # To be defined by subclasses
+    _decay_parameter_type = None  # To be defined by subclasses
 
     def __init__(
         self,
@@ -152,21 +152,21 @@ class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
 
     @abstractmethod
     def get_decay_parameter_value(self):
-        """Get the optimized parameter value.
+        """Get the simulated parameter value.
         This method should be implemented by subclasses.
 
         Returns:
-            float: The optimized parameter value.
+            float: The simulated parameter value.
         """
-        raise NotImplementedError("Subclasses must implement this method")
+        pass
 
-    def get_decay_parameter_name(self):
+    def get_decay_parameter_type(self):
         """Get the type of parameter this study optimizes.
 
         Returns:
             str: The parameter type.
         """
-        return self._decay_parameter_name
+        return self._decay_parameter_type
 
 
 class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
@@ -185,7 +185,7 @@ class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
         ground_plane_capacitance_name (str, optional): capacitance name of ground plane
     """
 
-    _decay_parameter_name = PURCELL_LIMIT_T1
+    _decay_parameter_type = PURCELL_LIMIT_T1
 
     def __init__(
         self,
@@ -320,7 +320,7 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         resonator_type (Literal["lambda_4", "lambda_2"]): type of resonator
     """
 
-    _decay_parameter_name = KAPPA
+    _decay_parameter_type = KAPPA
 
     def __init__(
         self,

@@ -15,7 +15,6 @@ def get_opt_target_res_kappa_feedline(group: int) -> list[OptTarget]:
     target = get_opt_target_res_kappa_via_coupl_length(
         resonator=resonator, resonator_coupled_identifier="tee"
     )
-    # target.involved_modes=[]
     return [target]
 
 

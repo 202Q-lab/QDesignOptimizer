@@ -49,6 +49,7 @@ class DesignAnalysis:
         update_design_variables (bool): update parameters
         plot_settings (dict): plot settings for progress plots
         meshing_map (List[MeshingMap]): meshing map
+        minimization_tol (float): tolerance used to terminate the solution of an optimization step.
 
     """
 
@@ -57,11 +58,11 @@ class DesignAnalysis:
         state: DesignAnalysisState,
         mini_study: MiniStudy,
         opt_targets: List[OptTarget] = list(),
-        save_path: Optional[str] = None,
+        save_path: str = "analysis_result",
         update_design_variables: bool = True,
         plot_settings: Optional[dict] = None,
         meshing_map: List[MeshingMap] = list(),
-        minimization_tol=1e-12,
+        minimization_tol: float = 1e-12,
     ):
         self.design_analysis_version = get_version_from_pyproject()
         self.design = state.design
@@ -446,7 +447,7 @@ class DesignAnalysis:
 
         # Check if this is a ModeDecayStudy and update the appropriate parameter
         if isinstance(capacitance_study, ModeDecayStudy):
-            param_type = capacitance_study.get_decay_parameter_name()
+            param_type = capacitance_study.get_decay_parameter_type()
             log.info(f"Computing {param_type} from decay study.")
             if param_type == KAPPA:
                 log.warning(
