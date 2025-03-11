@@ -31,22 +31,22 @@ jobs:
         poetry install --no-interaction --no-root --with analysis
       if: steps.cache-deps.outputs.cache-hit != 'true'
 
+    - name: Activate virtual environment
+      run: .venv\Scripts\activate
+
     - name: install_project
       run: |
         poetry install --no-interaction
         pip install --no-deps qiskit-metal==0.1.5
 
-    - name: Analysing the code with pylint
+    - name: analyze the code with pylint
       run: |
-        source $VENV
         pylint src || pylint-exit $?
 
     - name: Running tests
       run: |
-        source $VENV
         pytest tests
 
     - name: Running Mypy analysis
       run: |
-        source $VENV
         mypy src
