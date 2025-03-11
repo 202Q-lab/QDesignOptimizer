@@ -1,4 +1,4 @@
-"""Utility functions for geometry and runtime operations."""
+"""Utility functions for geometry calculations and runtime operations."""
 
 import os
 

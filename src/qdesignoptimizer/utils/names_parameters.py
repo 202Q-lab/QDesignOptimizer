@@ -1,4 +1,4 @@
-"""Definition of standard names for parameters and modes."""
+"""Standard naming conventions for physical parameters and modes in quantum circuit designs."""
 
 from typing import Literal
 

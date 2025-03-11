@@ -1,4 +1,4 @@
-"""Loggers configuration."""
+"""Logging configuration with custom formatting."""
 
 import json
 import logging

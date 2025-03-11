@@ -1,4 +1,4 @@
-"""Definition of DesignAnalysis, central class for managing optimization of designs."""
+"""Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations."""
 
 import json
 from copy import deepcopy
@@ -280,7 +280,7 @@ class DesignAnalysis:
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
-            fine_mesh_names
+            (fine_mesh_names)
             and self.mini_study.build_fine_mesh
             and len(self.mini_study.port_list) > 0
         )
@@ -434,7 +434,7 @@ class DesignAnalysis:
                 )
             except KeyError:
                 log.warning(
-                    f"Warning: capacitance %s not found in capacitance matrix with names %s",
+                    "Warning: capacitance %s not found in capacitance matrix with names %s",
                     capacitance_names,
                     capacitance_matrix.columns,
                 )

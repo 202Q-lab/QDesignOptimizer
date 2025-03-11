@@ -1,4 +1,4 @@
-"""Definitions of data structures organizing specific aspects of the analysis such as meshing and optimization targets."""
+"""Data structures for organizing specific aspects of design analysis including meshing and optimization targets."""
 
 from typing import Callable, Dict, List, Literal, Optional, Union
 

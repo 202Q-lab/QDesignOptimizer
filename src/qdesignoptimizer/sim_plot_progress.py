@@ -1,4 +1,4 @@
-"""Utilities for generating plots showing the progress in the optimization."""
+"""Visualization utilities for tracking optimization progress of quantum circuit designs."""
 
 import os
 from itertools import cycle

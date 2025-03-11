@@ -1,4 +1,4 @@
-"""Definitions of common optimization targets for qubit/resonators/couplers systems."""
+"""Factory functions for creating common optimization targets in quantum circuit design."""
 
 from typing import Callable, List
 

@@ -1,4 +1,4 @@
-"""Manages configuration and creation and base chip for design."""
+"""Tools for creating and configuring basic chips in Qiskit Metal designs."""
 
 from dataclasses import dataclass
 
