@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install and configure poetry
@@ -29,12 +29,13 @@ jobs:
 
     - name: install_dependencies_only
       run: |
-        pip install --no-deps qiskit-metal==0.1.5
         poetry install --no-interaction --no-root --with analysis
       if: steps.cache-deps.outputs.cache-hit != 'true'
 
     - name: install_project
-      run: poetry install --no-interaction
+      run: |
+        poetry install --no-interaction
+        pip install --no-deps qiskit-metal==0.1.5
 
     - name: Analysing the code with pylint
       run: |
