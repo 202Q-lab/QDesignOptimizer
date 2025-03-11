@@ -18,6 +18,7 @@ RESONATOR_GAP = "20um"
 
 BEND_RADIUS = "99um"
 
+
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     nbr_idx = group - 1  # zero indexed
 
@@ -217,17 +218,17 @@ def add_chargeline(design: DesignPlanar, group: int):
     otg_options = dict(
         pos_x=n.design_var_cl_pos_x(qubit),
         pos_y=n.design_var_cl_pos_y(qubit),
-        orientation='0',
+        orientation="0",
         width=LINE_50_OHM_WIDTH,
         gap=LINE_50_OHM_GAP,
         termination_gap=LINE_50_OHM_GAP,
     )
-    
-    OpenToGround(design, n.name_('otg_'+qubit), options=otg_options)
+
+    OpenToGround(design, n.name_("otg_" + qubit), options=otg_options)
 
     pins_top = dict(
         start_pin=dict(component=n.name_lp(lp_nbr), pin="tie"),
-        end_pin=dict(component=n.name_('otg_'+qubit), pin="open"),
+        end_pin=dict(component=n.name_("otg_" + qubit), pin="open"),
     )
 
     options_chargeline = dict(

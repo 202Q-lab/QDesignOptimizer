@@ -9,21 +9,34 @@ from qdesignoptimizer.utils.names_parameters import (
 
 PLOT_SETTINGS = {
     "RES": [
-        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.FREQ), y_label="RES Freq",unit='GHz'),
-        OptPltSet(n.ITERATION, param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa",unit='MHz'),
-        OptPltSet(n.design_var_length(n.RESONATOR_1), param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa",unit='MHz'), # As an example that design variables can also be plotted for the results
+        OptPltSet(
+            n.ITERATION, param(n.RESONATOR_1, n.FREQ), y_label="RES Freq", unit="GHz"
+        ),
+        OptPltSet(
+            n.ITERATION, param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa", unit="MHz"
+        ),
+        OptPltSet(
+            n.design_var_length(n.RESONATOR_1),
+            param(n.RESONATOR_1, n.KAPPA),
+            y_label="RES Kappa",
+            unit="MHz",
+        ),  # As an example that design variables can also be plotted for the results
     ],
     "QUBIT": [
-        OptPltSet(n.ITERATION, param(n.QUBIT_1, n.FREQ), y_label="QB Freq",unit='GHz'),
+        OptPltSet(n.ITERATION, param(n.QUBIT_1, n.FREQ), y_label="QB Freq", unit="GHz"),
         OptPltSet(
-            n.ITERATION, param_nonlin(n.QUBIT_1, n.QUBIT_1), y_label="QB Anharm.",unit='MHz'
+            n.ITERATION,
+            param_nonlin(n.QUBIT_1, n.QUBIT_1),
+            y_label="QB Anharm.",
+            unit="MHz",
         ),
     ],
     "COUPLINGS": [
         OptPltSet(
             n.ITERATION,
             param_nonlin(n.RESONATOR_1, n.QUBIT_1),
-            y_label="RES-QB Chi",unit='kHz'
+            y_label="RES-QB Chi",
+            unit="kHz",
         ),
     ],
 }
@@ -74,11 +87,14 @@ PLOT_SETTINGS_TWO_QB = {
 }
 
 PLOT_SETTINGS_CHARGE_LINE_DECAY = {
-    "QUBIT": [OptPltSet(n.ITERATION, 
-                        param(n.QUBIT_1, n.PURCELL_LIMIT_T1), 
-                        y_label="T1 limit (s)", 
-                        y_scale='log')
-            ],
+    "QUBIT": [
+        OptPltSet(
+            n.ITERATION,
+            param(n.QUBIT_1, n.PURCELL_LIMIT_T1),
+            y_label="T1 limit (s)",
+            y_scale="log",
+        )
+    ],
 }
 
 PLOT_SETTINGS_CAPACITANCE = {
@@ -87,7 +103,7 @@ PLOT_SETTINGS_CAPACITANCE = {
             n.ITERATION,
             param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"),
             y_label="Capacitance",
-            unit='fF'
+            unit="fF",
         )
     ],
 }
