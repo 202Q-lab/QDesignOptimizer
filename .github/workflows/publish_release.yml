@@ -14,7 +14,6 @@ jobs:
         include:
           - os: windows-latest
             label: win-64
-            prefix: C:\Miniconda3\envs\qdesignenv
     steps:
       - uses: actions/checkout@v4
       - name: Setup Conda
@@ -24,7 +23,7 @@ jobs:
             activate-environment: qdesignenv
       - uses: actions/cache@v3
         with:
-          path: ${{ matrix.prefix }}
+          path: ${{ env.CONDA }}/envs
           key: ${{ matrix.label }}-conda-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
         id: cache
       - name: Update environment

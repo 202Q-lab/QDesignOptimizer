@@ -10,7 +10,7 @@ import pyEPR as epr
 import scipy
 import scipy.optimize
 from pyaedt import Hfss
-from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
+from qiskit_metal.analyses.quantization import EPRanalysis
 
 import qdesignoptimizer
 from qdesignoptimizer.design_analysis_types import (
