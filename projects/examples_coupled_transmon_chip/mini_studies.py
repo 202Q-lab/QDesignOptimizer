@@ -138,6 +138,7 @@ def get_mini_study_res_feedline(group: int):
         resonator_name=f"second_cpw_name_tee{group}",  # These names must be found from the model list in Ansys
         waveguide_name=f"prime_cpw_name_tee{group}",
         waveguide_impedance_Ohm=50,
+        resonator_type="lambda_4",
         qiskit_component_names=qiskit_component_names,
         open_pins=[
             (n.name_mode(resonator), "start"),
@@ -146,7 +147,6 @@ def get_mini_study_res_feedline(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
-        resonator_type="lambda_4",
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,

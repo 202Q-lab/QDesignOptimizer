@@ -317,7 +317,7 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         resonator_name (str): capacitance name of resonator
         waveguide_name (str): capacitance name of waveguide
         waveguide_impedance_Ohm (float): waveguide impedance in Ohm
-        resonator_type (Literal["lambda_4", "lambda_2"]): type of resonator
+        resonator_type (Literal["lambda_4", "lambda_2"]): specifies the type of resonator
     """
 
     _decay_parameter_type = KAPPA  # type: ignore
@@ -330,12 +330,12 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         waveguide_name: str,
         waveguide_impedance_Ohm: float,
         qiskit_component_names: list,
-        open_pins: list = [],
+        resonator_type: Literal["lambda_4", "lambda_2"],
+        open_pins: Optional[list] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
         percent_error: float = 0.5,
         nbr_passes: int = 10,
-        resonator_type: Literal["lambda_4", "lambda_2"] = "lambda_2",
     ):
         super().__init__(
             mode=mode,
@@ -356,6 +356,8 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
     def get_kappa_estimate(self) -> float:
         """Get the estimated kappa (decay rate) of the resonator into the waveguide.
 
+        Currently uses a simplified model, assuming that the resonator and waveguide have the same impedance.
+
         Returns:
             float: The estimated kappa (Hz).
 
@@ -373,7 +375,6 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         )
 
         Z0 = self.waveguide_impedance_Ohm
-        # Z0_res = 1/(self.capacitance_matrix_fF.loc[self.resonator_name, self.resonator_name]*self.freq_GHz)
         unit_conversion = 1e-3  # GHz^3 * fF^2
         kappa = Z0**2 * omega**3 * Ccoupling**2 / np.pi / (2 * np.pi) * unit_conversion
 

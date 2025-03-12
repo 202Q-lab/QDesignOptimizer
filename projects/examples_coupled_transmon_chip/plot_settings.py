@@ -46,12 +46,14 @@ PLOT_SETTINGS_TWO_QB = {
         OptPltSet(
             n.ITERATION,
             [param(n.RESONATOR_1, n.FREQ), param(n.RESONATOR_2, n.FREQ)],
-            y_label="RES Freq (Hz)",
+            y_label="RES Freq",
+            unit="Hz",
         ),
         OptPltSet(
             n.ITERATION,
             [param(n.RESONATOR_1, n.KAPPA), param(n.RESONATOR_2, n.KAPPA)],
-            y_label="RES Kappa (Hz)",
+            y_label="RES Kappa",
+            unit="Hz",
         ),
         OptPltSet(
             n.ITERATION,
@@ -59,19 +61,20 @@ PLOT_SETTINGS_TWO_QB = {
                 param_nonlin(n.RESONATOR_1, n.RESONATOR_1),
                 param_nonlin(n.RESONATOR_2, n.RESONATOR_2),
             ],
-            y_label="RES Kerr (Hz)",
+            y_label="RES Kerr",
+            unit="Hz",
         ),
     ],
     "QUBIT": [
         OptPltSet(
             n.ITERATION,
             [param(n.QUBIT_1, n.FREQ), param(n.QUBIT_2, n.FREQ)],
-            y_label="QB Freq (Hz)",
+            y_label="QB Freq",
         ),
         OptPltSet(
             n.ITERATION,
             [param_nonlin(n.QUBIT_1, n.QUBIT_1), param_nonlin(n.QUBIT_2, n.QUBIT_2)],
-            y_label="QB Anharm. (Hz)",
+            y_label="QB Anharm.",
         ),
     ],
     "COUPLINGS": [
@@ -81,7 +84,7 @@ PLOT_SETTINGS_TWO_QB = {
                 param_nonlin(n.RESONATOR_1, n.QUBIT_1),
                 param_nonlin(n.RESONATOR_2, n.QUBIT_2),
             ],
-            y_label="RES-QB Chi (Hz)",
+            y_label="RES-QB Chi",
         ),
     ],
 }
@@ -91,8 +94,9 @@ PLOT_SETTINGS_CHARGE_LINE_DECAY = {
         OptPltSet(
             n.ITERATION,
             param(n.QUBIT_1, n.CHARGE_LINE_LIMITED_T1),
-            y_label="T1 limit (s)",
+            y_label="T1 limit",
             y_scale="log",
+            unit="s",
         )
     ],
 }
@@ -102,7 +106,7 @@ PLOT_SETTINGS_RESONATOR_KAPPA = {
         OptPltSet(
             n.ITERATION,
             param(n.RESONATOR_1, n.KAPPA),
-            y_label="RES Kappa (Hz)",
+            y_label="RES Kappa",
             y_scale="log",
         )
     ],

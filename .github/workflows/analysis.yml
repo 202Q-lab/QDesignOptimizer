@@ -36,7 +36,6 @@ jobs:
           pip install --no-deps qiskit-metal==0.1.5
 
       - name: Analyze the code with pylint
-        continue-on-error: true
         run: |
           $pylint_status = 0
           pylint src

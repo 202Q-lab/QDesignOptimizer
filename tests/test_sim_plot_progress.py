@@ -5,7 +5,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from qdesignoptimizer.sim_plot_progress import OptPltSet, plot_progress
+from qdesignoptimizer.design_analysis_types import OptTarget
+from qdesignoptimizer.sim_plot_progress import (
+    DataExtractor,
+    OptimizationPlotter,
+    OptPltSet,
+    UnitEnum,
+    plot_progress,
+)
 from qdesignoptimizer.utils.names_parameters import ITERATION, param, param_nonlin
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
@@ -23,6 +30,7 @@ class TestOptPltSet:
         assert plt_set.y_label == "Y Label"
         assert plt_set.x_scale == "log"
         assert plt_set.y_scale == "log"
+        assert plt_set.unit == UnitEnum.HZ
 
     def test_init_multiple_y(self):
         """Test OptPltSet initialization with multiple y values."""
@@ -31,40 +39,44 @@ class TestOptPltSet:
 
         assert plt_set.x == "x_param"
         assert plt_set.y == y_values
-        assert plt_set.x_label == "x_param"  # Default label
-        assert plt_set.y_label == y_values  # Default label
+        assert plt_set.x_label is None  # No custom label
+        assert plt_set.y_label is None  # No custom label
         assert plt_set.x_scale == "linear"  # Default scale
         assert plt_set.y_scale == "linear"  # Default scale
 
-    def test_default_labels(self):
-        """Test that default labels are set correctly when not provided."""
-        plt_set = OptPltSet("x_param", "y_param")
-
-        assert plt_set.x_label == "x_param"
-        assert plt_set.y_label == "y_param"
-
-    def test_get_label_custom(self):
-        """Test that _get_label returns custom label when provided."""
+    def test_get_labels(self):
+        """Test getting labels with and without custom labels."""
+        # With custom labels
         plt_set = OptPltSet("x_param", "y_param", "Custom X", "Custom Y")
+        assert plt_set.get_x_label() == "Custom X"
+        assert plt_set.get_y_label() == "Custom Y"
 
-        assert plt_set._get_label("x_param", "Custom X") == "Custom X"
-        assert plt_set._get_label("y_param", "Custom Y") == "Custom Y"
-
-    def test_get_label_default(self):
-        """Test that _get_label returns variable name when no custom label is provided."""
+        # Without custom labels
         plt_set = OptPltSet("x_param", "y_param")
+        assert plt_set.get_x_label() == "x_param"
+        assert plt_set.get_y_label() == "y_param"
 
-        assert plt_set._get_label("x_param", None) == "x_param"
-        assert plt_set._get_label("y_param", None) == "y_param"
+        # With multiple y values and no custom label
+        plt_set = OptPltSet("x_param", ["y1", "y2", "y3"])
+        assert plt_set.get_y_label() == "y1, y2, y3"
 
-    def test_init_with_empty_y_list(self):
-        """Test initialization with an empty y list."""
-        plt_set = OptPltSet("x_param", [])
+    def test_normalization(self):
+        """Test normalization factors for different units."""
+        # Test Hz
+        plt_set = OptPltSet("x", "y", unit=UnitEnum.HZ)
+        assert plt_set.normalization == 1
 
-        assert plt_set.x == "x_param"
-        assert plt_set.y == []
-        assert plt_set.x_label == "x_param"
-        assert plt_set.y_label == []
+        # Test kHz
+        plt_set = OptPltSet("x", "y", unit=UnitEnum.KHZ)
+        assert plt_set.normalization == 1e3
+
+        # Test MHz
+        plt_set = OptPltSet("x", "y", unit=UnitEnum.MHZ)
+        assert plt_set.normalization == 1e6
+
+        # Test GHz
+        plt_set = OptPltSet("x", "y", unit=UnitEnum.GHZ)
+        assert plt_set.normalization == 1e9
 
 
 @pytest.fixture
@@ -130,6 +142,42 @@ def mock_system_target_params():
 
 
 @pytest.fixture
+def mock_opt_target_list():
+    """Create mock optimization target list."""
+    from qdesignoptimizer.utils.names_parameters import FREQ, NONLIN
+
+    qubit = "qubit_1"
+    resonator = "resonator_1"
+
+    return [
+        OptTarget(
+            target_param_type=FREQ,
+            involved_modes=[qubit],
+            design_var="design_var_lj_qubit_1",
+            design_var_constraint={"larger_than": "5nH", "smaller_than": "20nH"},
+            prop_to=lambda p, v: 1.0,
+            independent_target=True,
+        ),
+        OptTarget(
+            target_param_type=FREQ,
+            involved_modes=[resonator],
+            design_var="design_var_length_resonator_1",
+            design_var_constraint={"larger_than": "4000um", "smaller_than": "6000um"},
+            prop_to=lambda p, v: 1.0,
+            independent_target=True,
+        ),
+        OptTarget(
+            target_param_type=NONLIN,
+            involved_modes=[qubit, resonator],
+            design_var="design_var_width_qubit_1",
+            design_var_constraint={"larger_than": "10um", "smaller_than": "30um"},
+            prop_to=lambda p, v: 1.0,
+            independent_target=False,
+        ),
+    ]
+
+
+@pytest.fixture
 def mock_plot_settings():
     """Create mock plot settings."""
     qubit_freq = param("qubit_1", "freq")
@@ -147,6 +195,231 @@ def mock_plot_settings():
             OptPltSet(design_var_lj, cross_kerr, "Inductance (nH)", "Cross-Kerr (Hz)"),
         ],
     }
+
+
+class TestDataExtractor:
+    """Tests for the DataExtractor class."""
+
+    def test_get_parameter_value(self, mock_optimization_results):
+        """Test extracting parameter values from results."""
+        result = mock_optimization_results[0]
+        extractor = DataExtractor([mock_optimization_results], {})
+
+        # Test iteration parameter
+        assert extractor.get_parameter_value(ITERATION, result, 0) == 1
+
+        # Test system parameter
+        qubit_freq = param("qubit_1", "freq")
+        assert extractor.get_parameter_value(qubit_freq, result, 0) == 5.0e9
+
+        # Test design variable
+        design_var = "design_var_lj_qubit_1"
+        assert extractor.get_parameter_value(design_var, result, 0) == 10.0
+
+        # Test parameter not found
+        assert extractor.get_parameter_value("nonexistent", result, 0) is None
+
+    def test_get_design_var_name_for_param(self, mock_opt_target_list):
+        """Test finding design variable name associated with a parameter."""
+        extractor = DataExtractor([], {}, mock_opt_target_list)
+
+        # Test frequency parameter
+        freq_param = param("qubit_1", "freq")
+        assert (
+            extractor.get_design_var_name_for_param(freq_param)
+            == "design_var_lj_qubit_1"
+        )
+
+        # Test nonlinearity parameter
+        nonlin_param = param_nonlin("qubit_1", "resonator_1")
+        assert (
+            extractor.get_design_var_name_for_param(nonlin_param)
+            == "design_var_width_qubit_1"
+        )
+
+        # Test parameter not found
+        with pytest.raises(AssertionError):
+            extractor.get_design_var_name_for_param("nonexistent_param")
+
+    def test_extract_xy_data(
+        self, mock_optimization_results, mock_system_target_params
+    ):
+        """Test extracting x and y data series."""
+        extractor = DataExtractor(
+            [mock_optimization_results], mock_system_target_params
+        )
+
+        # Test extracting iteration vs frequency
+        qubit_freq = param("qubit_1", "freq")
+        x_values, y_values = extractor.extract_xy_data(ITERATION, qubit_freq, 0)
+
+        assert x_values == [1, 2, 3]
+        assert y_values == [5.0e9, 5.1e9, 5.2e9]
+
+        # Test extracting design variable vs frequency
+        design_var = "design_var_lj_qubit_1"
+        x_values, y_values = extractor.extract_xy_data(design_var, qubit_freq, 0)
+
+        assert x_values == [10.0, 9.8, 9.5]
+        assert y_values == [5.0e9, 5.1e9, 5.2e9]
+
+    def test_get_y_data_with_statistics(
+        self, mock_optimization_results, mock_system_target_params
+    ):
+        """Test extracting y data with statistics across runs."""
+        # Create multiple runs with identical data for testing
+        multiple_runs = [mock_optimization_results, mock_optimization_results]
+        extractor = DataExtractor(multiple_runs, mock_system_target_params)
+
+        # Test statistics for iteration vs frequency
+        qubit_freq = param("qubit_1", "freq")
+        x_values, y_mean, y_std = extractor.get_y_data_with_statistics(
+            ITERATION, qubit_freq
+        )
+
+        assert x_values == [1, 2, 3]
+        np.testing.assert_array_equal(y_mean, np.array([5.0e9, 5.1e9, 5.2e9]))
+        np.testing.assert_array_equal(
+            y_std, np.array([0.0, 0.0, 0.0])
+        )  # Same data, so std = 0
+
+        # Test with varying data
+        varying_run = [
+            {
+                "system_optimized_params": {
+                    qubit_freq: 5.1e9,
+                },
+                "design_variables": {},
+            },
+            {
+                "system_optimized_params": {
+                    qubit_freq: 5.2e9,
+                },
+                "design_variables": {},
+            },
+            {
+                "system_optimized_params": {
+                    qubit_freq: 5.3e9,
+                },
+                "design_variables": {},
+            },
+        ]
+
+        varying_runs = [mock_optimization_results, varying_run]
+        extractor = DataExtractor(varying_runs, mock_system_target_params)
+
+        x_values, y_mean, y_std = extractor.get_y_data_with_statistics(
+            ITERATION, qubit_freq
+        )
+
+        assert x_values == [1, 2, 3]
+        np.testing.assert_array_almost_equal(y_mean, np.array([5.05e9, 5.15e9, 5.25e9]))
+        np.testing.assert_array_almost_equal(y_std, np.array([0.05e9, 0.05e9, 0.05e9]))
+
+
+class TestOptimizationPlotter:
+    """Tests for the OptimizationPlotter class."""
+
+    @patch("matplotlib.pyplot.figure")
+    @patch("matplotlib.pyplot.subplots")
+    @patch("matplotlib.pyplot.show")
+    def test_plot_standard(
+        self,
+        mock_show,
+        mock_subplots,
+        mock_figure,
+        mock_optimization_results,
+        mock_system_target_params,
+    ):
+        """Test plotting standard parameter vs. iteration plots."""
+        # Mock the subplot and axes objects
+        mock_fig = MagicMock()
+        mock_axes = MagicMock()
+        mock_subplots.return_value = (mock_fig, mock_axes)
+
+        extractor = DataExtractor(
+            [mock_optimization_results], mock_system_target_params
+        )
+        plotter = OptimizationPlotter(extractor)
+
+        # Test single plot
+        qubit_freq = param("qubit_1", "freq")
+        config = OptPltSet(ITERATION, qubit_freq, "Iteration", "Frequency")
+
+        plotter.plot_standard(mock_fig, mock_axes, [config], "Test Plot")
+
+        # Verify setup was called
+        mock_axes.set_xlabel.assert_called_with("Iteration")
+        mock_axes.set_ylabel.assert_called_with("Frequency (Hz)")
+        mock_fig.suptitle.assert_called_with("Test Plot")
+
+    @patch("matplotlib.pyplot.figure")
+    @patch("matplotlib.pyplot.subplots")
+    @patch("matplotlib.pyplot.show")
+    def test_plot_params_vs_design_vars(
+        self,
+        mock_show,
+        mock_subplots,
+        mock_figure,
+        mock_optimization_results,
+        mock_system_target_params,
+        mock_opt_target_list,
+    ):
+        """Test plotting parameters vs. design variables."""
+        # Mock the subplot and axes objects
+        mock_fig = MagicMock()
+        mock_axes = MagicMock()
+        mock_subplots.return_value = (mock_fig, mock_axes)
+
+        extractor = DataExtractor(
+            [mock_optimization_results], mock_system_target_params, mock_opt_target_list
+        )
+        plotter = OptimizationPlotter(extractor)
+
+        # Test plotting parameter vs design variable
+        qubit_freq = param("qubit_1", "freq")
+        config = OptPltSet(ITERATION, qubit_freq, "Iteration", "Frequency")
+
+        plotter.plot_params_vs_design_vars(mock_fig, mock_axes, [config], "Test Plot")
+
+        # Verify setup was called with design variable name in label
+        # The _setup_ax method will be called but we can't directly test the label
+        # since it's determined dynamically based on the design variable
+        mock_fig.suptitle.assert_called_with("Test Plot vs Design Variables")
+
+    @patch("matplotlib.pyplot.figure")
+    @patch("matplotlib.pyplot.subplots")
+    @patch("matplotlib.pyplot.show")
+    def test_plot_design_vars_vs_iteration(
+        self,
+        mock_show,
+        mock_subplots,
+        mock_figure,
+        mock_optimization_results,
+        mock_system_target_params,
+        mock_opt_target_list,
+    ):
+        """Test plotting design variables vs. iteration."""
+        # Mock the subplot and axes objects
+        mock_fig = MagicMock()
+        mock_axes = MagicMock()
+        mock_subplots.return_value = (mock_fig, mock_axes)
+
+        extractor = DataExtractor(
+            [mock_optimization_results], mock_system_target_params, mock_opt_target_list
+        )
+        plotter = OptimizationPlotter(extractor)
+
+        # Test plotting design variables vs iteration
+        qubit_freq = param("qubit_1", "freq")
+        config = OptPltSet(ITERATION, qubit_freq, "Iteration", "Frequency")
+
+        plotter.plot_design_vars_vs_iteration(
+            mock_fig, mock_axes, [config], "Test Plot"
+        )
+
+        # Verify figure title is set correctly
+        mock_fig.suptitle.assert_called_with("Design Variables for Test Plot")
 
 
 class TestPlotProgress:
@@ -172,7 +445,7 @@ class TestPlotProgress:
 
         # Run the function
         plot_progress(
-            mock_optimization_results,
+            [mock_optimization_results],
             mock_system_target_params,
             mock_plot_settings,
             block_plots=False,
@@ -187,316 +460,92 @@ class TestPlotProgress:
         ), "Wrong number of titles set"
         assert mock_show.call_count == 1, "plt.show() should be called once"
 
+    @patch("matplotlib.pyplot.figure")
+    @patch("matplotlib.pyplot.subplots")
+    @patch("matplotlib.pyplot.show")
     @patch("matplotlib.pyplot.close")
-    @patch("matplotlib.pyplot.subplots")
-    @patch("matplotlib.pyplot.show")
-    def test_plot_progress_with_iteration(
+    def test_plot_progress_with_design_variables(
         self,
-        mock_show,
-        mock_subplots,
         mock_close,
-        mock_optimization_results,
-        mock_system_target_params,
-    ):
-        """Test plotting with iteration as x-axis."""
-        # Mock the subplot and axes objects
-        mock_fig = MagicMock()
-        mock_axes = MagicMock()
-        mock_subplots.return_value = (mock_fig, mock_axes)
-
-        qubit_freq = param("qubit_1", "freq")
-
-        # Create plot settings with iteration as x-axis
-        plot_settings = {
-            "Qubit Frequency Progress": [
-                OptPltSet(ITERATION, qubit_freq, "Iteration", "Frequency (Hz)"),
-            ]
-        }
-
-        # Run the function
-        plot_progress(
-            mock_optimization_results,
-            mock_system_target_params,
-            plot_settings,
-            block_plots=False,
-        )
-
-        # Verify close was called to clear previous plots
-        assert mock_close.call_count == 1
-
-    @patch("matplotlib.pyplot.subplots")
-    @patch("matplotlib.pyplot.show")
-    def test_plot_progress_with_design_variable(
-        self,
         mock_show,
         mock_subplots,
+        mock_figure,
         mock_optimization_results,
         mock_system_target_params,
+        mock_plot_settings,
+        mock_opt_target_list,
     ):
-        """Test plotting with design variable as x-axis."""
+        """Test plotting with design variables option."""
         # Mock the subplot and axes objects
         mock_fig = MagicMock()
         mock_axes = MagicMock()
         mock_subplots.return_value = (mock_fig, mock_axes)
 
-        qubit_freq = param("qubit_1", "freq")
-        design_var_lj = "design_var_lj_qubit_1"
-
-        # Create plot settings with design variable as x-axis
-        plot_settings = {
-            "Frequency vs LJ": [
-                OptPltSet(design_var_lj, qubit_freq, "LJ (nH)", "Frequency (Hz)"),
-            ]
-        }
-
-        # Run the function
+        # Run the function with design variables
         plot_progress(
-            mock_optimization_results,
+            [mock_optimization_results],
             mock_system_target_params,
-            plot_settings,
+            mock_plot_settings,
             block_plots=False,
+            plot_design_variables="sorted",
+            opt_target_list=mock_opt_target_list,
         )
 
-        # Verify subplots was called with the right number of panels
-        mock_subplots.assert_called_once()
-
-    @patch("matplotlib.pyplot.subplots")
-    @patch("matplotlib.pyplot.show")
-    def test_plot_progress_multiple_panels(
-        self,
-        mock_show,
-        mock_subplots,
-        mock_optimization_results,
-        mock_system_target_params,
-    ):
-        """Test plotting with multiple panels in a single figure."""
-        # Mock the subplot and axes objects
-        mock_fig = MagicMock()
-        mock_axes = MagicMock()
-        mock_subplots.return_value = (
-            mock_fig,
-            [mock_axes, mock_axes],
-        )  # Return list of axes
-
-        qubit_freq = param("qubit_1", "freq")
-        resonator_freq = param("resonator_1", "freq")
-
-        # Create plot settings with multiple panels
-        plot_settings = {
-            "Frequency Progress": [
-                OptPltSet(ITERATION, qubit_freq, "Iteration", "Qubit Frequency (Hz)"),
-                OptPltSet(
-                    ITERATION, resonator_freq, "Iteration", "Resonator Frequency (Hz)"
-                ),
-            ]
-        }
-
-        # Run the function
-        plot_progress(
-            mock_optimization_results,
-            mock_system_target_params,
-            plot_settings,
-            block_plots=False,
-        )
-
-        # Verify subplots was called with 2 panels
-        mock_subplots.assert_called_once_with(2)
-
-    @patch("matplotlib.pyplot.subplots")
-    @patch("matplotlib.pyplot.show")
-    def test_plot_progress_log_scale(
-        self,
-        mock_show,
-        mock_subplots,
-        mock_optimization_results,
-        mock_system_target_params,
-    ):
-        """Test plotting with log scales."""
-        # Mock the subplot and axes objects
-        mock_fig = MagicMock()
-        mock_axes = MagicMock()
-        mock_subplots.return_value = (mock_fig, mock_axes)
-
-        qubit_freq = param("qubit_1", "freq")
-
-        # Create plot settings with log scales
-        plot_settings = {
-            "Log Scale Test": [
-                OptPltSet(
-                    ITERATION,
-                    qubit_freq,
-                    "Iteration",
-                    "Frequency (Hz)",
-                    x_scale="log",
-                    y_scale="log",
-                ),
-            ]
-        }
-
-        # Run the function
-        plot_progress(
-            mock_optimization_results,
-            mock_system_target_params,
-            plot_settings,
-            block_plots=False,
-        )
-
-        # Verify that set_xscale and set_yscale were called with "log"
-        mock_axes.set_xscale.assert_called_with("log")
-        mock_axes.set_yscale.assert_called_with("log")
-
-
-@pytest.fixture
-def realistic_optimization_data():
-    """Create a more realistic set of optimization data."""
-    # Define parameter names
-    qubit_freq = param("qubit_1", "freq")
-    resonator_freq = param("resonator_1", "freq")
-    qubit_kappa = param("qubit_1", "kappa")
-    resonator_kappa = param("resonator_1", "kappa")
-    anharmonicity = param_nonlin("qubit_1", "qubit_1")
-    cross_kerr = param_nonlin("qubit_1", "resonator_1")
-
-    # Create iterations with improving results
-    iterations = []
-    for i in range(5):
-        # Gradually improve parameters toward target
-        progress = i / 4.0  # 0 to 1
-
-        # System parameters get closer to target
-        iterations.append(
-            {
-                "system_optimized_params": {
-                    qubit_freq: 5.0e9 + progress * 0.2e9,  # 5.0 to 5.2 GHz
-                    resonator_freq: 7.0e9 - progress * 0.2e9,  # 7.0 to 6.8 GHz
-                    qubit_kappa: 1e4 + progress * 1e4,  # 10 to 20 kHz
-                    resonator_kappa: 5e5 + progress * 1e5,  # 500 to 600 kHz
-                    anharmonicity: -200e6 - progress * 20e6,  # -200 to -220 MHz
-                    cross_kerr: 0.8e6 + progress * 0.4e6,  # 0.8 to 1.2 MHz
-                },
-                "design_variables": {
-                    "design_var_lj_qubit_1": f"{10.0 - progress * 0.5}nH",  # 10.0 to 9.5 nH
-                    "design_var_width_qubit_1": f"{20.0 + progress * 1.0}um",  # 20.0 to 21.0 um
-                    "design_var_length_resonator_1": f"{5000.0 + progress * 200.0}um",  # 5000 to 5200 um
-                    "design_var_coupl_length_resonator_1_qubit_1": f"{100.0 + progress * 10.0}um",  # 100 to 110 um
-                },
-            }
-        )
-
-    # System target parameters
-    system_target_params = {
-        qubit_freq: 5.2e9,
-        resonator_freq: 6.8e9,
-        qubit_kappa: 2e4,
-        resonator_kappa: 6e5,
-        anharmonicity: -220e6,
-        cross_kerr: 1.2e6,
-    }
-
-    # Plot settings with multiple figures and panels
-    plot_settings = {
-        "Frequencies": [
-            OptPltSet(
-                ITERATION, [qubit_freq, resonator_freq], "Iteration", "Frequency (Hz)"
-            ),
-        ],
-        "Linewidths": [
-            OptPltSet(
-                ITERATION,
-                [qubit_kappa, resonator_kappa],
-                "Iteration",
-                "Linewidth (Hz)",
-                y_scale="log",
-            ),
-        ],
-        "Nonlinearities": [
-            OptPltSet(
-                ITERATION, [anharmonicity, cross_kerr], "Iteration", "Nonlinearity (Hz)"
-            ),
-        ],
-        "Design Variables": [
-            OptPltSet(
-                ITERATION, "design_var_lj_qubit_1", "Iteration", "Inductance (nH)"
-            ),
-            OptPltSet(ITERATION, "design_var_width_qubit_1", "Iteration", "Width (um)"),
-        ],
-        "Performance vs Design": [
-            OptPltSet(
-                "design_var_lj_qubit_1", qubit_freq, "Inductance (nH)", "Frequency (Hz)"
-            ),
-            OptPltSet(
-                "design_var_coupl_length_resonator_1_qubit_1",
-                cross_kerr,
-                "Coupling Length (um)",
-                "Cross-Kerr (Hz)",
-            ),
-        ],
-    }
-
-    return {
-        "optimization_results": iterations,
-        "system_target_params": system_target_params,
-        "plot_settings": plot_settings,
-    }
-
-
-class TestPlotProgressIntegration:
-    """Integration tests for the plot_progress function with realistic data."""
-
-    @patch("matplotlib.pyplot.figure")
-    @patch("matplotlib.pyplot.subplots")
-    @patch("matplotlib.pyplot.show")
-    def test_realistic_data(
-        self, mock_show, mock_subplots, mock_figure, realistic_optimization_data
-    ):
-        """Test with a more realistic dataset."""
-        # Mock the subplot and axes objects
-        mock_fig = MagicMock()
-        mock_axes = MagicMock()
-        mock_subplots.return_value = (mock_fig, mock_axes)
-
-        # Run the function with realistic data
-        plot_progress(
-            realistic_optimization_data["optimization_results"],
-            realistic_optimization_data["system_target_params"],
-            realistic_optimization_data["plot_settings"],
-            block_plots=False,
-        )
-
-        # Check that all 5 figures were created (one for each key in plot_settings)
-        assert mock_subplots.call_count == 5, "Wrong number of figures created"
-
-        # Verify titles were set
-        assert mock_fig.suptitle.call_count == 5, "Wrong number of titles set"
-
-        # Verify show was called once
+        # Should create 3x the number of figures (standard + params vs design + design vs iteration)
+        assert mock_subplots.call_count == len(mock_plot_settings) * 3
         assert mock_show.call_count == 1, "plt.show() should be called once"
 
     @patch("matplotlib.pyplot.figure")
     @patch("matplotlib.pyplot.subplots")
     @patch("matplotlib.pyplot.show")
-    def test_empty_results(
-        self, mock_show, mock_subplots, mock_figure, realistic_optimization_data
+    def test_plot_progress_with_variance(
+        self,
+        mock_show,
+        mock_subplots,
+        mock_figure,
+        mock_optimization_results,
+        mock_system_target_params,
+        mock_plot_settings,
     ):
-        """Test behavior with empty optimization results."""
+        """Test plotting with variance option."""
         # Mock the subplot and axes objects
         mock_fig = MagicMock()
         mock_axes = MagicMock()
         mock_subplots.return_value = (mock_fig, mock_axes)
 
-        # Use empty results
-        empty_results = []
+        # Create multiple runs for variance plotting
+        multiple_runs = [mock_optimization_results, mock_optimization_results]
 
-        # Run the function
+        # Run the function with variance
         plot_progress(
-            empty_results,
-            realistic_optimization_data["system_target_params"],
-            realistic_optimization_data["plot_settings"],
+            multiple_runs,
+            mock_system_target_params,
+            mock_plot_settings,
             block_plots=False,
+            plot_variance=True,
         )
 
-        # Should still create the figures but won't have data to plot
-        assert (
-            mock_subplots.call_count == 5
-        ), "Should create figures even with empty results"
+        # Should create the standard number of figures
+        assert mock_subplots.call_count == len(mock_plot_settings)
         assert mock_show.call_count == 1, "plt.show() should be called once"
+
+    def test_plot_progress_invalid_args(self):
+        """Test that invalid arguments raise appropriate errors."""
+        # Test invalid plot_design_variables value
+        with pytest.raises(ValueError):
+            plot_progress(
+                [[]],  # Empty list of optimization results
+                {},  # Empty system target params
+                {},  # Empty plot settings
+                plot_design_variables="invalid",
+            )
+
+        # Test missing opt_target_list when plot_design_variables is set
+        with pytest.raises(ValueError):
+            plot_progress(
+                [[]],  # Empty list of optimization results
+                {},  # Empty system target params
+                {"Test": [OptPltSet("x", "y")]},  # Non-empty plot settings
+                plot_design_variables="sorted",
+                opt_target_list=None,
+            )
