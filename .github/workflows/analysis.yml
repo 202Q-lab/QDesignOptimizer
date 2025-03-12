@@ -19,7 +19,6 @@ jobs:
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@v3
         with:
-            miniforge-variant: Mambaforge
             miniforge-version: latest
             activate-environment: qdesignenv
       - uses: actions/cache@v3
