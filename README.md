@@ -92,9 +92,9 @@ This installs:
 To build the documentation yourself, install [pandoc](https://pandoc.org/) and run:
 
 ```bash
-poetry run sphinx-build -b html docs/source docs/_build/html
+poetry run sphinx-build -b html docs/source docs/build
 ```
 
 ## License
 
-This project is licensed under the Apache License 2.0.
+This project is licensed under the Apache License 2.0. See the [LICENSE](https://github.com/202Q-lab/QDesignOptimizer/blob/main/LICENSE.txt) file for details.

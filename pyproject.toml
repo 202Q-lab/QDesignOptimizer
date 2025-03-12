@@ -11,7 +11,7 @@ license = "Apache License 2.0"
 readme = "README.md"
 keywords = ["Quantum"]
 classifiers = ["Programming Language :: Python :: 3"]
-requires-python = "3.10.*"
+requires-python = ">=3.10,<3.11"
 dependencies = [
   "addict==2.4.0",
   "descartes==1.1.0",
