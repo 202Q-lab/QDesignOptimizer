@@ -1,5 +1,6 @@
 name: Publish to TestPyPI
-on: [push]
+on:
+  workflow_dispatch:
 
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually
@@ -35,5 +36,4 @@ jobs:
           poetry config pypi-token.test-pypi "${{ secrets.TEST_PYPI_TOKEN }}"
       - name: Publish package
         run: |
-          poetry build -l rc # release candidate
-          poetry publish -r test-pypi
+          poetry publish --build -r test-pypi
