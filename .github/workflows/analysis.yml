@@ -10,25 +10,32 @@ jobs:
         os: ["windows-latest"]
         python-version: ["3.10.4"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Cache conda
+        uses: actions/cache@v3
+        env:
+          # Increase this value to reset cache if etc/example-environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          # Use faster GNU tar
+          enableCrossOsArchive: true
+          path: D:\conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('etc/example-environment.yml') }}
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          miniconda-version: 'latest'
-          channels: conda-forge
-          mamba-version: "*"
-          channel-priority: true
-          auto-update-conda: false
-          auto-activate-base: false
-          environment-file: environment.yml
-          activate-environment: qdesignenv
+          activate-environment: anaconda-client-env
+          channel-priority: strict
+          environment-file: etc/example-environment.yml
+          pkgs-dirs: D:\conda_pkgs_dir
       - name: Install project and dependencies
         run: |
-          conda activate qdesignenv
           poetry install --with analysis
           pip install --no-deps qiskit-metal==0.1.5
       - name: Analyze the code with pylint
         run: |
-          pylint src || pylint-exit $?
+          pylint src
       - name: Run tests
         run: |
           pytest tests
