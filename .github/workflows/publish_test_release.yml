@@ -9,11 +9,6 @@ jobs:
   pypi-publish:
     name: Upload release to TestPyPI
     runs-on: windows-latest
-    environment:
-      name: testpypi
-      url: https://pypi.org/project/qdesignoptimizer/
-    permissions:
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Setup Conda
@@ -36,7 +31,9 @@ jobs:
           pip install --no-deps qiskit-metal==0.1.5
       - name: Package project
         run: poetry build -l rc # release candidate
-      - name: Publish package distributions to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
+      - name: Add credentials
+        run: |
+          poetry config repositories.test-pypi https://test.pypi.org/legacy/
+          poetry config pypi-token.test-pypi "${{ secrets.TEST_PYPI_TOKEN }}"
+      - name: Publish package
+        run:  poetry publish -r test-pypi

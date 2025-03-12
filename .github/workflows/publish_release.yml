@@ -37,5 +37,7 @@ jobs:
           pip install --no-deps qiskit-metal==0.1.5
       - name: Package project
         run: poetry build
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Add credentials
+        run: poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
+      - name: Publish package
+        run: poetry publish
