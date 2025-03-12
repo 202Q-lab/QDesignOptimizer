@@ -1,6 +1,5 @@
 name: Publish to TestPyPI
-on:
-  workflow_dispatch:
+on: [push]
 
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually
@@ -36,6 +35,6 @@ jobs:
           poetry install --with docs,analysis
           pip install --no-deps qiskit-metal==0.1.5
       - name: Package project
-        run: poetry build
+        run: poetry build -l rc # release candidate
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
