@@ -1,6 +1,9 @@
 name: Lint-Test-Mypy
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '.github/**'
 
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually
