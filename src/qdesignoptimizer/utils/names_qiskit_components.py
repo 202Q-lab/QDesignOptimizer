@@ -19,7 +19,7 @@ def name_id(identifier: Union[str, int]) -> QiskitComponentName:
     return f"name_{identifier}"
 
 
-def name_mode(identifier: Mode):
+def name_mode(identifier: Mode) -> QiskitComponentName:
     """Create a component name from a mode identifier."""
     return f"name_{identifier}"
 

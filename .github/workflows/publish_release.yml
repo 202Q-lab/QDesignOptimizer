@@ -1,5 +1,7 @@
-name: Docs
-on: [push]
+name: Publish to PyPI
+on:
+  release:
+    types: [published]
 
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually
@@ -34,18 +36,9 @@ jobs:
         run: |
           poetry install --with docs
           pip install --no-deps qiskit-metal==0.1.5
-      - name: Install Pandoc
+      - name: Add credentials
         shell: pwsh
-        run: |
-          choco install pandoc
-      - name: Compile documentation
+        run: poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
+      - name: Publish package
         shell: pwsh
-        run: |
-          cd docs
-          sphinx-build source build
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/build
+        run: poetry publish --build

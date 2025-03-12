@@ -2,36 +2,40 @@ name: Lint-Test-Mypy
 
 on: [push]
 
+env:
+  CACHE_NUMBER: 0  # increase to reset cache manually
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["windows-latest"]
+        include:
+          - os: windows-latest
+            label: win-64
+            prefix: C:\Miniconda3\envs\qdesignenv
     steps:
       - uses: actions/checkout@v4
-      - name: Cache conda
-        uses: actions/cache@v3
-        env:
-          # Increase this value to reset cache if etc/example-environment.yml has not changed
-          CACHE_NUMBER: 0
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          # Use faster GNU tar
-          enableCrossOsArchive: true
-          path: D:\conda_pkgs_dir
-          key:
-            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
-            hashFiles('etc/example-environment.yml') }}
-      - uses: conda-incubator/setup-miniconda@v3
+            miniforge-variant: Mambaforge
+            miniforge-version: latest
+            activate-environment: qdesignenv
+      - uses: actions/cache@v3
         with:
-          activate-environment: qdesignenv
-          channel-priority: strict
-          environment-file: environment.yml
-          pkgs-dirs: D:\conda_pkgs_dir
+          path: ${{ matrix.prefix }}
+          key: ${{ matrix.label }}-conda-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
+        id: cache
+      - name: Update environment
+        run: conda env update -n qdesignenv -f environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+
       - name: Install project and dependencies
         run: |
           poetry install --with analysis
           pip install --no-deps qiskit-metal==0.1.5
+
       - name: Analyze the code with pylint
         continue-on-error: true
         run: |
