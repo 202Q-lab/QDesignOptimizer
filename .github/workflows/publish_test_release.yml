@@ -36,5 +36,7 @@ jobs:
           pip install --no-deps qiskit-metal==0.1.5
       - name: Package project
         run: poetry build -l rc # release candidate
-      - name: Publish package distributions to PyPI
+      - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
