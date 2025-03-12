@@ -19,27 +19,29 @@ jobs:
       uses: abatilo/actions-poetry@v3
       with:
         poetry-version: "latest"
-    - name: cache deps
+    - name: Cache deps
       id: cache-deps
       uses: actions/cache@v3
       with:
         path: .venv
         key: pydeps-${{ hashFiles('**/poetry.lock') }}
 
-    - name: install_dependencies_only
+    - name: Install_dependencies_only
       run: |
         poetry install --no-interaction --no-root --with analysis
       if: steps.cache-deps.outputs.cache-hit != 'true'
 
     - name: Activate virtual environment
-      run: . $VENV
+      run: |
+        .\venv\Scripts\activate
+        echo PATH=$PATH >> $GITHUB_ENV
 
-    - name: install_project
+    - name: Install_project and qiskit-metal
       run: |
         poetry install --no-interaction
         pip install --no-deps qiskit-metal==0.1.5
 
-    - name: analyze the code with pylint
+    - name: Analyze the code with pylint
       run: |
         pylint src || pylint-exit $?
 
