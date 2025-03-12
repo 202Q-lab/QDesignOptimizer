@@ -25,9 +25,9 @@ jobs:
             hashFiles('etc/example-environment.yml') }}
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: anaconda-client-env
+          activate-environment: qdesignenv
           channel-priority: strict
-          environment-file: etc/example-environment.yml
+          environment-file: environment.yml
           pkgs-dirs: D:\conda_pkgs_dir
       - name: Install project and dependencies
         run: |
