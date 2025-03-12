@@ -10,45 +10,28 @@ jobs:
         os: ["windows-latest"]
         python-version: ["3.10.4"]
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install and configure poetry
-      uses: abatilo/actions-poetry@v3
-      with:
-        poetry-version: "latest"
-    - name: Cache deps
-      id: cache-deps
-      uses: actions/cache@v3
-      with:
-        path: .venv
-        key: pydeps-${{ hashFiles('**/poetry.lock') }}
-
-    - name: Install_dependencies_only
-      run: |
-        poetry install --no-interaction --no-root --with analysis
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-
-    - name: Activate virtual environment
-      run: |
-        .\venv\Scripts\activate
-        echo PATH=$PATH >> $GITHUB_ENV
-
-    - name: Install_project and qiskit-metal
-      run: |
-        poetry install --no-interaction
-        pip install --no-deps qiskit-metal==0.1.5
-
-    - name: Analyze the code with pylint
-      run: |
-        pylint src || pylint-exit $?
-
-    - name: Running tests
-      run: |
-        pytest tests
-
-    - name: Running Mypy analysis
-      run: |
-        mypy src
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: 'latest'
+          channels: conda-forge
+          mamba-version: "*"
+          channel-priority: true
+          auto-update-conda: false
+          auto-activate-base: false
+          environment-file: environment.yml
+          activate-environment: qdesignenv
+      - name: Install project and dependencies
+        run: |
+          conda activate qdesignenv
+          poetry install --with analysis
+          pip install --no-deps qiskit-metal==0.1.5
+      - name: Analyze the code with pylint
+        run: |
+          pylint src || pylint-exit $?
+      - name: Run tests
+        run: |
+          pytest tests
+      - name: Analyze the code with Mypy
+        run: |
+          mypy src
