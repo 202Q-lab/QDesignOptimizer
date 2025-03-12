@@ -1,17 +1,17 @@
-name: Publish to PyPI
+name: Publish to TestPyPI
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually
   label: win-64
 
 jobs:
   pypi-publish:
-    name: Upload release to PyPI
+    name: Upload release to TestPyPI
     runs-on: windows-latest
     environment:
-      name: pypi
+      name: testpypi
       url: https://pypi.org/project/qdesignoptimizer/
     permissions:
       id-token: write
