@@ -29,11 +29,11 @@ jobs:
         run: |
           poetry install --with docs,analysis
           pip install --no-deps qiskit-metal==0.1.5
-      - name: Package project
-        run: poetry build -l rc # release candidate
       - name: Add credentials
         run: |
           poetry config repositories.test-pypi https://test.pypi.org/legacy/
           poetry config pypi-token.test-pypi "${{ secrets.TEST_PYPI_TOKEN }}"
       - name: Publish package
-        run:  poetry publish -r test-pypi
+        run: |
+          poetry build -l rc # release candidate
+          poetry publish -r test-pypi

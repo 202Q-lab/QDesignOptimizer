@@ -10,11 +10,6 @@ jobs:
   pypi-publish:
     name: Upload release to PyPI
     runs-on: windows-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/qdesignoptimizer/
-    permissions:
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Setup Conda
@@ -35,9 +30,7 @@ jobs:
         run: |
           poetry install --with docs,analysis
           pip install --no-deps qiskit-metal==0.1.5
-      - name: Package project
-        run: poetry build
       - name: Add credentials
         run: poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
       - name: Publish package
-        run: poetry publish
+        run: poetry publish --build
