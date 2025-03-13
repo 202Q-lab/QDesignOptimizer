@@ -538,7 +538,6 @@ class DesignAnalysis:
             for idx, name in enumerate(design_var_names_to_minimize):
                 all_design_var_updated[name] = design_var_vals_updated[idx]
             cost = 0
-            x_list, y_list = np.load(r"out/temp_list.npy").tolist()
             for target in targets_to_minimize_for:
                 Q_k1_i = (
                     self.get_parameter_value(target, all_parameters_current)
@@ -552,21 +551,6 @@ class DesignAnalysis:
                     )
                     - 1
                 ) ** 2
-                if "design_var_lj_qubit_1" in design_var_names_to_minimize:
-                    x_list.append(all_design_var_updated["design_var_lj_qubit_1"])
-                    y_list.append(all_design_var_updated["design_var_coupl_length_qubit_1_resonator_1"])
-                    temp_list = [x_list,y_list]
-                    np.save(r"out/temp_list.npy",temp_list)
-                # print("Cost function", self.get_parameter_value(target, all_parameters_current),
-                #     target.prop_to(all_parameters_targets_met, all_design_var_updated),
-                #     # all_design_var_updated[n.design_var_width()],
-                #     target.prop_to(all_parameters_current, all_design_var_current),
-                #     self.get_parameter_value(target, all_parameters_targets_met))
-                # print("design_var_lj",all_design_var_updated["design_var_lj_qubit_1"],all_design_var_updated["design_var_width_qubit_1"]),
-                if math.isnan(target.prop_to(all_parameters_targets_met, all_design_var_updated)):
-                    print(all_design_var_updated)
-                    print(all_design_var_updated[n.design_var_lj(target.involved_modes[0])],all_design_var_updated[n.design_var_width(target.involved_modes[0])]),
-                    dsds
                     
             return cost
 
@@ -580,7 +564,6 @@ class DesignAnalysis:
 
 
         final_cost = cost_function([all_design_var_updated[name] for name in design_var_names_to_minimize])
-        # print("final_cost: ", final_cost, "init_design_var: ", init_design_var)
         return {"result": min_result, "targets_to_minimize_for": [target.design_var for target in targets_to_minimize_for], "final_cost": final_cost}
 
     def get_system_params_targets_met(self):
