@@ -1,9 +1,6 @@
 import json
 from copy import deepcopy
-import math
 from typing import List, Optional
-
-import qdesignoptimizer.utils.names_design_variables as n
 
 import numpy as np
 import pandas as pd
@@ -520,13 +517,16 @@ class DesignAnalysis:
             target.design_var for target in targets_to_minimize_for
         ]
         bounds_for_targets = [
-            (get_value_and_unit(target.design_var_constraint["larger_than"])[0],get_value_and_unit(target.design_var_constraint["smaller_than"])[0]) for target in targets_to_minimize_for
+            (
+                get_value_and_unit(target.design_var_constraint["larger_than"])[0],
+                get_value_and_unit(target.design_var_constraint["smaller_than"])[0],
+            )
+            for target in targets_to_minimize_for
         ]
 
         init_design_var = []
         init_design_var = [
-            all_design_var_current[name]
-            for name in design_var_names_to_minimize
+            all_design_var_current[name] for name in design_var_names_to_minimize
         ]
 
         def cost_function(design_var_vals_updated):
@@ -551,20 +551,35 @@ class DesignAnalysis:
                     )
                     - 1
                 ) ** 2
-                    
+
             return cost
 
         min_result = scipy.optimize.minimize(
-            cost_function, init_design_var, tol=self.minimization_tol,bounds=bounds_for_targets
+            cost_function,
+            init_design_var,
+            tol=self.minimization_tol,
+            bounds=bounds_for_targets,
         )
 
-        for idx,name in enumerate(design_var_names_to_minimize):
-            if all_design_var_updated[name]==bounds_for_targets[idx][0] or all_design_var_updated[name]==bounds_for_targets[idx][1]:
-                log.warning(f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or readjusting the ")
+        for idx, name in enumerate(design_var_names_to_minimize):
+            if (
+                all_design_var_updated[name] == bounds_for_targets[idx][0]
+                or all_design_var_updated[name] == bounds_for_targets[idx][1]
+            ):
+                log.warning(
+                    f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or readjusting the "
+                )
 
-
-        final_cost = cost_function([all_design_var_updated[name] for name in design_var_names_to_minimize])
-        return {"result": min_result, "targets_to_minimize_for": [target.design_var for target in targets_to_minimize_for], "final_cost": final_cost}
+        final_cost = cost_function(
+            [all_design_var_updated[name] for name in design_var_names_to_minimize]
+        )
+        return {
+            "result": min_result,
+            "targets_to_minimize_for": [
+                target.design_var for target in targets_to_minimize_for
+            ],
+            "final_cost": final_cost,
+        }
 
     def get_system_params_targets_met(self):
         system_params_targets_met = deepcopy(self.system_optimized_params)
@@ -613,7 +628,7 @@ class DesignAnalysis:
             target for target in self.opt_targets if target.independent_target
         ]
 
-        if independent_targets is not []:
+        if independent_targets:
             for independent_target in independent_targets:
                 minimization_result = self._minimize_for_design_vars(
                     [independent_target],
@@ -627,8 +642,7 @@ class DesignAnalysis:
         dependent_targets = [
             target for target in self.opt_targets if not target.independent_target
         ]
-        if len(dependent_targets) != 0:
-            np.save(r"out/temp_list.npy",[[],[]])
+        if dependent_targets:
             minimization_result = self._minimize_for_design_vars(
                 dependent_targets,
                 design_vars_current,
@@ -717,7 +731,7 @@ class DesignAnalysis:
                 "system_target_params": self.system_target_params,
                 "plot_settings": self.plot_settings,
                 "design_analysis_version": self.design_analysis_version,
-                "minimization_results": self.minimization_results
+                "minimization_results": self.minimization_results,
             }
         ]
         if self.save_path is not None:
