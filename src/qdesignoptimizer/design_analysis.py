@@ -1,6 +1,9 @@
 import json
 from copy import deepcopy
+import math
 from typing import List, Optional
+
+import qdesignoptimizer.utils.names_design_variables as n
 
 import numpy as np
 import pandas as pd
@@ -117,6 +120,7 @@ class DesignAnalysis:
             self.mini_study.max_mesh_length_port
         )
         self._validate_opt_targets()
+        self.minimization_results = []
 
         assert (
             not self.system_target_params is self.system_optimized_params
@@ -434,8 +438,8 @@ class DesignAnalysis:
                     f"Warning: capacitance {capacitance_names} not found in capacitance matrix with names {capacitance_matrix.columns}"
                 )
 
-        log.info("Computing T1 limit from decay in charge line.")
         if isinstance(capacitance_study, ModeDecayIntoChargeLineStudy):
+            log.info("Computing T1 limit from decay in charge line.")
             self.system_optimized_params[
                 param(capacitance_study.mode, PURCELL_LIMIT_T1)
             ] = capacitance_study.get_t1_limit_due_to_decay_into_charge_line()
@@ -512,19 +516,29 @@ class DesignAnalysis:
         """Minimize the cost function to find the optimal design variables to reach the target.
         The all_design_var_updated variable is automatically updated with the optimal design variables during the minimization.
         """
-        ordered_design_var_names_to_minimize = [
+        design_var_names_to_minimize = [
             target.design_var for target in targets_to_minimize_for
         ]
+        bounds_for_targets = [
+            (get_value_and_unit(target.design_var_constraint["larger_than"])[0],get_value_and_unit(target.design_var_constraint["smaller_than"])[0]) for target in targets_to_minimize_for
+        ]
 
-        def cost_function(ordered_design_var_vals_updated):
+        init_design_var = []
+        init_design_var = [
+            all_design_var_current[name]
+            for name in design_var_names_to_minimize
+        ]
+
+        def cost_function(design_var_vals_updated):
             """Cost function to minimize.
 
             Args:
                 ordered_design_var_vals_updated (List[float]): list of updated design variable values
             """
-            for idx, name in enumerate(ordered_design_var_names_to_minimize):
-                all_design_var_updated[name] = ordered_design_var_vals_updated[idx]
+            for idx, name in enumerate(design_var_names_to_minimize):
+                all_design_var_updated[name] = design_var_vals_updated[idx]
             cost = 0
+            x_list, y_list = np.load(r"out/temp_list.npy").tolist()
             for target in targets_to_minimize_for:
                 Q_k1_i = (
                     self.get_parameter_value(target, all_parameters_current)
@@ -538,17 +552,36 @@ class DesignAnalysis:
                     )
                     - 1
                 ) ** 2
+                if "design_var_lj_qubit_1" in design_var_names_to_minimize:
+                    x_list.append(all_design_var_updated["design_var_lj_qubit_1"])
+                    y_list.append(all_design_var_updated["design_var_coupl_length_qubit_1_resonator_1"])
+                    temp_list = [x_list,y_list]
+                    np.save(r"out/temp_list.npy",temp_list)
+                # print("Cost function", self.get_parameter_value(target, all_parameters_current),
+                #     target.prop_to(all_parameters_targets_met, all_design_var_updated),
+                #     # all_design_var_updated[n.design_var_width()],
+                #     target.prop_to(all_parameters_current, all_design_var_current),
+                #     self.get_parameter_value(target, all_parameters_targets_met))
+                # print("design_var_lj",all_design_var_updated["design_var_lj_qubit_1"],all_design_var_updated["design_var_width_qubit_1"]),
+                if math.isnan(target.prop_to(all_parameters_targets_met, all_design_var_updated)):
+                    print(all_design_var_updated)
+                    print(all_design_var_updated[n.design_var_lj(target.involved_modes[0])],all_design_var_updated[n.design_var_width(target.involved_modes[0])]),
+                    dsds
+                    
             return cost
 
-        init_design_var = []
-        init_design_var = [
-            all_design_var_current[name]
-            for name in ordered_design_var_names_to_minimize
-        ]
-
-        scipy.optimize.minimize(
-            cost_function, init_design_var, tol=self.minimization_tol
+        min_result = scipy.optimize.minimize(
+            cost_function, init_design_var, tol=self.minimization_tol,bounds=bounds_for_targets
         )
+
+        for idx,name in enumerate(design_var_names_to_minimize):
+            if all_design_var_updated[name]==bounds_for_targets[idx][0] or all_design_var_updated[name]==bounds_for_targets[idx][1]:
+                log.warning(f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or readjusting the ")
+
+
+        final_cost = cost_function([all_design_var_updated[name] for name in design_var_names_to_minimize])
+        # print("final_cost: ", final_cost, "init_design_var: ", init_design_var)
+        return {"result": min_result, "targets_to_minimize_for": [target.design_var for target in targets_to_minimize_for], "final_cost": final_cost}
 
     def get_system_params_targets_met(self):
         system_params_targets_met = deepcopy(self.system_optimized_params)
@@ -572,6 +605,7 @@ class DesignAnalysis:
 
     def _calculate_target_design_var(self) -> dict:
         """Calculate the new design value for the optimization targets."""
+        self.minimization_results = []
 
         system_params_current = deepcopy(self.system_optimized_params)
         system_params_targets_met = self.get_system_params_targets_met()
@@ -598,25 +632,28 @@ class DesignAnalysis:
 
         if independent_targets is not []:
             for independent_target in independent_targets:
-                self._minimize_for_design_vars(
+                minimization_result = self._minimize_for_design_vars(
                     [independent_target],
                     design_vars_current,
                     design_vars_updated,
                     system_params_current,
                     system_params_targets_met,
                 )
+                self.minimization_results.append(minimization_result)
 
         dependent_targets = [
             target for target in self.opt_targets if not target.independent_target
         ]
         if len(dependent_targets) != 0:
-            self._minimize_for_design_vars(
+            np.save(r"out/temp_list.npy",[[],[]])
+            minimization_result = self._minimize_for_design_vars(
                 dependent_targets,
                 design_vars_current,
                 design_vars_updated,
                 system_params_current,
                 system_params_targets_met,
             )
+            self.minimization_results.append(minimization_result)
 
         # Stitch back the unit of the design variable values
         design_vars_updated_constrained_str = {}
@@ -697,6 +734,7 @@ class DesignAnalysis:
                 "system_target_params": self.system_target_params,
                 "plot_settings": self.plot_settings,
                 "design_analysis_version": self.design_analysis_version,
+                "minimization_results": self.minimization_results
             }
         ]
         if self.save_path is not None:
