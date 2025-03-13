@@ -78,7 +78,7 @@ def mode(
 
 
 def param(
-    current_mode: Mode,
+    mode_instance: Mode,
     param_type: Literal["freq", "kappa", "charge_line_limited_t1", "capacitance"],
 ) -> Parameter:
     """Construct a parameter name from the mode and parameter type.
@@ -92,7 +92,7 @@ def param(
         "kappa",
         "charge_line_limited_t1",
     ], "param_type must be 'freq' or 'kappa' or 'charge_line_limited_t1"
-    return f"{current_mode}_{param_type}"
+    return f"{mode_instance}_{param_type}"
 
 
 def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:

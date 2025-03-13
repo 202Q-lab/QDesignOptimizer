@@ -317,7 +317,7 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         resonator_name (str): capacitance name of resonator
         waveguide_name (str): capacitance name of waveguide
         waveguide_impedance_Ohm (float): waveguide impedance in Ohm
-        resonator_type (Literal["lambda_4", "lambda_2"]): specifies the type of resonator
+        resonator_type (Literal["lambda_4", "lambda_2"]): specifies the type of resonator to be lambda/4 or lambda/2
     """
 
     _decay_parameter_type = KAPPA  # type: ignore

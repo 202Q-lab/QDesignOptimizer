@@ -358,9 +358,7 @@ class DesignAnalysis:
                         "Please install a more recent version of pyEPR (>=0.8.5.3)"
                     )
 
-            self.eig_solver.setup.junctions = (
-                self.mini_study.jj_setup
-            )  # reset jj_setup for linear HFSS simulation
+            self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
             return chis
         add_msg = ""
@@ -715,7 +713,7 @@ class DesignAnalysis:
                     deepcopy(capacitance_matrix)
                 )
 
-        iteration_result["design_variables"] = deepcopy(self.design.variables)
+        iteration_result["design_variables"] = dict(deepcopy(self.design.variables))
         iteration_result["system_optimized_params"] = deepcopy(
             self.system_optimized_params
         )

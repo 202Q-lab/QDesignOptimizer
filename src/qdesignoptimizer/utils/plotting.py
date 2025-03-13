@@ -8,7 +8,7 @@ import numpy as np
 
 # plotting function
 from qdesignoptimizer.design_analysis_types import OptTarget
-from qdesignoptimizer.sim_plot_progress import plot_progress  # type: ignore
+from qdesignoptimizer.sim_plot_progress import plot_progress
 
 
 def load_data_by_date(

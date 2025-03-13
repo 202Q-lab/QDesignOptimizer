@@ -4,6 +4,8 @@ on:
   push:
     paths-ignore:
       - '.github/**'
+      - '.projects/**'
+      - '.docs/**'
 
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually

@@ -185,14 +185,13 @@ class DataExtractor:
         )
 
     def get_design_var_for_param(
-        self, target_parameter: str, result: OptimizationResult, iteration: int
+        self, target_parameter: str, result: OptimizationResult
     ) -> Tuple[float, str]:
         """Get design variable value and unit for a target parameter.
 
         Args:
             target_parameter: Target parameter name
             result: Optimization result entry
-            iteration: Iteration number
 
         Returns:
             Tuple of (value, unit)
@@ -231,8 +230,8 @@ class DataExtractor:
         if use_design_var_as_x:
             # Use design variable associated with y_param as x
             x_values = [
-                self.get_design_var_for_param(y_param, result, i)[0]
-                for i, result in enumerate(opt_result)
+                self.get_design_var_for_param(y_param, result)[0]
+                for _, result in enumerate(opt_result)
             ]
         else:
             # Use parameter directly
@@ -406,7 +405,7 @@ class OptimizationPlotter:
         self,
         fig: Figure,
         axes: Union[Axes, List[Axes]],
-        plot_configs: List[OptPltSet],
+        plot_settings: List[OptPltSet],
         plot_name: str,
     ) -> None:
         """Create standard parameter vs. iteration plots.
@@ -414,17 +413,17 @@ class OptimizationPlotter:
         Args:
             fig: Matplotlib figure
             axes: Single axis or list of axes
-            plot_configs: List of plot configurations
+            plot_settings: List of plot configurations
             plot_name: Name for the plot (used for saving)
         """
-        if len(plot_configs) == 1:
+        if len(plot_settings) == 1:
             axes = [cast(Axes, axes)]
         else:
             axes = cast(List[Axes], axes)
 
         colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
-        for _, (ax, config) in enumerate(zip(axes, plot_configs)):
+        for _, (ax, config) in enumerate(zip(axes, plot_settings)):
             color = next(colors)
 
             if isinstance(config.y, str):
@@ -517,7 +516,7 @@ class OptimizationPlotter:
         self,
         fig: Figure,
         axes: Union[Axes, List[Axes]],
-        plot_configs: List[OptPltSet],
+        plot_settings: List[OptPltSet],
         plot_name: str,
         sort_by_x: bool = True,
     ) -> None:
@@ -526,11 +525,11 @@ class OptimizationPlotter:
         Args:
             fig: Matplotlib figure
             axes: Single axis or list of axes
-            plot_configs: List of plot configurations
+            plot_settings: List of plot configurations
             plot_name: Name for the plot (used for saving)
             sort_by_x: If True, sort data points by x value
         """
-        if len(plot_configs) == 1:
+        if len(plot_settings) == 1:
             axes = [cast(Axes, axes)]
         else:
             axes = cast(List[Axes], axes)
@@ -542,7 +541,7 @@ class OptimizationPlotter:
 
         colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
-        for ax, config in zip(axes, plot_configs):
+        for ax, config in zip(axes, plot_settings):
             color = next(colors)
 
             if isinstance(config.y, str):
@@ -581,7 +580,7 @@ class OptimizationPlotter:
         first_result = self.extractor.opt_results[0][0]
         design_var_name = self.extractor.get_design_var_name_for_param(y_param)
         _, design_var_unit = self.extractor.get_design_var_for_param(
-            y_param, first_result, 0
+            y_param, first_result
         )
 
         # Set up the axis with proper labels
@@ -617,7 +616,7 @@ class OptimizationPlotter:
         self,
         fig: Figure,
         axes: Union[Axes, List[Axes]],
-        plot_configs: List[OptPltSet],
+        plot_settings: List[OptPltSet],
         plot_name: str,
     ) -> None:
         """Create plots of design variables vs. iteration.
@@ -625,10 +624,10 @@ class OptimizationPlotter:
         Args:
             fig: Matplotlib figure
             axes: Single axis or list of axes
-            plot_configs: List of plot configurations
+            plot_settings: List of plot configurations
             plot_name: Name for the plot (used for saving)
         """
-        if len(plot_configs) == 1:
+        if len(plot_settings) == 1:
             axes = [cast(Axes, axes)]
         else:
             axes = cast(List[Axes], axes)
@@ -640,7 +639,7 @@ class OptimizationPlotter:
 
         colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
-        for ax, config in zip(axes, plot_configs):
+        for ax, config in zip(axes, plot_settings):
             color = next(colors)
 
             if isinstance(config.y, str):
@@ -675,7 +674,7 @@ class OptimizationPlotter:
         first_result = self.extractor.opt_results[0][0]
         design_var_name = self.extractor.get_design_var_name_for_param(y_param)
         _, design_var_unit = self.extractor.get_design_var_for_param(
-            y_param, first_result, 0
+            y_param, first_result
         )
 
         # Set up the axis with proper labels
@@ -691,8 +690,8 @@ class OptimizationPlotter:
 
             # Get design variable values associated with the target parameter
             y_values = [
-                self.extractor.get_design_var_for_param(y_param, result, i)[0]
-                for i, result in enumerate(opt_result)
+                self.extractor.get_design_var_for_param(y_param, result)[0]
+                for result in opt_result
             ]
 
             # Filter out None values
@@ -753,9 +752,9 @@ def plot_progress(
     plotter = OptimizationPlotter(data_extractor, plot_variance, save_figures)
 
     # Create standard parameter plots
-    for plot_name, plot_configs in plot_settings.items():
-        fig, axs = plt.subplots(len(plot_configs))
-        plotter.plot_standard(fig, axs, plot_configs, plot_name)
+    for plot_name, plot_setting in plot_settings.items():
+        fig, axs = plt.subplots(len(plot_setting))
+        plotter.plot_standard(fig, axs, plot_setting, plot_name)
 
         # Create additional plot types if requested
         if plot_design_variables is not None:
@@ -765,18 +764,18 @@ def plot_progress(
                 )
 
             # Plot parameters vs design variables
-            fig, axs = plt.subplots(len(plot_configs))
+            fig, axs = plt.subplots(len(plot_setting))
             plotter.plot_params_vs_design_vars(
                 fig,
                 axs,
-                plot_configs,
+                plot_setting,
                 plot_name,
                 sort_by_x=(plot_design_variables == "sorted"),
             )
 
             # Plot design variables vs iteration
-            fig, axs = plt.subplots(len(plot_configs))
-            plotter.plot_design_vars_vs_iteration(fig, axs, plot_configs, plot_name)
+            fig, axs = plt.subplots(len(plot_setting))
+            plotter.plot_design_vars_vs_iteration(fig, axs, plot_setting, plot_name)
 
     # Show plots
     plt.show(block=block_plots)

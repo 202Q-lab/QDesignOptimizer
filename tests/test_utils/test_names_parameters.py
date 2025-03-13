@@ -32,6 +32,15 @@ class TestNamesParameters:
         with pytest.raises(AssertionError):
             mode("mode_with_to", "identifier")
 
+        with pytest.raises(AssertionError):
+            mode("mode", "identifier_to_error")
+
+        with pytest.raises(AssertionError):
+            mode("mode-error", "identifier")
+
+        with pytest.raises(AssertionError):
+            mode("mode:error", "identifier")
+
     def test_param_creation(self):
         # Test parameter creation
         qubit_mode = mode(QUBIT, 1)
