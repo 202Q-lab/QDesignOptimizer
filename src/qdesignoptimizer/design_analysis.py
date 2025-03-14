@@ -751,6 +751,7 @@ class DesignAnalysis:
         iteration_result["system_optimized_params"] = deepcopy(
             self.system_optimized_params
         )
+        iteration_result["minimization_results"] = deepcopy(self.minimization_results)
 
         self.optimization_results.append(iteration_result)
         simulation = [
@@ -759,7 +760,6 @@ class DesignAnalysis:
                 "system_target_params": self.system_target_params,
                 "plot_settings": self.plot_settings,
                 "design_analysis_version": self.design_analysis_version,
-                "minimization_results": self.minimization_results,
             }
         ]
         if self.save_path is not None:
