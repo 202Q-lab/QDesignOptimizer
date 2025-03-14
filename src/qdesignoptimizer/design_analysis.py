@@ -105,7 +105,7 @@ class DesignAnalysis:
         self.minimization_tol = minimization_tol
 
         self.optimization_results: list[dict] = []
-        self.minimization_results = []
+        self.minimization_results: list[dict] = []
 
         self.renderer.start()
         self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
@@ -592,11 +592,7 @@ class DesignAnalysis:
                 or all_design_var_updated[name] == bounds_for_targets[idx][1]
             ):
                 log.warning(
-                    (
-                        f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds."
-                    )(
-                        "Consider changing the bounds or making the initial design closer to the optimal one."
-                    )
+                    f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or making the initial design closer to the optimal one."
                 )
 
         final_cost = cost_function(
