@@ -137,7 +137,7 @@ def get_mini_study_res_feedline(group: int):
         mode_freq_GHz=pt.PARAM_TARGETS[param(resonator, FREQ)] / 1e9,
         resonator_name=f"second_cpw_name_tee{group}",  # These names must be found from the model list in Ansys
         waveguide_name=f"prime_cpw_name_tee{group}",
-        waveguide_impedance_Ohm=50,
+        impedance_ohm=50,
         resonator_type="lambda_4",
         qiskit_component_names=qiskit_component_names,
         open_pins=[

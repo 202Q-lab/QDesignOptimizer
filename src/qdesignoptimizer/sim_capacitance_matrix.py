@@ -18,29 +18,35 @@ class CapacitanceMatrixStudy:
     """
     Capacitance matrix study for DesignAnalysis.
 
-    When several components are rendered in the capacitance matrix analysis,
-    the union of all connected components will be represented by a unique name,
-    which is a column in the capacitance matrix returned from LOManalysis e.g.
-    by running analyse_capacitance_matrix. We refer to this unique name as the capacitance name.
-    Note that the capacitance name typically change if you change which components are included in the analysis.
+    When several components are rendered in the capacitance matrix analysis, the union of all
+    connected components will be represented by a unique name, which is a column in the capacitance
+    matrix returned from LOManalysis e.g. by running analyse_capacitance_matrix. We refer to this
+    unique name as the capacitance name. Note that the capacitance name typically change if you
+    change which components are included in the analysis.
 
     Args:
-        qiskit_component_names (list):         list of Qiskit component names to be included in the capacitance simulation
-        freq_GHz (float):               Sets the frequency in GHz of the capacitance matrix. Or (not supported yet): If tuple, the simulation will use the frequency from corresponding mode in the EPR analysis.n
-                                        Example1: 5e9, Example2: ('BRANCH_1', 'qubit_freq')
-        open_pins (list):               pins to be left open (called open_terminations in the capacitance matrix simulation),
-                                        Example: [('comp_name', 'pin_name')]
-        x_buffer_width_mm (float):      x buffer width added around the rendered components
-        y_buffer_width_mm (float):      y buffer width added around the rendered components
+        qiskit_component_names (list): list of Qiskit component names to be included in the
+            capacitance simulation
+        freq_GHz (float): Sets the frequency in GHz of the capacitance matrix.
+            Or (not supported yet): If tuple, the simulation will use the frequency from
+            corresponding mode in the EPR analysis.n
 
-        render_qiskit_metal (Callable): if provided, the design will be rerendered using this function before the capacitance simulation
-                                        If a CapacitanceMatrixStudy is used in the DesignAnalysis optimization and self.render_qiskit_metal==None,
-                                        render_qiskit_metal from DesignAnalysisState will be used instead (i.e. it doesn't need to be provided).
-                                        Format: render_qiskit_metal(design, `**kw_args`)
+            Example1: 5e9
+            Example2: ('BRANCH_1', 'qubit_freq')
+        open_pins (list): pins to be left open, called open_terminations in the capacitance matrix
+            simulation.
+
+            Example: [('comp_name', 'pin_name')]
+        x_buffer_width_mm (float): x buffer width added around the rendered components
+        y_buffer_width_mm (float): y buffer width added around the rendered components
+        render_qiskit_metal (Callable): if provided, the design will be rerendered using this
+            function before the capacitance simulation. If a CapacitanceMatrixStudy is used in the
+            DesignAnalysis optimization and self.render_qiskit_metal==None, render_qiskit_metal from
+            DesignAnalysisState will be used instead (i.e. it doesn't need to be provided).
+            Format: render_qiskit_metal(design, `**kw_args`)
         render_qiskit_metal_kwargs (dict): kwargs for render_qiskit_metal
-
-        percent_error (float):          percent error in capacitance simulation
-        nbr_passes (int):               group of passes in capacitance simulation
+        percent_error (float): percent error in capacitance simulation
+        nbr_passes (int): group of passes in capacitance simulation
     """
 
     def __init__(
@@ -80,7 +86,8 @@ class CapacitanceMatrixStudy:
         Set the render_qiskit_metal function to be used before the capacitance simulation.
 
         Args:
-            render_qiskit_metal (Callable): The render_qiskit_metal function. Format: render_qiskit_metal(design, `**kw_args`)
+            render_qiskit_metal (Callable): The render_qiskit_metal function. Format:
+            render_qiskit_metal(design, `**kw_args`)
         """
         self.render_qiskit_metal = render_qiskit_metal
 
@@ -117,12 +124,11 @@ class CapacitanceMatrixStudy:
 class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
     """Base class for mode decay studies using capacitance matrix simulation.
 
-    Since the capacitance should be evaluated at the frequency of the mode,
-    each decay analysis should be done in a separate ModeDecayStudy.
+    Since the capacitance should be evaluated at the frequency of the mode, each decay analysis
+    should be done in a separate ModeDecayStudy.
 
     Args:
-        mode (str): The mode name
-        mode_freq_GHz (float): The mode frequency in GHz
+        mode (str): The mode name mode_freq_GHz (float): The mode frequency in GHz
     """
 
     _decay_parameter_type = None  # To be defined by subclasses
@@ -172,14 +178,13 @@ class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
 class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
     """Mode decay into charge line study by capacitance matrix simulation.
 
-    Since the capacitance should be evaluated at the frequency of the mode,
-    each decay analysis should be done in a separate ModeDecayIntoChargeLineStudy.
+    Since the capacitance should be evaluated at the frequency of the mode, each decay analysis
+    should be done in a separate ModeDecayIntoChargeLineStudy.
 
     Args:
-        mode (str): The mode name
-        mode_freq_GHz (float): The mode frequency in GHz
-        mode_capacitance_name (str or List[str]): capacitance name of mode, if grounded: 1 string of island name,
-                                                if floating: list of 2 strings of respective island name
+        mode (str): The mode name mode_freq_GHz (float): The mode frequency in GHz
+        mode_capacitance_name (str or List[str]): capacitance name of mode, if grounded: 1 string of
+            island name, if floating: list of 2 strings of respective islands names
         charge_line_capacitance_name (str): capacitance name of charge line
         charge_line_impedance_Ohm (float): charge line impedance in Ohm
         ground_plane_capacitance_name (str, optional): capacitance name of ground plane
@@ -308,16 +313,17 @@ class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
 class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
     """Resonator decay into waveguide study by capacitance matrix simulation.
 
-    Since the capacitance should be evaluated at the frequency of the mode,
-    each decay analysis should be done in a separate ResonatorDecayIntoWaveguideStudy.
+    Currently uses a simplified model, assuming that the resonator and waveguide have the same
+    impedance. Since the capacitance should be evaluated at the frequency of the mode, each decay
+    analysis should be done in a separate ResonatorDecayIntoWaveguideStudy.
+
 
     Args:
-        mode (str): The mode name
-        mode_freq_GHz (float): The mode frequency in GHz
-        resonator_name (str): capacitance name of resonator
-        waveguide_name (str): capacitance name of waveguide
-        waveguide_impedance_Ohm (float): waveguide impedance in Ohm
-        resonator_type (Literal["lambda_4", "lambda_2"]): specifies the type of resonator to be lambda/4 or lambda/2
+        mode (str): The mode name mode_freq_GHz (float): The mode frequency in GHz resonator_name
+        (str): capacitance name of resonator waveguide_name (str): capacitance name of waveguide
+        impedance_ohm (float): impedance of the waveguide and the resonator in Ohm resonator_type
+        (Literal["lambda_4", "lambda_2"]): specifies the type of resonator to be lambda/4 or
+        lambda/2
     """
 
     _decay_parameter_type = KAPPA  # type: ignore
@@ -328,7 +334,7 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         mode_freq_GHz: float,
         resonator_name: str,
         waveguide_name: str,
-        waveguide_impedance_Ohm: float,
+        impedance_ohm: float,
         qiskit_component_names: list,
         resonator_type: Literal["lambda_4", "lambda_2"],
         open_pins: Optional[list] = None,
@@ -349,14 +355,15 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         )
         self.resonator_name = resonator_name
         self.waveguide_name = waveguide_name
-        self.waveguide_impedance_Ohm = waveguide_impedance_Ohm
+        self.impedance_ohm = impedance_ohm
         self.resonator_type = resonator_type
         self.kappa = None
 
     def get_kappa_estimate(self) -> float:
         """Get the estimated kappa (decay rate) of the resonator into the waveguide.
 
-        Currently uses a simplified model, assuming that the resonator and waveguide have the same impedance.
+        Currently uses a simplified model, assuming that the resonator and waveguide have the same
+        impedance.
 
         Returns:
             float: The estimated kappa (Hz).
@@ -374,7 +381,7 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
             self.capacitance_matrix_fF.loc[self.resonator_name, self.waveguide_name]
         )
 
-        Z0 = self.waveguide_impedance_Ohm
+        Z0 = self.impedance_ohm
         unit_conversion = 1e-3  # GHz^3 * fF^2
         kappa = Z0**2 * omega**3 * Ccoupling**2 / np.pi / (2 * np.pi) * unit_conversion
 
