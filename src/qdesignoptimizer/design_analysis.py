@@ -102,6 +102,7 @@ class DesignAnalysis:
         self.minimization_tol = minimization_tol
 
         self.optimization_results = []
+        self.minimization_results = []
 
         self.renderer.start()
         self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
@@ -117,7 +118,6 @@ class DesignAnalysis:
             self.mini_study.max_mesh_length_port
         )
         self._validate_opt_targets()
-        self.minimization_results = []
 
         assert (
             not self.system_target_params is self.system_optimized_params
@@ -567,7 +567,11 @@ class DesignAnalysis:
                 or all_design_var_updated[name] == bounds_for_targets[idx][1]
             ):
                 log.warning(
-                    f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or readjusting the "
+                    (
+                        f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds."
+                    )(
+                        "Consider changing the bounds or making the initial design closer to the optimal one."
+                    )
                 )
 
         final_cost = cost_function(
@@ -603,7 +607,6 @@ class DesignAnalysis:
 
     def _calculate_target_design_var(self) -> dict:
         """Calculate the new design value for the optimization targets."""
-        self.minimization_results = []
 
         system_params_current = deepcopy(self.system_optimized_params)
         system_params_targets_met = self.get_system_params_targets_met()
