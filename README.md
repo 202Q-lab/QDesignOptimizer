@@ -7,7 +7,7 @@ QDesignOptimizer (QDO) is a Python package which optimizes the design of quantum
 
 ## Documentation
 
-For detailed documentation, visit [https://202Q-lab.github.io/QDesignOptimizer/](https://202Q-lab.github.io/QDesignOptimizer/)
+You can find the latest documentation [here](https://202Q-lab.github.io/QDesignOptimizer/index.html).
 
 ## Installation
 
