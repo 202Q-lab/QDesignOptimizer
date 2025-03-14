@@ -5,8 +5,17 @@ import numpy as np
 
 from qdesignoptimizer.design_analysis_types import OptTarget
 from qdesignoptimizer.utils.optimization_targets import (
+    get_opt_target_res_kappa_via_coupl_length,
     get_opt_targets_qb_res_transmission,
 )
+
+
+def get_opt_target_res_kappa_feedline(group: int) -> list[OptTarget]:
+    resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+    target = get_opt_target_res_kappa_via_coupl_length(
+        resonator=resonator, resonator_coupled_identifier="tee"
+    )
+    return [target]
 
 
 def get_opt_targets_2qubits_resonator_coupler(

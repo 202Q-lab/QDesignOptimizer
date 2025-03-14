@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_floating_lumped_mode_decay_into_chargeline,
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
-from qdesignoptimizer.logging import dict_log_format, log
+from qdesignoptimizer.utils.names_parameters import KAPPA, PURCELL_LIMIT_T1
 
 
 class CapacitanceMatrixStudy:
@@ -113,30 +114,25 @@ class CapacitanceMatrixStudy:
         return self.capacitance_matrix_fF
 
 
-class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
-    (
-        """ Mode decay into charge line study by capacitance matrix simulation.
+class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
+    """Base class for mode decay studies using capacitance matrix simulation.
+
     Since the capacitance should be evaluated at the frequency of the mode,
-    each decay analysis should be done in a separate ModeDecayIntoChargeLineStudy.
+    each decay analysis should be done in a separate ModeDecayStudy.
 
     Args:
-        mode_capacitance_name (str): capacitance name of mode, if grounded: 1 string of island name, if floating: list of 2 strings of respective island name
-        charge_line_capacitance_name (str): capacitance name of charge line
-        charge_line_impedance_Ohm (float): charge line impedance in Ohm
+        mode (str): The mode name
+        mode_freq_GHz (float): The mode frequency in GHz
     """
-        + CapacitanceMatrixStudy.__doc__
-    )
+
+    _decay_parameter_type = None  # To be defined by subclasses
 
     def __init__(
         self,
-        mode: Union[str],
-        mode_freq_GHz: Union[float],
-        mode_capacitance_name: Union[str, List[str]],
-        charge_line_capacitance_name: str,
-        charge_line_impedance_Ohm: float,
+        mode: str,
+        mode_freq_GHz: float,
         qiskit_component_names: list,
         open_pins: list = [],
-        ground_plane_capacitance_name: str = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
         percent_error: float = 0.5,
@@ -152,11 +148,75 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
             nbr_passes=nbr_passes,
         )
         self.mode = mode
+        self.freq_GHz = mode_freq_GHz
+
+    @abstractmethod
+    def get_decay_parameter_value(self):
+        """Get the simulated parameter value.
+        This method should be implemented by subclasses.
+
+        Returns:
+            float: The simulated parameter value.
+        """
+        pass
+
+    def get_decay_parameter_type(self):
+        """Get the type of parameter this study optimizes.
+
+        Returns:
+            str: The parameter type.
+        """
+        return self._decay_parameter_type
+
+
+class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
+    """Mode decay into charge line study by capacitance matrix simulation.
+
+    Since the capacitance should be evaluated at the frequency of the mode,
+    each decay analysis should be done in a separate ModeDecayIntoChargeLineStudy.
+
+    Args:
+        mode (str): The mode name
+        mode_freq_GHz (float): The mode frequency in GHz
+        mode_capacitance_name (str or List[str]): capacitance name of mode, if grounded: 1 string of island name,
+                                                if floating: list of 2 strings of respective island name
+        charge_line_capacitance_name (str): capacitance name of charge line
+        charge_line_impedance_Ohm (float): charge line impedance in Ohm
+        ground_plane_capacitance_name (str, optional): capacitance name of ground plane
+    """
+
+    _decay_parameter_type = PURCELL_LIMIT_T1
+
+    def __init__(
+        self,
+        mode: str,
+        mode_freq_GHz: float,
+        mode_capacitance_name: Union[str, List[str]],
+        charge_line_capacitance_name: str,
+        charge_line_impedance_Ohm: float,
+        qiskit_component_names: list,
+        open_pins: list = [],
+        ground_plane_capacitance_name: str = None,
+        x_buffer_width_mm: float = 2,
+        y_buffer_width_mm: float = 2,
+        percent_error: float = 0.5,
+        nbr_passes: int = 10,
+    ):
+        super().__init__(
+            mode=mode,
+            mode_freq_GHz=mode_freq_GHz,
+            qiskit_component_names=qiskit_component_names,
+            open_pins=open_pins,
+            x_buffer_width_mm=x_buffer_width_mm,
+            y_buffer_width_mm=y_buffer_width_mm,
+            percent_error=percent_error,
+            nbr_passes=nbr_passes,
+        )
         self.mode_capacitance_name = mode_capacitance_name
         self.ground_plane_capacitance_name = ground_plane_capacitance_name
         self.charge_line_capacitance_name = charge_line_capacitance_name
         self.charge_line_impedance_Ohm = charge_line_impedance_Ohm
-        self.freq_GHz = mode_freq_GHz
+        self.t1_limit_due_to_decay_into_charge_line = None
 
     def get_t1_limit_due_to_decay_into_charge_line(self) -> float:
         """Get the T1 limit due to decay into charge line decay
@@ -236,26 +296,97 @@ class ModeDecayIntoChargeLineStudy(CapacitanceMatrixStudy):
 
         return self.t1_limit_due_to_decay_into_charge_line
 
+    def get_decay_parameter_value(self) -> float:
+        """Get the optimized parameter value (T1 limit).
 
-def sim_capacitance_matrix(
-    design: QDesign,
-    qiskit_component_names: list,
-    open_terminations: list,
-    freq_ghz: float = 4,
-    nbr_passes: int = 16,
-):
+        Returns:
+            float: The T1 limit due to decay into charge line.
+        """
+        return self.get_t1_limit_due_to_decay_into_charge_line()
 
-    lom_analysis = LOManalysis(design, "q3d")
-    lom_analysis.sim.setup.max_passes = nbr_passes
-    lom_analysis.sim.setup.freq_ghz = freq_ghz
-    lom_analysis.sim.setup.percent_error = 0.1
-    lom_analysis.sim.renderer.options["x_buffer_width_mm"] = 2
-    lom_analysis.sim.renderer.options["y_buffer_width_mm"] = 2
-    log.info("lom_analysis.sim.setup %s", dict_log_format(lom_analysis.sim.setup))
 
-    lom_analysis.sim.run(
-        components=qiskit_component_names, open_terminations=open_terminations
-    )
-    capacitance_matrix = lom_analysis.sim.capacitance_matrix
+class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
+    """Resonator decay into waveguide study by capacitance matrix simulation.
 
-    return capacitance_matrix
+    Since the capacitance should be evaluated at the frequency of the mode,
+    each decay analysis should be done in a separate ResonatorDecayIntoWaveguideStudy.
+
+    Args:
+        mode (str): The mode name
+        mode_freq_GHz (float): The mode frequency in GHz
+        resonator_name (str): capacitance name of resonator
+        waveguide_name (str): capacitance name of waveguide
+        waveguide_impedance_Ohm (float): waveguide impedance in Ohm
+        resonator_type (Literal["lambda_4", "lambda_2"]): type of resonator
+    """
+
+    _decay_parameter_type = KAPPA
+
+    def __init__(
+        self,
+        mode: str,
+        mode_freq_GHz: float,
+        resonator_name: str,
+        waveguide_name: str,
+        waveguide_impedance_Ohm: float,
+        qiskit_component_names: list,
+        open_pins: list = [],
+        x_buffer_width_mm: float = 2,
+        y_buffer_width_mm: float = 2,
+        percent_error: float = 0.5,
+        nbr_passes: int = 10,
+        resonator_type: Literal["lambda_4", "lambda_2"] = "lambda_2",
+    ):
+        super().__init__(
+            mode=mode,
+            mode_freq_GHz=mode_freq_GHz,
+            qiskit_component_names=qiskit_component_names,
+            open_pins=open_pins,
+            x_buffer_width_mm=x_buffer_width_mm,
+            y_buffer_width_mm=y_buffer_width_mm,
+            percent_error=percent_error,
+            nbr_passes=nbr_passes,
+        )
+        self.resonator_name = resonator_name
+        self.waveguide_name = waveguide_name
+        self.waveguide_impedance_Ohm = waveguide_impedance_Ohm
+        self.resonator_type = resonator_type
+        self.kappa = None
+
+    def get_kappa_estimate(self) -> float:
+        """Get the estimated kappa (decay rate) of the resonator into the waveguide.
+
+        Returns:
+            float: The estimated kappa (Hz).
+
+        Raises:
+            AssertionError: If capacitance_matrix_fF is not set when trying to access kappa.
+        """
+        assert (
+            self.capacitance_matrix_fF is not None
+        ), "capacitance_matrix_fF is not set, you need to run .simulate_capacitance_matrix()."
+
+        omega = self.freq_GHz * 2 * np.pi
+
+        Ccoupling = np.abs(
+            self.capacitance_matrix_fF.loc[self.resonator_name, self.waveguide_name]
+        )
+
+        Z0 = self.waveguide_impedance_Ohm
+        # Z0_res = 1/(self.capacitance_matrix_fF.loc[self.resonator_name, self.resonator_name]*self.freq_GHz)
+        unit_conversion = 1e-3  # GHz^3 * fF^2
+        kappa = Z0**2 * omega**3 * Ccoupling**2 / np.pi / (2 * np.pi) * unit_conversion
+
+        if self.resonator_type == "lambda_4":
+            kappa *= 2
+
+        self.kappa = kappa
+        return kappa
+
+    def get_decay_parameter_value(self) -> float:
+        """Get the optimized parameter value (kappa).
+
+        Returns:
+            float: The estimated kappa.
+        """
+        return self.get_kappa_estimate()
