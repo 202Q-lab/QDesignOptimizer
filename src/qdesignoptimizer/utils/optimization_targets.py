@@ -122,7 +122,6 @@ def get_opt_target_res_qub_chi_via_coupl_length_simple(
         design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
         prop_to=lambda p, v: np.abs(
             v[design_var_res_qb_coupl_length(resonator, qubit)]
-            / v[design_var_qubit_width(qubit)]
         ),
         independent_target=False,
     )
