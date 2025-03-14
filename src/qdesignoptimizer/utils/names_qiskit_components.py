@@ -5,12 +5,12 @@ from typing import Union
 from qdesignoptimizer.utils.names_parameters import Mode
 
 QiskitComponentName = str
-r""" A string representing the name of a Qiskit Metal component, by convention starts with 'name\_'
+"""A string representing the name of a Qiskit Metal component, by convention starts with \'name\\_\'
 
     Examples:
-        name_qubit
-        name_resonator_1
-        name_coupler_1to2
+        >>> "name_qubit"
+        >>> "name_resonator_1"
+        >>> "name_coupler_1to2"
 """
 
 
