@@ -19,7 +19,7 @@
     "design_var_coupl_length_qubit_1_resonator_1": "100um",
     "design_var_coupl_length_qubit_2_resonator_2": "100um",
 
-    "design_var_coupl_length_resonator_1_tee": "170um",
+    "design_var_coupl_length_resonator_1_tee": "400um",
     "design_var_coupl_length_resonator_2_tee": "160um"
 
 
