@@ -47,7 +47,11 @@ def get_mini_study_2qb_resonator_coupler():
         qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
         resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
         all_comps.extend(
-            [n.name_mode(qubit), n.name_mode(resonator), n.name_tee(group)]
+            [
+                n.name_mode(qubit),
+                n.name_mode(resonator),
+                n.name_tee(group),
+            ]
         )
         all_ports.extend(
             [
@@ -133,7 +137,8 @@ def get_mini_study_res_feedline(group: int):
         mode_freq_GHz=pt.PARAM_TARGETS[param(resonator, FREQ)] / 1e9,
         resonator_name=f"second_cpw_name_tee{group}",  # These names must be found from the model list in Ansys
         waveguide_name=f"prime_cpw_name_tee{group}",
-        waveguide_impedance_Ohm=50,
+        impedance_ohm=50,
+        resonator_type="lambda_4",
         qiskit_component_names=qiskit_component_names,
         open_pins=[
             (n.name_mode(resonator), "start"),
@@ -142,7 +147,6 @@ def get_mini_study_res_feedline(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
-        resonator_type="lambda_4",
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,

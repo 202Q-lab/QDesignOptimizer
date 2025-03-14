@@ -1,3 +1,5 @@
+"""Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations."""
+
 import json
 from copy import deepcopy
 from typing import List, Optional
@@ -9,33 +11,32 @@ import scipy
 import scipy.optimize
 from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
-from qiskit_metal.analyses.quantization.energy_participation_ratio import EPRanalysis
 
+import qdesignoptimizer
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
     MiniStudy,
     OptTarget,
 )
-from qdesignoptimizer.logging import dict_log_format, log
+from qdesignoptimizer.logger import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import (
     CapacitanceMatrixStudy,
     ModeDecayStudy,
     ResonatorDecayIntoWaveguideStudy,
 )
-from qdesignoptimizer.sim_plot_progress import plot_progress
+from qdesignoptimizer.sim_plot_progress import plot_progress  # type: ignore
 from qdesignoptimizer.utils.names_parameters import (
     CAPACITANCE,
+    CHARGE_LINE_LIMITED_T1,
     FREQ,
     KAPPA,
     NONLIN,
-    PURCELL_LIMIT_T1,
-    mode,
     param,
     param_capacitance,
     param_nonlin,
 )
-from qdesignoptimizer.utils.utils import get_value_and_unit, get_version_from_pyproject
+from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class DesignAnalysis:
@@ -57,14 +58,14 @@ class DesignAnalysis:
         self,
         state: DesignAnalysisState,
         mini_study: MiniStudy,
-        opt_targets: List[OptTarget] = list(),
+        opt_targets: Optional[List[OptTarget]] = None,
         save_path: str = "analysis_result",
         update_design_variables: bool = True,
         plot_settings: Optional[dict] = None,
-        meshing_map: List[MeshingMap] = list(),
-        minimization_tol: float = 1e-12,
+        meshing_map: Optional[List[MeshingMap]] = None,
+        minimization_tol=1e-12,
     ):
-        self.design_analysis_version = get_version_from_pyproject()
+        self.design_analysis_version = qdesignoptimizer.__version__
         self.design = state.design
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
@@ -75,8 +76,8 @@ class DesignAnalysis:
         self.eig_solver.setup.sweep_variable = "dummy"
 
         self.mini_study = mini_study
-        self.opt_targets = opt_targets
-        self.all_design_vars = [target.design_var for target in opt_targets]
+        self.opt_targets: List[OptTarget] = opt_targets or []
+        self.all_design_vars = [target.design_var for target in self.opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
 
@@ -100,11 +101,11 @@ class DesignAnalysis:
         self.save_path = save_path
         self.update_design_variables = update_design_variables
         self.plot_settings = plot_settings
-        self.meshing_map = meshing_map
+        self.meshing_map: List[MeshingMap] = meshing_map or []
         self.minimization_tol = minimization_tol
 
         self.optimization_results: list[dict] = []
-        self.minimization_results = []
+        self.minimization_results: list[dict] = []
 
         self.renderer.start()
         self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
@@ -123,9 +124,10 @@ class DesignAnalysis:
 
         assert (
             not self.system_target_params is self.system_optimized_params
-        ), "system_target_params and system_optimized_params may not be references to the same object"
+        ), "system_target_params and system_optimized_params cannot be references to the same object"
 
     def update_nbr_passes(self, nbr_passes: int):
+        """Update the number of simulation passes."""
         self.mini_study.nbr_passes = nbr_passes
         self.setup.passes = nbr_passes
 
@@ -136,6 +138,7 @@ class DesignAnalysis:
                 cap_study.nbr_passes = nbr_passes
 
     def update_delta_f(self, delta_f: float):
+        """Update eigenmode convergence tolerance."""
         self.mini_study.delta_f = delta_f
         self.setup.delta_f = delta_f
 
@@ -146,7 +149,7 @@ class DesignAnalysis:
                 assert (
                     target.design_var in self.design.variables
                 ), f"Design variable {target.design_var} not found in design variables."
-                if target.target_param_type == PURCELL_LIMIT_T1:
+                if target.target_param_type == CHARGE_LINE_LIMITED_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
@@ -228,18 +231,19 @@ class DesignAnalysis:
                 finer_mesh_names += self.design.components[
                     component
                 ].get_meshing_names()
-            elif self.meshing_map != None:
-                for map in self.meshing_map:
+            elif self.meshing_map is not None:
+                for m_map in self.meshing_map:
                     if isinstance(
-                        self.design.components[component], map.component_class
+                        self.design.components[component], m_map.component_class
                     ):
-                        finer_mesh_names += map.mesh_names(component)
+                        finer_mesh_names += m_map.mesh_names(component)
             else:
-                log.info("No fine mesh map was found for " + component)
+                log.info("No fine mesh map was found for %s", component)
 
         return finer_mesh_names
 
     def get_port_gap_names(self):
+        """Get names of all endcap ports in the design."""
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
 
     def run_eigenmodes(self):
@@ -288,7 +292,7 @@ class DesignAnalysis:
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
-            (not not fine_mesh_names)
+            (fine_mesh_names)
             and self.mini_study.build_fine_mesh
             and len(self.mini_study.port_list) > 0
         )
@@ -349,23 +353,20 @@ class DesignAnalysis:
                     self.epra.plot_hamiltonian_results()
                     freqs = self.epra.get_frequencies(numeric=True)
                     chis = self.epra.get_chis(numeric=True)
+                    self._update_optimized_params_epr(freqs, chis)
                 except AttributeError:
                     log.error(
                         "Please install a more recent version of pyEPR (>=0.8.5.3)"
                     )
 
-            self.eig_solver.setup.junctions = (
-                self.mini_study.jj_setup
-            )  # reset jj_setup for linear HFSS simulation
+            self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
-            self._update_optimized_params_epr(freqs, chis)
             return chis
-        else:
-            add_msg = ""
-            if linear_element_found:
-                add_msg = " However, a linear element was found."
-            log.warning("No junctions found, skipping EPR analysis." + add_msg)
-            return
+        add_msg = ""
+        if linear_element_found:
+            add_msg = " However, a linear element was found."
+        log.warning("No junctions found, skipping EPR analysis.%s", add_msg)
+        return None
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -443,7 +444,9 @@ class DesignAnalysis:
                 )
             except KeyError:
                 log.warning(
-                    f"Warning: capacitance {capacitance_names} not found in capacitance matrix with names {capacitance_matrix.columns}"
+                    "Warning: capacitance %s not found in capacitance matrix with names %s",
+                    capacitance_names,
+                    capacitance_matrix.columns,
                 )
 
         # Check if this is a ModeDecayStudy and update the appropriate parameter
@@ -510,6 +513,7 @@ class DesignAnalysis:
 
     @staticmethod
     def get_parameter_value(target: OptTarget, system_params: dict) -> float:
+        """Return value of parameter from target specification."""
         if target.target_param_type == NONLIN:
             mode1, mode2 = target.involved_modes
             current_value = system_params[param_nonlin(mode1, mode2)]
@@ -588,11 +592,7 @@ class DesignAnalysis:
                 or all_design_var_updated[name] == bounds_for_targets[idx][1]
             ):
                 log.warning(
-                    (
-                        f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds."
-                    )(
-                        "Consider changing the bounds or making the initial design closer to the optimal one."
-                    )
+                    f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or making the initial design closer to the optimal one."
                 )
 
         final_cost = cost_function(
@@ -607,6 +607,7 @@ class DesignAnalysis:
         }
 
     def get_system_params_targets_met(self) -> dict[str, float]:
+        """Return organized dictionary of parameters given target specifications and current status."""
         system_params_targets_met = deepcopy(self.system_optimized_params)
         for target in self.opt_targets:
             if target.target_param_type == NONLIN:
@@ -691,8 +692,6 @@ class DesignAnalysis:
             design_vars_updated_constrained_str[design_var_name] = (
                 constrained_val_and_unit
             )
-
-        # TODO AXEL document that the user must make sure that if they use e.g. sums or differences of design variables, they must make sure they are the same dimensions
         return design_vars_updated_constrained_str
 
     def optimize_target(
@@ -747,7 +746,7 @@ class DesignAnalysis:
                     deepcopy(capacitance_matrix)
                 )
 
-        iteration_result["design_variables"] = deepcopy(self.design.variables)
+        iteration_result["design_variables"] = dict(deepcopy(self.design.variables))
         iteration_result["system_optimized_params"] = deepcopy(
             self.system_optimized_params
         )
@@ -779,8 +778,9 @@ class DesignAnalysis:
             )
 
     def overwrite_parameters(self):
+        """Overwirte the original design_variables.json file with new values."""
         if self.save_path is None:
-            raise Exception("A path must be specified to fetch results.")
+            raise ValueError("A path must be specified to fetch results.")
 
         with open(self.save_path + "_design_variables.json") as in_file:
             updated_design_vars = json.load(in_file)
@@ -841,15 +841,18 @@ class DesignAnalysis:
             capacitance_matrices = self.optimization_results[iteration][
                 "capacitance_matrix"
             ]
-
-        if 0 <= capacitance_study_number - 1 < len(capacitance_matrices):
-            return capacitance_matrices[capacitance_study_number - 1]
+            if 0 <= capacitance_study_number - 1 < len(capacitance_matrices):
+                return capacitance_matrices[capacitance_study_number - 1]
 
         return None
 
     def screenshot(self, gui, run=None):
+        """Take and save a screenshot of the current qiskit-metal design.
+
+        Useful for tracking how the geometry is updated during optimization.
+        """
         if self.save_path is None:
-            raise Exception("A path must be specified to save screenshot.")
+            raise ValueError("A path must be specified to save screenshot.")
         gui.autoscale()
         name = self.save_path + f"_{run+1}" if run is not None else self.save_path
         gui.screenshot(name=name, display=False)

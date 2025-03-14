@@ -1,3 +1,5 @@
+"""Additional plotting utilities for data loaded from files."""
+
 import os
 from datetime import datetime
 from typing import List, Literal, Optional, Union
@@ -30,8 +32,8 @@ def load_data_by_date(
     # get all .npy
     all_files_in_folder = [os.path.join(folder_parent, f) for f in all_files_in_folder]
     npy_ind = []
-    for i in range(len(all_files_in_folder)):
-        if all_files_in_folder[i].endswith("npy"):
+    for i, folder in enumerate(all_files_in_folder):
+        if folder.endswith("npy"):
             npy_ind.append(i)
 
     npy_ind = np.array(npy_ind)
@@ -41,8 +43,8 @@ def load_data_by_date(
 
     # filter for experiment name
     experiment_ind = []
-    for i in range(len(files_npy)):
-        if files_npy[i].find(name_experiment) > 0:
+    for i, file_npy in enumerate(files_npy):
+        if file_npy.find(name_experiment) > 0:
             experiment_ind.append(i)
 
     experiment_ind = np.array(experiment_ind)

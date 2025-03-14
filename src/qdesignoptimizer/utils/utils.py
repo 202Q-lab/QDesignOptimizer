@@ -1,23 +1,27 @@
+"""Utility functions for geometry calculations and runtime operations."""
+
 import os
 
 import numpy as np
-import tomli
-from pathlib import Path
 
 
 def close_ansys():
+    """Close Ansys by killing the active process. Only works on Windows."""
     os.system("taskkill /f /im ansysedt.exe")
 
 
 def get_junction_position(design, qcomponent):
-    """Calculates the position of the Josephson junction in the component where a flux line could be placed.
+    """Calculates the position of the Josephson junction in a component.
+
+    Useful for finding where a flux line could be placed.
 
     Args:
         design (QDesign): The Qiskit metal design.
         qcomponent (QComponent): The component to calculate the junction position for.
 
     Returns:
-        tuple: The x and y coordinates of the junction as strings ending with "mm", to be used as qcomponents options.
+        tuple: The x and y coordinates of the junction as strings ending with "mm",
+               to be used as qcomponents options.
 
     Raises:
         AssertionError: If the component does not have a junction.
@@ -113,8 +117,8 @@ def get_value_and_unit(val_unit: str) -> tuple:
             val = float(val_unit)
             unit = ""
         return val, unit
-    except:
-        raise ValueError(f"Could not parse value and unit from {val_unit}")
+    except Exception as exc:
+        raise ValueError(f"Could not parse value and unit from {val_unit}") from exc
 
 
 def sum_expression(vals: list):
@@ -135,36 +139,3 @@ def sum_expression(vals: list):
         sum_unit = unit
 
     return f"{sum_val}{sum_unit}"
-
-
-def get_version_from_pyproject():
-    """
-    Read the version from pyproject.toml file, finding it relative to the current module.
-    
-    Returns:
-        str: The version string from pyproject.toml
-    """
-    # Get the path of the current file
-    current_file = Path(__file__)
-    
-    # Navigate up to find the project root (where pyproject.toml is)
-    # This assumes the directory structure you described
-    project_root = current_file.parents[3]  # Go up 3 levels from design_analysis.py
-    pyproject_path = project_root / "pyproject.toml"
-    
-    try:
-        if not pyproject_path.exists():
-            raise FileNotFoundError(f"pyproject.toml not found at {pyproject_path}")
-            
-        with open(pyproject_path, "rb") as f:
-            pyproject_data = tomli.load(f)
-        
-        # Get version from the project section
-        version = pyproject_data.get("project", {}).get("version")
-        
-        if not version:
-            raise ValueError("Version not found in pyproject.toml")
-            
-        return version
-    except Exception as e:
-        raise Exception(f"Error reading version from pyproject.toml: {str(e)}")

@@ -1,3 +1,5 @@
+"""Standard naming conventions for physical parameters and modes in quantum circuit designs."""
+
 from typing import Literal
 
 # Standard mode types
@@ -7,10 +9,10 @@ CAVITY = "cavity"
 COUPLER = "coupler"
 
 # Parameter types
-FREQ = "freq"
-KAPPA = "kappa"
-PURCELL_LIMIT_T1 = "purcell_limit_T1"
-NONLIN = "nonlin"
+FREQ: Literal["freq"] = "freq"
+KAPPA: Literal["kappa"] = "kappa"
+CHARGE_LINE_LIMITED_T1: Literal["charge_line_limited_t1"] = "charge_line_limited_t1"
+NONLIN: Literal["nonlinearity"] = "nonlinearity"
 
 CAPACITANCE = "capacitance"
 """ dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.
@@ -57,12 +59,13 @@ def mode(
     assert identifier is None or "_" not in str(
         identifier
     ), "identifier cannot contain underscores"
-    assert (
-        isinstance(identifier, int) or "_to_" not in identifier
-    ), "identifier cannot contain the string '_to_', since it is a keyword for non-linear parameters"
 
     mode_name = mode_type
     if identifier is not None:
+        assert (
+            isinstance(identifier, int) or "_to_" not in identifier
+        ), "identifier cannot contain the string '_to_', since it is a keyword for non-linear parameters"
+
         mode_name = f"{mode_name}_{identifier}"
 
     assert (
@@ -75,7 +78,8 @@ def mode(
 
 
 def param(
-    mode: Mode, param_type: Literal["freq", "kappa", "purcell_limit_T1"]
+    mode_instance: Mode,
+    param_type: Literal["freq", "kappa", "charge_line_limited_t1", "capacitance"],
 ) -> Parameter:
     """Construct a parameter name from the mode and parameter type.
 
@@ -86,9 +90,9 @@ def param(
     assert param_type in [
         "freq",
         "kappa",
-        "purcell_limit_T1",
-    ], "param_type must be 'freq' or 'kappa' or 'purcell_limit_T1"
-    return f"{mode}_{param_type}"
+        "charge_line_limited_t1",
+    ], "param_type must be 'freq' or 'kappa' or 'charge_line_limited_t1"
+    return f"{mode_instance}_{param_type}"
 
 
 def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:
@@ -118,10 +122,12 @@ def param_capacitance(capacitance_name_1: str, capacitance_name_2: str) -> Param
     return f"{capacitance_names[0]}_to_{capacitance_names[1]}_capacitance"
 
 
-def get_mode_from_param(param: Parameter) -> Mode:
-    return "_".join(param.split("_")[:-1])
+def get_mode_from_param(parameter: Parameter) -> Mode:
+    """Get the mode identifier from parameter identifier."""
+    return "_".join(parameter.split("_")[:-1])
 
 
-def get_modes_from_param_nonlin(param: Parameter) -> tuple[Mode, Mode]:
-    assert param.endswith("_nonlin"), "param must end with '_nonlin'"
-    return tuple(param.split("_nonlin")[0].split("_to_")[:2])
+def get_modes_from_param_nonlin(parameter: Parameter) -> tuple[Mode, ...]:
+    """Get identifiers of modes included in nonlinear parameter."""
+    assert parameter.endswith("_nonlin"), "param must end with '_nonlin'"
+    return tuple(parameter.split("_nonlin")[0].split("_to_")[:2])

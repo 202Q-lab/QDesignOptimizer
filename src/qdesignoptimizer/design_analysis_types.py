@@ -1,4 +1,6 @@
-from typing import Callable, Dict, List, Literal, Union
+"""Data structures for organizing specific aspects of design analysis including meshing and optimization targets."""
+
+from typing import Callable, Dict, List, Literal, Optional, Union
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -59,9 +61,12 @@ class OptTarget:
         ],
         involved_modes: List[Mode] | List[str],
         design_var: str,
-        design_var_constraint: object,
-        prop_to: Callable[
-            [Dict[str, Union[float, int]], Dict[str, Union[float, int]]], None
+        design_var_constraint: dict[str, str],
+        prop_to: Optional[
+            Callable[
+                [Dict[str, Union[float, int]], Dict[str, Union[float, int]]],
+                float | int,
+            ]
         ] = None,
         independent_target: bool = False,
     ):
@@ -85,7 +90,7 @@ class MiniStudy:
                            If modes is not empty and run_capacitance_studies_only is False, eigenmode and EPR analysis will run.
                            Example: [qubit_1, resonator_1]
         nbr_passes (int): group of passes in eigenmode simulation
-        delta_f (float): Convergence freq max delta percent diff
+        delta_f (float): Absolute frequency tolerance determining the convergence of eigenmode simulations.
         jj_setup (object): junction setup, example: {'Lj_variable': 'Lj', 'rect': 'JJ_rect_Lj_Q1_rect_jj', 'line': 'JJ_Lj_Q1_rect_jj', 'Cj_variable': 'Cj'}
         design_name (str): name of design
         project_name (str): name of project (default: dummy_project
@@ -111,7 +116,7 @@ class MiniStudy:
         modes: List[Mode],
         nbr_passes: int = 10,
         delta_f: float = 0.1,
-        jj_setup: object = {},
+        jj_setup: Optional[dict] = None,
         design_name: str = "mini_study",
         project_name: str = "dummy_project",
         x_buffer_width_mm=0.5,
@@ -125,9 +130,9 @@ class MiniStudy:
         adjustment_rate: float = 1.0,
         cos_trunc=8,
         fock_trunc=7,
-        render_qiskit_metal_eigenmode_kw_args: dict = {},
+        render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
         run_capacitance_studies_only: bool = False,
-        capacitance_matrix_studies: List[CapacitanceMatrixStudy] = [],
+        capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
     ):
         self.qiskit_component_names = qiskit_component_names
         self.port_list = port_list
@@ -135,7 +140,7 @@ class MiniStudy:
         self.modes = modes
         self.nbr_passes = nbr_passes
         self.delta_f = delta_f
-        self.jj_setup = jj_setup
+        self.jj_setup: dict = jj_setup or {}
         self.design_name = design_name
         self.project_name = project_name
         self.x_buffer_width_mm = x_buffer_width_mm
@@ -149,11 +154,13 @@ class MiniStudy:
         self.adjustment_rate = adjustment_rate
         self.cos_trunc = cos_trunc
         self.fock_trunc = fock_trunc
-        self.render_qiskit_metal_eigenmode_kw_args = (
-            render_qiskit_metal_eigenmode_kw_args
+        self.render_qiskit_metal_eigenmode_kw_args: dict = (
+            render_qiskit_metal_eigenmode_kw_args or {}
         )
         self.run_capacitance_studies_only = run_capacitance_studies_only
-        self.capacitance_matrix_studies = capacitance_matrix_studies
+        self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
+            capacitance_matrix_studies or []
+        )
 
 
 class DesignAnalysisState:
@@ -172,7 +179,7 @@ class DesignAnalysisState:
         design: QDesign,
         render_qiskit_metal: Callable,
         system_target_params: dict,
-        system_optimized_params: dict = None,
+        system_optimized_params: Optional[dict] = None,
     ):
         self.design = design
         self.render_qiskit_metal = render_qiskit_metal

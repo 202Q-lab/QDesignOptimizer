@@ -224,11 +224,11 @@ def add_chargeline(design: DesignPlanar, group: int):
         termination_gap=LINE_50_OHM_GAP,
     )
 
-    OpenToGround(design, n.name_("otg_" + qubit), options=otg_options)
+    OpenToGround(design, n.name_id("otg_" + qubit), options=otg_options)
 
     pins_top = dict(
         start_pin=dict(component=n.name_lp(lp_nbr), pin="tie"),
-        end_pin=dict(component=n.name_("otg_" + qubit), pin="open"),
+        end_pin=dict(component=n.name_id("otg_" + qubit), pin="open"),
     )
 
     options_chargeline = dict(

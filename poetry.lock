@@ -2116,7 +2116,7 @@ xmp = ["defusedxml"]
 [[package]]
 name = "pint"
 version = "0.20.1"
-description = "Physical parameters module"
+description = "Physical quantities module"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
@@ -3774,5 +3774,5 @@ viz = ["matplotlib", "nc-time-axis", "seaborn"]
 
 [metadata]
 lock-version = "2.1"
-python-versions = "3.10.*"
-content-hash = "ad9aee4f2435b6fe7341f8cb4db891a5732010b43b071fe0cd38ca9296b88cef"
+python-versions = ">=3.10,<3.11"
+content-hash = "76c8161cd2c2f5aa2d960903be8d0eae397804de5139e369b42df28c41b54420"
