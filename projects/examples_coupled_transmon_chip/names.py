@@ -14,6 +14,8 @@ def design_var_my_custom(identifier: int):
 def name_my_custom_qiskit_component(identifier: int):
     return f"name_my_custom_qiskit_component{identifier}"
 
+# Name of the chip
+CHIP_NAME = "multi_transmon_chip"
 
 # Modes names for all modes in the design, which you define according to your design needs
 NBR_1 = 1

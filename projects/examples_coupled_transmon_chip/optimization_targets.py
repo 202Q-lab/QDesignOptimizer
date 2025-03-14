@@ -25,7 +25,7 @@ def get_opt_targets_2qubits_resonator_coupler(
     opt_target_resonator_freq=False,
     opt_target_resonator_kappa=False,
     opt_target_resonator_qubit_chi=False,
-    use_simple_resonator_qubit_chi=False,
+    use_simple_resonator_qubit_chi_relation=False,
     opt_target_coupler_freq=False,
 ) -> List[OptTarget]:
     """Get the optimization targets for a 2 qubit-resonator system with a coupler.
@@ -70,7 +70,7 @@ def get_opt_targets_2qubits_resonator_coupler(
                 opt_target_resonator_freq=opt_target_resonator_freq,
                 opt_target_resonator_kappa=opt_target_resonator_kappa,
                 opt_target_resonator_qubit_chi=opt_target_resonator_qubit_chi,
-                use_simple_resonator_qubit_chi=use_simple_resonator_qubit_chi,
+                use_simple_resonator_qubit_chi_relation=use_simple_resonator_qubit_chi_relation,
             )
         )
 

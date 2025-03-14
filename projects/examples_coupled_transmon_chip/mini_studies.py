@@ -185,7 +185,8 @@ def get_mini_study_resonator_capacitance(group: int):
         modes=[],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
         jj_setup={},
         design_name="get_mini_study_capacitance",
-        adjustment_rate=1,
+        adjustment_rate=0.7,
+        hfss_wire_bond_size = 10,
         capacitance_matrix_studies=[cap_study],
         **CONVERGENCE,
     )

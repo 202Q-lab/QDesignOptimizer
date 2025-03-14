@@ -242,3 +242,20 @@ def add_chargeline(design: DesignPlanar, group: int):
     )
 
     RoutePathfinder(design, n.name_charge_line(group), options=options_chargeline)
+
+# Function to render the design
+def render_qiskit_metal_design(design, gui):
+    add_transmon_plus_resonator(design, group=n.NBR_1)
+    add_transmon_plus_resonator(design, group=n.NBR_2)
+
+    add_coupler(design)
+
+    add_route_interconnects(design)
+
+    add_launch_pads(design)
+
+    add_chargeline(design, group=n.NBR_1)
+    add_chargeline(design, group=n.NBR_2)
+
+    gui.rebuild()
+    gui.autoscale()

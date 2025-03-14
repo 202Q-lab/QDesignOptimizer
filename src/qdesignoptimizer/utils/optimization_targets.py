@@ -136,7 +136,7 @@ def get_opt_targets_qb_res_transmission(
     opt_target_resonator_freq=False,
     opt_target_resonator_kappa=False,
     opt_target_resonator_qubit_chi=False,
-    use_simple_resonator_qubit_chi=False,
+    use_simple_resonator_qubit_chi_relation=False,
     design_var_qubit_lj: Callable[[str], str] = n.design_var_lj,
     design_var_qubit_width: Callable[[str], str] = n.design_var_width,
     design_var_res_length: Callable[[str], str] = n.design_var_length,
@@ -193,7 +193,7 @@ def get_opt_targets_qb_res_transmission(
             )
         )
     if opt_target_resonator_qubit_chi:
-        if use_simple_resonator_qubit_chi is True:
+        if use_simple_resonator_qubit_chi_relation is True:
             opt_targets.append(
                 get_opt_target_res_qub_chi_via_coupl_length_simple(
                     qubit,
