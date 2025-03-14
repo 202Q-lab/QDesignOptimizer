@@ -1,0 +1,275 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.utils.utils &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.utils.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qdesignoptimizer.utils.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Utility functions for geometry calculations and runtime operations.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="close_ansys">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.close_ansys">[docs]</a>
+<span class="k">def</span> <span class="nf">close_ansys</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Close Ansys by killing the active process. Only works on Windows.&quot;&quot;&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;taskkill /f /im ansysedt.exe&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_junction_position">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_junction_position">[docs]</a>
+<span class="k">def</span> <span class="nf">get_junction_position</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">qcomponent</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the position of the Josephson junction in a component.</span>
+
+<span class="sd">    Useful for finding where a flux line could be placed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        design (QDesign): The Qiskit metal design.</span>
+<span class="sd">        qcomponent (QComponent): The component to calculate the junction position for.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The x and y coordinates of the junction as strings ending with &quot;mm&quot;,</span>
+<span class="sd">               to be used as qcomponents options.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If the component does not have a junction.</span>
+<span class="sd">        AssertionError: If the component has more than one junction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">junction_table</span> <span class="o">=</span> <span class="n">design</span><span class="o">.</span><span class="n">qgeometry</span><span class="o">.</span><span class="n">tables</span><span class="p">[</span><span class="s2">&quot;junction&quot;</span><span class="p">]</span>
+    <span class="n">rect_jj_junction</span> <span class="o">=</span> <span class="n">junction_table</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+        <span class="n">junction_table</span><span class="p">[</span><span class="s2">&quot;component&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">qcomponent</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;geometry&quot;</span>
+    <span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rect_jj_junction</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only supports a single junction per component&quot;</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rect_jj_junction</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">mm&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">mm&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="get_middle_point">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_middle_point">[docs]</a>
+<span class="k">def</span> <span class="nf">get_middle_point</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the middle point between two points.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        point1 (tuple): The first point.</span>
+<span class="sd">        point2 (tuple): The second point.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The middle point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">point1</span>
+    <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">point2</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="n">y1</span> <span class="o">+</span> <span class="n">y2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span></div>
+
+
+
+<div class="viewcode-block" id="get_normalized_vector">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_normalized_vector">[docs]</a>
+<span class="k">def</span> <span class="nf">get_normalized_vector</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the normalized vector between two points.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        point1 (tuple): The first point.</span>
+<span class="sd">        point2 (tuple): The second point.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The normalized vector.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">point1</span>
+    <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">point2</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dx</span> <span class="o">/</span> <span class="n">length</span><span class="p">,</span> <span class="n">dy</span> <span class="o">/</span> <span class="n">length</span></div>
+
+
+
+<div class="viewcode-block" id="rotate_point">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.rotate_point">[docs]</a>
+<span class="k">def</span> <span class="nf">rotate_point</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">rotation_center</span><span class="p">,</span> <span class="n">angle_rad</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate a point counterclockwise by a given angle around a given center.</span>
+
+<span class="sd">    The angle should be given in radians.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        point (np.array): The point to rotate.</span>
+<span class="sd">        rotation_center (np.array): The center of rotation.</span>
+<span class="sd">        angle_rad (float): The angle of rotation in radians.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        np.array: The rotated point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Translate the point so that the rotation center is at the origin</span>
+    <span class="n">point_translated</span> <span class="o">=</span> <span class="n">point</span> <span class="o">-</span> <span class="n">rotation_center</span>
+
+    <span class="c1"># Perform the rotation</span>
+    <span class="n">rotation_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle_rad</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle_rad</span><span class="p">)],</span>
+            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle_rad</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle_rad</span><span class="p">)],</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">rotated_point_translated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rotation_matrix</span><span class="p">,</span> <span class="n">point_translated</span><span class="p">)</span>
+
+    <span class="c1"># Translate back</span>
+    <span class="n">rotated_point</span> <span class="o">=</span> <span class="n">rotated_point_translated</span> <span class="o">+</span> <span class="n">rotation_center</span>
+
+    <span class="k">return</span> <span class="n">rotated_point</span></div>
+
+
+
+<div class="viewcode-block" id="get_value_and_unit">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_value_and_unit">[docs]</a>
+<span class="k">def</span> <span class="nf">get_value_and_unit</span><span class="p">(</span><span class="n">val_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the value and unit from string.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">while</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]):</span>
+                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">unit</span> <span class="o">=</span> <span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="n">idx</span><span class="p">:]</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val_unit</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val_unit</span><span class="p">)</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="n">unit</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not parse value and unit from </span><span class="si">{</span><span class="n">val_unit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span></div>
+
+
+
+<div class="viewcode-block" id="sum_expression">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.sum_expression">[docs]</a>
+<span class="k">def</span> <span class="nf">sum_expression</span><span class="p">(</span><span class="n">vals</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum a list of values and units.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        vals (list): A list of values and units.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The sum of the values with unit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sum_val</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">unit_0</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">unit_0</span> <span class="o">==</span> <span class="n">unit</span><span class="p">,</span> <span class="s2">&quot;Units must be the same&quot;</span>
+        <span class="n">sum_val</span> <span class="o">+=</span> <span class="n">val</span>
+        <span class="n">sum_unit</span> <span class="o">=</span> <span class="n">unit</span>
+
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sum_val</span><span class="si">}{</span><span class="n">sum_unit</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

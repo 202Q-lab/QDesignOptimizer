@@ -1,0 +1,205 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Optimizer 101" href="optimizer.html" />
+    <link rel="prev" title="Welcome to the qdesignoptimizer’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation-with-pip">Installation with pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-from-github-repository">Installation from github repository</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#clone-the-repository">Clone the Repository</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-virtual-environment">Create a Virtual Environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#user-installation">User Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#developer-installation">Developer Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-of-ansys-hfss">Installation of Ansys HFSS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p>This installation guide will help you install the package QDesignOptimizer on your system.</p>
+<section id="installation-with-pip">
+<h2>Installation with pip<a class="headerlink" href="#installation-with-pip" title="Link to this heading"></a></h2>
+<p>The user can install the package QDesignOptimizer via the python package manager pip. After that, install qiskit-metal on top without dependencies to avoid conflicts.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>qdesignoptimizer
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
+</pre></div>
+</div>
+</section>
+<section id="installation-from-github-repository">
+<h2>Installation from github repository<a class="headerlink" href="#installation-from-github-repository" title="Link to this heading"></a></h2>
+<p>The user can install the QDesignOptimizer directly from the github repository. To do so, follow the steps below:</p>
+<section id="clone-the-repository">
+<h3>Clone the Repository<a class="headerlink" href="#clone-the-repository" title="Link to this heading"></a></h3>
+<p>First, clone the repository and navigate to its directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/202Q-lab/QDesignOptimizer
+<span class="nb">cd</span><span class="w"> </span>QDesignOptimizer
+</pre></div>
+</div>
+</section>
+<section id="create-a-virtual-environment">
+<h3>Create a Virtual Environment<a class="headerlink" href="#create-a-virtual-environment" title="Link to this heading"></a></h3>
+<p>It is strongly recommended that you install the project in a separate virtual environment, which must use python3.10. This project is packaged with <cite>poetry &lt;https://python-poetry.org/&gt;</cite>, which handles the environment setup for you. If you instead use conda, you can create the environment from the provided environment.yml file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
+conda<span class="w"> </span>activate<span class="w"> </span>qdesignenv
+</pre></div>
+</div>
+<p>You can also create the environment using venv:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create new virtual environment</span>
+python3.10<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>qdesignenv
+
+<span class="c1"># Activate the environment</span>
+<span class="c1"># On Linux/MacOS:</span>
+<span class="nb">source</span><span class="w"> </span>qdesignenv/bin/activate
+<span class="c1"># On Windows:</span>
+qdesign-env<span class="se">\\</span>Scripts<span class="se">\\</span>activate
+
+<span class="c1"># Verify Python version</span>
+python<span class="w"> </span>--version
+<span class="c1"># Install poetry if not already available</span>
+pip<span class="w"> </span>install<span class="w"> </span>poetry
+</pre></div>
+</div>
+</section>
+<section id="user-installation">
+<h3>User Installation<a class="headerlink" href="#user-installation" title="Link to this heading"></a></h3>
+<p>For regular users, install the project with its dependencies and Qiskit Metal:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
+</pre></div>
+</div>
+</section>
+<section id="developer-installation">
+<h3>Developer Installation<a class="headerlink" href="#developer-installation" title="Link to this heading"></a></h3>
+<p>For developers, who want to contribute to the project, install with additional development dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>docs,analysis
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
+pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+<p>This will install:</p>
+<ul class="simple">
+<li><p>All project dependencies</p></li>
+<li><p>Documentation tools</p></li>
+<li><p>Analysis and testing tools</p></li>
+<li><p>Pre-commit hooks for code quality</p></li>
+</ul>
+<p>In order to build the documentation yourself, you also need to install <a class="reference external" href="https://pandoc.org/">pandoc</a> (And you probably need to restart your PC to set the path variables correctly). You can build the documentation by running <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">run</span> <span class="pre">sphinx-build</span> <span class="pre">-b</span> <span class="pre">html</span> <span class="pre">docs/source</span> <span class="pre">docs/_build/htm</span></code>.</p>
+</section>
+</section>
+<section id="installation-of-ansys-hfss">
+<h2>Installation of Ansys HFSS<a class="headerlink" href="#installation-of-ansys-hfss" title="Link to this heading"></a></h2>
+<p>This version of qdesignoptimizer has been tested with Ansys Electronics Desktop 2021 R2.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to the qdesignoptimizer’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="optimizer.html" class="btn btn-neutral float-right" title="Optimizer 101" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

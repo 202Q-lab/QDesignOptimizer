@@ -1,0 +1,201 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.utils.optimization_targets module &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="qdesignoptimizer.utils.plotting module" href="qdesignoptimizer.utils.plotting.html" />
+    <link rel="prev" title="qdesignoptimizer.utils.names_qiskit_components module" href="qdesignoptimizer.utils.names_qiskit_components.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">qdesignoptimizer</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="qdesignoptimizer.html">qdesignoptimizer package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="qdesignoptimizer.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.estimation.html">qdesignoptimizer.estimation package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="qdesignoptimizer.utils.html">qdesignoptimizer.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">qdesignoptimizer</a></li>
+          <li class="breadcrumb-item"><a href="qdesignoptimizer.html">qdesignoptimizer package</a></li>
+          <li class="breadcrumb-item"><a href="qdesignoptimizer.utils.html">qdesignoptimizer.utils package</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.utils.optimization_targets module</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qdesignoptimizer.utils.optimization_targets">
+<span id="qdesignoptimizer-utils-optimization-targets-module"></span><h1>qdesignoptimizer.utils.optimization_targets module<a class="headerlink" href="#module-qdesignoptimizer.utils.optimization_targets" title="Link to this heading"></a></h1>
+<p>Functions for creating common optimization targets in quantum circuit design.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_qubit_freq_via_lj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_lj:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_lj&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_qubit_freq_via_lj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj" title="Link to this definition"></a></dt>
+<dd><p>Get target for qubit frequency vs Josephson inductance and qubit width.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_qubit_anharmonicity_via_capacitance_width</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_qubit_anharmonicity_via_capacitance_width"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width" title="Link to this definition"></a></dt>
+<dd><p>Get target for qubit anharmonicity vs its capacitive pad(s) size.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_freq_via_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_length&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_freq_via_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length" title="Link to this definition"></a></dt>
+<dd><p>Get target for resonator frequency vs its length.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_kappa_via_coupl_length">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_kappa_via_coupl_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator_coupled_identifier:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_coupl_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_kappa_via_coupl_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_kappa_via_coupl_length" title="Link to this definition"></a></dt>
+<dd><p>Get target for resonator’s kappa vs. length of the coupler to a feedline.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_qub_chi_via_coupl_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_qb_coupl_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_qub_chi_via_coupl_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length" title="Link to this definition"></a></dt>
+<dd><p>Get optimization target for qubit-resonator dispersive shift.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length_simple">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_qub_chi_via_coupl_length_simple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_qb_coupl_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_qub_chi_via_coupl_length_simple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length_simple" title="Link to this definition"></a></dt>
+<dd><p>Get optimization target for qubit-resonator dispersive shift with simplified formula.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_targets_qb_res_transmission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">qubit:</span> <span class="pre">str,</span> <span class="pre">resonator:</span> <span class="pre">str,</span> <span class="pre">resonator_coupled_identifier:</span> <span class="pre">str,</span> <span class="pre">opt_target_qubit_freq=False,</span> <span class="pre">opt_target_qubit_anharm=False,</span> <span class="pre">opt_target_resonator_freq=False,</span> <span class="pre">opt_target_resonator_kappa=False,</span> <span class="pre">opt_target_resonator_qubit_chi=False,</span> <span class="pre">use_simple_resonator_qubit_chi=False,</span> <span class="pre">design_var_qubit_lj:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_lj&gt;,</span> <span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;,</span> <span class="pre">design_var_res_length:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_length&gt;,</span> <span class="pre">design_var_res_coupl_length:</span> <span class="pre">~typing.Callable[[str,</span> <span class="pre">str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_targets_qb_res_transmission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission" title="Link to this definition"></a></dt>
+<dd><p>Get the optimization targets for a qubit-resonator system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> (<em>Mode</em>) – The qubit mode.</p></li>
+<li><p><strong>resonator</strong> (<em>Mode</em>) – The resonator mode.</p></li>
+<li><p><strong>resonator_coupled_identifier</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The identifier of the resonator coupled to the qubit.</p></li>
+<li><p><strong>opt_target_qubit_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the qubit frequency.</p></li>
+<li><p><strong>opt_target_qubit_anharm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the qubit anharmonicity.</p></li>
+<li><p><strong>opt_target_resonator_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the resonator frequency.</p></li>
+<li><p><strong>opt_target_resonator_kappa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the resonator linewidth.</p></li>
+<li><p><strong>opt_target_resonator_qubit_chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the qubit-resonator coupling strength.</p></li>
+<li><p><strong>design_var_qubit_lj</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the qubit inductance.</p></li>
+<li><p><strong>design_var_qubit_width</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the qubit width.</p></li>
+<li><p><strong>design_var_res_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the resonator length.</p></li>
+<li><p><strong>design_var_res_coupl_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the resonator coupling length.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The optimization targets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget">OptTarget</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="qdesignoptimizer.utils.names_qiskit_components.html" class="btn btn-neutral float-left" title="qdesignoptimizer.utils.names_qiskit_components module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="qdesignoptimizer.utils.plotting.html" class="btn btn-neutral float-right" title="qdesignoptimizer.utils.plotting module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

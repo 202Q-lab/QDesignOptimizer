@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.utils package &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="qdesignoptimizer.utils.chip_generation module" href="qdesignoptimizer.utils.chip_generation.html" />
+    <link rel="prev" title="qdesignoptimizer.estimation.classical_model_decay_into_charge_line module" href="qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">qdesignoptimizer</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="qdesignoptimizer.html">qdesignoptimizer package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="qdesignoptimizer.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.estimation.html">qdesignoptimizer.estimation package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">qdesignoptimizer.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">qdesignoptimizer</a></li>
+          <li class="breadcrumb-item"><a href="qdesignoptimizer.html">qdesignoptimizer package</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.utils package</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qdesignoptimizer.utils">
+<span id="qdesignoptimizer-utils-package"></span><h1>qdesignoptimizer.utils package<a class="headerlink" href="#module-qdesignoptimizer.utils" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="qdesignoptimizer.utils.chip_generation.html">qdesignoptimizer.utils.chip_generation module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType"><code class="docutils literal notranslate"><span class="pre">ChipType</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType.material"><code class="docutils literal notranslate"><span class="pre">ChipType.material</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType.size_x"><code class="docutils literal notranslate"><span class="pre">ChipType.size_x</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType.size_y"><code class="docutils literal notranslate"><span class="pre">ChipType.size_y</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType.size_z"><code class="docutils literal notranslate"><span class="pre">ChipType.size_z</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.create_chip_base"><code class="docutils literal notranslate"><span class="pre">create_chip_base()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html">qdesignoptimizer.utils.names_design_variables module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.add_design_variables_to_design"><code class="docutils literal notranslate"><span class="pre">add_design_variables_to_design()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_length"><code class="docutils literal notranslate"><span class="pre">design_var_length()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_width"><code class="docutils literal notranslate"><span class="pre">design_var_width()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_gap"><code class="docutils literal notranslate"><span class="pre">design_var_gap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_coupl_length"><code class="docutils literal notranslate"><span class="pre">design_var_coupl_length()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_lj"><code class="docutils literal notranslate"><span class="pre">design_var_lj()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_cj"><code class="docutils literal notranslate"><span class="pre">design_var_cj()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_cl_pos_x"><code class="docutils literal notranslate"><span class="pre">design_var_cl_pos_x()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_cl_pos_y"><code class="docutils literal notranslate"><span class="pre">design_var_cl_pos_y()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.junction_setup"><code class="docutils literal notranslate"><span class="pre">junction_setup()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html">qdesignoptimizer.utils.names_parameters module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.CAPACITANCE"><code class="docutils literal notranslate"><span class="pre">CAPACITANCE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.Mode"><code class="docutils literal notranslate"><span class="pre">Mode</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.Parameter"><code class="docutils literal notranslate"><span class="pre">Parameter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.mode"><code class="docutils literal notranslate"><span class="pre">mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param"><code class="docutils literal notranslate"><span class="pre">param()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param_nonlin"><code class="docutils literal notranslate"><span class="pre">param_nonlin()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param_capacitance"><code class="docutils literal notranslate"><span class="pre">param_capacitance()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.get_mode_from_param"><code class="docutils literal notranslate"><span class="pre">get_mode_from_param()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.get_modes_from_param_nonlin"><code class="docutils literal notranslate"><span class="pre">get_modes_from_param_nonlin()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html">qdesignoptimizer.utils.names_qiskit_components module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.QiskitComponentName"><code class="docutils literal notranslate"><span class="pre">QiskitComponentName</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_id"><code class="docutils literal notranslate"><span class="pre">name_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_mode"><code class="docutils literal notranslate"><span class="pre">name_mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_mode_to_mode"><code class="docutils literal notranslate"><span class="pre">name_mode_to_mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_tee"><code class="docutils literal notranslate"><span class="pre">name_tee()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_lp"><code class="docutils literal notranslate"><span class="pre">name_lp()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_charge_line"><code class="docutils literal notranslate"><span class="pre">name_charge_line()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_flux_line"><code class="docutils literal notranslate"><span class="pre">name_flux_line()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_lp_to_tee"><code class="docutils literal notranslate"><span class="pre">name_lp_to_tee()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_tee_to_tee"><code class="docutils literal notranslate"><span class="pre">name_tee_to_tee()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_lp_to_chargeline"><code class="docutils literal notranslate"><span class="pre">name_lp_to_chargeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html">qdesignoptimizer.utils.optimization_targets module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj"><code class="docutils literal notranslate"><span class="pre">get_opt_target_qubit_freq_via_lj()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width"><code class="docutils literal notranslate"><span class="pre">get_opt_target_qubit_anharmonicity_via_capacitance_width()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length"><code class="docutils literal notranslate"><span class="pre">get_opt_target_res_freq_via_length()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_kappa_via_coupl_length"><code class="docutils literal notranslate"><span class="pre">get_opt_target_res_kappa_via_coupl_length()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length"><code class="docutils literal notranslate"><span class="pre">get_opt_target_res_qub_chi_via_coupl_length()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length_simple"><code class="docutils literal notranslate"><span class="pre">get_opt_target_res_qub_chi_via_coupl_length_simple()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission"><code class="docutils literal notranslate"><span class="pre">get_opt_targets_qb_res_transmission()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qdesignoptimizer.utils.plotting.html">qdesignoptimizer.utils.plotting module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.plotting.html#qdesignoptimizer.utils.plotting.load_data_by_date"><code class="docutils literal notranslate"><span class="pre">load_data_by_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.plotting.html#qdesignoptimizer.utils.plotting.plot_optimization_results"><code class="docutils literal notranslate"><span class="pre">plot_optimization_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qdesignoptimizer.utils.utils.html">qdesignoptimizer.utils.utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.close_ansys"><code class="docutils literal notranslate"><span class="pre">close_ansys()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_junction_position"><code class="docutils literal notranslate"><span class="pre">get_junction_position()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_middle_point"><code class="docutils literal notranslate"><span class="pre">get_middle_point()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_normalized_vector"><code class="docutils literal notranslate"><span class="pre">get_normalized_vector()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.rotate_point"><code class="docutils literal notranslate"><span class="pre">rotate_point()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_value_and_unit"><code class="docutils literal notranslate"><span class="pre">get_value_and_unit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.sum_expression"><code class="docutils literal notranslate"><span class="pre">sum_expression()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html" class="btn btn-neutral float-left" title="qdesignoptimizer.estimation.classical_model_decay_into_charge_line module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="qdesignoptimizer.utils.chip_generation.html" class="btn btn-neutral float-right" title="qdesignoptimizer.utils.chip_generation module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

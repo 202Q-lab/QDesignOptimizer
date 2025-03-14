@@ -1,0 +1,247 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optimizer 101 &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User Guide" href="userguide.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Optimizer 101</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-qdo">Why QDO?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qdo-concept">QDO Concept</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#problem-formulation">Problem Formulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulate-design-variables">Simulate Design Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#update-design-variables">Update Design Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#separating-physical-dependencies-by-design">Separating physical dependencies by design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#independent-variables">Independent Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#factorization-of-update-step">Factorization of Update Step</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Optimizer 101</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="optimizer-101">
+<span id="qdesignoptimizer"></span><h1>Optimizer 101<a class="headerlink" href="#optimizer-101" title="Link to this heading"></a></h1>
+<p>This section contains information about the workflow of the QDesignOptimizer (QDO).</p>
+<section id="why-qdo">
+<h2>Why QDO?<a class="headerlink" href="#why-qdo" title="Link to this heading"></a></h2>
+<p>Tuning up a superconducting quantum chip often involves lenghty simulations where the user manually updates the design variables, such as capacitance lengths and Josephson junction sizes, to reach the parameter targets of the circuit, such as frequencies, decay rates and coupling strengths. The QDesignOptimizer package strongly reduces the need for manual intervention by automating the simulation and optimization of the design variables. The optimization cycle first runs a detailed and often time-taking electro-magnetic <a class="reference external" href="https://www.ansys.com/products/electronics/ansys-hfss">Ansys HFSS</a> simulation <a class="footnote-reference brackets" href="#f1" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> combined with <a class="reference external" href="https://pyepr-docs.readthedocs.io/en/latest/">Energy Participation Ratio (EPR)</a> analysis <a class="footnote-reference brackets" href="#f2" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> to estimate the current values of the circuit parameters, integrated together with design framework <a class="reference external" href="https://qiskit-community.github.io/qiskit-metal/">Qiskit Metal</a> <a class="footnote-reference brackets" href="#f3" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>. The second step solves a nonlinear approximate model based on the user’s physical knowledge about the circuit, which estimates how the design variables should be changed to reach the target. The flexibility in the QDesignOptimizer setup allows for the efficient investigation of chip subsystems since the simulation and approximate physical model are dynamically compiled from the user settings.</p>
+</section>
+<section id="qdo-concept">
+<h2>QDO Concept<a class="headerlink" href="#qdo-concept" title="Link to this heading"></a></h2>
+<p>The optimiation framework allows for a systematic and automated optimization of quantum chip designs based on physical models including:</p>
+<ol class="arabic simple">
+<li><p>Eigenmode simulations</p></li>
+<li><p>Capacitance simulations</p></li>
+<li><p>Energy participation ratio analysis</p></li>
+</ol>
+<p>The workflow of the QDesignOptimizer follows a three-step logic, which is also shown in the figure below:</p>
+<ol class="arabic simple">
+<li><p>Problem formulation</p></li>
+<li><p>Optimization based on physical models</p></li>
+<li><p>Validation and results</p></li>
+</ol>
+<p>In short, in the problem formulation the user specifies the parameter targets, an initial guess for the design variables, and the optimization targets holding the approximate physical relationships between the parameters and variables. The optimization step is an iterative process that begins with a detailed electromagnetic simulation and energy participation ratio analysis for the current design variables, which provide the current values of the parameters. The approximate nonlinear model specified in the optimization targets is then solved, suggesting a good approximation to the optimal design variables, leading to convergence after a few iterations.
+| Further information on the setup can be found in <a class="reference internal" href="userguide.html#userguide"><span class="std std-ref">User Guide</span></a>.</p>
+<figure class="align-center">
+<a class="reference internal image-reference" href="_images/optimizationflow.png"><img alt="Example image" src="_images/optimizationflow.png" style="width: 450.0px; height: 937.0px;" />
+</a>
+</figure>
+<section id="problem-formulation">
+<h3>Problem Formulation<a class="headerlink" href="#problem-formulation" title="Link to this heading"></a></h3>
+<p>The general idea is to identify <span class="math notranslate nohighlight">\(N\)</span> design variables <span class="math notranslate nohighlight">\(\overrightarrow{V}=\{V_1, ..., V_N\}\)</span>, which can be varied so that the targets of the <span class="math notranslate nohighlight">\(N\)</span> parameters <span class="math notranslate nohighlight">\(\overrightarrow{Q}=\{Q_1, ..., Q_N\}\)</span> can be reached. These definitions are done by setting up one <a class="reference internal" href="quickstart.html#opttarget"><span class="std std-ref">Optimization Target</span></a> for each parameter, which specifies the physical, generally nonlinear relation of how the parameter depends on the varying design variables as well as (other) parameters, i.e.,</p>
+<div class="math notranslate nohighlight">
+\[Q_i\propto F_i\left(\underset{\textrm{excl.} Q_i}{ \overrightarrow{Q}},  \overrightarrow{V}\right)\]</div>
+<p>As an initial guess for the optimization, the user will provide sensible values for the design variables <span class="math notranslate nohighlight">\(\overrightarrow{V}\)</span>.</p>
+</section>
+<section id="simulate-design-variables">
+<h3>Simulate Design Variables<a class="headerlink" href="#simulate-design-variables" title="Link to this heading"></a></h3>
+<p>To obtain knowledge of which values of the parameters the current design variables result in, the QDesignOptimizer runs a detailed electromagnetic simulation (by choice an eigenmode and/or capacitance simulation) in <a class="reference external" href="https://www.ansys.com/products/electronics/ansys-hfss">Ansys HFSS</a> and performs an energy-participation ratio (<a class="reference external" href="https://pyepr-docs.readthedocs.io/en/latest/">pyEPR</a>) analysis. The parameters <span class="math notranslate nohighlight">\(\overrightarrow{Q}^{k}\)</span>, in the k-th iteration, are then extracted from the simulation and analysis results.</p>
+</section>
+<section id="update-design-variables">
+<h3>Update Design Variables<a class="headerlink" href="#update-design-variables" title="Link to this heading"></a></h3>
+<p>In update step number <span class="math notranslate nohighlight">\(k\)</span>, the optimizer updates the design variables from the ones used in the simulation <span class="math notranslate nohighlight">\(\overrightarrow{V}^{k}\)</span> to <span class="math notranslate nohighlight">\(\overrightarrow{V}^{k+1}\)</span>, such that <span class="math notranslate nohighlight">\(\overrightarrow{Q}_i^{k+1}\)</span> gets close to the target value <span class="math notranslate nohighlight">\(Q_i^{target}\)</span>. Due to the assumption of proportionality between <span class="math notranslate nohighlight">\(Q_i\)</span> and <span class="math notranslate nohighlight">\(F_i\)</span>, the updated parameter is estimated as:</p>
+<div class="math notranslate nohighlight">
+\[\tilde Q_i^{k+1} = Q_i^{k} \frac{F_i(\overrightarrow{\tilde Q}^{k+1},\overrightarrow{V}^{k+1})}{F_i(\overrightarrow{Q}^k,\overrightarrow{V}^k)}.\]</div>
+<p>Note that we here distinguish between the parameter <span class="math notranslate nohighlight">\(\overrightarrow{\tilde Q}\)</span> estimated by the approximate model and the simulated parameter <span class="math notranslate nohighlight">\(\overrightarrow{Q}\)</span>, which is typically more accurate. The more accurate the physical model is, which we set up in the equation above, the smaller is the discrepancy <span class="math notranslate nohighlight">\(|| \overrightarrow{Q}- \overrightarrow{\tilde Q}||\)</span>, and the faster the optimization converges.</p>
+<p>To obtain the updated design variables <span class="math notranslate nohighlight">\(\overrightarrow{V}^{k+1}\)</span>, the QDesignOptimizer minimizes the cost function:</p>
+<div class="math notranslate nohighlight">
+\[C = \sum_{i=1}^N\left|\frac{\tilde Q_i^{k+1}}{Q_i^{target}} - 1\right|^2\]</div>
+<p>by finding the optimal <span class="math notranslate nohighlight">\(\overrightarrow{V}^{k+1}\)</span>. If the problem is correctly formulated, the minimization will reach <span class="math notranslate nohighlight">\(\tilde Q_i^{k+1} = Q_i^{target}\)</span> for all <span class="math notranslate nohighlight">\(k=1,...,N\)</span> targets in the optimization. However, the QDesignOptimizer assumes that parameters, which are not associated with an <a class="reference internal" href="quickstart.html#opttarget"><span class="std std-ref">Optimization Target</span></a>, will not be affected by the changed design variables, i.e., <span class="math notranslate nohighlight">\(\tilde Q_i^{k+1} = Q_i^{k}\)</span> for <span class="math notranslate nohighlight">\(k&gt;N\)</span>, if the system contains more parameters than targets.</p>
+<p>These relations for <span class="math notranslate nohighlight">\(\tilde Q_i^{k+1}\)</span> simplify parameter updates to only depend on:</p>
+<ul class="simple">
+<li><p>The values of the parameters in the previous step,</p></li>
+<li><p>The target values, and</p></li>
+<li><p>The design variables.</p></li>
+</ul>
+<p>One of the main assumptions, which the QDesignOptimizer takes advantage of is that, if the approximate model incorporates the correct general trends of the physical relationships, the optimization will converge to the target. Hence, there is no need for the user to specify a very precise physical model, but the more the user knows about the physics, the faster and more robust the optimizer will be.</p>
+</section>
+<section id="separating-physical-dependencies-by-design">
+<h3>Separating physical dependencies by design<a class="headerlink" href="#separating-physical-dependencies-by-design" title="Link to this heading"></a></h3>
+<div class="line-block">
+<div class="line">We recommend to create a design which separates the physical dependence between parameter targets and their intendet design variables. As a result, the user can specify more easily a nonlinear model that approximates the physical dependences of the design well. This nonlinear model is the input to the <a class="reference internal" href="quickstart.html#opttarget"><span class="std std-ref">Optimization Target</span></a>. Note that, the user does not need to decouple the physics of the system as long as the user can model the coupled system by nonlinear equations well. In many cases, it might not even be necessary to develop a very precise mode. An inaccurate model capturing the gradient is often sufficient, if the optimizer takes small update steps, which can be set by the update rate of the optimizer. However, the user might compromise on convergence.</div>
+<div class="line">For example, if we define the <span class="math notranslate nohighlight">\(l_{res-tl}\)</span> coupling length such that it does not affect the total length of the resonator, we approximately decouple the optimization of <span class="math notranslate nohighlight">\(f_{res}\)</span> and <span class="math notranslate nohighlight">\(\kappa_{res}\)</span>. In this example, given that we decoupled the physical relation between coupling strenght and frequency, a simple decoupled nonlinear model is a good approximation of the system.</div>
+</div>
+</section>
+<section id="independent-variables">
+<h3>Independent Variables<a class="headerlink" href="#independent-variables" title="Link to this heading"></a></h3>
+<p>The number of independent design variables <span class="math notranslate nohighlight">\(N\)</span> must match the number of parameters that have a target in the optimization. In the example discussed in <a class="reference internal" href="quickstart.html#qickstart"><span class="std std-ref">QDO QuickStart</span></a>, we consider the <span class="math notranslate nohighlight">\(N=5\)</span> parameters specified in table under <a class="reference internal" href="quickstart.html#relationtable"><span class="std std-ref">Physical relation</span></a>, where the corresponding five design variables are:</p>
+<ul class="simple">
+<li><p>Resonator length <span class="math notranslate nohighlight">\(l_{res}\)</span></p></li>
+<li><p>Qubit Josephson junction inductance <span class="math notranslate nohighlight">\(L_{qb}\)</span></p></li>
+<li><p>Qubit width <span class="math notranslate nohighlight">\(w_{qb}\)</span></p></li>
+<li><p>Resonator-qubit coupling width <span class="math notranslate nohighlight">\(w_{res-qb}\)</span></p></li>
+<li><p>Resonator to transmission line coupling length <span class="math notranslate nohighlight">\(l_{res-tl}\)</span></p></li>
+</ul>
+</section>
+<section id="factorization-of-update-step">
+<h3>Factorization of Update Step<a class="headerlink" href="#factorization-of-update-step" title="Link to this heading"></a></h3>
+<div class="line-block">
+<div class="line">The nonlinear minimization step is simplified by exploiting the independence of some design variables in the physical relations. Involving this factorization, we can decompose the original N-dimensional optimization problem into a sequence of lower-dimensional subproblems, which significantly reduces the computational complexity and can be solved faster.</div>
+<div class="line">Specifically in the example discussed in <a class="reference internal" href="quickstart.html#qickstart"><span class="std std-ref">QDO QuickStart</span></a> we observe that:</div>
+</div>
+<ul class="simple">
+<li><p>The resonance frequency of the resonator <span class="math notranslate nohighlight">\(f_{res}\)</span> depends solely on the resonator length <span class="math notranslate nohighlight">\(l_{res}\)</span></p></li>
+<li><p>The coupling of the resonator to the feedline <span class="math notranslate nohighlight">\(\kappa_{res}\)</span> depends solely on the resonator to feedline coupling length <span class="math notranslate nohighlight">\(l_{res-tl}\)</span></p></li>
+<li><p>The qubit capacitance energy <span class="math notranslate nohighlight">\(f_{qb}\)</span> is influenced only by the qubit width <span class="math notranslate nohighlight">\(w_{qb}\)</span>.</p></li>
+</ul>
+<p>Instead of minimizing all parameters simultaneously, the optimizer first solve the following one-dimensional optimization problems to obtain the updated design variables:</p>
+<ul class="simple">
+<li><p>Determine <span class="math notranslate nohighlight">\(l_{res}^{k+1}\)</span> by minimizing the cost function with respect to <span class="math notranslate nohighlight">\((f_{res}, l_{res})\)</span>.</p></li>
+<li><p>Determine <span class="math notranslate nohighlight">\(l_{res-tl}^{k+1}\)</span> by minimizing the cost function with respect to <span class="math notranslate nohighlight">\((\kappa_{res}, l_{res-tl})\)</span>.</p></li>
+<li><p>Determine <span class="math notranslate nohighlight">\(w_{qb}^{k+1}\)</span> by minimizing the cost function with respect to <span class="math notranslate nohighlight">\((f_{qb}, w_{qb})\)</span>.</p></li>
+</ul>
+<p>Once these one-dimensional optimizations are complete, we solve the remaining two-dimensional problem involving:</p>
+<ul class="simple">
+<li><p>Determine <span class="math notranslate nohighlight">\(\chi_{qb-res}^{k+1}\)</span> by solving for <span class="math notranslate nohighlight">\((f_{qb}, \chi, L_{qb}, w_{res-qb})\)</span></p></li>
+</ul>
+<div class="line-block">
+<div class="line">Instead of solving a full five-dimensional problem at once, we handle subproblems of dimensions 1, 1, 1, and 2, which are computationally more efficient.</div>
+</div>
+<p class="rubric">Footnotes</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="f1" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://www.ansys.com/products/electronics/ansys-hfss">Ansys HFSS</a> is a proprietary, multipurpose, full wave 3D electromagnetic (EM) simulation software for designing and simulating high-frequency electronic products such as antennas, components, interconnects, connectors, ICs, and PCBs.</p>
+</aside>
+<aside class="footnote brackets" id="f2" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://pyepr-docs.readthedocs.io/en/latest/">pyEPR</a> is an open-source library providing automated analysis and design of quantum microwave devices. This package is based on the publication Minev, Z.K., Leghtas, Z., Mundhada, S.O. et al. Energy-participation quantization of Josephson circuits. npj Quantum Inf 7, 131 (2021).</p>
+</aside>
+<aside class="footnote brackets" id="f3" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">3</a><span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://qiskit-community.github.io/qiskit-metal/">Qiskit Metal</a> is an open-source framework (and library) for the design of superconducting quantum chips and devices.</p>
+</aside>
+</aside>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="userguide.html" class="btn btn-neutral float-right" title="User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

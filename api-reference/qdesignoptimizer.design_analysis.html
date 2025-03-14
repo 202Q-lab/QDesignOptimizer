@@ -1,0 +1,316 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.design_analysis module &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="qdesignoptimizer.design_analysis_types module" href="qdesignoptimizer.design_analysis_types.html" />
+    <link rel="prev" title="qdesignoptimizer.utils.utils module" href="qdesignoptimizer.utils.utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">qdesignoptimizer</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="qdesignoptimizer.html">qdesignoptimizer package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="qdesignoptimizer.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">qdesignoptimizer.design_analysis module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html">qdesignoptimizer.design_analysis_types module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.logger.html">qdesignoptimizer.logger module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.sim_capacitance_matrix.html">qdesignoptimizer.sim_capacitance_matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.sim_plot_progress.html">qdesignoptimizer.sim_plot_progress module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">qdesignoptimizer</a></li>
+          <li class="breadcrumb-item"><a href="qdesignoptimizer.html">qdesignoptimizer package</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.design_analysis module</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qdesignoptimizer.design_analysis">
+<span id="qdesignoptimizer-design-analysis-module"></span><h1>qdesignoptimizer.design_analysis module<a class="headerlink" href="#module-qdesignoptimizer.design_analysis" title="Link to this heading"></a></h1>
+<p>Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.design_analysis.</span></span><span class="sig-name descname"><span class="pre">DesignAnalysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.DesignAnalysisState" title="qdesignoptimizer.design_analysis_types.DesignAnalysisState"><span class="pre">DesignAnalysisState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mini_study</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MiniStudy" title="qdesignoptimizer.design_analysis_types.MiniStudy"><span class="pre">MiniStudy</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'analysis_result'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_design_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_settings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MeshingMap" title="qdesignoptimizer.design_analysis_types.MeshingMap"><span class="pre">MeshingMap</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimization_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for DesignAnalysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<em>DesignAnalysisSetup</em>) – DesignAnalysisState object</p></li>
+<li><p><strong>mini_study</strong> (<a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MiniStudy" title="qdesignoptimizer.design_analysis_types.MiniStudy"><em>MiniStudy</em></a>) – MiniStudy object</p></li>
+<li><p><strong>opt_targets</strong> (<em>List</em><em>[</em><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><em>OptTarget</em></a><em>]</em>) – list of OptTarget objects</p></li>
+<li><p><strong>save_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – path to save results</p></li>
+<li><p><strong>update_design_variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – update parameters</p></li>
+<li><p><strong>plot_settings</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – plot settings for progress plots</p></li>
+<li><p><strong>meshing_map</strong> (<em>List</em><em>[</em><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MeshingMap" title="qdesignoptimizer.design_analysis_types.MeshingMap"><em>MeshingMap</em></a><em>]</em>) – meshing map</p></li>
+<li><p><strong>minimization_tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – tolerance used to terminate the solution of an optimization step.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.update_nbr_passes">
+<span class="sig-name descname"><span class="pre">update_nbr_passes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nbr_passes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.update_nbr_passes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.update_nbr_passes" title="Link to this definition"></a></dt>
+<dd><p>Update the number of simulation passes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.update_nbr_passes_capacitance_ministudies">
+<span class="sig-name descname"><span class="pre">update_nbr_passes_capacitance_ministudies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nbr_passes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.update_nbr_passes_capacitance_ministudies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.update_nbr_passes_capacitance_ministudies" title="Link to this definition"></a></dt>
+<dd><p>Updates the number of passes for capacitance matrix studies.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.update_delta_f">
+<span class="sig-name descname"><span class="pre">update_delta_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.update_delta_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.update_delta_f" title="Link to this definition"></a></dt>
+<dd><p>Update eigenmode convergence tolerance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.update_var">
+<span class="sig-name descname"><span class="pre">update_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updated_design_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_optimized_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.update_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.update_var" title="Link to this definition"></a></dt>
+<dd><p>Update junction and design variables in mini_study, design, pinfo and.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_fine_mesh_names">
+<span class="sig-name descname"><span class="pre">get_fine_mesh_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_fine_mesh_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_fine_mesh_names" title="Link to this definition"></a></dt>
+<dd><p>The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name “get_meshing_names”. This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_port_gap_names">
+<span class="sig-name descname"><span class="pre">get_port_gap_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_port_gap_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_port_gap_names" title="Link to this definition"></a></dt>
+<dd><p>Get names of all endcap ports in the design.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.run_eigenmodes">
+<span class="sig-name descname"><span class="pre">run_eigenmodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.run_eigenmodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.run_eigenmodes" title="Link to this definition"></a></dt>
+<dd><p>Simulate eigenmodes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.run_epr">
+<span class="sig-name descname"><span class="pre">run_epr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.run_epr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.run_epr" title="Link to this definition"></a></dt>
+<dd><p>Run EPR, requires design with junctions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_simulated_modes_sorted">
+<span class="sig-name descname"><span class="pre">get_simulated_modes_sorted</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_simulated_modes_sorted"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_simulated_modes_sorted" title="Link to this definition"></a></dt>
+<dd><p>Get simulated modes sorted on value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of modes sorted on freq_value</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)">tuple</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_parameter_value">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_parameter_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_parameter_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_parameter_value" title="Link to this definition"></a></dt>
+<dd><p>Return value of parameter from target specification.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_system_params_targets_met">
+<span class="sig-name descname"><span class="pre">get_system_params_targets_met</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_system_params_targets_met"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_system_params_targets_met" title="Link to this definition"></a></dt>
+<dd><p>Return organized dictionary of parameters given target specifications and current status.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target">
+<span class="sig-name descname"><span class="pre">optimize_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updated_design_vars_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_optimized_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.optimize_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target" title="Link to this definition"></a></dt>
+<dd><p>Optimize with respect to provided targets.
+!!! Assumes that all simulated frequencies have same order as the target mode freqs, to associate them correctly. !!!
+The modes will be incorrectly assigned if the frequencies are not in the same order.
+Tip: simulate the modes individually first to get them close to their target frequencies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>updated_design_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – updated design variables</p></li>
+<li><p><strong>system_optimized_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – updated system optimized parameters</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.overwrite_parameters">
+<span class="sig-name descname"><span class="pre">overwrite_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.overwrite_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.overwrite_parameters" title="Link to this definition"></a></dt>
+<dd><p>Overwirte the original design_variables.json file with new values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_cross_kerr_matrix">
+<span class="sig-name descname"><span class="pre">get_cross_kerr_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iteration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_cross_kerr_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_cross_kerr_matrix" title="Link to this definition"></a></dt>
+<dd><p>Get cross kerr matrix from EPR analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>iteration</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – simulation iteration number defaults to the most recent iteration</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>cross kerr matrix</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_eigenmode_results">
+<span class="sig-name descname"><span class="pre">get_eigenmode_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iteration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_eigenmode_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_eigenmode_results" title="Link to this definition"></a></dt>
+<dd><p>Get eigenmode results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>iteration</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – simulation iteration number defaults to the most recent iteration</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>eigenmode results</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_capacitance_matrix">
+<span class="sig-name descname"><span class="pre">get_capacitance_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">capacitance_study_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">iteration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_capacitance_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_capacitance_matrix" title="Link to this definition"></a></dt>
+<dd><p>Get capacitance matrix from stati simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>capacitance_study_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – which of the capacitance studies in the MiniStudy to retrive the matrix from (1 being the first)</p></li>
+<li><p><strong>iteration</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – simulation iteration number defaults to the most recent iteration</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>capacitance matrix</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[pd.DataFrame]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.screenshot">
+<span class="sig-name descname"><span class="pre">screenshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gui</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.screenshot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.screenshot" title="Link to this definition"></a></dt>
+<dd><p>Take and save a screenshot of the current qiskit-metal design.</p>
+<p>Useful for tracking how the geometry is updated during optimization.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="qdesignoptimizer.utils.utils.html" class="btn btn-neutral float-left" title="qdesignoptimizer.utils.utils module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="qdesignoptimizer.design_analysis_types.html" class="btn btn-neutral float-right" title="qdesignoptimizer.design_analysis_types module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

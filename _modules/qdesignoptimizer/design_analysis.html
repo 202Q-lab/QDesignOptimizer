@@ -1,0 +1,1025 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.design_analysis &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.design_analysis</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qdesignoptimizer.design_analysis</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pyEPR</span> <span class="k">as</span> <span class="nn">epr</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">import</span> <span class="nn">scipy.optimize</span>
+<span class="kn">from</span> <span class="nn">pyaedt</span> <span class="kn">import</span> <span class="n">Hfss</span>
+<span class="kn">from</span> <span class="nn">qiskit_metal.analyses.quantization</span> <span class="kn">import</span> <span class="n">EPRanalysis</span>
+
+<span class="kn">import</span> <span class="nn">qdesignoptimizer</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DesignAnalysisState</span><span class="p">,</span>
+    <span class="n">MeshingMap</span><span class="p">,</span>
+    <span class="n">MiniStudy</span><span class="p">,</span>
+    <span class="n">OptTarget</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.logger</span> <span class="kn">import</span> <span class="n">dict_log_format</span><span class="p">,</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.sim_capacitance_matrix</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CapacitanceMatrixStudy</span><span class="p">,</span>
+    <span class="n">ModeDecayStudy</span><span class="p">,</span>
+    <span class="n">ResonatorDecayIntoWaveguideStudy</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.sim_plot_progress</span> <span class="kn">import</span> <span class="n">plot_progress</span>  <span class="c1"># type: ignore</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.names_parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CAPACITANCE</span><span class="p">,</span>
+    <span class="n">CHARGE_LINE_LIMITED_T1</span><span class="p">,</span>
+    <span class="n">FREQ</span><span class="p">,</span>
+    <span class="n">KAPPA</span><span class="p">,</span>
+    <span class="n">NONLIN</span><span class="p">,</span>
+    <span class="n">param</span><span class="p">,</span>
+    <span class="n">param_capacitance</span><span class="p">,</span>
+    <span class="n">param_nonlin</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_value_and_unit</span>
+
+
+<div class="viewcode-block" id="DesignAnalysis">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis">[docs]</a>
+<span class="k">class</span> <span class="nc">DesignAnalysis</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for DesignAnalysis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        state (DesignAnalysisSetup): DesignAnalysisState object</span>
+<span class="sd">        mini_study (MiniStudy): MiniStudy object</span>
+<span class="sd">        opt_targets (List[OptTarget]): list of OptTarget objects</span>
+<span class="sd">        save_path (str): path to save results</span>
+<span class="sd">        update_design_variables (bool): update parameters</span>
+<span class="sd">        plot_settings (dict): plot settings for progress plots</span>
+<span class="sd">        meshing_map (List[MeshingMap]): meshing map</span>
+<span class="sd">        minimization_tol (float): tolerance used to terminate the solution of an optimization step.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">DesignAnalysisState</span><span class="p">,</span>
+        <span class="n">mini_study</span><span class="p">:</span> <span class="n">MiniStudy</span><span class="p">,</span>
+        <span class="n">opt_targets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">save_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;analysis_result&quot;</span><span class="p">,</span>
+        <span class="n">update_design_variables</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">plot_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshing_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">MeshingMap</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">minimization_tol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">design_analysis_version</span> <span class="o">=</span> <span class="n">qdesignoptimizer</span><span class="o">.</span><span class="n">__version__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">design</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">design</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span> <span class="o">=</span> <span class="n">EPRanalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="p">,</span> <span class="s2">&quot;hfss&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Resonator_setup&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">renderer</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;self.eig_solver.sim.setup </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dict_log_format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">setup</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">sweep_variable</span> <span class="o">=</span> <span class="s2">&quot;dummy&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span> <span class="o">=</span> <span class="n">mini_study</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt_targets</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_design_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">design_var</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">render_qiskit_metal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">system_target_params</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_system_optimized_params_initialized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">system_optimized_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sys_opt_param</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">system_optimized_params</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_system_optimized_params_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">fill_leaves_with_none</span><span class="p">(</span><span class="n">nested_dict</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">nested_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">fill_leaves_with_none</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">nested_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="n">nested_dict</span>
+
+            <span class="n">sys_opt_param</span> <span class="o">=</span> <span class="n">fill_leaves_with_none</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span> <span class="o">=</span> <span class="n">sys_opt_param</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="n">save_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_design_variables</span> <span class="o">=</span> <span class="n">update_design_variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_settings</span> <span class="o">=</span> <span class="n">plot_settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meshing_map</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">MeshingMap</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshing_map</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minimization_tol</span> <span class="o">=</span> <span class="n">minimization_tol</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minimization_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">activate_ansys_design</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">design_name</span><span class="p">,</span> <span class="s2">&quot;eigenmode&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">pinfo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">n_modes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">passes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">nbr_passes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">delta_f</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;x_buffer_width_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">x_buffer_width_mm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;y_buffer_width_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">y_buffer_width_mm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;max_mesh_length_port&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">max_mesh_length_port</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_opt_targets</span><span class="p">()</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span>
+        <span class="p">),</span> <span class="s2">&quot;system_target_params and system_optimized_params cannot be references to the same object&quot;</span>
+
+<div class="viewcode-block" id="DesignAnalysis.update_nbr_passes">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.update_nbr_passes">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_nbr_passes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbr_passes</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the number of simulation passes.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">nbr_passes</span> <span class="o">=</span> <span class="n">nbr_passes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">passes</span> <span class="o">=</span> <span class="n">nbr_passes</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.update_nbr_passes_capacitance_ministudies">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.update_nbr_passes_capacitance_ministudies">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_nbr_passes_capacitance_ministudies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbr_passes</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the number of passes for capacitance matrix studies.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">cap_study</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span><span class="p">:</span>
+                <span class="n">cap_study</span><span class="o">.</span><span class="n">nbr_passes</span> <span class="o">=</span> <span class="n">nbr_passes</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.update_delta_f">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.update_delta_f">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_delta_f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update eigenmode convergence tolerance.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">=</span> <span class="n">delta_f</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">=</span> <span class="n">delta_f</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_validate_opt_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate opt_targets.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="p">(</span>
+                    <span class="n">target</span><span class="o">.</span><span class="n">design_var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">variables</span>
+                <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Design variable </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">design_var</span><span class="si">}</span><span class="s2"> not found in design variables.&quot;</span>
+                <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">CHARGE_LINE_LIMITED_T1</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+                    <span class="p">),</span> <span class="s2">&quot;capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study.&quot;</span>
+                <span class="k">elif</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">KAPPA</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
+                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">study</span><span class="p">,</span> <span class="n">ResonatorDecayIntoWaveguideStudy</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">study</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span>
+                    <span class="p">):</span>
+                        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span>
+                            <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+                        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target for </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> expects </span><span class="se">\</span>
+<span class="s2">                        </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span><span class="si">}</span><span class="s2"> modes but only </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">n_modes</span><span class="si">}</span><span class="s2"> modes will be simulated.&quot;</span>
+                <span class="k">elif</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">CAPACITANCE</span><span class="p">:</span>
+                    <span class="n">capacitance_1</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">capacitance_2</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">assert</span> <span class="p">(</span>
+                        <span class="n">param_capacitance</span><span class="p">(</span><span class="o">*</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span>
+                        <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target for &#39;</span><span class="si">{</span><span class="n">CAPACITANCE</span><span class="si">}</span><span class="s2">&#39; requires </span><span class="si">{</span><span class="n">param_capacitance</span><span class="p">(</span><span class="o">*</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span><span class="si">}</span><span class="s2"> in system_target_params.&quot;</span>
+                    <span class="k">assert</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target for </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> expects 2 capacitance names, but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span><span class="si">}</span><span class="s2"> were given.&quot;</span>
+                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                        <span class="n">capacitance_1</span><span class="p">,</span> <span class="nb">str</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;First capacitance name </span><span class="si">{</span><span class="n">capacitance_1</span><span class="si">}</span><span class="s2"> must be a string.&quot;</span>
+                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                        <span class="n">capacitance_2</span><span class="p">,</span> <span class="nb">str</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Second capacitance name </span><span class="si">{</span><span class="n">capacitance_2</span><span class="si">}</span><span class="s2"> must be a string.&quot;</span>
+
+                <span class="k">elif</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">NONLIN</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target for </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> expects 2 modes.&quot;</span>
+                    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span>
+                        <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target for </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> expects </span><span class="se">\</span>
+<span class="s2">                        </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span><span class="si">}</span><span class="s2"> modes but only </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">n_modes</span><span class="si">}</span><span class="s2"> modes will be simulated.&quot;</span>
+                    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="p">(</span>
+                            <span class="n">mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span>
+                        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target mode </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                            not found in modes which will be simulated.&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span>
+                        <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+                    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target for </span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> expects </span><span class="se">\</span>
+<span class="s2">                        </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span><span class="si">}</span><span class="s2"> modes but only </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">n_modes</span><span class="si">}</span><span class="s2"> modes will be simulated.&quot;</span>
+                    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="p">(</span>
+                            <span class="n">mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span>
+                        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Target mode </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                            not found in modes which will be simulated.&quot;</span>
+
+            <span class="n">design_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">target</span><span class="o">.</span><span class="n">design_var</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">design_variables</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
+                <span class="nb">set</span><span class="p">(</span><span class="n">design_variables</span><span class="p">)</span>
+            <span class="p">),</span> <span class="s2">&quot;Design variables must be unique.&quot;</span>
+
+<div class="viewcode-block" id="DesignAnalysis.update_var">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.update_var">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">updated_design_vars</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">system_optimized_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update junction and design variables in mini_study, design, pinfo and.&quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="o">**</span><span class="n">updated_design_vars</span><span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">set_variable</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">system_optimized_params</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.get_fine_mesh_names">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_fine_mesh_names">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_fine_mesh_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name &quot;get_meshing_names&quot;. This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.&quot;&quot;&quot;</span>
+        <span class="n">finer_mesh_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component</span><span class="p">],</span> <span class="s2">&quot;get_meshing_names&quot;</span><span class="p">):</span>
+                <span class="n">finer_mesh_names</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span>
+                    <span class="n">component</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">get_meshing_names</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshing_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">m_map</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshing_map</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component</span><span class="p">],</span> <span class="n">m_map</span><span class="o">.</span><span class="n">component_class</span>
+                    <span class="p">):</span>
+                        <span class="n">finer_mesh_names</span> <span class="o">+=</span> <span class="n">m_map</span><span class="o">.</span><span class="n">mesh_names</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No fine mesh map was found for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">component</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">finer_mesh_names</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.get_port_gap_names">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_port_gap_names">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_port_gap_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get names of all endcap ports in the design.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;endcap_</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">port_list</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.run_eigenmodes">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.run_eigenmodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_eigenmodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simulate eigenmodes.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_var</span><span class="p">({},</span> <span class="p">{})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">validate_junction_info</span><span class="p">()</span>
+
+        <span class="n">hfss</span> <span class="o">=</span> <span class="n">Hfss</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">clean_active_design</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">render_qiskit_metal_eigenmode_kw_args</span>
+        <span class="p">)</span>
+        <span class="c1"># set hfss wire bonds properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;wb_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">hfss_wire_bond_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;wb_threshold&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">hfss_wire_bond_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;wb_offset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">hfss_wire_bond_offset</span>
+
+        <span class="c1"># render design in HFSS</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render_design</span><span class="p">(</span>
+            <span class="n">selection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">,</span>
+            <span class="n">port_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">port_list</span><span class="p">,</span>
+            <span class="n">open_pins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">open_pins</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># set custom air bridges</span>
+        <span class="k">for</span> <span class="n">component_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component_name</span><span class="p">],</span> <span class="s2">&quot;get_air_bridge_coordinates&quot;</span>
+            <span class="p">):</span>
+                <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span>
+                    <span class="n">component_name</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">get_air_bridge_coordinates</span><span class="p">():</span>
+                    <span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">create_bondwire</span><span class="p">(</span>
+                        <span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">h1</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+                        <span class="n">h2</span><span class="o">=</span><span class="mf">0.000</span><span class="p">,</span>
+                        <span class="n">alpha</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
+                        <span class="n">beta</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
+                        <span class="n">diameter</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+                        <span class="n">bond_type</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;mybox1&quot;</span><span class="p">,</span>
+                        <span class="n">matname</span><span class="o">=</span><span class="s2">&quot;aluminum&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># set fine mesh</span>
+        <span class="n">fine_mesh_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_fine_mesh_names</span><span class="p">()</span>
+        <span class="n">restrict_mesh</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">fine_mesh_names</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">build_fine_mesh</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">port_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">restrict_mesh</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">mesh_length</span><span class="p">(</span>
+                <span class="s2">&quot;fine_mesh&quot;</span><span class="p">,</span>
+                <span class="n">fine_mesh_names</span><span class="p">,</span>
+                <span class="n">MaxLength</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">max_mesh_length_lines_to_ports</span><span class="p">,</span>
+                <span class="n">RefineInside</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># run eigenmode analysis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>
+        <span class="n">eig_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">get_frequencies</span><span class="p">()</span>
+        <span class="n">eig_results</span><span class="p">[</span><span class="s2">&quot;Kappas (kHz)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">eig_results</span><span class="p">[</span><span class="s2">&quot;Freq. (GHz)&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e9</span> <span class="o">/</span> <span class="n">eig_results</span><span class="p">[</span><span class="s2">&quot;Quality Factor&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1e3</span>
+        <span class="p">)</span>
+        <span class="n">eig_results</span><span class="p">[</span><span class="s2">&quot;Freq. (Hz)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eig_results</span><span class="p">[</span><span class="s2">&quot;Freq. (GHz)&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e9</span>
+        <span class="n">eig_results</span><span class="p">[</span><span class="s2">&quot;Kappas (Hz)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eig_results</span><span class="p">[</span><span class="s2">&quot;Kappas (kHz)&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e3</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_optimized_params</span><span class="p">(</span><span class="n">eig_results</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">eig_results</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.run_epr">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.run_epr">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_epr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run EPR, requires design with junctions.&quot;&quot;&quot;</span>
+        <span class="n">no_junctions</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="p">)</span>
+
+        <span class="n">jj_setups_to_include_in_epr</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">junction_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">linear_element_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># experimental implementation. to be generatized in the future to arbitrary junction potentials</span>
+            <span class="c1"># this is a simple way to implement a linear potential only</span>
+            <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">in</span> <span class="n">val</span> <span class="ow">and</span> <span class="n">val</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+                <span class="n">linear_element_found</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">continue</span>
+            <span class="n">jj_setups_to_include_in_epr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="n">junction_found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">junction_found</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="n">jj_setups_to_include_in_epr</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">no_junctions</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">DistributedAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">get_stored_energy</span><span class="p">(</span><span class="n">no_junctions</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">do_EPR_analysis</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">epra</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">QuantumAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">data_filename</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">analyze_all_variations</span><span class="p">(</span>
+                        <span class="n">cos_trunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">cos_trunc</span><span class="p">,</span>
+                        <span class="n">fock_trunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">fock_trunc</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">plot_hamiltonian_results</span><span class="p">()</span>
+                    <span class="n">freqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_frequencies</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">chis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_chis</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_update_optimized_params_epr</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">chis</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="s2">&quot;Please install a more recent version of pyEPR (&gt;=0.8.5.3)&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span>
+
+            <span class="k">return</span> <span class="n">chis</span>
+        <span class="n">add_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">linear_element_found</span><span class="p">:</span>
+            <span class="n">add_msg</span> <span class="o">=</span> <span class="s2">&quot; However, a linear element was found.&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No junctions found, skipping EPR analysis.</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">add_msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.get_simulated_modes_sorted">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_simulated_modes_sorted">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_simulated_modes_sorted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get simulated modes sorted on value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[tuple]: list of modes sorted on freq_value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">simulated_modes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span>
+        <span class="n">simulated_mode_freq_value</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">FREQ</span><span class="p">)])</span>
+            <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">simulated_modes</span>
+        <span class="p">]</span>
+        <span class="n">simulated_modes_sorted_on_freq_value</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">simulated_mode_freq_value</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">simulated_modes_sorted_on_freq_value</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_update_optimized_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eig_result</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">freq</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_simulated_modes_sorted</span><span class="p">()):</span>
+            <span class="n">freq</span> <span class="o">=</span> <span class="n">eig_result</span><span class="p">[</span><span class="s2">&quot;Freq. (Hz)&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">decay</span> <span class="o">=</span> <span class="n">eig_result</span><span class="p">[</span><span class="s2">&quot;Kappas (Hz)&quot;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">FREQ</span><span class="p">)]</span> <span class="o">=</span> <span class="n">freq</span>
+            <span class="k">if</span> <span class="n">param</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">KAPPA</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">KAPPA</span><span class="p">)]</span> <span class="o">=</span> <span class="n">decay</span>
+
+    <span class="k">def</span> <span class="nf">_get_mode_idx_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get mode index map.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: object {mode: idx}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_modes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_simulated_modes_sorted</span><span class="p">()</span>
+        <span class="n">mode_idx</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">idx_i</span><span class="p">,</span> <span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_modes</span><span class="p">):</span>
+            <span class="n">mode_idx</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx_i</span>
+        <span class="k">return</span> <span class="n">mode_idx</span>
+
+    <span class="k">def</span> <span class="nf">_update_optimized_params_epr</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">freq_ND_results</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">epr_result</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="p">):</span>
+
+        <span class="n">MHz</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">mode_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mode_idx_map</span><span class="p">()</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;freq_ND_results</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dict_log_format</span><span class="p">(</span><span class="n">freq_ND_results</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()))</span>
+        <span class="n">freq_column</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">mode</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">mode_idx</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">FREQ</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">freq_ND_results</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">mode_idx</span><span class="p">[</span><span class="n">mode</span><span class="p">]][</span><span class="n">freq_column</span><span class="p">]</span> <span class="o">*</span> <span class="n">MHz</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">mode_i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">mode_j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">mode_i</span><span class="p">,</span> <span class="n">mode_j</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">epr_result</span><span class="p">[</span><span class="n">mode_idx</span><span class="p">[</span><span class="n">mode_i</span><span class="p">]]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">mode_idx</span><span class="p">[</span><span class="n">mode_j</span><span class="p">]]</span> <span class="o">*</span> <span class="n">MHz</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_optimized_params_capacitance_simulation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">capacitance_matrix</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">capacitance_study</span><span class="p">:</span> <span class="n">CapacitanceMatrixStudy</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">capacitance_names_all_targets</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+            <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">CAPACITANCE</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">capacitance_names</span> <span class="ow">in</span> <span class="n">capacitance_names_all_targets</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param_capacitance</span><span class="p">(</span><span class="o">*</span><span class="n">capacitance_names</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">capacitance_matrix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">capacitance_names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">capacitance_names</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Warning: capacitance </span><span class="si">%s</span><span class="s2"> not found in capacitance matrix with names </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">capacitance_names</span><span class="p">,</span>
+                    <span class="n">capacitance_matrix</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Check if this is a ModeDecayStudy and update the appropriate parameter</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">capacitance_study</span><span class="p">,</span> <span class="n">ModeDecayStudy</span><span class="p">):</span>
+            <span class="n">param_type</span> <span class="o">=</span> <span class="n">capacitance_study</span><span class="o">.</span><span class="n">get_decay_parameter_type</span><span class="p">()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computing </span><span class="si">{</span><span class="n">param_type</span><span class="si">}</span><span class="s2"> from decay study.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">param_type</span> <span class="o">==</span> <span class="n">KAPPA</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Parameter KAPPA from capacitance matrix simulation will overwrite eigenmode result.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">param_value</span> <span class="o">=</span> <span class="n">capacitance_study</span><span class="o">.</span><span class="n">get_decay_parameter_value</span><span class="p">()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Computed </span><span class="si">{</span><span class="n">param_type</span><span class="si">}</span><span class="s2"> value: </span><span class="si">{</span><span class="n">param_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">capacitance_study</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="n">param_type</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">param_value</span>
+            <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_apply_adjustment_rate</span><span class="p">(</span>
+        <span class="n">new_val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">old_val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Low pass filter for adjustment rate.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            new_val (float): new value</span>
+<span class="sd">            old_val (float): old value</span>
+<span class="sd">            rate (float): rate of adjustment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">new_val</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rate</span><span class="p">)</span> <span class="o">*</span> <span class="n">old_val</span>
+
+    <span class="k">def</span> <span class="nf">_constrain_design_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">design_value_old</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">design_value_new</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">design_var_constraint</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constrain design value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            design_value (str): design value to be constrained</span>
+<span class="sd">            design_var_constraint (dict[str, str]): design variable constraint, example {&#39;min&#39;: &#39;10 um&#39;, &#39;max&#39;: &#39;100 um&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d_val_o</span><span class="p">,</span> <span class="n">d_unit</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">design_value_old</span><span class="p">)</span>
+        <span class="n">d_val_n</span><span class="p">,</span> <span class="n">d_unit</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">design_value_new</span><span class="p">)</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">adjustment_rate</span>
+        <span class="n">d_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_adjustment_rate</span><span class="p">(</span><span class="n">d_val_n</span><span class="p">,</span> <span class="n">d_val_o</span><span class="p">,</span> <span class="n">rate</span><span class="p">)</span>
+
+        <span class="n">c_val_to_be_smaller_than</span><span class="p">,</span> <span class="n">c_unit_to_be_smaller_than</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span>
+            <span class="n">design_var_constraint</span><span class="p">[</span><span class="s2">&quot;smaller_than&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">c_val_to_be_larger_than</span><span class="p">,</span> <span class="n">c_unit_to_be_larger_than</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span>
+            <span class="n">design_var_constraint</span><span class="p">[</span><span class="s2">&quot;larger_than&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">d_unit</span> <span class="o">==</span> <span class="n">c_unit_to_be_smaller_than</span> <span class="o">==</span> <span class="n">c_unit_to_be_larger_than</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Units of design_value </span><span class="si">{</span><span class="n">design_value_old</span><span class="si">}</span><span class="s2"> and constraint </span><span class="si">{</span><span class="n">design_var_constraint</span><span class="si">}</span><span class="s2"> must match&quot;</span>
+        <span class="k">if</span> <span class="n">d_val</span> <span class="o">&gt;</span> <span class="n">c_val_to_be_smaller_than</span><span class="p">:</span>
+            <span class="n">design_value</span> <span class="o">=</span> <span class="n">c_val_to_be_smaller_than</span>
+        <span class="k">elif</span> <span class="n">d_val</span> <span class="o">&lt;</span> <span class="n">c_val_to_be_larger_than</span><span class="p">:</span>
+            <span class="n">design_value</span> <span class="o">=</span> <span class="n">c_val_to_be_larger_than</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">design_value</span> <span class="o">=</span> <span class="n">d_val</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">design_value</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">d_unit</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="DesignAnalysis.get_parameter_value">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_parameter_value">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_parameter_value</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">OptTarget</span><span class="p">,</span> <span class="n">system_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return value of parameter from target specification.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">NONLIN</span><span class="p">:</span>
+            <span class="n">mode1</span><span class="p">,</span> <span class="n">mode2</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+            <span class="n">current_value</span> <span class="o">=</span> <span class="n">system_params</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">mode1</span><span class="p">,</span> <span class="n">mode2</span><span class="p">)]</span>
+        <span class="k">elif</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">CAPACITANCE</span><span class="p">:</span>
+            <span class="n">capacitance_name_1</span><span class="p">,</span> <span class="n">capacitance_name_2</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+            <span class="n">current_value</span> <span class="o">=</span> <span class="n">system_params</span><span class="p">[</span>
+                <span class="n">param_capacitance</span><span class="p">(</span><span class="n">capacitance_name_1</span><span class="p">,</span> <span class="n">capacitance_name_2</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">current_value</span> <span class="o">=</span> <span class="n">system_params</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">current_value</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_minimize_for_design_vars</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">targets_to_minimize_for</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">],</span>
+        <span class="n">all_design_var_current</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">all_design_var_updated</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">all_parameters_current</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">all_parameters_targets_met</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Minimize the cost function to find the optimal design variables to reach the target.</span>
+<span class="sd">        The all_design_var_updated variable is automatically updated with the optimal design variables during the minimization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">design_var_names_to_minimize</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">design_var</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">targets_to_minimize_for</span>
+        <span class="p">]</span>
+        <span class="n">bounds_for_targets</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">design_var_constraint</span><span class="p">[</span><span class="s2">&quot;larger_than&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">design_var_constraint</span><span class="p">[</span><span class="s2">&quot;smaller_than&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">targets_to_minimize_for</span>
+        <span class="p">]</span>
+
+        <span class="n">init_design_var</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">init_design_var</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">all_design_var_current</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">design_var_names_to_minimize</span>
+        <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">cost_function</span><span class="p">(</span><span class="n">design_var_vals_updated</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Cost function to minimize.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                ordered_design_var_vals_updated (List[float]): list of updated design variable values</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">design_var_names_to_minimize</span><span class="p">):</span>
+                <span class="n">all_design_var_updated</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">design_var_vals_updated</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">targets_to_minimize_for</span><span class="p">:</span>
+                <span class="n">Q_k1_i</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">all_parameters_current</span><span class="p">)</span>
+                    <span class="o">*</span> <span class="n">target</span><span class="o">.</span><span class="n">prop_to</span><span class="p">(</span><span class="n">all_parameters_targets_met</span><span class="p">,</span> <span class="n">all_design_var_updated</span><span class="p">)</span>
+                    <span class="o">/</span> <span class="n">target</span><span class="o">.</span><span class="n">prop_to</span><span class="p">(</span><span class="n">all_parameters_current</span><span class="p">,</span> <span class="n">all_design_var_current</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">cost</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="n">Q_k1_i</span>
+                        <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">all_parameters_targets_met</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="o">-</span> <span class="mi">1</span>
+                <span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+            <span class="k">return</span> <span class="n">cost</span>
+
+        <span class="n">min_result</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+            <span class="n">cost_function</span><span class="p">,</span>
+            <span class="n">init_design_var</span><span class="p">,</span>
+            <span class="n">tol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">minimization_tol</span><span class="p">,</span>
+            <span class="n">bounds</span><span class="o">=</span><span class="n">bounds_for_targets</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">design_var_names_to_minimize</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">all_design_var_updated</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">==</span> <span class="n">bounds_for_targets</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="ow">or</span> <span class="n">all_design_var_updated</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">==</span> <span class="n">bounds_for_targets</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The optimized value for the design variable </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">all_design_var_updated</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2"> is at the bounds. Consider changing the bounds or making the initial design closer to the optimal one.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">final_cost</span> <span class="o">=</span> <span class="n">cost_function</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">all_design_var_updated</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">design_var_names_to_minimize</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="n">min_result</span><span class="p">,</span>
+            <span class="s2">&quot;targets_to_minimize_for&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">design_var</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">targets_to_minimize_for</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;final_cost&quot;</span><span class="p">:</span> <span class="n">final_cost</span><span class="p">,</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="DesignAnalysis.get_system_params_targets_met">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_system_params_targets_met">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_system_params_targets_met</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return organized dictionary of parameters given target specifications and current status.&quot;&quot;&quot;</span>
+        <span class="n">system_params_targets_met</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">NONLIN</span><span class="p">:</span>
+                <span class="n">mode1</span><span class="p">,</span> <span class="n">mode2</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+                <span class="n">system_params_targets_met</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">mode1</span><span class="p">,</span> <span class="n">mode2</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">CAPACITANCE</span><span class="p">:</span>
+                <span class="n">capacitance_name_1</span><span class="p">,</span> <span class="n">capacitance_name_2</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span>
+                <span class="n">system_params_targets_met</span><span class="p">[</span>
+                    <span class="n">param_capacitance</span><span class="p">(</span><span class="n">capacitance_name_1</span><span class="p">,</span> <span class="n">capacitance_name_2</span><span class="p">)</span>
+                <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mode_name</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">system_params_targets_met</span><span class="p">[</span>
+                    <span class="n">param</span><span class="p">(</span><span class="n">mode_name</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">target_param_type</span><span class="p">)</span>
+                <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">system_params_targets_met</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_calculate_target_design_var</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the new design value for the optimization targets.&quot;&quot;&quot;</span>
+
+        <span class="n">system_params_current</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">)</span>
+        <span class="n">system_params_targets_met</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_system_params_targets_met</span><span class="p">()</span>
+
+        <span class="n">design_vars_current_str</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_system_optimized_params_initialized</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_system_optimized_params_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="n">design_vars_current_str</span>
+
+        <span class="c1"># Fetch the numeric values of the design variables</span>
+        <span class="n">design_vars_current</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">design_vars_updated</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">units</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">design_var</span><span class="p">,</span> <span class="n">val_unit</span> <span class="ow">in</span> <span class="n">design_vars_current_str</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">val</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">val_unit</span><span class="p">)</span>
+            <span class="n">design_vars_current</span><span class="p">[</span><span class="n">design_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="n">design_vars_updated</span><span class="p">[</span><span class="n">design_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="n">units</span><span class="p">[</span><span class="n">design_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">unit</span>
+
+        <span class="n">independent_targets</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">target</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span> <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">independent_target</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">independent_targets</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">independent_target</span> <span class="ow">in</span> <span class="n">independent_targets</span><span class="p">:</span>
+                <span class="n">minimization_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_minimize_for_design_vars</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">independent_target</span><span class="p">],</span>
+                    <span class="n">design_vars_current</span><span class="p">,</span>
+                    <span class="n">design_vars_updated</span><span class="p">,</span>
+                    <span class="n">system_params_current</span><span class="p">,</span>
+                    <span class="n">system_params_targets_met</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">minimization_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">minimization_result</span><span class="p">)</span>
+
+        <span class="n">dependent_targets</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">target</span> <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">independent_target</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">dependent_targets</span><span class="p">:</span>
+            <span class="n">minimization_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_minimize_for_design_vars</span><span class="p">(</span>
+                <span class="n">dependent_targets</span><span class="p">,</span>
+                <span class="n">design_vars_current</span><span class="p">,</span>
+                <span class="n">design_vars_updated</span><span class="p">,</span>
+                <span class="n">system_params_current</span><span class="p">,</span>
+                <span class="n">system_params_targets_met</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">minimization_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">minimization_result</span><span class="p">)</span>
+
+        <span class="c1"># Stitch back the unit of the design variable values</span>
+        <span class="n">design_vars_updated_constrained_str</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">:</span>
+            <span class="n">design_var_name</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">design_var</span>
+            <span class="n">design_vars_updated_val_and_unit</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">design_vars_updated</span><span class="p">[</span><span class="n">design_var_name</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">units</span><span class="p">[</span><span class="n">design_var_name</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">constrained_val_and_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constrain_design_value</span><span class="p">(</span>
+                <span class="n">design_vars_current_str</span><span class="p">[</span><span class="n">design_var_name</span><span class="p">],</span>
+                <span class="n">design_vars_updated_val_and_unit</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">design_var_constraint</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">design_vars_updated_constrained_str</span><span class="p">[</span><span class="n">design_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">constrained_val_and_unit</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">design_vars_updated_constrained_str</span>
+
+<div class="viewcode-block" id="DesignAnalysis.optimize_target">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target">[docs]</a>
+    <span class="k">def</span> <span class="nf">optimize_target</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">updated_design_vars_input</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">system_optimized_params</span><span class="p">:</span> <span class="nb">dict</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Optimize with respect to provided targets.</span>
+<span class="sd">        !!! Assumes that all simulated frequencies have same order as the target mode freqs, to associate them correctly. !!!</span>
+<span class="sd">        The modes will be incorrectly assigned if the frequencies are not in the same order.</span>
+<span class="sd">        Tip: simulate the modes individually first to get them close to their target frequencies.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            updated_design_vars (dict): updated design variables</span>
+<span class="sd">            system_optimized_params (dict): updated system optimized parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">system_optimized_params</span> <span class="o">==</span> <span class="p">{}:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_system_optimized_params_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_var</span><span class="p">(</span><span class="n">updated_design_vars_input</span><span class="p">,</span> <span class="n">system_optimized_params</span><span class="p">)</span>
+
+        <span class="n">updated_design_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_target_design_var</span><span class="p">()</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Updated_design_vars</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dict_log_format</span><span class="p">(</span><span class="n">updated_design_vars</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_var</span><span class="p">(</span><span class="n">updated_design_vars</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="n">iteration_result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">run_capacitance_studies_only</span>
+        <span class="p">):</span>
+            <span class="c1"># Eigenmode analysis for frequencies</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eig_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_eigenmodes</span><span class="p">()</span>
+            <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;eig_results&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eig_result</span><span class="p">)</span>
+
+            <span class="c1"># EPR analysis for nonlinearities</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cross_kerrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_epr</span><span class="p">()</span>
+
+            <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;cross_kerrs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cross_kerrs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;capacitance_matrix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">capacitance_study</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span><span class="p">:</span>
+                <span class="n">capacitance_study</span><span class="o">.</span><span class="n">set_render_qiskit_metal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Simulating capacitance matrix study.&quot;</span><span class="p">)</span>
+                <span class="n">capacitance_matrix</span> <span class="o">=</span> <span class="n">capacitance_study</span><span class="o">.</span><span class="n">simulate_capacitance_matrix</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">design</span>
+                <span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CAPACITANCE MATRIX</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">capacitance_matrix</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_optimized_params_capacitance_simulation</span><span class="p">(</span>
+                    <span class="n">capacitance_matrix</span><span class="p">,</span> <span class="n">capacitance_study</span>
+                <span class="p">)</span>
+
+                <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;capacitance_matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">deepcopy</span><span class="p">(</span><span class="n">capacitance_matrix</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;design_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">))</span>
+        <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;system_optimized_params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span>
+        <span class="p">)</span>
+        <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;minimization_results&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minimization_results</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iteration_result</span><span class="p">)</span>
+        <span class="n">simulation</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;optimization_results&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">,</span>
+                <span class="s2">&quot;system_target_params&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">,</span>
+                <span class="s2">&quot;plot_settings&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_settings</span><span class="p">,</span>
+                <span class="s2">&quot;design_analysis_version&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_analysis_version</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">simulation</span><span class="p">),</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">+</span> <span class="s2">&quot;_design_variables.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">updated_design_vars</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_design_variables</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_parameters</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_settings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">plot_progress</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">plot_settings</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.overwrite_parameters">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.overwrite_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">overwrite_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Overwirte the original design_variables.json file with new values.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A path must be specified to fetch results.&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">+</span> <span class="s2">&quot;_design_variables.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">in_file</span><span class="p">:</span>
+            <span class="n">updated_design_vars</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">in_file</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;design_variables.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">in_file</span><span class="p">:</span>
+            <span class="n">rewrite_parameters</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">in_file</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">updated_design_vars</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">rewrite_parameters</span><span class="p">:</span>
+                <span class="n">rewrite_parameters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;design_variables.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">rewrite_parameters</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Overwritten parameters</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dict_log_format</span><span class="p">(</span><span class="n">updated_design_vars</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.get_cross_kerr_matrix">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_cross_kerr_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_cross_kerr_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get cross kerr matrix from EPR analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            iteration (int): simulation iteration number defaults to the most recent iteration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: cross kerr matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;cross_kerrs&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">[</span><span class="n">iteration</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">[</span><span class="n">iteration</span><span class="p">][</span><span class="s2">&quot;cross_kerrs&quot;</span><span class="p">]</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No cross kerr matrix in optimization results.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.get_eigenmode_results">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_eigenmode_results">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_eigenmode_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get eigenmode results.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            iteration (int): simulation iteration number defaults to the most recent iteration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: eigenmode results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;eig_results&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">[</span><span class="n">iteration</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">[</span><span class="n">iteration</span><span class="p">][</span><span class="s2">&quot;eig_results&quot;</span><span class="p">]</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No eigenmode matrix in optimization results.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.get_capacitance_matrix">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_capacitance_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_capacitance_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">capacitance_study_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get capacitance matrix from stati simulation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            capacitance_study_number (int): which of the capacitance studies in the MiniStudy to retrive the matrix from (1 being the first)</span>
+<span class="sd">            iteration (int): simulation iteration number defaults to the most recent iteration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[pd.DataFrame]: capacitance matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;capacitance_matrix&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">[</span><span class="n">iteration</span><span class="p">]:</span>
+            <span class="n">capacitance_matrices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">[</span><span class="n">iteration</span><span class="p">][</span>
+                <span class="s2">&quot;capacitance_matrix&quot;</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">capacitance_study_number</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">capacitance_matrices</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">capacitance_matrices</span><span class="p">[</span><span class="n">capacitance_study_number</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.screenshot">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.screenshot">[docs]</a>
+    <span class="k">def</span> <span class="nf">screenshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Take and save a screenshot of the current qiskit-metal design.</span>
+
+<span class="sd">        Useful for tracking how the geometry is updated during optimization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A path must be specified to save screenshot.&quot;</span><span class="p">)</span>
+        <span class="n">gui</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">run</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span>
+        <span class="n">gui</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

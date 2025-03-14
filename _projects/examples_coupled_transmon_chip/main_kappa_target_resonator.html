@@ -1,0 +1,278 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resonator Kappa through capacitance matrix simulation &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/my_theme.css?v=eea1f72d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Optimization of capacitance matrix target" href="main_capacitance_target_resonator.html" />
+    <link rel="prev" title="Capacitive simulation of qubit decay in charge line" href="main_charge_line_decay_single_qubit.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../userguide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">QDO QuickStart</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../examples.html">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_single_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_robustness_of_single_qubit.html">Robustness of qubit design optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_charge_line_decay_single_qubit.html">Capacitive simulation of qubit decay in charge line</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Resonator Kappa through capacitance matrix simulation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Design-assembly">Design assembly</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Optimization of capacitance matrix target</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../userguide.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="../../examples.html">Examples</a></li>
+      <li class="breadcrumb-item active">Resonator Kappa through capacitance matrix simulation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Resonator-Kappa-through-capacitance-matrix-simulation">
+<h1>Resonator Kappa through capacitance matrix simulation<a class="headerlink" href="#Resonator-Kappa-through-capacitance-matrix-simulation" title="Link to this heading"></a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+<span class="kn">import</span> <span class="nn">time</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">design</span> <span class="k">as</span> <span class="nn">d</span>
+<span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;design_variables.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">in_file</span><span class="p">:</span>
+    <span class="n">initial_design_variables</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">in_file</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.chip_generation</span> <span class="kn">import</span> <span class="n">create_chip_base</span><span class="p">,</span> <span class="n">ChipType</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
+
+<span class="n">close_ansys</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># for this example to store the data in the right place</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Design-assembly">
+<h2>Design assembly<a class="headerlink" href="#Design-assembly" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">CHIP_NAME</span> <span class="o">=</span> <span class="s2">&quot;multi_transmon_chip&quot;</span>
+<span class="n">OPEN_GUI</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">chip_type</span> <span class="o">=</span> <span class="n">ChipType</span><span class="p">(</span><span class="n">size_x</span><span class="o">=</span><span class="s2">&quot;10mm&quot;</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="s2">&quot;10mm&quot;</span><span class="p">,</span> <span class="n">size_z</span><span class="o">=</span><span class="s2">&quot;-300um&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;silicon&quot;</span><span class="p">)</span>
+<span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_base</span><span class="p">(</span>
+    <span class="n">chip_name</span><span class="o">=</span><span class="n">CHIP_NAME</span><span class="p">,</span> <span class="n">chip_type</span><span class="o">=</span><span class="n">chip_type</span><span class="p">,</span> <span class="n">open_gui</span><span class="o">=</span><span class="n">OPEN_GUI</span>
+<span class="p">)</span>
+
+<span class="n">n</span><span class="o">.</span><span class="n">add_design_variables_to_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">initial_design_variables</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">):</span>
+    <span class="n">d</span><span class="o">.</span><span class="n">add_transmon_plus_resonator</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span><span class="p">)</span>
+    <span class="n">d</span><span class="o">.</span><span class="n">add_transmon_plus_resonator</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_2</span><span class="p">)</span>
+
+    <span class="n">d</span><span class="o">.</span><span class="n">add_coupler</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+
+    <span class="n">d</span><span class="o">.</span><span class="n">add_route_interconnects</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+
+    <span class="n">d</span><span class="o">.</span><span class="n">add_launch_pads</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+
+    <span class="n">d</span><span class="o">.</span><span class="n">add_chargeline</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span><span class="p">)</span>
+    <span class="n">d</span><span class="o">.</span><span class="n">add_chargeline</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_2</span><span class="p">)</span>
+
+    <span class="n">gui</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
+    <span class="n">gui</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
+
+
+<span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Capacitive-simulation-of-resonator-decay-into-feedline">
+<h3>Capacitive simulation of resonator decay into feedline<a class="headerlink" href="#Capacitive-simulation-of-resonator-decay-into-feedline" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
+<span class="kn">import</span> <span class="nn">optimization_targets</span> <span class="k">as</span> <span class="nn">ot</span>
+<span class="kn">import</span> <span class="nn">parameter_targets</span> <span class="k">as</span> <span class="nn">pt</span>
+<span class="kn">import</span> <span class="nn">plot_settings</span> <span class="k">as</span> <span class="nn">ps</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis</span> <span class="kn">import</span> <span class="n">DesignAnalysis</span><span class="p">,</span> <span class="n">DesignAnalysisState</span>
+
+
+<span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_res_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
+<span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_target_res_kappa_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+
+<span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
+    <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
+<span class="p">)</span>
+<span class="n">design_analysis</span> <span class="o">=</span> <span class="n">DesignAnalysis</span><span class="p">(</span>
+    <span class="n">design_analysis_state</span><span class="p">,</span>
+    <span class="n">mini_study</span><span class="o">=</span><span class="n">MINI_STUDY</span><span class="p">,</span>
+    <span class="n">opt_targets</span><span class="o">=</span><span class="n">opt_targets</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="s2">&quot;out/&quot;</span> <span class="o">+</span> <span class="n">CHIP_NAME</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">),</span>
+    <span class="n">update_design_variables</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_settings</span><span class="o">=</span><span class="n">ps</span><span class="o">.</span><span class="n">PLOT_SETTINGS_RESONATOR_KAPPA</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">group_runs</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">group_passes_cap</span> <span class="o">=</span> <span class="mi">6</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group_runs</span><span class="p">):</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes_capacitance_ministudies</span><span class="p">(</span><span class="n">group_passes_cap</span><span class="p">)</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="main_charge_line_decay_single_qubit.html" class="btn btn-neutral float-left" title="Capacitive simulation of qubit decay in charge line" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="main_capacitance_target_resonator.html" class="btn btn-neutral float-right" title="Optimization of capacitance matrix target" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

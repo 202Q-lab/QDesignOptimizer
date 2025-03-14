@@ -1,0 +1,348 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.utils.optimization_targets &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.utils.optimization_targets</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qdesignoptimizer.utils.optimization_targets</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Functions for creating common optimization targets in quantum circuit design.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">qdesignoptimizer.utils.names_design_variables</span> <span class="k">as</span> <span class="nn">n</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="n">OptTarget</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.names_parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FREQ</span><span class="p">,</span>
+    <span class="n">KAPPA</span><span class="p">,</span>
+    <span class="n">NONLIN</span><span class="p">,</span>
+    <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">param</span><span class="p">,</span>
+    <span class="n">param_nonlin</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_opt_target_qubit_freq_via_lj">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj">[docs]</a>
+<span class="k">def</span> <span class="nf">get_opt_target_qubit_freq_via_lj</span><span class="p">(</span>
+    <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">design_var_qubit_lj</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_lj</span><span class="p">,</span>
+    <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get target for qubit frequency vs Josephson inductance and qubit width.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
+        <span class="n">target_param_type</span><span class="o">=</span><span class="n">FREQ</span><span class="p">,</span>
+        <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">],</span>
+        <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_qubit_lj</span><span class="p">(</span><span class="n">qubit</span><span class="p">),</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;0.1nH&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;400nH&quot;</span><span class="p">},</span>
+        <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_lj</span><span class="p">(</span><span class="n">qubit</span><span class="p">)]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">)]),</span>
+        <span class="n">independent_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_opt_target_qubit_anharmonicity_via_capacitance_width">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width">[docs]</a>
+<span class="k">def</span> <span class="nf">get_opt_target_qubit_anharmonicity_via_capacitance_width</span><span class="p">(</span>
+    <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get target for qubit anharmonicity vs its capacitive pad(s) size.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
+        <span class="n">target_param_type</span><span class="o">=</span><span class="n">NONLIN</span><span class="p">,</span>
+        <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">,</span> <span class="n">qubit</span><span class="p">],</span>
+        <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">),</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">},</span>
+        <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">)],</span>
+        <span class="n">independent_target</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_opt_target_res_freq_via_length">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length">[docs]</a>
+<span class="k">def</span> <span class="nf">get_opt_target_res_freq_via_length</span><span class="p">(</span>
+    <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">design_var_res_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_length</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get target for resonator frequency vs its length.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
+        <span class="n">target_param_type</span><span class="o">=</span><span class="n">FREQ</span><span class="p">,</span>
+        <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">resonator</span><span class="p">],</span>
+        <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">),</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;500um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;15000um&quot;</span><span class="p">},</span>
+        <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_res_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">)],</span>
+        <span class="n">independent_target</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_opt_target_res_kappa_via_coupl_length">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_kappa_via_coupl_length">[docs]</a>
+<span class="k">def</span> <span class="nf">get_opt_target_res_kappa_via_coupl_length</span><span class="p">(</span>
+    <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">resonator_coupled_identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">design_var_res_coupl_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get target for resonator&#39;s kappa vs. length of the coupler to a feedline.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
+        <span class="n">target_param_type</span><span class="o">=</span><span class="n">KAPPA</span><span class="p">,</span>
+        <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">resonator</span><span class="p">],</span>
+        <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">resonator_coupled_identifier</span><span class="p">),</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;20um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;2000um&quot;</span><span class="p">},</span>
+        <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span>
+            <span class="n">design_var_res_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">resonator_coupled_identifier</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">independent_target</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_opt_target_res_qub_chi_via_coupl_length">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length">[docs]</a>
+<span class="k">def</span> <span class="nf">get_opt_target_res_qub_chi_via_coupl_length</span><span class="p">(</span>
+    <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">design_var_res_qb_coupl_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
+    <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get optimization target for qubit-resonator dispersive shift.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
+        <span class="n">target_param_type</span><span class="o">=</span><span class="n">NONLIN</span><span class="p">,</span>
+        <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">,</span> <span class="n">resonator</span><span class="p">],</span>
+        <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">),</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">},</span>
+        <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+            <span class="n">v</span><span class="p">[</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)]</span>
+            <span class="o">/</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">)]</span>
+            <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">qubit</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)]</span>
+            <span class="o">/</span> <span class="p">(</span>
+                <span class="n">p</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">qubit</span><span class="p">,</span> <span class="n">FREQ</span><span class="p">)]</span>
+                <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">FREQ</span><span class="p">)]</span>
+                <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">qubit</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)]</span>
+            <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">independent_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_opt_target_res_qub_chi_via_coupl_length_simple">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length_simple">[docs]</a>
+<span class="k">def</span> <span class="nf">get_opt_target_res_qub_chi_via_coupl_length_simple</span><span class="p">(</span>
+    <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">design_var_res_qb_coupl_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
+    <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get optimization target for qubit-resonator dispersive shift with simplified formula.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
+        <span class="n">target_param_type</span><span class="o">=</span><span class="n">NONLIN</span><span class="p">,</span>
+        <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">,</span> <span class="n">resonator</span><span class="p">],</span>
+        <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">),</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">},</span>
+        <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+            <span class="n">v</span><span class="p">[</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)]</span>
+        <span class="p">),</span>
+        <span class="n">independent_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_opt_targets_qb_res_transmission">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission">[docs]</a>
+<span class="k">def</span> <span class="nf">get_opt_targets_qb_res_transmission</span><span class="p">(</span>
+    <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">resonator_coupled_identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">opt_target_qubit_freq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_qubit_anharm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_freq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_kappa</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_qubit_chi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_simple_resonator_qubit_chi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">design_var_qubit_lj</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_lj</span><span class="p">,</span>
+    <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+    <span class="n">design_var_res_length</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_length</span><span class="p">,</span>
+    <span class="n">design_var_res_coupl_length</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the optimization targets for a qubit-resonator system.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        qubit (Mode): The qubit mode.</span>
+<span class="sd">        resonator (Mode): The resonator mode.</span>
+<span class="sd">        resonator_coupled_identifier (str): The identifier of the resonator coupled to the qubit.</span>
+<span class="sd">        opt_target_qubit_freq (bool, optional): Whether to optimize the qubit frequency.</span>
+<span class="sd">        opt_target_qubit_anharm (bool, optional): Whether to optimize the qubit anharmonicity.</span>
+<span class="sd">        opt_target_resonator_freq (bool, optional): Whether to optimize the resonator frequency.</span>
+<span class="sd">        opt_target_resonator_kappa (bool, optional): Whether to optimize the resonator linewidth.</span>
+<span class="sd">        opt_target_resonator_qubit_chi (bool, optional): Whether to optimize the qubit-resonator coupling strength.</span>
+<span class="sd">        design_var_qubit_lj (Callable, optional): The function to get the qubit inductance.</span>
+<span class="sd">        design_var_qubit_width (Callable, optional): The function to get the qubit width.</span>
+<span class="sd">        design_var_res_length (Callable, optional): The function to get the resonator length.</span>
+<span class="sd">        design_var_res_coupl_length (Callable, optional): The function to get the resonator coupling length.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[OptTarget]: The optimization targets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">opt_targets</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">opt_target_qubit_freq</span><span class="p">:</span>
+        <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">get_opt_target_qubit_freq_via_lj</span><span class="p">(</span>
+                <span class="n">qubit</span><span class="p">,</span>
+                <span class="n">design_var_qubit_lj</span><span class="o">=</span><span class="n">design_var_qubit_lj</span><span class="p">,</span>
+                <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">opt_target_qubit_anharm</span><span class="p">:</span>
+        <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">get_opt_target_qubit_anharmonicity_via_capacitance_width</span><span class="p">(</span>
+                <span class="n">qubit</span><span class="p">,</span> <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">opt_target_resonator_freq</span><span class="p">:</span>
+        <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">get_opt_target_res_freq_via_length</span><span class="p">(</span>
+                <span class="n">resonator</span><span class="p">,</span>
+                <span class="n">design_var_res_length</span><span class="o">=</span><span class="n">design_var_res_length</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">opt_target_resonator_kappa</span><span class="p">:</span>
+        <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">get_opt_target_res_kappa_via_coupl_length</span><span class="p">(</span>
+                <span class="n">resonator</span><span class="p">,</span>
+                <span class="n">resonator_coupled_identifier</span><span class="p">,</span>
+                <span class="n">design_var_res_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">opt_target_resonator_qubit_chi</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_simple_resonator_qubit_chi</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">get_opt_target_res_qub_chi_via_coupl_length_simple</span><span class="p">(</span>
+                    <span class="n">qubit</span><span class="p">,</span>
+                    <span class="n">resonator</span><span class="p">,</span>
+                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
+                    <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">get_opt_target_res_qub_chi_via_coupl_length</span><span class="p">(</span>
+                    <span class="n">qubit</span><span class="p">,</span>
+                    <span class="n">resonator</span><span class="p">,</span>
+                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
+                    <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">opt_targets</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

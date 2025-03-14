@@ -1,0 +1,939 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.sim_plot_progress &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.sim_plot_progress</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qdesignoptimizer.sim_plot_progress</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Visualization utilities for tracking optimization progress of quantum circuit designs.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">cycle</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.axes</span> <span class="kn">import</span> <span class="n">Axes</span>
+<span class="kn">from</span> <span class="nn">matplotlib.figure</span> <span class="kn">import</span> <span class="n">Figure</span>
+<span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">MaxNLocator</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="n">OptTarget</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.names_parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CAPACITANCE</span><span class="p">,</span>
+    <span class="n">ITERATION</span><span class="p">,</span>
+    <span class="n">NONLIN</span><span class="p">,</span>
+    <span class="n">param</span><span class="p">,</span>
+    <span class="n">param_capacitance</span><span class="p">,</span>
+    <span class="n">param_nonlin</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_value_and_unit</span>
+
+
+<div class="viewcode-block" id="UnitEnum">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum">[docs]</a>
+<span class="k">class</span> <span class="nc">UnitEnum</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Supported frequency units for plotting.&quot;&quot;&quot;</span>
+
+    <span class="n">HZ</span> <span class="o">=</span> <span class="s2">&quot;Hz&quot;</span>
+    <span class="n">KHZ</span> <span class="o">=</span> <span class="s2">&quot;kHz&quot;</span>
+    <span class="n">MHZ</span> <span class="o">=</span> <span class="s2">&quot;MHz&quot;</span>
+    <span class="n">GHZ</span> <span class="o">=</span> <span class="s2">&quot;GHz&quot;</span>
+    <span class="n">FF</span> <span class="o">=</span> <span class="s2">&quot;fF&quot;</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="s2">&quot;s&quot;</span>
+    <span class="n">MS</span> <span class="o">=</span> <span class="s2">&quot;ms&quot;</span>
+    <span class="n">US</span> <span class="o">=</span> <span class="s2">&quot;us&quot;</span>
+    <span class="n">NS</span> <span class="o">=</span> <span class="s2">&quot;ns&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="OptPltSet">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptPltSet">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">OptPltSet</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for optimization progress plots.&quot;&quot;&quot;</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;X-axis parameter name.&quot;&quot;&quot;</span>
+
+    <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Y-axis parameter name(s).&quot;&quot;&quot;</span>
+
+    <span class="n">x_label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom X-axis label (uses x if None).&quot;&quot;&quot;</span>
+
+    <span class="n">y_label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom Y-axis label (uses y if None).&quot;&quot;&quot;</span>
+
+    <span class="n">x_scale</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;X-axis scale (linear or logarithmic).&quot;&quot;&quot;</span>
+
+    <span class="n">y_scale</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Y-axis scale (linear or logarithmic).&quot;&quot;&quot;</span>
+
+    <span class="n">unit</span><span class="p">:</span> <span class="n">UnitEnum</span> <span class="o">=</span> <span class="n">UnitEnum</span><span class="o">.</span><span class="n">HZ</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Display unit for y-axis values.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">normalization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the normalization factor for the selected unit.&quot;&quot;&quot;</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">HZ</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">KHZ</span><span class="p">:</span> <span class="mf">1e3</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">MHZ</span><span class="p">:</span> <span class="mf">1e6</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">GHZ</span><span class="p">:</span> <span class="mf">1e9</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">FF</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">S</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">MS</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">US</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+            <span class="n">UnitEnum</span><span class="o">.</span><span class="n">NS</span><span class="p">:</span> <span class="mf">1e-9</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">factors</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">]</span>
+
+<div class="viewcode-block" id="OptPltSet.get_x_label">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptPltSet.get_x_label">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_x_label</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the x-axis label, using the default if none specified.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_label</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span></div>
+
+
+<div class="viewcode-block" id="OptPltSet.get_y_label">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptPltSet.get_y_label">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_y_label</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the y-axis label, using the default if none specified.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y_label</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">OptimizationResult</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<span class="n">SystemParams</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<span class="n">PlotSettingsType</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">OptPltSet</span><span class="p">]]</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DataExtractor">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor">[docs]</a>
+<span class="k">class</span> <span class="nc">DataExtractor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts data from optimization results for plotting.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">opt_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OptimizationResult</span><span class="p">]],</span>
+        <span class="n">system_target_params</span><span class="p">:</span> <span class="n">SystemParams</span><span class="p">,</span>
+        <span class="n">opt_target_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the data extractor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            opt_results: List of optimization result sequences (one per optimization run)</span>
+<span class="sd">            system_target_params: Target system parameters</span>
+<span class="sd">            opt_target_list: Optional list of optimization targets for mapping parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span> <span class="o">=</span> <span class="n">opt_results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span> <span class="o">=</span> <span class="n">system_target_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_target_list</span> <span class="o">=</span> <span class="n">opt_target_list</span>
+
+<div class="viewcode-block" id="DataExtractor.get_parameter_value">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.get_parameter_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_parameter_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">OptimizationResult</span><span class="p">,</span> <span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract parameter value from a result entry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            param_name: Name of the parameter to extract</span>
+<span class="sd">            result: Optimization result entry</span>
+<span class="sd">            iteration: Iteration number (for ITERATION parameter)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Parameter value or None if not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">param_name</span> <span class="o">==</span> <span class="n">ITERATION</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">iteration</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;system_optimized_params&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;system_optimized_params&quot;</span><span class="p">][</span><span class="n">param_name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;design_variables&quot;</span><span class="p">]:</span>
+            <span class="n">value</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;design_variables&quot;</span><span class="p">][</span><span class="n">param_name</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DataExtractor.get_design_var_name_for_param">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.get_design_var_name_for_param">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_design_var_name_for_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_parameter</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the design variable name associated with a target parameter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target_parameter: Target parameter name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Name of the associated design variable</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If the parameter is not found in optimization targets</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_target_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No optimization targets provided&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">opt_target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_target_list</span><span class="p">:</span>
+            <span class="n">opt_target_variable</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">opt_target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">NONLIN</span><span class="p">:</span>
+                <span class="n">opt_target_variable</span> <span class="o">=</span> <span class="n">param_nonlin</span><span class="p">(</span><span class="o">*</span><span class="n">opt_target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">opt_target</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">==</span> <span class="n">CAPACITANCE</span><span class="p">:</span>
+                <span class="n">opt_target_variable</span> <span class="o">=</span> <span class="n">param_capacitance</span><span class="p">(</span><span class="o">*</span><span class="n">opt_target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">opt_target_variable</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span>
+                    <span class="n">opt_target</span><span class="o">.</span><span class="n">involved_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">opt_target</span><span class="o">.</span><span class="n">target_param_type</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">target_parameter</span> <span class="o">==</span> <span class="n">opt_target_variable</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">opt_target</span><span class="o">.</span><span class="n">design_var</span>
+
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Target parameter </span><span class="si">{</span><span class="n">target_parameter</span><span class="si">}</span><span class="s2"> not found in optimization targets&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataExtractor.get_design_var_for_param">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.get_design_var_for_param">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_design_var_for_param</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">target_parameter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">OptimizationResult</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get design variable value and unit for a target parameter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target_parameter: Target parameter name</span>
+<span class="sd">            result: Optimization result entry</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (value, unit)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">design_variable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_design_var_name_for_param</span><span class="p">(</span><span class="n">target_parameter</span><span class="p">)</span>
+        <span class="n">design_var_value</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;design_variables&quot;</span><span class="p">][</span><span class="n">design_variable</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">design_var_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Design variable </span><span class="si">{</span><span class="n">design_variable</span><span class="si">}</span><span class="s2"> not found in results&quot;</span>
+
+        <span class="n">value</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">design_var_value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span></div>
+
+
+<div class="viewcode-block" id="DataExtractor.extract_xy_data">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.extract_xy_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_xy_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">run_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">use_design_var_as_x</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">sort_by_x</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract x and y data series for plotting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x_param: X-axis parameter name</span>
+<span class="sd">            y_param: Y-axis parameter name</span>
+<span class="sd">            run_index: Index of the optimization run to use</span>
+<span class="sd">            use_design_var_as_x: If True, use design variable for x instead of parameter</span>
+<span class="sd">            sort_by_x: If True, sort the data by x values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (x_values, y_values)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">opt_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="n">run_index</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">use_design_var_as_x</span><span class="p">:</span>
+            <span class="c1"># Use design variable associated with y_param as x</span>
+            <span class="n">x_values</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_design_var_for_param</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">result</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Use parameter directly</span>
+            <span class="n">x_values</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">x_param</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="n">y_values</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Filter out None values</span>
+        <span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="o">*</span><span class="p">[</span>
+                <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">x_values_filtered</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">)</span>
+        <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">y_values_filtered</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sort_by_x</span> <span class="ow">and</span> <span class="n">x_values_filtered</span><span class="p">:</span>
+            <span class="c1"># Sort by x values if requested</span>
+            <span class="n">sorted_pairs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span><span class="p">))</span>
+            <span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">sorted_pairs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">y_values_filtered</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DataExtractor.get_y_data_with_statistics">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.get_y_data_with_statistics">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_y_data_with_statistics</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">use_design_var_as_x</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">sort_by_x</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract y data with mean and standard deviation across runs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x_param: X-axis parameter name</span>
+<span class="sd">            y_param: Y-axis parameter name</span>
+<span class="sd">            use_design_var_as_x: If True, use design variable for x instead of parameter</span>
+<span class="sd">            sort_by_x: If True, sort the data by x values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (x_values, y_mean, y_std)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_x_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_y_values</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">run_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">)):</span>
+            <span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_xy_data</span><span class="p">(</span>
+                <span class="n">x_param</span><span class="p">,</span> <span class="n">y_param</span><span class="p">,</span> <span class="n">run_index</span><span class="p">,</span> <span class="n">use_design_var_as_x</span><span class="p">,</span> <span class="n">sort_by_x</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">x_values</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">y_values</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">all_x_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span>
+            <span class="n">all_y_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">all_x_values</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="c1"># Use first run&#39;s x values as reference</span>
+        <span class="n">x_ref</span> <span class="o">=</span> <span class="n">all_x_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Ensure all series have the same x values for statistics</span>
+        <span class="n">y_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">y_values</span> <span class="k">for</span> <span class="n">y_values</span> <span class="ow">in</span> <span class="n">all_y_values</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_ref</span><span class="p">)]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">y_matrix</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x_ref</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="n">y_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">y_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">y_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x_ref</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="n">y_std</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="OptimizationPlotter">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter">[docs]</a>
+<span class="k">class</span> <span class="nc">OptimizationPlotter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handles plotting of optimization progress data.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data_extractor</span><span class="p">:</span> <span class="n">DataExtractor</span><span class="p">,</span>
+        <span class="n">plot_variance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">save_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the plotter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_extractor: Data extractor instance</span>
+<span class="sd">            plot_variance: If True, plot mean and variance across runs</span>
+<span class="sd">            save_figures: If True, save generated figures to disk</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span> <span class="o">=</span> <span class="n">data_extractor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_variance</span> <span class="o">=</span> <span class="n">plot_variance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_figures</span> <span class="o">=</span> <span class="n">save_figures</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_extractor</span><span class="o">.</span><span class="n">opt_results</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_setup_ax</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">OptPltSet</span><span class="p">,</span>
+        <span class="n">x_label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up an axis with proper labels, scales, and formatting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ax: Matplotlib axis</span>
+<span class="sd">            config: Plot configuration</span>
+<span class="sd">            x_label: Custom x-axis label (overrides config)</span>
+<span class="sd">            y_label: Custom y-axis label (overrides config)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">get_legend</span><span class="p">()</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">x_label</span> <span class="k">if</span> <span class="n">x_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">config</span><span class="o">.</span><span class="n">get_x_label</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">y_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">get_y_label</span><span class="p">()</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">x_scale</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">y_scale</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">MaxNLocator</span><span class="p">(</span><span class="n">integer</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_plot_target</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+        <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">normalization</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot horizontal target line if target exists for the parameter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ax: Matplotlib axis</span>
+<span class="sd">            param_name: Parameter name</span>
+<span class="sd">            x_min: Minimum x value</span>
+<span class="sd">            x_max: Maximum x value</span>
+<span class="sd">            color: Line color</span>
+<span class="sd">            normalization: Value normalization factor</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if target was plotted, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">param_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">target_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span>
+        <span class="n">normalized_target</span> <span class="o">=</span> <span class="n">target_value</span> <span class="o">/</span> <span class="n">normalization</span>
+        <span class="k">if</span> <span class="n">x_min</span> <span class="o">==</span> <span class="n">x_max</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                <span class="n">x_min</span><span class="p">,</span> <span class="n">normalized_target</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">normalized_target</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="OptimizationPlotter.plot_standard">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter.plot_standard">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot_standard</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fig</span><span class="p">:</span> <span class="n">Figure</span><span class="p">,</span>
+        <span class="n">axes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]],</span>
+        <span class="n">plot_settings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OptPltSet</span><span class="p">],</span>
+        <span class="n">plot_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create standard parameter vs. iteration plots.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fig: Matplotlib figure</span>
+<span class="sd">            axes: Single axis or list of axes</span>
+<span class="sd">            plot_settings: List of plot configurations</span>
+<span class="sd">            plot_name: Name for the plot (used for saving)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">plot_settings</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">cast</span><span class="p">(</span><span class="n">Axes</span><span class="p">,</span> <span class="n">axes</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">],</span> <span class="n">axes</span><span class="p">)</span>
+
+        <span class="n">colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;axes.prop_cycle&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">by_key</span><span class="p">()[</span><span class="s2">&quot;color&quot;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">plot_settings</span><span class="p">)):</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_single_param</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">y_idx</span><span class="p">,</span> <span class="n">y_param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
+                    <span class="n">curr_color</span> <span class="o">=</span> <span class="n">color</span> <span class="k">if</span> <span class="n">y_idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">y_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_single_param</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">y_param</span><span class="p">,</span> <span class="n">curr_color</span><span class="p">)</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">plot_name</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_figures</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;optimization_plot_</span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">plot_name</span><span class="si">}</span><span class="s2">.png&quot;</span>
+            <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_plot_single_param</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">OptPltSet</span><span class="p">,</span> <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot a single parameter series.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ax: Matplotlib axis</span>
+<span class="sd">            config: Plot configuration</span>
+<span class="sd">            y_param: Y-axis parameter name</span>
+<span class="sd">            color: Line color</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_variance</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Plot mean and variance</span>
+            <span class="n">x_values</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="n">y_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">get_y_data_with_statistics</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y_param</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">normalized_mean</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">normalization</span>
+                <span class="n">normalized_std</span> <span class="o">=</span> <span class="n">y_std</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">normalization</span>
+
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">x_values</span><span class="p">,</span> <span class="n">normalized_mean</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;optimized mean&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span>
+                <span class="p">)</span>
+
+                <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+                    <span class="n">x_values</span><span class="p">,</span>
+                    <span class="n">normalized_mean</span> <span class="o">-</span> <span class="n">normalized_std</span><span class="p">,</span>
+                    <span class="n">normalized_mean</span> <span class="o">+</span> <span class="n">normalized_std</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+                    <span class="n">facecolor</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">x_values</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_target</span><span class="p">(</span>
+                        <span class="n">ax</span><span class="p">,</span>
+                        <span class="n">y_param</span><span class="p">,</span>
+                        <span class="nb">min</span><span class="p">(</span><span class="n">x_values</span><span class="p">),</span>
+                        <span class="nb">max</span><span class="p">(</span><span class="n">x_values</span><span class="p">),</span>
+                        <span class="n">color</span><span class="p">,</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">normalization</span><span class="p">,</span>
+                    <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Plot individual runs</span>
+            <span class="k">for</span> <span class="n">run_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">):</span>
+                <span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">extract_xy_data</span><span class="p">(</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y_param</span><span class="p">,</span> <span class="n">run_idx</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">x_values</span> <span class="ow">and</span> <span class="n">y_values</span><span class="p">:</span>
+                    <span class="n">normalized_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">normalization</span>
+
+                    <span class="n">run_label</span> <span class="o">=</span> <span class="s2">&quot;optimized&quot;</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">run_label</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">run_idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">normalized_y</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">run_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_target</span><span class="p">(</span>
+                        <span class="n">ax</span><span class="p">,</span>
+                        <span class="n">y_param</span><span class="p">,</span>
+                        <span class="nb">min</span><span class="p">(</span><span class="n">x_values</span><span class="p">),</span>
+                        <span class="nb">max</span><span class="p">(</span><span class="n">x_values</span><span class="p">),</span>
+                        <span class="n">color</span><span class="p">,</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">normalization</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+<div class="viewcode-block" id="OptimizationPlotter.plot_params_vs_design_vars">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter.plot_params_vs_design_vars">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot_params_vs_design_vars</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fig</span><span class="p">:</span> <span class="n">Figure</span><span class="p">,</span>
+        <span class="n">axes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]],</span>
+        <span class="n">plot_settings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OptPltSet</span><span class="p">],</span>
+        <span class="n">plot_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">sort_by_x</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create plots of parameters vs. their associated design variables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fig: Matplotlib figure</span>
+<span class="sd">            axes: Single axis or list of axes</span>
+<span class="sd">            plot_settings: List of plot configurations</span>
+<span class="sd">            plot_name: Name for the plot (used for saving)</span>
+<span class="sd">            sort_by_x: If True, sort data points by x value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">plot_settings</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">cast</span><span class="p">(</span><span class="n">Axes</span><span class="p">,</span> <span class="n">axes</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">],</span> <span class="n">axes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">opt_target_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot plot against design variables without optimization targets&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;axes.prop_cycle&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">by_key</span><span class="p">()[</span><span class="s2">&quot;color&quot;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">config</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">plot_settings</span><span class="p">):</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_param_vs_design_var</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">sort_by_x</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">y_idx</span><span class="p">,</span> <span class="n">y_param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
+                    <span class="n">curr_color</span> <span class="o">=</span> <span class="n">color</span> <span class="k">if</span> <span class="n">y_idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">y_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_param_vs_design_var</span><span class="p">(</span>
+                        <span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">y_param</span><span class="p">,</span> <span class="n">curr_color</span><span class="p">,</span> <span class="n">sort_by_x</span>
+                    <span class="p">)</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plot_name</span><span class="si">}</span><span class="s2"> vs Design Variables&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_figures</span><span class="p">:</span>
+            <span class="n">sorting</span> <span class="o">=</span> <span class="s2">&quot;sorted&quot;</span> <span class="k">if</span> <span class="n">sort_by_x</span> <span class="k">else</span> <span class="s2">&quot;chronological&quot;</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;optimization_plot_</span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">plot_name</span><span class="si">}</span><span class="s2">_vs_design_vars_</span><span class="si">{</span><span class="n">sorting</span><span class="si">}</span><span class="s2">.png&quot;</span>
+            <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_plot_param_vs_design_var</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">OptPltSet</span><span class="p">,</span> <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sort_by_x</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot a parameter vs. its associated design variable.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ax: Matplotlib axis</span>
+<span class="sd">            config: Plot configuration</span>
+<span class="sd">            y_param: Y-axis parameter name</span>
+<span class="sd">            color: Line color</span>
+<span class="sd">            sort_by_x: If True, sort data points by x value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get design variable information for labeling</span>
+        <span class="n">first_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">design_var_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">get_design_var_name_for_param</span><span class="p">(</span><span class="n">y_param</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">design_var_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">get_design_var_for_param</span><span class="p">(</span>
+            <span class="n">y_param</span><span class="p">,</span> <span class="n">first_result</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Set up the axis with proper labels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">design_var_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">design_var_unit</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">run_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">):</span>
+            <span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">extract_xy_data</span><span class="p">(</span>
+                <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">y_param</span><span class="p">,</span> <span class="n">run_idx</span><span class="p">,</span> <span class="n">use_design_var_as_x</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sort_by_x</span><span class="o">=</span><span class="n">sort_by_x</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">x_values</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">y_values</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">normalized_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">normalization</span>
+
+            <span class="n">run_label</span> <span class="o">=</span> <span class="s2">&quot;optimized&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">run_label</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">run_idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">normalized_y</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">run_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">x_values</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_target</span><span class="p">(</span>
+                    <span class="n">ax</span><span class="p">,</span>
+                    <span class="n">y_param</span><span class="p">,</span>
+                    <span class="nb">min</span><span class="p">(</span><span class="n">x_values</span><span class="p">),</span>
+                    <span class="nb">max</span><span class="p">(</span><span class="n">x_values</span><span class="p">),</span>
+                    <span class="n">color</span><span class="p">,</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">normalization</span><span class="p">,</span>
+                <span class="p">)</span>
+
+<div class="viewcode-block" id="OptimizationPlotter.plot_design_vars_vs_iteration">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter.plot_design_vars_vs_iteration">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot_design_vars_vs_iteration</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fig</span><span class="p">:</span> <span class="n">Figure</span><span class="p">,</span>
+        <span class="n">axes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]],</span>
+        <span class="n">plot_settings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OptPltSet</span><span class="p">],</span>
+        <span class="n">plot_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create plots of design variables vs. iteration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fig: Matplotlib figure</span>
+<span class="sd">            axes: Single axis or list of axes</span>
+<span class="sd">            plot_settings: List of plot configurations</span>
+<span class="sd">            plot_name: Name for the plot (used for saving)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">plot_settings</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">cast</span><span class="p">(</span><span class="n">Axes</span><span class="p">,</span> <span class="n">axes</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">],</span> <span class="n">axes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">opt_target_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot plot design variables without optimization targets&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;axes.prop_cycle&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">by_key</span><span class="p">()[</span><span class="s2">&quot;color&quot;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">config</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">plot_settings</span><span class="p">):</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_design_var_vs_iteration</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">y_idx</span><span class="p">,</span> <span class="n">y_param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
+                    <span class="n">curr_color</span> <span class="o">=</span> <span class="n">color</span> <span class="k">if</span> <span class="n">y_idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">y_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_design_var_vs_iteration</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">y_param</span><span class="p">,</span> <span class="n">curr_color</span><span class="p">)</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Design Variables for </span><span class="si">{</span><span class="n">plot_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_figures</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;optimization_plot_</span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">plot_name</span><span class="si">}</span><span class="s2">_design_vars.png&quot;</span>
+            <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_plot_design_var_vs_iteration</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">OptPltSet</span><span class="p">,</span> <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot a design variable vs. iteration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ax: Matplotlib axis</span>
+<span class="sd">            config: Plot configuration</span>
+<span class="sd">            y_param: Parameter name (used to find associated design variable)</span>
+<span class="sd">            color: Line color</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get design variable information for labeling</span>
+        <span class="n">first_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">design_var_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">get_design_var_name_for_param</span><span class="p">(</span><span class="n">y_param</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">design_var_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">get_design_var_for_param</span><span class="p">(</span>
+            <span class="n">y_param</span><span class="p">,</span> <span class="n">first_result</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Set up the axis with proper labels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">design_var_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">design_var_unit</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">run_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span><span class="p">):</span>
+            <span class="n">opt_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="n">run_idx</span><span class="p">]</span>
+
+            <span class="n">x_values</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Get design variable values associated with the target parameter</span>
+            <span class="n">y_values</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">get_design_var_for_param</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">result</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">opt_result</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Filter out None values</span>
+            <span class="n">valid_pairs</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_pairs</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">x_filtered</span><span class="p">,</span> <span class="n">y_filtered</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">valid_pairs</span><span class="p">)</span>
+
+            <span class="n">run_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">design_var_name</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">y_param</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">run_label</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (run </span><span class="si">{</span><span class="n">run_idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_filtered</span><span class="p">,</span> <span class="n">y_filtered</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">run_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="plot_progress">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.plot_progress">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_progress</span><span class="p">(</span>
+    <span class="n">opt_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OptimizationResult</span><span class="p">]],</span>
+    <span class="n">system_target_params</span><span class="p">:</span> <span class="n">SystemParams</span><span class="p">,</span>
+    <span class="n">plot_settings</span><span class="p">:</span> <span class="n">PlotSettingsType</span><span class="p">,</span>
+    <span class="n">block_plots</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">save_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_variance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_design_variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chronological&quot;</span><span class="p">,</span> <span class="s2">&quot;sorted&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">opt_target_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the progress of optimization iterations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        opt_results: List of optimization result sequences (one per optimization run)</span>
+<span class="sd">        system_target_params: Target system parameters</span>
+<span class="sd">        plot_settings: Plot configurations by plot name</span>
+<span class="sd">        block_plots: If True, block execution until plots are closed</span>
+<span class="sd">        save_figures: If True, save figures to disk</span>
+<span class="sd">        plot_variance: If True, plot mean and variance across runs</span>
+<span class="sd">        plot_design_variables: How to plot design variables (&quot;chronological&quot;, &quot;sorted&quot;, or None to disable)</span>
+<span class="sd">        opt_target_list: Optional list of optimization targets</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Validate input arguments</span>
+    <span class="k">if</span> <span class="n">plot_design_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">plot_design_variables</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="s2">&quot;chronological&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sorted&quot;</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;plot_design_variables must be None, &#39;chronological&#39;, or &#39;sorted&#39;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Close existing figures</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create data extractor and plotter</span>
+    <span class="n">data_extractor</span> <span class="o">=</span> <span class="n">DataExtractor</span><span class="p">(</span><span class="n">opt_results</span><span class="p">,</span> <span class="n">system_target_params</span><span class="p">,</span> <span class="n">opt_target_list</span><span class="p">)</span>
+    <span class="n">plotter</span> <span class="o">=</span> <span class="n">OptimizationPlotter</span><span class="p">(</span><span class="n">data_extractor</span><span class="p">,</span> <span class="n">plot_variance</span><span class="p">,</span> <span class="n">save_figures</span><span class="p">)</span>
+
+    <span class="c1"># Create standard parameter plots</span>
+    <span class="k">for</span> <span class="n">plot_name</span><span class="p">,</span> <span class="n">plot_setting</span> <span class="ow">in</span> <span class="n">plot_settings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">plot_setting</span><span class="p">))</span>
+        <span class="n">plotter</span><span class="o">.</span><span class="n">plot_standard</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span><span class="p">,</span> <span class="n">plot_setting</span><span class="p">,</span> <span class="n">plot_name</span><span class="p">)</span>
+
+        <span class="c1"># Create additional plot types if requested</span>
+        <span class="k">if</span> <span class="n">plot_design_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">opt_target_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;opt_target_list is required when plot_design_variables is set&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Plot parameters vs design variables</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">plot_setting</span><span class="p">))</span>
+            <span class="n">plotter</span><span class="o">.</span><span class="n">plot_params_vs_design_vars</span><span class="p">(</span>
+                <span class="n">fig</span><span class="p">,</span>
+                <span class="n">axs</span><span class="p">,</span>
+                <span class="n">plot_setting</span><span class="p">,</span>
+                <span class="n">plot_name</span><span class="p">,</span>
+                <span class="n">sort_by_x</span><span class="o">=</span><span class="p">(</span><span class="n">plot_design_variables</span> <span class="o">==</span> <span class="s2">&quot;sorted&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Plot design variables vs iteration</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">plot_setting</span><span class="p">))</span>
+            <span class="n">plotter</span><span class="o">.</span><span class="n">plot_design_vars_vs_iteration</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span><span class="p">,</span> <span class="n">plot_setting</span><span class="p">,</span> <span class="n">plot_name</span><span class="p">)</span>
+
+    <span class="c1"># Show plots</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block_plots</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

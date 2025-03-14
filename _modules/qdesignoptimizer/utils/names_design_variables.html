@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qdesignoptimizer.utils.names_design_variables &mdash; qdesignoptimizer · 0.0.1</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/my_theme.css?v=eea1f72d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../userguide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qdesignoptimizer.utils.names_design_variables</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qdesignoptimizer.utils.names_design_variables</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Standardized naming conventions for design variables in qubit/resonator/coupler systems.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">qiskit_metal.designs.design_planar</span> <span class="kn">import</span> <span class="n">DesignPlanar</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.names_parameters</span> <span class="kn">import</span> <span class="n">Mode</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.names_qiskit_components</span> <span class="kn">import</span> <span class="n">name_mode</span>
+
+
+<div class="viewcode-block" id="add_design_variables_to_design">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.add_design_variables_to_design">[docs]</a>
+<span class="k">def</span> <span class="nf">add_design_variables_to_design</span><span class="p">(</span>
+    <span class="n">design</span><span class="p">:</span> <span class="n">DesignPlanar</span><span class="p">,</span> <span class="n">design_variables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add design variables to a Qiskit Metal design so that the variables can be used in render.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        design (DesignPlanar): A Qiskit Metal design.</span>
+<span class="sd">        design_variables (dict[str:str]): Design variables to add to the design.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="p">{</span><span class="o">**</span><span class="n">design_variables</span><span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+
+<span class="c1"># Design variables</span>
+<div class="viewcode-block" id="design_var_length">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_length">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_length</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for component length.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_length_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="design_var_width">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_width">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_width</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for component width.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_width_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="design_var_gap">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_gap">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_gap</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for gap dimension.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_gap_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="design_var_coupl_length">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_coupl_length">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_coupl_length</span><span class="p">(</span><span class="n">identifier_1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">identifier_2</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for coupler length between two components.&quot;&quot;&quot;</span>
+    <span class="n">identifier_first</span><span class="p">,</span> <span class="n">identifier_second</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">identifier_1</span><span class="p">,</span> <span class="n">identifier_2</span><span class="p">])</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_coupl_length_</span><span class="si">{</span><span class="n">identifier_first</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">identifier_second</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="design_var_lj">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_lj">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_lj</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for Josephson inductance.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_lj_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="design_var_cj">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_cj">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_cj</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for Josephson capacitance.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_cj_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="design_var_cl_pos_x">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_cl_pos_x">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_cl_pos_x</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for charge line x-position.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_cl_pos_x_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="design_var_cl_pos_y">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_cl_pos_y">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_cl_pos_y</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for charge line y-position.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_cl_pos_y_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="junction_setup">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.junction_setup">[docs]</a>
+<span class="k">def</span> <span class="nf">junction_setup</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span> <span class="n">mode_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate jj setup for</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        component_name (str): component name</span>
+<span class="sd">        mode_type (str): mode_type of JJ, e.g. &#39;linear&#39; for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict: jj setup</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">jj_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;jj_</span><span class="si">{</span><span class="n">name_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">setup</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">jj_name</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;rect&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;JJ_rect_Lj_</span><span class="si">{</span><span class="n">name_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span><span class="si">}</span><span class="s2">_rect_jj&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;line&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;JJ_Lj_</span><span class="si">{</span><span class="n">name_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span><span class="si">}</span><span class="s2">_rect_jj_&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Lj_variable&quot;</span><span class="p">:</span> <span class="n">design_var_lj</span><span class="p">(</span><span class="n">mode</span><span class="p">),</span>
+            <span class="s2">&quot;Cj_variable&quot;</span><span class="p">:</span> <span class="n">design_var_cj</span><span class="p">(</span><span class="n">mode</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">mode_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">setup</span><span class="p">[</span><span class="n">jj_name</span><span class="p">][</span><span class="s2">&quot;mode_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mode_type</span>
+    <span class="k">return</span> <span class="n">setup</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
