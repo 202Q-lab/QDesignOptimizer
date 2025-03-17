@@ -2,9 +2,9 @@
 
 This module provides standard optimization target definitions used to specify how
 different physical parameters (frequency, coupling strength, anharmonicity, etc.)
-respond to changes in design variables during the optimization process. Each function
-returns an OptTarget instance that describes how a specific physical parameter
-depends on one or more design variables. The module implements common optimization strategies for:
+respond to changes in design variables during the optimization process. Each function returns an
+OptTarget instance that describes how a specific physical parameter depends on one or more design
+variables and other parameters. The module implements common optimization strategies for:
 
 - Qubit frequency via Josephson inductance
 - Qubit anharmonicity via capacitance width

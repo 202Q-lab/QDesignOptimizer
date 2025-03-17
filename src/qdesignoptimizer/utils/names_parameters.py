@@ -87,7 +87,7 @@ def mode(
     assert "_" not in mode_type, "mode_type cannot contain underscores"
     assert (
         "_to_" not in mode_type
-    ), "mode_type cannot contain the string '_to_', since it is a keyword for non-linear parameters"
+    ), "mode_type cannot contain the string '_to_', since it is a keyword for nonlinear parameters"
 
     assert identifier is None or "_" not in str(
         identifier
@@ -97,7 +97,7 @@ def mode(
     if identifier is not None:
         assert (
             isinstance(identifier, int) or "_to_" not in identifier
-        ), "identifier cannot contain the string '_to_', since it is a keyword for non-linear parameters"
+        ), "identifier cannot contain the string '_to_', since it is a keyword for nonlinear parameters"
 
         mode_name = f"{mode_name}_{identifier}"
 
@@ -150,7 +150,7 @@ def param(
 
 def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:
     """
-    Construct a non-linear parameter name from two modes.
+    Construct a nonlinear parameter name from two modes.
 
     Creates a parameter name for nonlinear interactions between two modes,
     such as cross-Kerr coupling or anharmonicity (self-Kerr). The modes are
@@ -231,7 +231,7 @@ def get_mode_from_param(parameter: Parameter) -> Mode:
 
 def get_modes_from_param_nonlin(parameter: Parameter) -> Tuple[Mode, ...]:
     """
-    Extract mode identifiers from a non-linear parameter name.
+    Extract mode identifiers from a nonlinear parameter name.
 
     Parses a nonlinearity parameter name to retrieve the original mode names
     that are involved in the interaction.

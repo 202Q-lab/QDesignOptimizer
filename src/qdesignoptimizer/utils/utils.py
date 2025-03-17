@@ -39,6 +39,9 @@ def get_junction_position(design, qcomponent) -> Tuple[str, str]:
         A tuple of (x, y) coordinates as strings with "mm" units,
         suitable for use in QComponent options.
 
+    Note:
+        Supports only components containing a single junction.
+
     Example:
         >>> x_pos, y_pos = get_junction_position(design, transmon)
         >>> print(x_pos, y_pos)
@@ -194,13 +197,16 @@ def sum_expression(vals: List[str]) -> str:
     Returns:
         A string representing the sum with the preserved unit.
 
+    Raises:
+        AssertionError: If the units of the provided values are not the same.
+
     Example:
         >>> sum_expression(["10mm", "5mm", "2.5mm"])
         '17.5mm'
         >>> sum_expression(["1.2GHz", "0.8GHz"])
         '2.0GHz'
     """
-    sum_val = 0
+    sum_val = 0.0
     _, unit_0 = get_value_and_unit(vals[0])
 
     for val_str in vals:

@@ -40,16 +40,26 @@ from qdesignoptimizer.utils.utils import get_value_and_unit
 
 
 class DesignAnalysis:
-    """Class for DesignAnalysis.
+    """Manager for quantum circuit design optimization and electromagnetic simulation.
+
+    Handles the workflow of:
+
+        - Simulation setup for eigenmode and capacitance calculations
+        - Parameter extraction from simulations
+        - Design variable optimization based on physical targets
+        - Result tracking and visualization
+
+    This class integrates HFSS/ANSYS simulations with Qiskit Metal designs to automate
+    the optimization of superconducting circuit parameters.
 
     Args:
-        state (DesignAnalysisSetup): DesignAnalysisState object
-        mini_study (MiniStudy): MiniStudy object
-        opt_targets (List[OptTarget]): list of OptTarget objects
-        save_path (str): path to save results
-        update_design_variables (bool): update parameters
-        plot_settings (dict): plot settings for progress plots
-        meshing_map (List[MeshingMap]): meshing map
+        state (DesignAnalysisState): State object containing design, render function, and target parameters.
+        mini_study (MiniStudy): Simulation parameters including component names, modes, and passes.
+        opt_targets (List[OptTarget]): List of target physical parameters to optimize and their design variable relationships.
+        save_path (str): Location to save optimization results.
+        update_design_variables (bool): Whether to automatically update design files with optimized values.
+        plot_settings (dict): Configuration for progress visualization plots.
+        meshing_map (List[MeshingMap]): Custom mesh refinement configurations for specific components.
         minimization_tol (float): tolerance used to terminate the solution of an optimization step.
 
     """
@@ -697,14 +707,23 @@ class DesignAnalysis:
     def optimize_target(
         self, updated_design_vars_input: dict, system_optimized_params: dict
     ):
-        """Optimize with respect to provided targets.
-        !!! Assumes that all simulated frequencies have same order as the target mode freqs, to associate them correctly. !!!
-        The modes will be incorrectly assigned if the frequencies are not in the same order.
-        Tip: simulate the modes individually first to get them close to their target frequencies.
+        """Run full optimization iteration to adjust design variables toward target parameters.
+
+        Performs these steps in sequence:
+
+        1. Updates design variables and system parameters
+        2. Runs eigenmode simulation to extract frequencies and decay rates
+        3. Performs energy participation ratio (EPR) analysis for nonlinearities
+        4. Executes capacitance matrix studies if configured
+        5. Saves results and generates visualization plots
 
         Args:
-            updated_design_vars (dict): updated design variables
-            system_optimized_params (dict): updated system optimized parameters
+            updated_design_vars_input (dict): Manual design variable overrides
+            system_optimized_params (dict): Manual system parameter overrides
+
+        Note:
+            Assumes modes are simulated in the same order as target frequencies for correct assignment.
+            Mismatched orders will cause incorrect parameter mapping.
         """
         if not system_optimized_params == {}:
             self.is_system_optimized_params_initialized = True
