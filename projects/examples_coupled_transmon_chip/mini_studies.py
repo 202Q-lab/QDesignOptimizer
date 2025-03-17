@@ -186,7 +186,7 @@ def get_mini_study_resonator_capacitance(group: int):
         jj_setup={},
         design_name="get_mini_study_capacitance",
         adjustment_rate=0.7,
-        hfss_wire_bond_size = 10,
+        hfss_wire_bond_size = 3,
         capacitance_matrix_studies=[cap_study],
         **CONVERGENCE,
     )
