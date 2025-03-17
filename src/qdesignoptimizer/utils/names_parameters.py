@@ -143,8 +143,7 @@ def param(
         "freq",
         "kappa",
         "charge_line_limited_t1",
-        "capacitance",
-    ], "param_type must be 'freq', 'kappa', 'charge_line_limited_t1', or 'capacitance'"
+    ], "param_type must be 'freq', 'kappa' or 'charge_line_limited_t1'"
     return f"{mode_instance}_{param_type}"
 
 
