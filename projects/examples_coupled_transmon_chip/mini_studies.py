@@ -158,6 +158,7 @@ def get_mini_study_res_feedline(group: int):
         jj_setup={},
         design_name="get_mini_study_res_feedline",
         adjustment_rate=0.7,
+        hfss_wire_bond_size=2,
         capacitance_matrix_studies=[resonator_decay_study],
         run_capacitance_studies_only=True,
         **CONVERGENCE,
@@ -186,7 +187,7 @@ def get_mini_study_resonator_capacitance(group: int):
         jj_setup={},
         design_name="get_mini_study_capacitance",
         adjustment_rate=0.7,
-        hfss_wire_bond_size = 3,
+        hfss_wire_bond_size = 2,
         capacitance_matrix_studies=[cap_study],
         **CONVERGENCE,
     )

@@ -58,6 +58,9 @@ class CapacitanceMatrixStudy:
         y_buffer_width_mm: float = 2,
         render_qiskit_metal: Optional[Callable] = None,
         render_qiskit_metal_kwargs: Optional[dict] = None,
+        hfss_wire_bond_size: Optional[int]= 3,
+        hfss_wire_bond_threshold: Optional[str] = "400um"  ,
+        hfss_wire_bond_offset: Optional[str] = "100um" ,
         percent_error: Optional[float] = 0.5,
         nbr_passes: Optional[int] = 10,
     ):
@@ -69,6 +72,10 @@ class CapacitanceMatrixStudy:
 
         self.render_qiskit_metal = render_qiskit_metal
         self.render_qiskit_metal_kwargs: dict = render_qiskit_metal_kwargs or {}
+
+        self.hfss_wire_bond_size = hfss_wire_bond_size,
+        self.hfss_wire_bond_threshold = hfss_wire_bond_threshold,
+        self.hfss_wire_bond_offset = hfss_wire_bond_offset
 
         self.percent_error = percent_error
         self.nbr_passes = nbr_passes
@@ -113,6 +120,9 @@ class CapacitanceMatrixStudy:
         lom_analysis.sim.setup.percent_error = self.percent_error
         lom_analysis.sim.renderer.options["x_buffer_width_mm"] = self.x_buffer_width_mm
         lom_analysis.sim.renderer.options["y_buffer_width_mm"] = self.y_buffer_width_mm
+        lom_analysis.sim.renderer.options["wb_size"] = self.hfss_wire_bond_size
+        lom_analysis.sim.renderer.options["wb_threshold"] = self.hfss_wire_bond_threshold
+        lom_analysis.sim.renderer.options["wb_offset"] = self.hfss_wire_bond_offset
 
         lom_analysis.sim.run(
             components=self.qiskit_component_names, open_terminations=self.open_pins
