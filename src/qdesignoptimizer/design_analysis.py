@@ -733,6 +733,12 @@ class DesignAnalysis:
             iteration_result["capacitance_matrix"] = []
             for capacitance_study in self.mini_study.capacitance_matrix_studies:
                 capacitance_study.set_render_qiskit_metal(self.render_qiskit_metal)
+                
+                # set hfss wire bonds properties
+                capacitance_study.hfss_wire_bond_size = self.mini_study.hfss_wire_bond_size
+                capacitance_study.hfss_wire_bond_threshold = self.mini_study.hfss_wire_bond_threshold
+                capacitance_study.hfss_wire_bond_offset = self.mini_study.hfss_wire_bond_offset
+
                 log.info("Simulating capacitance matrix study.")
                 capacitance_matrix = capacitance_study.simulate_capacitance_matrix(
                     self.design
