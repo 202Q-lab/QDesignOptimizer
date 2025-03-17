@@ -243,6 +243,11 @@ def add_chargeline(design: DesignPlanar, group: int):
 
     RoutePathfinder(design, n.name_charge_line(group), options=options_chargeline)
 
+# Function for meshing names for mapping for finer meshing
+def CoupledLineTee_mesh_names(comp_names):
+    all_names_to_mesh = [f"prime_cpw_{comp_names}", f"second_cpw_{comp_names}"]
+    return all_names_to_mesh
+
 # Function to render the design
 def render_qiskit_metal_design(design, gui):
     add_transmon_plus_resonator(design, group=n.NBR_1)

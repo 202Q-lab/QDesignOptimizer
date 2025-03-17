@@ -2,8 +2,11 @@
 
 import os
 
+import time
+
 import numpy as np
 
+from typing import Optional
 
 def close_ansys():
     """Close Ansys by killing the active process. Only works on Windows."""
@@ -139,3 +142,7 @@ def sum_expression(vals: list):
         sum_unit = unit
 
     return f"{sum_val}{sum_unit}"
+
+def get_save_path(out_folder: str, chip_name: str, time_format: Optional[str] = "%Y%m%d-%H%M%S"):
+    """Create a path to save simulation results by appending the start time of the simulation to the identifier name."""
+    return out_folder + chip_name + "_" + time.strftime(time_format)
