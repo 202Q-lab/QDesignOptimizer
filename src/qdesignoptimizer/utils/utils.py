@@ -143,6 +143,6 @@ def sum_expression(vals: list):
 
     return f"{sum_val}{sum_unit}"
 
-def get_save_path(out_folder: str, chip_name: str, time_format: Optional[str] = "%Y%m%d-%H%M%S"):
+def get_save_path(out_folder: str, chip_name: str, time_format: str = "%Y%m%d-%H%M%S"):
     """Create a path to save simulation results by appending the start time of the simulation to the identifier name."""
     return out_folder + chip_name + "_" + time.strftime(time_format)
