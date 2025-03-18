@@ -112,7 +112,7 @@ def mode(
 
 def param(
     mode_instance: Mode,
-    param_type: Literal["freq", "kappa", "charge_line_limited_t1", "capacitance"],
+    param_type: Literal["freq", "kappa", "charge_line_limited_t1"],
 ) -> Parameter:
     """
     Construct a parameter name from a mode and parameter type.
