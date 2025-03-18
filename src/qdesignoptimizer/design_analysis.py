@@ -534,7 +534,7 @@ class DesignAnalysis:
             ]
         else:
             mode = target.involved_modes[0]
-            current_value = system_params[param(mode, target.target_param_type)]
+            current_value = system_params[param(mode, target.target_param_type)]  # type: ignore
         return current_value
 
     def _minimize_for_design_vars(
@@ -633,7 +633,7 @@ class DesignAnalysis:
             else:
                 mode_name = target.involved_modes[0]
                 system_params_targets_met[
-                    param(mode_name, target.target_param_type)
+                    param(mode_name, target.target_param_type)  # type: ignore
                 ] = self.get_parameter_value(target, self.system_target_params)
         return system_params_targets_met
 
