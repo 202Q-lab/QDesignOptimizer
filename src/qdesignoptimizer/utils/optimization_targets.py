@@ -275,11 +275,12 @@ def get_opt_targets_qb_res_transmission(
     qubit: Mode,
     resonator: Mode,
     resonator_coupled_identifier: str,
-    opt_target_qubit_freq: bool = True,
-    opt_target_qubit_anharm: bool = True,
-    opt_target_resonator_freq: bool = True,
-    opt_target_resonator_kappa: bool = True,
-    opt_target_resonator_qubit_chi: bool = True,
+    opt_target_qubit_freq=False,
+    opt_target_qubit_anharm=False,
+    opt_target_resonator_freq=False,
+    opt_target_resonator_kappa=False,
+    opt_target_resonator_qubit_chi=False,
+    use_simple_resonator_qubit_chi_relation=False,
     design_var_qubit_lj: Callable[[str], str] = n.design_var_lj,
     design_var_qubit_width: Callable[[str], str] = n.design_var_width,
     design_var_res_length: Callable[[str], str] = n.design_var_length,
@@ -365,12 +366,22 @@ def get_opt_targets_qb_res_transmission(
             )
         )
     if opt_target_resonator_qubit_chi:
-        opt_targets.append(
-            get_opt_target_res_qub_chi_via_coupl_length(
-                qubit,
-                resonator,
-                design_var_res_qb_coupl_length=design_var_res_coupl_length,
-                design_var_qubit_width=design_var_qubit_width,
+        if use_simple_resonator_qubit_chi_relation is True:
+            opt_targets.append(
+                get_opt_target_res_qub_chi_via_coupl_length_simple(
+                    qubit,
+                    resonator,
+                    design_var_res_qb_coupl_length=design_var_res_coupl_length,
+                    design_var_qubit_width=design_var_qubit_width,
+                )
             )
-        )
+        else:
+            opt_targets.append(
+                get_opt_target_res_qub_chi_via_coupl_length(
+                    qubit,
+                    resonator,
+                    design_var_res_qb_coupl_length=design_var_res_coupl_length,
+                    design_var_qubit_width=design_var_qubit_width,
+                )
+            )
     return opt_targets

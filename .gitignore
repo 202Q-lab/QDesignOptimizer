@@ -8,10 +8,8 @@ __pycache__/
 
 # Optimization info
 *.npy
-projects/*/*/*.png
+projects/**/out/
 projects/*/*.png
-projects/*/*/*.json
-projects/*/*.json
 
 # Distribution / packaging
 .Python
