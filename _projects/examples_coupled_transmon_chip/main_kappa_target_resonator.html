@@ -27,7 +27,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Optimization of capacitance matrix target" href="main_capacitance_target_resonator.html" />
+    <link rel="next" title="Eigenmode simulation of single qubit with readout resonator" href="main_capacitance_target_resonator.html" />
     <link rel="prev" title="Capacitive simulation of qubit decay in charge line" href="main_charge_line_decay_single_qubit.html" /> 
 </head>
 
@@ -58,14 +58,19 @@
 <li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">QDO QuickStart</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../examples.html">Examples</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="main_eigenmode_single_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
-<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
-<li class="toctree-l3"><a class="reference internal" href="main_robustness_of_single_qubit.html">Robustness of qubit design optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="main_charge_line_decay_single_qubit.html">Capacitive simulation of qubit decay in charge line</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Resonator Kappa through capacitance matrix simulation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#Design-assembly">Design assembly</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Rendering-the-design">Rendering the design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Creating-the-study-and-optimization-targets">Creating the study and optimization targets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Creating-design-analysis-objects">Creating design analysis objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Optimization-step">Optimization step</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Results">Results</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Update-parameters">Update parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Close">Close</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Optimization of capacitance matrix target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
 </ul>
 </li>
 </ul>
@@ -110,7 +115,33 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
 <span class="o">%</span><span class="k">autoreload</span> 2
-<span class="kn">import</span> <span class="nn">time</span>
+</pre></div>
+</div>
+</div>
+<section id="Rendering-the-design">
+<h2>Rendering the design<a class="headerlink" href="#Rendering-the-design" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">chip_initialization</span> <span class="kn">import</span> <span class="n">create_chip_and_gui</span>
+<span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_and_gui</span><span class="p">()</span>
+
+<span class="kn">from</span> <span class="nn">design</span> <span class="kn">import</span> <span class="n">render_qiskit_metal_design</span>
+<span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-the-study-and-optimization-targets">
+<h2>Creating the study and optimization targets<a class="headerlink" href="#Creating-the-study-and-optimization-targets" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
+<span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
+<span class="kn">import</span> <span class="nn">optimization_targets</span> <span class="k">as</span> <span class="nn">ot</span>
 </pre></div>
 </div>
 </div>
@@ -118,16 +149,31 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">design</span> <span class="k">as</span> <span class="nn">d</span>
-<span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
+<span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_res_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;design_variables.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">in_file</span><span class="p">:</span>
-    <span class="n">initial_design_variables</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">in_file</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.chip_generation</span> <span class="kn">import</span> <span class="n">create_chip_base</span><span class="p">,</span> <span class="n">ChipType</span>
+<span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_target_res_kappa_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-design-analysis-objects">
+<h2>Creating design analysis objects<a class="headerlink" href="#Creating-design-analysis-objects" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">parameter_targets</span> <span class="k">as</span> <span class="nn">pt</span>
+<span class="kn">import</span> <span class="nn">plot_settings</span> <span class="k">as</span> <span class="nn">ps</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis</span> <span class="kn">import</span> <span class="n">DesignAnalysis</span><span class="p">,</span> <span class="n">DesignAnalysisState</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_save_path</span>
+
+<span class="c1"># Closing Ansys hfss</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
-
 <span class="n">close_ansys</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -136,94 +182,31 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># for this example to store the data in the right place</span>
-<span class="kn">import</span> <span class="nn">os</span>
-
-<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<section id="Design-assembly">
-<h2>Design assembly<a class="headerlink" href="#Design-assembly" title="Link to this heading"></a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">CHIP_NAME</span> <span class="o">=</span> <span class="s2">&quot;multi_transmon_chip&quot;</span>
-<span class="n">OPEN_GUI</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">chip_type</span> <span class="o">=</span> <span class="n">ChipType</span><span class="p">(</span><span class="n">size_x</span><span class="o">=</span><span class="s2">&quot;10mm&quot;</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="s2">&quot;10mm&quot;</span><span class="p">,</span> <span class="n">size_z</span><span class="o">=</span><span class="s2">&quot;-300um&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;silicon&quot;</span><span class="p">)</span>
-<span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_base</span><span class="p">(</span>
-    <span class="n">chip_name</span><span class="o">=</span><span class="n">CHIP_NAME</span><span class="p">,</span> <span class="n">chip_type</span><span class="o">=</span><span class="n">chip_type</span><span class="p">,</span> <span class="n">open_gui</span><span class="o">=</span><span class="n">OPEN_GUI</span>
-<span class="p">)</span>
-
-<span class="n">n</span><span class="o">.</span><span class="n">add_design_variables_to_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">initial_design_variables</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">):</span>
-    <span class="n">d</span><span class="o">.</span><span class="n">add_transmon_plus_resonator</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span><span class="p">)</span>
-    <span class="n">d</span><span class="o">.</span><span class="n">add_transmon_plus_resonator</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_2</span><span class="p">)</span>
-
-    <span class="n">d</span><span class="o">.</span><span class="n">add_coupler</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
-
-    <span class="n">d</span><span class="o">.</span><span class="n">add_route_interconnects</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
-
-    <span class="n">d</span><span class="o">.</span><span class="n">add_launch_pads</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
-
-    <span class="n">d</span><span class="o">.</span><span class="n">add_chargeline</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span><span class="p">)</span>
-    <span class="n">d</span><span class="o">.</span><span class="n">add_chargeline</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_2</span><span class="p">)</span>
-
-    <span class="n">gui</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
-    <span class="n">gui</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
-
-
-<span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<section id="Capacitive-simulation-of-resonator-decay-into-feedline">
-<h3>Capacitive simulation of resonator decay into feedline<a class="headerlink" href="#Capacitive-simulation-of-resonator-decay-into-feedline" title="Link to this heading"></a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
-<span class="kn">import</span> <span class="nn">optimization_targets</span> <span class="k">as</span> <span class="nn">ot</span>
-<span class="kn">import</span> <span class="nn">parameter_targets</span> <span class="k">as</span> <span class="nn">pt</span>
-<span class="kn">import</span> <span class="nn">plot_settings</span> <span class="k">as</span> <span class="nn">ps</span>
-
-<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis</span> <span class="kn">import</span> <span class="n">DesignAnalysis</span><span class="p">,</span> <span class="n">DesignAnalysisState</span>
-
-
-<span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_res_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
-<span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_target_res_kappa_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
-<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
-
-<span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
     <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
-<span class="p">)</span>
+    <span class="p">)</span>
+
 <span class="n">design_analysis</span> <span class="o">=</span> <span class="n">DesignAnalysis</span><span class="p">(</span>
     <span class="n">design_analysis_state</span><span class="p">,</span>
     <span class="n">mini_study</span><span class="o">=</span><span class="n">MINI_STUDY</span><span class="p">,</span>
     <span class="n">opt_targets</span><span class="o">=</span><span class="n">opt_targets</span><span class="p">,</span>
-    <span class="n">save_path</span><span class="o">=</span><span class="s2">&quot;out/&quot;</span> <span class="o">+</span> <span class="n">CHIP_NAME</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">),</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="n">get_save_path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">CHIP_NAME</span><span class="p">),</span>
     <span class="n">update_design_variables</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">plot_settings</span><span class="o">=</span><span class="n">ps</span><span class="o">.</span><span class="n">PLOT_SETTINGS_RESONATOR_KAPPA</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </div>
+</section>
+<section id="Optimization-step">
+<h2>Optimization step<a class="headerlink" href="#Optimization-step" title="Link to this heading"></a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">group_runs</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="n">group_passes_cap</span> <span class="o">=</span> <span class="mi">6</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
+<span class="n">group_runs</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">group_passes_cap</span> <span class="o">=</span> <span class="mi">8</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group_runs</span><span class="p">):</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes_capacitance_ministudies</span><span class="p">(</span><span class="n">group_passes_cap</span><span class="p">)</span>
@@ -232,15 +215,44 @@
 </pre></div>
 </div>
 </div>
+</section>
+<section id="Results">
+<h2>Results<a class="headerlink" href="#Results" title="Link to this heading"></a></h2>
+<section id="Cross-Kerr">
+<h3>Cross Kerr<a class="headerlink" href="#Cross-Kerr" title="Link to this heading"></a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">get_cross_kerr_matrix</span><span class="p">(</span><span class="n">iteration</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </section>
+</section>
+<section id="Update-parameters">
+<h2>Update parameters<a class="headerlink" href="#Update-parameters" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">overwrite_parameters</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Close">
+<h2>Close<a class="headerlink" href="#Close" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
+
+<span class="n">close_ansys</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
 </section>
 </section>
 
@@ -249,7 +261,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="main_charge_line_decay_single_qubit.html" class="btn btn-neutral float-left" title="Capacitive simulation of qubit decay in charge line" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="main_capacitance_target_resonator.html" class="btn btn-neutral float-right" title="Optimization of capacitance matrix target" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="main_capacitance_target_resonator.html" class="btn btn-neutral float-right" title="Eigenmode simulation of single qubit with readout resonator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -378,11 +378,12 @@
     <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">resonator_coupled_identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">opt_target_qubit_freq</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">opt_target_qubit_anharm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">opt_target_resonator_freq</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">opt_target_resonator_kappa</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">opt_target_resonator_qubit_chi</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_qubit_freq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_qubit_anharm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_freq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_kappa</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_qubit_chi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_simple_resonator_qubit_chi_relation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">design_var_qubit_lj</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_lj</span><span class="p">,</span>
     <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
     <span class="n">design_var_res_length</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_length</span><span class="p">,</span>
@@ -468,14 +469,24 @@
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">opt_target_resonator_qubit_chi</span><span class="p">:</span>
-        <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">get_opt_target_res_qub_chi_via_coupl_length</span><span class="p">(</span>
-                <span class="n">qubit</span><span class="p">,</span>
-                <span class="n">resonator</span><span class="p">,</span>
-                <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
-                <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+        <span class="k">if</span> <span class="n">use_simple_resonator_qubit_chi_relation</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">get_opt_target_res_qub_chi_via_coupl_length_simple</span><span class="p">(</span>
+                    <span class="n">qubit</span><span class="p">,</span>
+                    <span class="n">resonator</span><span class="p">,</span>
+                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
+                    <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="p">)</span>
-        <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">get_opt_target_res_qub_chi_via_coupl_length</span><span class="p">(</span>
+                    <span class="n">qubit</span><span class="p">,</span>
+                    <span class="n">resonator</span><span class="p">,</span>
+                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
+                    <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
     <span class="k">return</span> <span class="n">opt_targets</span></div>
 
 </pre></div>
