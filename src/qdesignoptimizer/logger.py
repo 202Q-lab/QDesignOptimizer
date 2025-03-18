@@ -7,7 +7,7 @@ LOG_LEVEL = logging.INFO
 
 
 class CustomHandler(logging.StreamHandler):
-    """Custom handler for logging algorithm. Credits to Qibocal."""
+    """Custom handler for logging."""
 
     def __init__(self):
         """Initialize custom handler."""

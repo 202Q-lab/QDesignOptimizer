@@ -175,7 +175,6 @@ def get_mini_study_resonator_capacitance(group: int):
             (n.name_tee(group), "prime_end"),
             (n.name_tee(group), "prime_start"),
         ],
-        mode_freq_GHz=pt.PARAM_TARGETS[param(resonator, FREQ)] * 1e-9,
         nbr_passes=8,
     )
     return MiniStudy(

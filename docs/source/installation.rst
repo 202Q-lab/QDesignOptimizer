@@ -3,24 +3,37 @@
 ============
 Installation
 ============
-This installation guide will help you install the package QDesignOptimizer on your system.
+
+This guide will help you install the ``qdesignoptimizer`` package and its dependencies on your system.
+
+Prerequisites
+=============
+
+- Python 3.10 (required)
+- pip or poetry package manager
+- Git (for installation from repository)
+- Ansys HFSS. ``qdesignoptimizer`` has been tested with Ansys Electronics Desktop 2021 R2.
 
 Installation with pip
 =====================
-The user can install the package QDesignOptimizer via the python package manager pip. After that, install qiskit-metal on top without dependencies to avoid conflicts.
+
+The simplest way to install ``qdesignoptimizer`` is via the Python package manager pip:
 
 .. code-block:: bash
 
     pip install qdesignoptimizer
     pip install --no-deps qiskit-metal==0.1.5
 
-Installation from github repository
-===================================
-The user can install the QDesignOptimizer directly from the github repository. To do so, follow the steps below:
+Note that at the moment Qiskit Metal must be installed separately and without dependencies to make it work properly.
 
+Installation from GitHub Repository
+===================================
+
+For the latest version or if you want to contribute to development, you can install directly from the GitHub repository.
 
 Clone the Repository
 --------------------
+
 First, clone the repository and navigate to its directory:
 
 .. code-block:: bash
@@ -30,14 +43,25 @@ First, clone the repository and navigate to its directory:
 
 Create a Virtual Environment
 ----------------------------
-It is strongly recommended that you install the project in a separate virtual environment, which must use python3.10. This project is packaged with `poetry <https://python-poetry.org/>`, which handles the environment setup for you. If you instead use conda, you can create the environment from the provided environment.yml file:
+
+It is strongly recommended to install the project in a separate virtual environment using Python 3.10. You have several options:
+
+**Option 1: Using Poetry (Recommended)**
+
+This project is packaged with `poetry <https://python-poetry.org/>`_, which handles the environment setup for you.
+
+**Option 2: Using Conda**
+
+Create the environment from the provided environment.yml file:
 
 .. code-block:: bash
 
     conda env create -f environment.yml
     conda activate qdesignenv
 
-You can also create the environment using venv:
+**Option 3: Using venv**
+
+Create and activate a virtual environment using Python's built-in venv module:
 
 .. code-block:: bash
 
@@ -48,16 +72,17 @@ You can also create the environment using venv:
     # On Linux/MacOS:
     source qdesignenv/bin/activate
     # On Windows:
-    qdesign-env\\Scripts\\activate
+    qdesignenv\Scripts\activate
 
     # Verify Python version
     python --version
+
     # Install poetry if not already available
     pip install poetry
 
-
 User Installation
 -----------------
+
 For regular users, install the project with its dependencies and Qiskit Metal:
 
 .. code-block:: bash
@@ -67,7 +92,8 @@ For regular users, install the project with its dependencies and Qiskit Metal:
 
 Developer Installation
 ----------------------
-For developers, who want to contribute to the project, install with additional development dependencies:
+
+For developers who want to contribute to the project, install with additional development dependencies:
 
 .. code-block:: bash
 
@@ -82,9 +108,25 @@ This will install:
 - Analysis and testing tools
 - Pre-commit hooks for code quality
 
-In order to build the documentation yourself, you also need to install `pandoc <https://pandoc.org/>`_ (And you probably need to restart your PC to set the path variables correctly). You can build the documentation by running ``poetry run sphinx-build -b html docs/source docs/_build/htm``.
+Building Documentation
+----------------------
 
+To build the documentation yourself:
 
-Installation of Ansys HFSS
-==========================
-This version of qdesignoptimizer has been tested with Ansys Electronics Desktop 2021 R2.
+1. Install `pandoc <https://pandoc.org/>`_ (you may need to restart your computer to set path variables correctly)
+2. Run the following command:
+
+.. code-block:: bash
+
+    poetry run sphinx-build -b html docs/source docs/_build/html
+
+Troubleshooting
+===============
+
+**Common Issues:**
+
+- **Python Version Mismatch**: Ensure you're using Python 3.10
+- **Dependency Conflicts**: If you encounter dependency conflicts, try installing in a fresh virtual environment
+- **Ansys Connection Issues**: Make sure Ansys HFSS is correctly installed and licensed
+
+For more help, please open an issue on the `GitHub repository <https://github.com/202Q-lab/QDesignOptimizer/issues>`_.

@@ -174,7 +174,7 @@ class DataExtractor:
                 opt_target_variable = param_capacitance(*opt_target.involved_modes)
             else:
                 opt_target_variable = param(
-                    opt_target.involved_modes[0], opt_target.target_param_type
+                    opt_target.involved_modes[0], opt_target.target_param_type  # type: ignore
                 )
 
             if target_parameter == opt_target_variable:

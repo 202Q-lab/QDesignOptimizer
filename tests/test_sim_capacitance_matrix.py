@@ -85,12 +85,10 @@ class TestCapacitanceMatrixStudy:
         """Test that CapacitanceMatrixStudy initializes with correct parameters."""
         try:
             qiskit_component_names = ["comp1", "comp2"]
-            freq_GHz = 5.0
             open_pins = [("comp1", "pin1")]
 
             study = CapacitanceMatrixStudy(
                 qiskit_component_names=qiskit_component_names,
-                mode_freq_GHz=freq_GHz,
                 open_pins=open_pins,
                 x_buffer_width_mm=2.5,
                 y_buffer_width_mm=3.0,
@@ -99,7 +97,6 @@ class TestCapacitanceMatrixStudy:
             )
 
             assert study.qiskit_component_names == qiskit_component_names
-            assert study.mode_freq_GHz == freq_GHz
             assert study.open_pins == open_pins
             assert study.x_buffer_width_mm == 2.5
             assert study.y_buffer_width_mm == 3.0
@@ -113,9 +110,7 @@ class TestCapacitanceMatrixStudy:
     def test_set_render_qiskit_metal(self):
         """Test that render_qiskit_metal function can be set correctly."""
         try:
-            study = CapacitanceMatrixStudy(
-                qiskit_component_names=["comp1"], mode_freq_GHz=5.0
-            )
+            study = CapacitanceMatrixStudy(qiskit_component_names=["comp1"])
 
             render_func = MagicMock()
             study.set_render_qiskit_metal(render_func)
@@ -137,7 +132,6 @@ class TestCapacitanceMatrixStudy:
                 # Create study
                 study = CapacitanceMatrixStudy(
                     qiskit_component_names=["comp1", "comp2"],
-                    mode_freq_GHz=5.0,
                     open_pins=[("comp1", "pin1")],
                     percent_error=0.3,
                     nbr_passes=12,
@@ -179,7 +173,6 @@ class TestCapacitanceMatrixStudy:
                 # Create study with render function
                 study = CapacitanceMatrixStudy(
                     qiskit_component_names=["comp1"],
-                    mode_freq_GHz=5.0,
                     render_qiskit_metal=render_func,
                     render_qiskit_metal_kwargs={"param1": "value1"},
                 )
@@ -217,7 +210,7 @@ class TestModeDecayIntoChargeLineStudy:
             assert study.charge_line_capacitance_name == "charge_line"
             assert study.charge_line_impedance_Ohm == 50.0
             assert study.ground_plane_capacitance_name == "ground"
-            assert study.freq_GHz == 5.0
+            assert study.mode_freq_GHz == 5.0
         except Exception as e:
             pytest.fail(f"Initialization test failed with exception: {e}")
 
