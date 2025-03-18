@@ -9,6 +9,7 @@ __pycache__/
 # Optimization info
 *.npy
 projects/**/out/
+projects/*/*.png
 
 # Distribution / packaging
 .Python
