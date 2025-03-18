@@ -118,71 +118,236 @@ Capacitance matrix elements are in femto Farads (fF).</p>
 </dl>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.ITERATION">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">ITERATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ITERATION'</span></em><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.ITERATION" title="Link to this definition"></a></dt>
+<dd><p>Special parameter identifier used for tracking optimization iterations.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.Mode">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">Mode</span></span><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.Mode" title="Link to this definition"></a></dt>
-<dd><p>“Mode name on the format  modetype_identifier, the complete Mode name must be unique.</p>
+<dd><p>Type representing a unique mode name in the format ‘modetype_identifier’.</p>
+<p>The mode name must be unique within a design and follows a standardized format
+of lowercase mode type, optionally followed by an underscore and an identifier.</p>
 <p class="rubric">Examples</p>
-<p>qubit
-QUBIT_1
-qubit_xy3</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;qubit&quot;</span>       <span class="c1"># A single qubit without an identifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;qubit_1&quot;</span>     <span class="c1"># First qubit in a multi-qubit system</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;resonator_a&quot;</span> <span class="c1"># A resonator with string identifier &#39;a&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.Parameter">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">Parameter</span></span><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.Parameter" title="Link to this definition"></a></dt>
-<dd><p>“Paramter name which is a unique mode name concatenated with a parameter type.</p>
+<dd><p>Type representing a parameter name, formed by concatenating a unique mode name with a parameter type.</p>
+<p>The parameter name uniquely identifies a physical quantity associated with
+one or more modes in the system.</p>
 <p class="rubric">Examples</p>
-<p>qubit_freq
-qubit_3_freq</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;qubit_freq&quot;</span>      <span class="c1"># Frequency of a qubit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;qubit_1_kappa&quot;</span>   <span class="c1"># Decay rate of qubit 1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;qubit_1_to_resonator_1_nonlin&quot;</span>  <span class="c1"># Cross-Kerr interaction</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.mode">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.mode" title="Link to this definition"></a></dt>
-<dd><p>Construct a mode name from the mode type and identifier. Note that the complete mode name must be unique.</p>
+<dd><p>Construct a standardized mode name from a mode type and optional identifier.</p>
+<p>Creates a unique mode name by combining the mode type with an optional identifier. The resulting
+name follows the convention ‘modetype_identifier’ and must be unique within a design.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The type of mode (e.g., “qubit”, “resonator”).
+Must not contain underscores or the string “_to_”.</p></li>
+<li><p><strong>identifier</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>None</em>) – Optional identifier for the mode.
+Must not contain underscores or the string “_to_”. If None, only the mode_type is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A standardized mode name in the format ‘modetype_identifier’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mode</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#AssertionError" title="(in Python v3.13)"><strong>AssertionError</strong></a> – If mode_type or identifier contains forbidden characters.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;qubit&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">&#39;qubit_1&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;resonator&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span>
+<span class="go">&#39;resonator_a&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;cavity&quot;</span><span class="p">)</span>
+<span class="go">&#39;cavity&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.param">
-<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode_instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'freq'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'kappa'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'charge_line_limited_t1'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'capacitance'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.param" title="Link to this definition"></a></dt>
-<dd><p>Construct a parameter name from the mode and parameter type.</p>
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode_instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'freq'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'kappa'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'charge_line_limited_t1'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.param" title="Link to this definition"></a></dt>
+<dd><p>Construct a parameter name from a mode and parameter type.</p>
+<p>Creates a parameter name by concatenating the mode name with the parameter type.
+Used for parameters associated with a single mode, such as frequency or decay rate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode_instance</strong> (<em>Mode</em>) – The mode name (e.g., “qubit_1”).</p></li>
+<li><p><strong>param_type</strong> (<em>Literal</em>) – The type of parameter, must be one of:
+- “freq”: Frequency
+- “kappa”: Decay rate/linewidth
+- “charge_line_limited_t1”: T1 limited by charge line</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A parameter name in the format ‘mode_paramtype’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Parameter</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#AssertionError" title="(in Python v3.13)"><strong>AssertionError</strong></a> – If param_type is not one of the allowed values.</p>
+</dd>
+</dl>
 <p class="rubric">Examples</p>
-<p>param(“QUBIT_1”, “freq”) -&gt; “qubit_1_freq”
-param(“QUBIT_1”, “kappa”) -&gt; “qubit_1_kappa”</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;qubit_1&quot;</span><span class="p">,</span> <span class="s2">&quot;freq&quot;</span><span class="p">)</span>
+<span class="go">&#39;qubit_1_freq&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;resonator_a&quot;</span><span class="p">,</span> <span class="s2">&quot;kappa&quot;</span><span class="p">)</span>
+<span class="go">&#39;resonator_a_kappa&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.param_nonlin">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">param_nonlin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#param_nonlin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.param_nonlin" title="Link to this definition"></a></dt>
-<dd><p>Construct a non-linear parameter name from two modes.
-The modes are sorted alphabetically before constructing the parameter name.
-If mode_1 == mode_2, the parameter name is the anharmonicity/self-Kerr of the mode.</p>
+<dd><p>Construct a nonlinear parameter name from two modes.</p>
+<p>Creates a parameter name for nonlinear interactions between two modes,
+such as cross-Kerr coupling or anharmonicity (self-Kerr). The modes are
+sorted alphabetically to ensure consistency regardless of argument order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode_1</strong> (<em>Mode</em>) – First mode name.</p></li>
+<li><p><strong>mode_2</strong> (<em>Mode</em>) – Second mode name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A nonlinearity parameter name in the format ‘mode1_to_mode2_nonlin’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Parameter</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If mode_1 == mode_2, the returned parameter represents the anharmonicity
+(self-Kerr) of the mode.</p>
+</div>
 <p class="rubric">Examples</p>
-<p>param_nonlin(“QUBIT_1”, “QUBIT_2”) -&gt; “qubit_1_to_qubit_2_nonlin”
-param_nonlin(“QUBIT_2”, “QUBIT_1”) -&gt; “qubit_1_to_qubit_2_nonlin”</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">param_nonlin</span><span class="p">(</span><span class="s2">&quot;qubit_1&quot;</span><span class="p">,</span> <span class="s2">&quot;qubit_2&quot;</span><span class="p">)</span>
+<span class="go">&#39;qubit_1_to_qubit_2_nonlin&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">param_nonlin</span><span class="p">(</span><span class="s2">&quot;qubit_2&quot;</span><span class="p">,</span> <span class="s2">&quot;qubit_1&quot;</span><span class="p">)</span>  <span class="c1"># Order is normalized</span>
+<span class="go">&#39;qubit_1_to_qubit_2_nonlin&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">param_nonlin</span><span class="p">(</span><span class="s2">&quot;qubit_1&quot;</span><span class="p">,</span> <span class="s2">&quot;qubit_1&quot;</span><span class="p">)</span>  <span class="c1"># Anharmonicity</span>
+<span class="go">&#39;qubit_1_to_qubit_1_nonlin&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.param_capacitance">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">param_capacitance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">capacitance_name_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">capacitance_name_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#param_capacitance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.param_capacitance" title="Link to this definition"></a></dt>
-<dd><p>Construct a parameter name for capacitance matrix elements (femto Farad) from two capacitance names.
-The capacitance names are sorted alphabetically before constructing the parameter name.</p>
+<dd><p>Construct a parameter name for capacitance matrix elements.</p>
+<p>Creates a parameter name for capacitance between two islands or components
+in the system. The capacitance names are sorted alphabetically to ensure
+consistency regardless of argument order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>capacitance_name_1</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – First capacitance island/component name.</p></li>
+<li><p><strong>capacitance_name_2</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Second capacitance island/component name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A capacitance parameter name in the format</dt><dd><p>’name1_to_name2_capacitance’, with values measured in femto Farads (fF).</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Parameter</p>
+</dd>
+</dl>
 <p class="rubric">Examples</p>
-<p>param_capacitance(“capacitance_name_1”, “capacitance_name_2”) -&gt; “capacitance_name_1_to_capacitance_name_2_capacitance”
-param_capacitance(“capacitance_name_2”, “capacitance_name_1”) -&gt; “capacitance_name_1_to_capacitance_name_2_capacitance”</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">param_capacitance</span><span class="p">(</span><span class="s2">&quot;island_1&quot;</span><span class="p">,</span> <span class="s2">&quot;island_2&quot;</span><span class="p">)</span>
+<span class="go">&#39;island_1_to_island_2_capacitance&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">param_capacitance</span><span class="p">(</span><span class="s2">&quot;island_2&quot;</span><span class="p">,</span> <span class="s2">&quot;island_1&quot;</span><span class="p">)</span>  <span class="c1"># Order is normalized</span>
+<span class="go">&#39;island_1_to_island_2_capacitance&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.get_mode_from_param">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">get_mode_from_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#get_mode_from_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.get_mode_from_param" title="Link to this definition"></a></dt>
-<dd><p>Get the mode identifier from parameter identifier.</p>
+<dd><p>Extract the mode identifier from a parameter name.</p>
+<p>Parses a parameter name to retrieve the original mode name by removing
+the parameter type suffix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parameter</strong> (<em>Parameter</em>) – The parameter name to parse.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The extracted mode name.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mode</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_mode_from_param</span><span class="p">(</span><span class="s2">&quot;qubit_1_freq&quot;</span><span class="p">)</span>
+<span class="go">&#39;qubit_1&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_mode_from_param</span><span class="p">(</span><span class="s2">&quot;resonator_a_kappa&quot;</span><span class="p">)</span>
+<span class="go">&#39;resonator_a&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.get_modes_from_param_nonlin">
-<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">get_modes_from_param_nonlin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#get_modes_from_param_nonlin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.get_modes_from_param_nonlin" title="Link to this definition"></a></dt>
-<dd><p>Get identifiers of modes included in nonlinear parameter.</p>
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">get_modes_from_param_nonlin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#get_modes_from_param_nonlin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.get_modes_from_param_nonlin" title="Link to this definition"></a></dt>
+<dd><p>Extract mode identifiers from a nonlinear parameter name.</p>
+<p>Parses a nonlinearity parameter name to retrieve the original mode names
+that are involved in the interaction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parameter</strong> (<em>Parameter</em>) – The nonlinearity parameter name to parse.
+Must end with “_nonlin”.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the extracted mode names.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[Mode, …]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#AssertionError" title="(in Python v3.13)"><strong>AssertionError</strong></a> – If parameter does not end with “_nonlin”.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_modes_from_param_nonlin</span><span class="p">(</span><span class="s2">&quot;qubit_1_to_qubit_2_nonlin&quot;</span><span class="p">)</span>
+<span class="go">(&#39;qubit_1&#39;, &#39;qubit_2&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_modes_from_param_nonlin</span><span class="p">(</span><span class="s2">&quot;qubit_1_to_qubit_1_nonlin&quot;</span><span class="p">)</span>
+<span class="go">(&#39;qubit_1&#39;, &#39;qubit_1&#39;)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>

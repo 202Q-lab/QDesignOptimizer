@@ -81,15 +81,14 @@
            <div itemprop="articleBody">
              
   <h1>Source code for qdesignoptimizer.utils.plotting</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Additional plotting utilities for data loaded from files.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Additional plotting utilities for loading and visualizing optimization results from files.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="c1"># plotting function</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="n">OptTarget</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.sim_plot_progress</span> <span class="kn">import</span> <span class="n">plot_progress</span>
 
@@ -101,21 +100,40 @@
     <span class="n">name_experiment</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">experiment_beginning</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">experiment_end</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads file names with location for plotting with plot_optimization_results</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load optimization data files within a specified date range and experiment name.</span>
+
+<span class="sd">    Searches a directory for .npy files matching an experiment name and falling within</span>
+<span class="sd">    a specified date range. The function extracts dates from filenames following the</span>
+<span class="sd">    convention &#39;experiment_name_YYYYMMDD-HHMMSS.npy&#39;.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">    folder_parent: str: Location of the parent folder from where to retrieve the files.</span>
-<span class="sd">    name_experiment: str: Name of the experiment (which is a string literal which will be used to sort out the files). eg: &quot;multi_transmon_chip&quot;.</span>
-<span class="sd">    experiment_beginning: str: Name or datetime of the first result (YYYYMMDD-HHMMSS format). eg: &quot;multi_transmon_chip_20250306-165308&quot;, &quot;20250306-165308&quot;</span>
-<span class="sd">    experiment_end: str: Name or datetime of the last result (YYYYMMDD-HHMMSS format)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        folder_parent: Directory path containing the optimization result files.</span>
+<span class="sd">        name_experiment: Experiment name to filter files (e.g., &quot;multi_transmon_chip&quot;).</span>
+<span class="sd">        experiment_beginning: Start date in &#39;YYYYMMDD-HHMMSS&#39; format, either as full filename</span>
+<span class="sd">                             or just the date portion.</span>
+<span class="sd">        experiment_end: End date in &#39;YYYYMMDD-HHMMSS&#39; format, either as full filename</span>
+<span class="sd">                       or just the date portion.</span>
 
+<span class="sd">    Returns:</span>
+<span class="sd">        List of full file paths for matching optimization result files.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; files = load_data_by_date(</span>
+<span class="sd">        ...     &quot;results/&quot;,</span>
+<span class="sd">        ...     &quot;multi_transmon_chip&quot;,</span>
+<span class="sd">        ...     &quot;20250306-165308&quot;,</span>
+<span class="sd">        ...     &quot;20250308-120000&quot;</span>
+<span class="sd">        ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">files_experiment</span> <span class="o">=</span> <span class="p">[]</span>
 
+    <span class="c1"># Get all files in the parent folder</span>
     <span class="n">all_files_in_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder_parent</span><span class="p">)</span>
-    <span class="c1"># get all .npy</span>
     <span class="n">all_files_in_folder</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_parent</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">all_files_in_folder</span><span class="p">]</span>
+
+    <span class="c1"># Filter for .npy files</span>
     <span class="n">npy_ind</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">folder</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_files_in_folder</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">folder</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;npy&quot;</span><span class="p">):</span>
@@ -123,10 +141,9 @@
 
     <span class="n">npy_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">npy_ind</span><span class="p">)</span>
     <span class="n">all_files_in_folder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_files_in_folder</span><span class="p">)</span>
-
     <span class="n">files_npy</span> <span class="o">=</span> <span class="n">all_files_in_folder</span><span class="p">[</span><span class="n">npy_ind</span><span class="p">]</span>
 
-    <span class="c1"># filter for experiment name</span>
+    <span class="c1"># Filter for experiment name</span>
     <span class="n">experiment_ind</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file_npy</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">files_npy</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">file_npy</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">name_experiment</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -135,18 +152,17 @@
     <span class="n">experiment_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">experiment_ind</span><span class="p">)</span>
     <span class="n">files_experiment</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">files_npy</span><span class="p">[</span><span class="n">experiment_ind</span><span class="p">])</span>
 
+    <span class="c1"># Extract dates from filenames and filter by date range</span>
     <span class="n">date_start_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
         <span class="n">experiment_beginning</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span>
     <span class="p">)</span>
     <span class="n">date_stop_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">experiment_end</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span>
 
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">files_experiment</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="n">date_start_dt</span>
-            <span class="o">&lt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;.npy&quot;</span><span class="p">),</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span>
-            <span class="o">&lt;=</span> <span class="n">date_stop_dt</span>
-        <span class="p">):</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">files_experiment</span><span class="p">):</span>
+        <span class="n">file_date_str</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;.npy&quot;</span><span class="p">)</span>
+        <span class="n">file_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">file_date_str</span><span class="p">,</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">date_start_dt</span> <span class="o">&lt;=</span> <span class="n">file_date</span> <span class="o">&lt;=</span> <span class="n">date_stop_dt</span><span class="p">:</span>
             <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">filtered_files</span></div>
@@ -159,28 +175,55 @@
     <span class="n">files</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">plot_variance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">plot_design_variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chronological&quot;</span><span class="p">,</span> <span class="s2">&quot;sorted&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">opt_target_list</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">opt_target_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">save_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for plotting optimization results.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot optimization results from multiple data files.</span>
+
+<span class="sd">    Loads optimization data from provided file paths and creates visualizations</span>
+<span class="sd">    using the plot_progress function. Handles multiple optimization runs and</span>
+<span class="sd">    configures plotting options for parameter visualization.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        files: List[str]: List of file locations to be analysed.</span>
-<span class="sd">        plot_variance: bool = False: When there are multiple optimization results, whether to add individual lines for each or plot mean and std. deviation.</span>
-<span class="sd">        plot_design_variables: Optional[Literal[&#39;chronological&#39;, &#39;sorted&#39;]]  = None: Whether to plot design variables vs iteration and target parameters vs design variables (None if not to be plotted).</span>
-<span class="sd">                                And whether to sort the design variables (x-axis) when plotting target parameters vs design variables (&#39;sorted&#39; for sorting otherwise &#39;chronological&#39;).</span>
-<span class="sd">                                (Be mindful that some target parameters may depend on multiple design variables, so plotting target parameters vs design variables may not represent the complete physics)</span>
-<span class="sd">        opt_target_list: Union[None,List[OptTarget]] = None: List of optimization targets to be used when plotting design variables automatically (when plot_design_variables is set True)</span>
-<span class="sd">                        for mapping target parameters to the respective design variables.</span>
-<span class="sd">        opt_results List[(dict)]: Takes a list of optimization results.</span>
-<span class="sd">        save_figures: bool = False: Whether to save the plots.</span>
+<span class="sd">        files: List of file paths to optimization result files (.npy format).</span>
+<span class="sd">        plot_variance: Whether to show mean and standard deviation across multiple</span>
+<span class="sd">                      optimization runs (True) or individual lines for each run (False).</span>
+<span class="sd">                      Defaults to True.</span>
+<span class="sd">        plot_design_variables: How design variables should be plotted against parameters:</span>
 
+<span class="sd">                              - &quot;chronological&quot;: Plot in order of iterations</span>
+<span class="sd">                              - &quot;sorted&quot;: Sort by design variable values</span>
+<span class="sd">                              - None: Don&#39;t plot design variables</span>
+
+<span class="sd">                              Note that some target parameters may depend on multiple design</span>
+<span class="sd">                              variables, so these plots may not capture the full physics.</span>
+<span class="sd">        opt_target_list: List of optimization targets defining relationships between</span>
+<span class="sd">                        physical parameters and design variables. Required when</span>
+<span class="sd">                        plot_design_variables is set.</span>
+<span class="sd">        save_figures: Whether to save generated plots to disk. Defaults to True.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If loaded optimization results have inconsistent target</span>
+<span class="sd">                       parameters or different numbers of iterations.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; files = load_data_by_date(&quot;results/&quot;, &quot;transmon&quot;, &quot;20250306-165308&quot;, &quot;20250308-120000&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; targets = get_opt_targets_qb_res_transmission(&quot;qubit_1&quot;, &quot;resonator_1&quot;, &quot;feedline&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; plot_optimization_results(</span>
+<span class="sd">        ...     files,</span>
+<span class="sd">        ...     plot_variance=True,</span>
+<span class="sd">        ...     plot_design_variables=&quot;sorted&quot;,</span>
+<span class="sd">        ...     opt_target_list=targets</span>
+<span class="sd">        ... )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load results from files</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
         <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
 
+    <span class="c1"># Verify consistency of loaded results</span>
     <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="n">result</span><span class="p">[</span><span class="s2">&quot;system_target_params&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;system_target_params&quot;</span><span class="p">]</span>
@@ -189,6 +232,7 @@
             <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;optimization_results&quot;</span><span class="p">]</span>
         <span class="p">),</span> <span class="s2">&quot;All optimization results must have the same number of passes&quot;</span>
 
+    <span class="c1"># Generate plots using the plot_progress function</span>
     <span class="n">plot_progress</span><span class="p">(</span>
         <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;optimization_results&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">],</span>
         <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;system_target_params&quot;</span><span class="p">],</span>

@@ -83,7 +83,7 @@
   <h1>Source code for qdesignoptimizer.utils.names_parameters</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Standard naming conventions for physical parameters and modes in quantum circuit designs.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="c1"># Standard mode types</span>
 <span class="n">RESONATOR</span> <span class="o">=</span> <span class="s2">&quot;resonator&quot;</span>
@@ -96,7 +96,6 @@
 <span class="n">KAPPA</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;kappa&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;kappa&quot;</span>
 <span class="n">CHARGE_LINE_LIMITED_T1</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;charge_line_limited_t1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;charge_line_limited_t1&quot;</span>
 <span class="n">NONLIN</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;nonlinearity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;nonlinearity&quot;</span>
-
 <span class="n">CAPACITANCE</span> <span class="o">=</span> <span class="s2">&quot;capacitance&quot;</span>
 <span class="sd">&quot;&quot;&quot; dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.</span>
 <span class="sd">    Capacitance matrix elements are in femto Farads (fF).</span>
@@ -110,22 +109,31 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="n">ITERATION</span> <span class="o">=</span> <span class="s2">&quot;ITERATION&quot;</span>
+<span class="sd">&quot;&quot;&quot;Special parameter identifier used for tracking optimization iterations.&quot;&quot;&quot;</span>
 
 
 <span class="n">Mode</span> <span class="o">=</span> <span class="nb">str</span>
-<span class="sd">&quot;&quot;&quot;&quot;Mode name on the format  modetype_identifier, the complete Mode name must be unique.</span>
+<span class="sd">&quot;&quot;&quot;Type representing a unique mode name in the format &#39;modetype_identifier&#39;.</span>
 
-<span class="sd">Examples:</span>
-<span class="sd">    qubit</span>
-<span class="sd">    QUBIT_1</span>
-<span class="sd">    qubit_xy3</span>
+<span class="sd">    The mode name must be unique within a design and follows a standardized format</span>
+<span class="sd">    of lowercase mode type, optionally followed by an underscore and an identifier.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; &quot;qubit&quot;       # A single qubit without an identifier</span>
+<span class="sd">        &gt;&gt;&gt; &quot;qubit_1&quot;     # First qubit in a multi-qubit system</span>
+<span class="sd">        &gt;&gt;&gt; &quot;resonator_a&quot; # A resonator with string identifier &#39;a&#39;</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="n">Parameter</span> <span class="o">=</span> <span class="nb">str</span>
-<span class="sd">&quot;&quot;&quot;&quot;Paramter name which is a unique mode name concatenated with a parameter type.</span>
 
-<span class="sd">Examples:</span>
-<span class="sd">    qubit_freq</span>
-<span class="sd">    qubit_3_freq</span>
+<span class="n">Parameter</span> <span class="o">=</span> <span class="nb">str</span>
+<span class="sd">&quot;&quot;&quot;Type representing a parameter name, formed by concatenating a unique mode name with a parameter type.</span>
+
+<span class="sd">    The parameter name uniquely identifies a physical quantity associated with</span>
+<span class="sd">    one or more modes in the system.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; &quot;qubit_freq&quot;      # Frequency of a qubit</span>
+<span class="sd">        &gt;&gt;&gt; &quot;qubit_1_kappa&quot;   # Decay rate of qubit 1</span>
+<span class="sd">        &gt;&gt;&gt; &quot;qubit_1_to_resonator_1_nonlin&quot;  # Cross-Kerr interaction</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -133,13 +141,38 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.mode">[docs]</a>
 <span class="k">def</span> <span class="nf">mode</span><span class="p">(</span>
     <span class="n">mode_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mode</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a mode name from the mode type and identifier. Note that the complete mode name must be unique.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a standardized mode name from a mode type and optional identifier.</span>
+
+<span class="sd">    Creates a unique mode name by combining the mode type with an optional identifier. The resulting</span>
+<span class="sd">    name follows the convention &#39;modetype_identifier&#39; and must be unique within a design.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mode_type (str): The type of mode (e.g., &quot;qubit&quot;, &quot;resonator&quot;).</span>
+<span class="sd">            Must not contain underscores or the string &quot;_to_&quot;.</span>
+<span class="sd">        identifier (int, str, None): Optional identifier for the mode.</span>
+<span class="sd">            Must not contain underscores or the string &quot;_to_&quot;. If None, only the mode_type is used.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mode: A standardized mode name in the format &#39;modetype_identifier&#39;.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If mode_type or identifier contains forbidden characters.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; mode(&quot;qubit&quot;, 1)</span>
+<span class="sd">        &#39;qubit_1&#39;</span>
+<span class="sd">        &gt;&gt;&gt; mode(&quot;resonator&quot;, &quot;a&quot;)</span>
+<span class="sd">        &#39;resonator_a&#39;</span>
+<span class="sd">        &gt;&gt;&gt; mode(&quot;cavity&quot;)</span>
+<span class="sd">        &#39;cavity&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="s2">&quot;_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mode_type</span><span class="p">,</span> <span class="s2">&quot;mode_type cannot contain underscores&quot;</span>
     <span class="k">assert</span> <span class="p">(</span>
         <span class="s2">&quot;_to_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mode_type</span>
-    <span class="p">),</span> <span class="s2">&quot;mode_type cannot contain the string &#39;_to_&#39;, since it is a keyword for non-linear parameters&quot;</span>
+    <span class="p">),</span> <span class="s2">&quot;mode_type cannot contain the string &#39;_to_&#39;, since it is a keyword for nonlinear parameters&quot;</span>
 
     <span class="k">assert</span> <span class="n">identifier</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="s2">&quot;_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span>
         <span class="n">identifier</span>
@@ -149,7 +182,7 @@
     <span class="k">if</span> <span class="n">identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;_to_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">identifier</span>
-        <span class="p">),</span> <span class="s2">&quot;identifier cannot contain the string &#39;_to_&#39;, since it is a keyword for non-linear parameters&quot;</span>
+        <span class="p">),</span> <span class="s2">&quot;identifier cannot contain the string &#39;_to_&#39;, since it is a keyword for nonlinear parameters&quot;</span>
 
         <span class="n">mode_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span>
 
@@ -167,19 +200,38 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param">[docs]</a>
 <span class="k">def</span> <span class="nf">param</span><span class="p">(</span>
     <span class="n">mode_instance</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
-    <span class="n">param_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;freq&quot;</span><span class="p">,</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;charge_line_limited_t1&quot;</span><span class="p">,</span> <span class="s2">&quot;capacitance&quot;</span><span class="p">],</span>
+    <span class="n">param_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;freq&quot;</span><span class="p">,</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;charge_line_limited_t1&quot;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a parameter name from the mode and parameter type.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a parameter name from a mode and parameter type.</span>
+
+<span class="sd">    Creates a parameter name by concatenating the mode name with the parameter type.</span>
+<span class="sd">    Used for parameters associated with a single mode, such as frequency or decay rate.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mode_instance (Mode): The mode name (e.g., &quot;qubit_1&quot;).</span>
+<span class="sd">        param_type (Literal): The type of parameter, must be one of:</span>
+<span class="sd">            - &quot;freq&quot;: Frequency</span>
+<span class="sd">            - &quot;kappa&quot;: Decay rate/linewidth</span>
+<span class="sd">            - &quot;charge_line_limited_t1&quot;: T1 limited by charge line</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Parameter: A parameter name in the format &#39;mode_paramtype&#39;.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If param_type is not one of the allowed values.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        param(&quot;QUBIT_1&quot;, &quot;freq&quot;) -&gt; &quot;qubit_1_freq&quot;</span>
-<span class="sd">        param(&quot;QUBIT_1&quot;, &quot;kappa&quot;) -&gt; &quot;qubit_1_kappa&quot;</span>
+<span class="sd">        &gt;&gt;&gt; param(&quot;qubit_1&quot;, &quot;freq&quot;)</span>
+<span class="sd">        &#39;qubit_1_freq&#39;</span>
+<span class="sd">        &gt;&gt;&gt; param(&quot;resonator_a&quot;, &quot;kappa&quot;)</span>
+<span class="sd">        &#39;resonator_a_kappa&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">param_type</span> <span class="ow">in</span> <span class="p">[</span>
         <span class="s2">&quot;freq&quot;</span><span class="p">,</span>
         <span class="s2">&quot;kappa&quot;</span><span class="p">,</span>
         <span class="s2">&quot;charge_line_limited_t1&quot;</span><span class="p">,</span>
-    <span class="p">],</span> <span class="s2">&quot;param_type must be &#39;freq&#39; or &#39;kappa&#39; or &#39;charge_line_limited_t1&quot;</span>
+    <span class="p">],</span> <span class="s2">&quot;param_type must be &#39;freq&#39;, &#39;kappa&#39; or &#39;charge_line_limited_t1&#39;&quot;</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode_instance</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">param_type</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
 
@@ -187,13 +239,31 @@
 <div class="viewcode-block" id="param_nonlin">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param_nonlin">[docs]</a>
 <span class="k">def</span> <span class="nf">param_nonlin</span><span class="p">(</span><span class="n">mode_1</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span> <span class="n">mode_2</span><span class="p">:</span> <span class="n">Mode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a non-linear parameter name from two modes.</span>
-<span class="sd">    The modes are sorted alphabetically before constructing the parameter name.</span>
-<span class="sd">    If mode_1 == mode_2, the parameter name is the anharmonicity/self-Kerr of the mode.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a nonlinear parameter name from two modes.</span>
+
+<span class="sd">    Creates a parameter name for nonlinear interactions between two modes,</span>
+<span class="sd">    such as cross-Kerr coupling or anharmonicity (self-Kerr). The modes are</span>
+<span class="sd">    sorted alphabetically to ensure consistency regardless of argument order.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mode_1 (Mode): First mode name.</span>
+<span class="sd">        mode_2 (Mode): Second mode name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Parameter: A nonlinearity parameter name in the format &#39;mode1_to_mode2_nonlin&#39;.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        If mode_1 == mode_2, the returned parameter represents the anharmonicity</span>
+<span class="sd">        (self-Kerr) of the mode.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        param_nonlin(&quot;QUBIT_1&quot;, &quot;QUBIT_2&quot;) -&gt; &quot;qubit_1_to_qubit_2_nonlin&quot;</span>
-<span class="sd">        param_nonlin(&quot;QUBIT_2&quot;, &quot;QUBIT_1&quot;) -&gt; &quot;qubit_1_to_qubit_2_nonlin&quot;</span>
+<span class="sd">        &gt;&gt;&gt; param_nonlin(&quot;qubit_1&quot;, &quot;qubit_2&quot;)</span>
+<span class="sd">        &#39;qubit_1_to_qubit_2_nonlin&#39;</span>
+<span class="sd">        &gt;&gt;&gt; param_nonlin(&quot;qubit_2&quot;, &quot;qubit_1&quot;)  # Order is normalized</span>
+<span class="sd">        &#39;qubit_1_to_qubit_2_nonlin&#39;</span>
+<span class="sd">        &gt;&gt;&gt; param_nonlin(&quot;qubit_1&quot;, &quot;qubit_1&quot;)  # Anharmonicity</span>
+<span class="sd">        &#39;qubit_1_to_qubit_1_nonlin&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">modes</span> <span class="o">=</span> <span class="p">[</span><span class="n">mode_1</span><span class="p">,</span> <span class="n">mode_2</span><span class="p">]</span>
     <span class="n">modes</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
@@ -204,12 +274,26 @@
 <div class="viewcode-block" id="param_capacitance">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param_capacitance">[docs]</a>
 <span class="k">def</span> <span class="nf">param_capacitance</span><span class="p">(</span><span class="n">capacitance_name_1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">capacitance_name_2</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a parameter name for capacitance matrix elements (femto Farad) from two capacitance names.</span>
-<span class="sd">    The capacitance names are sorted alphabetically before constructing the parameter name.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a parameter name for capacitance matrix elements.</span>
+
+<span class="sd">    Creates a parameter name for capacitance between two islands or components</span>
+<span class="sd">    in the system. The capacitance names are sorted alphabetically to ensure</span>
+<span class="sd">    consistency regardless of argument order.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        capacitance_name_1 (str): First capacitance island/component name.</span>
+<span class="sd">        capacitance_name_2 (str): Second capacitance island/component name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Parameter: A capacitance parameter name in the format</span>
+<span class="sd">            &#39;name1_to_name2_capacitance&#39;, with values measured in femto Farads (fF).</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        param_capacitance(&quot;capacitance_name_1&quot;, &quot;capacitance_name_2&quot;) -&gt; &quot;capacitance_name_1_to_capacitance_name_2_capacitance&quot;</span>
-<span class="sd">        param_capacitance(&quot;capacitance_name_2&quot;, &quot;capacitance_name_1&quot;) -&gt; &quot;capacitance_name_1_to_capacitance_name_2_capacitance&quot;</span>
+<span class="sd">        &gt;&gt;&gt; param_capacitance(&quot;island_1&quot;, &quot;island_2&quot;)</span>
+<span class="sd">        &#39;island_1_to_island_2_capacitance&#39;</span>
+<span class="sd">        &gt;&gt;&gt; param_capacitance(&quot;island_2&quot;, &quot;island_1&quot;)  # Order is normalized</span>
+<span class="sd">        &#39;island_1_to_island_2_capacitance&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">capacitance_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">capacitance_name_1</span><span class="p">,</span> <span class="n">capacitance_name_2</span><span class="p">]</span>
     <span class="n">capacitance_names</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
@@ -220,16 +304,54 @@
 <div class="viewcode-block" id="get_mode_from_param">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.get_mode_from_param">[docs]</a>
 <span class="k">def</span> <span class="nf">get_mode_from_param</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mode</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the mode identifier from parameter identifier.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the mode identifier from a parameter name.</span>
+
+<span class="sd">    Parses a parameter name to retrieve the original mode name by removing</span>
+<span class="sd">    the parameter type suffix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parameter (Parameter): The parameter name to parse.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mode: The extracted mode name.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; get_mode_from_param(&quot;qubit_1_freq&quot;)</span>
+<span class="sd">        &#39;qubit_1&#39;</span>
+<span class="sd">        &gt;&gt;&gt; get_mode_from_param(&quot;resonator_a_kappa&quot;)</span>
+<span class="sd">        &#39;resonator_a&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parameter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
 
 
 
 <div class="viewcode-block" id="get_modes_from_param_nonlin">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.get_modes_from_param_nonlin">[docs]</a>
-<span class="k">def</span> <span class="nf">get_modes_from_param_nonlin</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Mode</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get identifiers of modes included in nonlinear parameter.&quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">parameter</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_nonlin&quot;</span><span class="p">),</span> <span class="s2">&quot;param must end with &#39;_nonlin&#39;&quot;</span>
+<span class="k">def</span> <span class="nf">get_modes_from_param_nonlin</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Mode</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract mode identifiers from a nonlinear parameter name.</span>
+
+<span class="sd">    Parses a nonlinearity parameter name to retrieve the original mode names</span>
+<span class="sd">    that are involved in the interaction.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parameter (Parameter): The nonlinearity parameter name to parse.</span>
+<span class="sd">            Must end with &quot;_nonlin&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[Mode, ...]: A tuple containing the extracted mode names.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If parameter does not end with &quot;_nonlin&quot;.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; get_modes_from_param_nonlin(&quot;qubit_1_to_qubit_2_nonlin&quot;)</span>
+<span class="sd">        (&#39;qubit_1&#39;, &#39;qubit_2&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; get_modes_from_param_nonlin(&quot;qubit_1_to_qubit_1_nonlin&quot;)</span>
+<span class="sd">        (&#39;qubit_1&#39;, &#39;qubit_1&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">parameter</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_nonlin&quot;</span><span class="p">),</span> <span class="s2">&quot;parameter must end with &#39;_nonlin&#39;&quot;</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">parameter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_nonlin&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_to_&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span></div>
 
 </pre></div>

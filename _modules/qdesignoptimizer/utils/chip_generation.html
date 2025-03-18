@@ -93,7 +93,7 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">ChipType</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Define sizes for designed chip.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Define physical dimensions and material for a designed chip.&quot;&quot;&quot;</span>
 
     <span class="n">material</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">size_x</span><span class="p">:</span> <span class="nb">str</span>
@@ -107,7 +107,23 @@
 <span class="k">def</span> <span class="nf">create_chip_base</span><span class="p">(</span>
     <span class="n">chip_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">chip_type</span><span class="p">:</span> <span class="n">ChipType</span><span class="p">,</span> <span class="n">open_gui</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DesignPlanar</span><span class="p">,</span> <span class="n">MetalGUI</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return basic qiskit-metal chip design.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create and return a basic Qiskit Metal planar chip design.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        chip_name (str): The name to assign to the chip design.</span>
+<span class="sd">        chip_type (ChipType): The physical dimensions and material of the chip.</span>
+<span class="sd">        open_gui (bool, optional): Whether to open the Qiskit Metal GUI. Defaults to True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[DesignPlanar, MetalGUI]: A tuple containing:</span>
+<span class="sd">            - The initialized planar design object.</span>
+<span class="sd">            - The Metal GUI instance if open_gui is True, otherwise None.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; chip_dimensions = ChipType(size_x=&quot;10mm&quot;, size_y=&quot;10mm&quot;, size_z=&quot;0.5mm&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; design, gui = create_chip_base(&quot;my_quantum_chip&quot;, chip_dimensions)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">design</span> <span class="o">=</span> <span class="n">DesignPlanar</span><span class="p">({},</span> <span class="kc">True</span><span class="p">)</span>
     <span class="n">design</span><span class="o">.</span><span class="n">chip_name</span> <span class="o">=</span> <span class="n">chip_name</span>
     <span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">material</span> <span class="o">=</span> <span class="n">chip_type</span><span class="o">.</span><span class="n">material</span>

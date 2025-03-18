@@ -98,71 +98,255 @@
              
   <section id="module-qdesignoptimizer.utils.optimization_targets">
 <span id="qdesignoptimizer-utils-optimization-targets-module"></span><h1>qdesignoptimizer.utils.optimization_targets module<a class="headerlink" href="#module-qdesignoptimizer.utils.optimization_targets" title="Link to this heading"></a></h1>
-<p>Functions for creating common optimization targets in quantum circuit design.</p>
+<p>Definitions of common optimization targets for qubit/resonator/coupler systems.</p>
+<p>This module provides standard optimization target definitions used to specify how
+different physical parameters (frequency, coupling strength, anharmonicity, etc.)
+respond to changes in design variables during the optimization process. Each function returns an
+OptTarget instance that describes how a specific physical parameter depends on one or more design
+variables and other parameters. The module implements common optimization strategies for:</p>
+<ul class="simple">
+<li><p>Qubit frequency via Josephson inductance</p></li>
+<li><p>Qubit anharmonicity via capacitance width</p></li>
+<li><p>Resonator frequency via length</p></li>
+<li><p>Resonator linewidth (kappa) via coupling length</p></li>
+<li><p>Qubit-resonator dispersive shift (chi) via coupling length</p></li>
+<li><p>Combined qubit-resonator system optimization</p></li>
+</ul>
+<p>Each optimization target specifies a proportionality relationship between
+physical parameters and design variables, along with valid ranges for the
+design variables.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_qubit_freq_via_lj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_lj:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_lj&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_qubit_freq_via_lj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj" title="Link to this definition"></a></dt>
-<dd><p>Get target for qubit frequency vs Josephson inductance and qubit width.</p>
+<dd><p>Create an optimization target for qubit frequency via Josephson inductance.</p>
+<p>This function creates an optimization target that models how a qubit’s frequency
+depends on its Josephson inductance (Lj) and width. The relationship follows the
+standard LC oscillator model, where frequency is inversely proportional to the
+square root of inductance times capacitance (which scales with width).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> (<em>Mode</em>) – The qubit mode identifier.</p></li>
+<li><p><strong>design_var_qubit_lj</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit Josephson inductance. Defaults to n.design_var_lj.</p></li>
+<li><p><strong>design_var_qubit_width</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit width. Defaults to n.design_var_width.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The target uses the relationship f ∝ 1/√(L·C), where C scales with width.</p></li>
+<li><p>Valid inductance range is constrained between 0.1nH and 400nH.</p></li>
+<li><p>This is marked as a dependent target since frequency depends on multiple
+design variables and physical parameters.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_qubit_anharmonicity_via_capacitance_width</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_qubit_anharmonicity_via_capacitance_width"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width" title="Link to this definition"></a></dt>
-<dd><p>Get target for qubit anharmonicity vs its capacitive pad(s) size.</p>
+<dd><p>Create an optimization target for qubit anharmonicity via capacitive pad width.</p>
+<p>This function creates an optimization target that models how a qubit’s anharmonicity
+(self-Kerr nonlinearity) depends on its capacitive pad width. Larger capacitance
+(wider pad) leads to smaller anharmonicity, following the relation where
+anharmonicity is inversely proportional to capacitance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> (<em>Mode</em>) – The qubit mode identifier.</p></li>
+<li><p><strong>design_var_qubit_width</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit width. Defaults to n.design_var_width.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The target uses the relationship α ∝ 1/C, where C scales with width.</p></li>
+<li><p>Valid width range is constrained between 5µm and 1000µm.</p></li>
+<li><p>This is marked as an independent target since anharmonicity depends
+only on the capacitance width.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_freq_via_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_length&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_freq_via_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length" title="Link to this definition"></a></dt>
-<dd><p>Get target for resonator frequency vs its length.</p>
+<dd><p>Create an optimization target for resonator frequency via length.</p>
+<p>This function creates an optimization target that models how a resonator’s frequency
+depends on its physical length. Longer resonators have lower frequencies, following
+the relation where frequency is inversely proportional to length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>resonator</strong> (<em>Mode</em>) – The resonator mode identifier.</p></li>
+<li><p><strong>design_var_res_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for resonator length. Defaults to n.design_var_length.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The target uses the relationship f ∝ 1/L, where L is the resonator length.</p></li>
+<li><p>Valid length range is constrained between 500µm and 15000µm.</p></li>
+<li><p>This is marked as an independent target since frequency depends only on
+the resonator’s length.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_kappa_via_coupl_length">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_kappa_via_coupl_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator_coupled_identifier:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_coupl_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_kappa_via_coupl_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_kappa_via_coupl_length" title="Link to this definition"></a></dt>
-<dd><p>Get target for resonator’s kappa vs. length of the coupler to a feedline.</p>
+<dd><p>Create an optimization target for resonator linewidth via coupling length.</p>
+<p>This function creates an optimization target that models how a resonator’s linewidth
+(kappa) depends on its coupling length to a feedline or other component. Longer
+coupling sections lead to stronger coupling and thus higher linewidth, following
+the relation where kappa is proportional to the square of coupling length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>resonator</strong> (<em>Mode</em>) – The resonator mode identifier.</p></li>
+<li><p><strong>resonator_coupled_identifier</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Identifier for the element to which the
+resonator is coupled (e.g., a feedline or transmission line).</p></li>
+<li><p><strong>design_var_res_coupl_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for coupling length. Defaults to n.design_var_coupl_length.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The target uses the relationship κ ∝ L², where L is the coupling length.</p></li>
+<li><p>Valid coupling length range is constrained between 20µm and 1000µm.</p></li>
+<li><p>This is marked as an independent target since kappa depends only on
+the coupling length.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_qub_chi_via_coupl_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_qb_coupl_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_qub_chi_via_coupl_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length" title="Link to this definition"></a></dt>
-<dd><p>Get optimization target for qubit-resonator dispersive shift.</p>
+<dd><p>Create an optimization target for qubit-resonator dispersive shift.</p>
+<p>This function creates an optimization target that models how the dispersive shift
+(chi) between a qubit and resonator depends on their coupling length and the qubit’s
+width. The dispersive shift follows from circuit QED theory, where chi depends on
+the coupling strength, qubit anharmonicity, and detuning between the qubit and resonator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> (<em>Mode</em>) – The qubit mode identifier.</p></li>
+<li><p><strong>resonator</strong> (<em>Mode</em>) – The resonator mode identifier.</p></li>
+<li><p><strong>design_var_res_qb_coupl_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit-resonator coupling length. Defaults to n.design_var_coupl_length.</p></li>
+<li><p><strong>design_var_qubit_width</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit width. Defaults to n.design_var_width.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The target uses the relationship χ ∝ g²α/(Δ·(Δ-α)), where:</p>
+<ul>
+<li><p>g is the coupling strength (proportional to coupling length / qubit width)</p></li>
+<li><p>α is the qubit anharmonicity</p></li>
+<li><p>Δ is the detuning between qubit and resonator frequencies</p></li>
+</ul>
+</li>
+<li><p>Valid coupling length range is constrained between 5µm and 1000µm.</p></li>
+<li><p>This is marked as a dependent target since chi depends on multiple
+design variables and physical parameters.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length_simple">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_target_res_qub_chi_via_coupl_length_simple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_res_qb_coupl_length:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_target_res_qub_chi_via_coupl_length_simple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_qub_chi_via_coupl_length_simple" title="Link to this definition"></a></dt>
-<dd><p>Get optimization target for qubit-resonator dispersive shift with simplified formula.</p>
+<dd><p>Create a simplified optimization target for qubit-resonator dispersive shift.</p>
+<p>This function creates an optimization target that uses a simplified model for the
+dispersive shift (chi) between a qubit and resonator. In this model, chi is
+considered to be directly proportional to the coupling length between the qubit
+and resonator, ignoring other dependencies to provide a more straightforward
+optimization approach.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qubit</strong> (<em>Mode</em>) – The qubit mode identifier.</p></li>
+<li><p><strong>resonator</strong> (<em>Mode</em>) – The resonator mode identifier.</p></li>
+<li><p><strong>design_var_res_qb_coupl_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit-resonator coupling length. Defaults to n.design_var_coupl_length.</p></li>
+<li><p><strong>design_var_qubit_width</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit width. Not used in this simplified model, but
+included for API compatibility.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>This simplified model uses the relationship χ ∝ coupling_length, making
+the dispersive shift directly proportional to the coupling length.</p></li>
+<li><p>Valid coupling length range is constrained between 5µm and 1000µm.</p></li>
+<li><p>This is marked as a dependent target to maintain consistency with the
+full model, although it has a simpler relationship.</p></li>
+<li><p>Use this simplified model when a coarse approximation is sufficient or
+when the full parameter dependencies are not critical.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission">
-<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_targets_qb_res_transmission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">qubit:</span> <span class="pre">str,</span> <span class="pre">resonator:</span> <span class="pre">str,</span> <span class="pre">resonator_coupled_identifier:</span> <span class="pre">str,</span> <span class="pre">opt_target_qubit_freq=False,</span> <span class="pre">opt_target_qubit_anharm=False,</span> <span class="pre">opt_target_resonator_freq=False,</span> <span class="pre">opt_target_resonator_kappa=False,</span> <span class="pre">opt_target_resonator_qubit_chi=False,</span> <span class="pre">use_simple_resonator_qubit_chi=False,</span> <span class="pre">design_var_qubit_lj:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_lj&gt;,</span> <span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;,</span> <span class="pre">design_var_res_length:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_length&gt;,</span> <span class="pre">design_var_res_coupl_length:</span> <span class="pre">~typing.Callable[[str,</span> <span class="pre">str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_targets_qb_res_transmission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission" title="Link to this definition"></a></dt>
-<dd><p>Get the optimization targets for a qubit-resonator system.</p>
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.optimization_targets.</span></span><span class="sig-name descname"><span class="pre">get_opt_targets_qb_res_transmission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">qubit:</span> <span class="pre">str,</span> <span class="pre">resonator:</span> <span class="pre">str,</span> <span class="pre">resonator_coupled_identifier:</span> <span class="pre">str,</span> <span class="pre">opt_target_qubit_freq:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">opt_target_qubit_anharm:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">opt_target_resonator_freq:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">opt_target_resonator_kappa:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">opt_target_resonator_qubit_chi:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">design_var_qubit_lj:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_lj&gt;,</span> <span class="pre">design_var_qubit_width:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_width&gt;,</span> <span class="pre">design_var_res_length:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_length&gt;,</span> <span class="pre">design_var_res_coupl_length:</span> <span class="pre">~typing.Callable[[str,</span> <span class="pre">str],</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">design_var_coupl_length&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/optimization_targets.html#get_opt_targets_qb_res_transmission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission" title="Link to this definition"></a></dt>
+<dd><p>Create a comprehensive set of optimization targets for a qubit-resonator system.</p>
+<p>This function combines multiple optimization targets to create a complete optimization
+strategy for a coupled qubit-resonator system. It allows for selectively including
+or excluding specific targets based on the design requirements.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>qubit</strong> (<em>Mode</em>) – The qubit mode.</p></li>
-<li><p><strong>resonator</strong> (<em>Mode</em>) – The resonator mode.</p></li>
-<li><p><strong>resonator_coupled_identifier</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The identifier of the resonator coupled to the qubit.</p></li>
-<li><p><strong>opt_target_qubit_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the qubit frequency.</p></li>
-<li><p><strong>opt_target_qubit_anharm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the qubit anharmonicity.</p></li>
-<li><p><strong>opt_target_resonator_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the resonator frequency.</p></li>
-<li><p><strong>opt_target_resonator_kappa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the resonator linewidth.</p></li>
-<li><p><strong>opt_target_resonator_qubit_chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to optimize the qubit-resonator coupling strength.</p></li>
-<li><p><strong>design_var_qubit_lj</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the qubit inductance.</p></li>
-<li><p><strong>design_var_qubit_width</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the qubit width.</p></li>
-<li><p><strong>design_var_res_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the resonator length.</p></li>
-<li><p><strong>design_var_res_coupl_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – The function to get the resonator coupling length.</p></li>
+<li><p><strong>qubit</strong> (<em>Mode</em>) – The qubit mode identifier.</p></li>
+<li><p><strong>resonator</strong> (<em>Mode</em>) – The resonator mode identifier.</p></li>
+<li><p><strong>resonator_coupled_identifier</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Identifier for the element to which the
+resonator is coupled (e.g., a feedline or transmission line).</p></li>
+<li><p><strong>opt_target_qubit_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to include qubit frequency
+optimization. Defaults to True.</p></li>
+<li><p><strong>opt_target_qubit_anharm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to include qubit anharmonicity
+optimization. Defaults to True.</p></li>
+<li><p><strong>opt_target_resonator_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to include resonator
+frequency optimization. Defaults to True.</p></li>
+<li><p><strong>opt_target_resonator_kappa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to include resonator
+linewidth optimization. Defaults to True.</p></li>
+<li><p><strong>opt_target_resonator_qubit_chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to include
+qubit-resonator dispersive shift optimization. Defaults to True.</p></li>
+<li><p><strong>design_var_qubit_lj</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit Josephson inductance. Defaults to n.design_var_lj.</p></li>
+<li><p><strong>design_var_qubit_width</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for qubit width. Defaults to n.design_var_width.</p></li>
+<li><p><strong>design_var_res_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for resonator length. Defaults to n.design_var_length.</p></li>
+<li><p><strong>design_var_res_coupl_length</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Function to generate the design
+variable name for coupling length. Defaults to n.design_var_coupl_length.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The optimization targets.</p>
+<dd class="field-even"><p>A list of optimization targets for the qubit-resonator system.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>List[<a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget">OptTarget</a>]</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">targets</span> <span class="o">=</span> <span class="n">get_opt_targets_qb_res_transmission</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">qubit</span><span class="o">=</span><span class="s2">&quot;qubit_1&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">resonator</span><span class="o">=</span><span class="s2">&quot;resonator_1&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">resonator_coupled_identifier</span><span class="o">=</span><span class="s2">&quot;feedline&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">opt_target_qubit_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">opt_target_qubit_anharm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">opt_target_resonator_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">opt_target_resonator_kappa</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">opt_target_resonator_qubit_chi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>  <span class="c1"># Returns 5 if all targets are enabled</span>
+<span class="go">5</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>

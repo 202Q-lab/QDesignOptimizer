@@ -8,15 +8,27 @@ This section contains information about the workflow of the QDesignOptimizer (QD
 
 Why QDO?
 =============
-Tuning up a superconducting quantum chip often involves lenghty simulations where the user manually updates the design variables, such as capacitance lengths and Josephson junction sizes, to reach the parameter targets of the circuit, such as frequencies, decay rates and coupling strengths. The QDesignOptimizer package strongly reduces the need for manual intervention by automating the simulation and optimization of the design variables. The optimization cycle first runs a detailed and often time-taking electro-magnetic `Ansys HFSS <https://www.ansys.com/products/electronics/ansys-hfss>`_ simulation [#f1]_ combined with `Energy Participation Ratio (EPR) <https://pyepr-docs.readthedocs.io/en/latest/>`_ analysis [#f2]_ to estimate the current values of the circuit parameters, integrated together with design framework `Qiskit Metal <https://qiskit-community.github.io/qiskit-metal/>`_ [#f3]_. The second step solves a nonlinear approximate model based on the user's physical knowledge about the circuit, which estimates how the design variables should be changed to reach the target. The flexibility in the QDesignOptimizer setup allows for the efficient investigation of chip subsystems since the simulation and approximate physical model are dynamically compiled from the user settings.
+Tuning up a superconducting quantum chip often involves lengthy simulations where the user manually
+updates the design variables, such as capacitance lengths and Josephson junction sizes, to reach the
+parameter targets of the circuit, such as frequencies, decay rates and coupling strengths. The
+QDesignOptimizer package strongly reduces the need for manual intervention by automating the
+simulation and optimization of the design variables. The optimization cycle first runs a detailed
+and often time-consuming electro-magnetic `Ansys HFSS <https://www.ansys.com/products/electronics/ansys-hfss>`_ simulation [#f1]_ combined with
+`Energy Participation Ratio (EPR) <https://pyepr-docs.readthedocs.io/en/latest/>`_ analysis [#f2]_ to
+estimate the current values of the circuit parameters, integrated together with design framework
+`Qiskit Metal <https://qiskit-community.github.io/qiskit-metal/>`_ [#f3]_. The second step solves a
+nonlinear approximate model based on the user's physical knowledge about the circuit, which
+estimates how the design variables should be changed to reach the target. The flexibility in the
+QDesignOptimizer setup allows for the efficient investigation of chip subsystems since the
+simulation and approximate physical model are dynamically compiled from the user settings.
 
 QDO Concept
 =============
-The optimiation framework allows for a systematic and automated optimization of quantum chip designs based on physical models including:
+The optimization framework allows for a systematic and automated optimization of quantum chip designs based on physical models including:
 
-1. Eigenmode simulations 
+1. Eigenmode simulations
 2. Capacitance simulations
-3. Energy participation ratio analysis 
+3. Energy participation ratio analysis
 
 The workflow of the QDesignOptimizer follows a three-step logic, which is also shown in the figure below:
 
@@ -25,7 +37,7 @@ The workflow of the QDesignOptimizer follows a three-step logic, which is also s
 3. Validation and results
 
 In short, in the problem formulation the user specifies the parameter targets, an initial guess for the design variables, and the optimization targets holding the approximate physical relationships between the parameters and variables. The optimization step is an iterative process that begins with a detailed electromagnetic simulation and energy participation ratio analysis for the current design variables, which provide the current values of the parameters. The approximate nonlinear model specified in the optimization targets is then solved, suggesting a good approximation to the optimal design variables, leading to convergence after a few iterations.
-| Further information on the setup can be found in :ref:`userguide`. 
+| Further information on the setup can be found in :ref:`userguide`.
 
 .. figure:: optimizationflow.png
    :width: 450px
@@ -67,7 +79,7 @@ To obtain the updated design variables :math:`\overrightarrow{V}^{k+1}`, the QDe
 
    C = \sum_{i=1}^N\left|\frac{\tilde Q_i^{k+1}}{Q_i^{target}} - 1\right|^2
 
-by finding the optimal :math:`\overrightarrow{V}^{k+1}`. If the problem is correctly formulated, the minimization will reach :math:`\tilde Q_i^{k+1} = Q_i^{target}` for all :math:`k=1,...,N` targets in the optimization. However, the QDesignOptimizer assumes that parameters, which are not associated with an :ref:`opttarget`, will not be affected by the changed design variables, i.e., :math:`\tilde Q_i^{k+1} = Q_i^{k}` for :math:`k>N`, if the system contains more parameters than targets.
+by finding the optimal :math:`\overrightarrow{V}^{k+1}`. If the problem is correctly formulated, the minimization will reach :math:`\tilde Q_i^{k+1} = Q_i^{target}` for all :math:`i=1,...,N` targets in the optimization. However, the QDesignOptimizer assumes that parameters, which are not associated with an :ref:`opttarget`, will not be affected by the changed design variables, i.e., :math:`\tilde Q_i^{k+1} = Q_i^{k}` for :math:`i>N`, if the system contains more parameters than targets.
 
 These relations for :math:`\tilde Q_i^{k+1}` simplify parameter updates to only depend on:
 
@@ -80,8 +92,8 @@ One of the main assumptions, which the QDesignOptimizer takes advantage of is th
 Separating physical dependencies by design
 -------------------------------------------
 
-| We recommend to create a design which separates the physical dependence between parameter targets and their intendet design variables. As a result, the user can specify more easily a nonlinear model that approximates the physical dependences of the design well. This nonlinear model is the input to the :ref:`opttarget`. Note that, the user does not need to decouple the physics of the system as long as the user can model the coupled system by nonlinear equations well. In many cases, it might not even be necessary to develop a very precise mode. An inaccurate model capturing the gradient is often sufficient, if the optimizer takes small update steps, which can be set by the update rate of the optimizer. However, the user might compromise on convergence.  
-| For example, if we define the :math:`l_{res-tl}` coupling length such that it does not affect the total length of the resonator, we approximately decouple the optimization of :math:`f_{res}` and :math:`\kappa_{res}`. In this example, given that we decoupled the physical relation between coupling strenght and frequency, a simple decoupled nonlinear model is a good approximation of the system.
+| We recommend creating a design which separates the physical dependence between parameter targets and their intended design variables. As a result, the user can more easily specify a nonlinear model that approximates the physical dependencies of the design well. This nonlinear model is the input to the :ref:`opttarget`. Note that the user does not need to decouple the physics of the system as long as the user can model the coupled system by nonlinear equations well. In many cases, it might not even be necessary to develop a very precise model. An inaccurate model capturing the gradient is often sufficient, if the optimizer takes small update steps, which can be set by the update rate of the optimizer. However, the user might compromise on convergence.
+| For example, if we define the :math:`l_{res-tl}` coupling length such that it does not affect the total length of the resonator, we approximately decouple the optimization of :math:`f_{res}` and :math:`\kappa_{res}`. In this example, given that we decoupled the physical relation between coupling strength and frequency, a simple decoupled nonlinear model is a good approximation of the system.
 
 
 Independent Variables
@@ -100,13 +112,13 @@ Factorization of Update Step
 ----------------------------
 
 | The nonlinear minimization step is simplified by exploiting the independence of some design variables in the physical relations. Involving this factorization, we can decompose the original N-dimensional optimization problem into a sequence of lower-dimensional subproblems, which significantly reduces the computational complexity and can be solved faster.
-| Specifically in the example discussed in :ref:`qickstart` we observe that: 
+| Specifically in the example discussed in :ref:`qickstart` we observe that:
 
 - The resonance frequency of the resonator :math:`f_{res}` depends solely on the resonator length :math:`l_{res}`
 - The coupling of the resonator to the feedline :math:`\kappa_{res}` depends solely on the resonator to feedline coupling length :math:`l_{res-tl}`
 - The qubit capacitance energy :math:`f_{qb}` is influenced only by the qubit width :math:`w_{qb}`.
 
-Instead of minimizing all parameters simultaneously, the optimizer first solve the following one-dimensional optimization problems to obtain the updated design variables:
+Instead of minimizing all parameters simultaneously, the optimizer first solves the following one-dimensional optimization problems to obtain the updated design variables:
 
 - Determine :math:`l_{res}^{k+1}` by minimizing the cost function with respect to :math:`(f_{res}, l_{res})`.
 - Determine :math:`l_{res-tl}^{k+1}` by minimizing the cost function with respect to :math:`(\kappa_{res}, l_{res-tl})`.
@@ -116,7 +128,7 @@ Once these one-dimensional optimizations are complete, we solve the remaining tw
 
 - Determine :math:`\chi_{qb-res}^{k+1}` by solving for :math:`(f_{qb}, \chi, L_{qb}, w_{res-qb})`
 
-| Instead of solving a full five-dimensional problem at once, we handle subproblems of dimensions 1, 1, 1, and 2, which are computationally more efficient. 
+| Instead of solving a full five-dimensional problem at once, we handle subproblems of dimensions 1, 1, 1, and 2, which are computationally more efficient.
 
 
 
@@ -125,4 +137,3 @@ Once these one-dimensional optimizations are complete, we solve the remaining tw
 .. [#f1] `Ansys HFSS <https://www.ansys.com/products/electronics/ansys-hfss>`_ is a proprietary, multipurpose, full wave 3D electromagnetic (EM) simulation software for designing and simulating high-frequency electronic products such as antennas, components, interconnects, connectors, ICs, and PCBs.
 .. [#f2] `pyEPR <https://pyepr-docs.readthedocs.io/en/latest/>`_ is an open-source library providing automated analysis and design of quantum microwave devices. This package is based on the publication Minev, Z.K., Leghtas, Z., Mundhada, S.O. et al. Energy-participation quantization of Josephson circuits. npj Quantum Inf 7, 131 (2021).
 .. [#f3] `Qiskit Metal <https://qiskit-community.github.io/qiskit-metal/>`_ is an open-source framework (and library) for the design of superconducting quantum chips and devices.
-

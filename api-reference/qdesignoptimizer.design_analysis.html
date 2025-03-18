@@ -105,17 +105,28 @@
 <dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.design_analysis.</span></span><span class="sig-name descname"><span class="pre">DesignAnalysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.DesignAnalysisState" title="qdesignoptimizer.design_analysis_types.DesignAnalysisState"><span class="pre">DesignAnalysisState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mini_study</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MiniStudy" title="qdesignoptimizer.design_analysis_types.MiniStudy"><span class="pre">MiniStudy</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'analysis_result'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_design_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_settings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MeshingMap" title="qdesignoptimizer.design_analysis_types.MeshingMap"><span class="pre">MeshingMap</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimization_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Class for DesignAnalysis.</p>
+<p>Manager for quantum circuit design optimization and electromagnetic simulation.</p>
+<p>Handles the workflow of:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Simulation setup for eigenmode and capacitance calculations</p></li>
+<li><p>Parameter extraction from simulations</p></li>
+<li><p>Design variable optimization based on physical targets</p></li>
+<li><p>Result tracking and visualization</p></li>
+</ul>
+</div></blockquote>
+<p>This class integrates HFSS/ANSYS simulations with Qiskit Metal designs to automate
+the optimization of superconducting circuit parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>state</strong> (<em>DesignAnalysisSetup</em>) – DesignAnalysisState object</p></li>
-<li><p><strong>mini_study</strong> (<a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MiniStudy" title="qdesignoptimizer.design_analysis_types.MiniStudy"><em>MiniStudy</em></a>) – MiniStudy object</p></li>
-<li><p><strong>opt_targets</strong> (<em>List</em><em>[</em><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><em>OptTarget</em></a><em>]</em>) – list of OptTarget objects</p></li>
-<li><p><strong>save_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – path to save results</p></li>
-<li><p><strong>update_design_variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – update parameters</p></li>
-<li><p><strong>plot_settings</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – plot settings for progress plots</p></li>
-<li><p><strong>meshing_map</strong> (<em>List</em><em>[</em><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MeshingMap" title="qdesignoptimizer.design_analysis_types.MeshingMap"><em>MeshingMap</em></a><em>]</em>) – meshing map</p></li>
+<li><p><strong>state</strong> (<a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.DesignAnalysisState" title="qdesignoptimizer.design_analysis_types.DesignAnalysisState"><em>DesignAnalysisState</em></a>) – State object containing design, render function, and target parameters.</p></li>
+<li><p><strong>mini_study</strong> (<a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MiniStudy" title="qdesignoptimizer.design_analysis_types.MiniStudy"><em>MiniStudy</em></a>) – Simulation parameters including component names, modes, and passes.</p></li>
+<li><p><strong>opt_targets</strong> (<em>List</em><em>[</em><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><em>OptTarget</em></a><em>]</em>) – List of target physical parameters to optimize and their design variable relationships.</p></li>
+<li><p><strong>save_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Location to save optimization results.</p></li>
+<li><p><strong>update_design_variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether to automatically update design files with optimized values.</p></li>
+<li><p><strong>plot_settings</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Configuration for progress visualization plots.</p></li>
+<li><p><strong>meshing_map</strong> (<em>List</em><em>[</em><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MeshingMap" title="qdesignoptimizer.design_analysis_types.MeshingMap"><em>MeshingMap</em></a><em>]</em>) – Custom mesh refinement configurations for specific components.</p></li>
 <li><p><strong>minimization_tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – tolerance used to terminate the solution of an optimization step.</p></li>
 </ul>
 </dd>
@@ -197,18 +208,28 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target">
 <span class="sig-name descname"><span class="pre">optimize_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updated_design_vars_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_optimized_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.optimize_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target" title="Link to this definition"></a></dt>
-<dd><p>Optimize with respect to provided targets.
-!!! Assumes that all simulated frequencies have same order as the target mode freqs, to associate them correctly. !!!
-The modes will be incorrectly assigned if the frequencies are not in the same order.
-Tip: simulate the modes individually first to get them close to their target frequencies.</p>
+<dd><p>Run full optimization iteration to adjust design variables toward target parameters.</p>
+<p>Performs these steps in sequence:</p>
+<ol class="arabic simple">
+<li><p>Updates design variables and system parameters</p></li>
+<li><p>Runs eigenmode simulation to extract frequencies and decay rates</p></li>
+<li><p>Performs energy participation ratio (EPR) analysis for nonlinearities</p></li>
+<li><p>Executes capacitance matrix studies if configured</p></li>
+<li><p>Saves results and generates visualization plots</p></li>
+</ol>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>updated_design_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – updated design variables</p></li>
-<li><p><strong>system_optimized_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – updated system optimized parameters</p></li>
+<li><p><strong>updated_design_vars_input</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Manual design variable overrides</p></li>
+<li><p><strong>system_optimized_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Manual system parameter overrides</p></li>
 </ul>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Assumes modes are simulated in the same order as target frequencies for correct assignment.
+Mismatched orders will cause incorrect parameter mapping.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">

@@ -100,44 +100,40 @@
 <div class="viewcode-block" id="CapacitanceMatrixStudy">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.CapacitanceMatrixStudy">[docs]</a>
 <span class="k">class</span> <span class="nc">CapacitanceMatrixStudy</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Capacitance matrix study for DesignAnalysis.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for capacitance matrix simulations of quantum circuit components in DesignAnalysis.</span>
 
-<span class="sd">    When several components are rendered in the capacitance matrix analysis, the union of all</span>
-<span class="sd">    connected components will be represented by a unique name, which is a column in the capacitance</span>
-<span class="sd">    matrix returned from LOManalysis e.g. by running analyse_capacitance_matrix. We refer to this</span>
-<span class="sd">    unique name as the capacitance name. Note that the capacitance name typically change if you</span>
-<span class="sd">    change which components are included in the analysis.</span>
+<span class="sd">    When multiple components are rendered in the capacitance matrix analysis, the union of all</span>
+<span class="sd">    connected components will be represented by a unique name, which becomes a column in the</span>
+<span class="sd">    resulting capacitance matrix. These capacitance names typically change if you modify which</span>
+<span class="sd">    components are included in the analysis.</span>
+
+<span class="sd">    This class can be used directly for basic capacitance simulations or extended by specialized</span>
+<span class="sd">    subclasses to calculate specific decay parameters like T1 or kappa.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        qiskit_component_names (list): list of Qiskit component names to be included in the</span>
-<span class="sd">            capacitance simulation</span>
-<span class="sd">        freq_GHz (float): Sets the frequency in GHz of the capacitance matrix.</span>
-<span class="sd">            Or (not supported yet): If tuple, the simulation will use the frequency from</span>
-<span class="sd">            corresponding mode in the EPR analysis.n</span>
-
-<span class="sd">            Example1: 5e9</span>
-<span class="sd">            Example2: (&#39;BRANCH_1&#39;, &#39;qubit_freq&#39;)</span>
-<span class="sd">        open_pins (list): pins to be left open, called open_terminations in the capacitance matrix</span>
-<span class="sd">            simulation.</span>
-
-<span class="sd">            Example: [(&#39;comp_name&#39;, &#39;pin_name&#39;)]</span>
-<span class="sd">        x_buffer_width_mm (float): x buffer width added around the rendered components</span>
-<span class="sd">        y_buffer_width_mm (float): y buffer width added around the rendered components</span>
-<span class="sd">        render_qiskit_metal (Callable): if provided, the design will be rerendered using this</span>
-<span class="sd">            function before the capacitance simulation. If a CapacitanceMatrixStudy is used in the</span>
-<span class="sd">            DesignAnalysis optimization and self.render_qiskit_metal==None, render_qiskit_metal from</span>
-<span class="sd">            DesignAnalysisState will be used instead (i.e. it doesn&#39;t need to be provided).</span>
-<span class="sd">            Format: render_qiskit_metal(design, `**kw_args`)</span>
-<span class="sd">        render_qiskit_metal_kwargs (dict): kwargs for render_qiskit_metal</span>
-<span class="sd">        percent_error (float): percent error in capacitance simulation</span>
-<span class="sd">        nbr_passes (int): group of passes in capacitance simulation</span>
+<span class="sd">        qiskit_component_names (list): Names of Qiskit Metal components to include in the</span>
+<span class="sd">            capacitance simulation.</span>
+<span class="sd">        open_pins (list, optional): Pin connections to leave open (not grounded or connected),</span>
+<span class="sd">            specified as tuples of (component_name, pin_name). Defaults to an empty list.</span>
+<span class="sd">        x_buffer_width_mm (float, optional): Width of simulation buffer space in x-direction</span>
+<span class="sd">            in millimeters. Defaults to 2mm.</span>
+<span class="sd">        y_buffer_width_mm (float, optional): Width of simulation buffer space in y-direction</span>
+<span class="sd">            in millimeters. Defaults to 2mm.</span>
+<span class="sd">        render_qiskit_metal (Callable, optional): Function for rendering the design before</span>
+<span class="sd">            simulation. If None, the function from DesignAnalysisState will be used when this</span>
+<span class="sd">            study is part of a DesignAnalysis optimization. Takes the form</span>
+<span class="sd">            ``render_qiskit_metal(design, **kwargs)``.</span>
+<span class="sd">        render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal</span>
+<span class="sd">            function. Defaults to an empty dict.</span>
+<span class="sd">        percent_error (float, optional): Target percentage error for simulation convergence.</span>
+<span class="sd">            Defaults to 0.5%.</span>
+<span class="sd">        nbr_passes (int, optional): Maximum number of mesh refinement passes to perform.</span>
+<span class="sd">            Defaults to 10.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">qiskit_component_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
-        <span class="n">mode_freq_GHz</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
         <span class="n">open_pins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">x_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">y_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
@@ -147,7 +143,6 @@
         <span class="n">nbr_passes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qiskit_component_names</span> <span class="o">=</span> <span class="n">qiskit_component_names</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mode_freq_GHz</span> <span class="o">=</span> <span class="n">mode_freq_GHz</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">open_pins</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="n">open_pins</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x_buffer_width_mm</span> <span class="o">=</span> <span class="n">x_buffer_width_mm</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">y_buffer_width_mm</span> <span class="o">=</span> <span class="n">y_buffer_width_mm</span>
@@ -158,23 +153,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">percent_error</span> <span class="o">=</span> <span class="n">percent_error</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nbr_passes</span> <span class="o">=</span> <span class="n">nbr_passes</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">capacitance_matrix_fF</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="kc">None</span>  <span class="c1"># (fF) gets populated by simulate_capacitance_matrix (pd.DataFrame)</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mode_capacitances_matrix_fF</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="kc">None</span>  <span class="c1"># (fF) gets populated by simulate_capacitance_matrix (dict)</span>
-        <span class="p">)</span>
-        <span class="c1"># Example: {(&#39;branch_name&#39;, &#39;freq_name&#39;): 100}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacitance_matrix_fF</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;pandas.DataFrame: Capacitance matrix results from simulation in femtofarads (fF).</span>
+<span class="sd">        Populated by calling simulate_capacitance_matrix().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode_capacitances_matrix_fF</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;dict: Extracted mode capacitances from the capacitance matrix.</span>
+<span class="sd">        Populated by calling simulate_capacitance_matrix().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="CapacitanceMatrixStudy.set_render_qiskit_metal">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.CapacitanceMatrixStudy.set_render_qiskit_metal">[docs]</a>
     <span class="k">def</span> <span class="nf">set_render_qiskit_metal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">render_qiskit_metal</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Set the render_qiskit_metal function to be used before the capacitance simulation.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the rendering function to use before capacitance simulation.</span>
+
+<span class="sd">        This method allows updating the rendering function after initialization,</span>
+<span class="sd">        particularly useful when a CapacitanceMatrixStudy is being used within</span>
+<span class="sd">        a DesignAnalysis context.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            render_qiskit_metal (Callable): The render_qiskit_metal function. Format:</span>
-<span class="sd">            render_qiskit_metal(design, `**kw_args`)</span>
+<span class="sd">            render_qiskit_metal (Callable): Function that renders the design components,</span>
+<span class="sd">                with signature ``render_qiskit_metal(design, **kwargs)``.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal</span> <span class="o">=</span> <span class="n">render_qiskit_metal</span></div>
 
@@ -185,21 +186,24 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">design</span><span class="p">:</span> <span class="n">QDesign</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simualte the capacitance matrix for the given design and study parameters</span>
-<span class="sd">        and populates the capacitance_matrix_fF attribute.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the capacitance matrix simulation for the specified design.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            design (QDesign): The design to simulate.</span>
+<span class="sd">            design (QDesign): The Qiskit Metal design to simulate.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            pandas.DataFrame: The capacitance matrix.</span>
+<span class="sd">            pandas.DataFrame: The simulated capacitance matrix in femtofarads (fF).</span>
+<span class="sd">            Rows and columns correspond to component/island names.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            The simulation results are also stored in the capacitance_matrix_fF</span>
+<span class="sd">            attribute for later use by derived classes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal_kwargs</span><span class="p">)</span>
 
         <span class="n">lom_analysis</span> <span class="o">=</span> <span class="n">LOManalysis</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s2">&quot;q3d&quot;</span><span class="p">)</span>
         <span class="n">lom_analysis</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">max_passes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbr_passes</span>
-        <span class="c1"># lom_analysis.sim.setup.freq_ghz = self.freq_GHz</span>
         <span class="n">lom_analysis</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">percent_error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">percent_error</span>
         <span class="n">lom_analysis</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;x_buffer_width_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_buffer_width_mm</span>
         <span class="n">lom_analysis</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;y_buffer_width_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_buffer_width_mm</span>
@@ -216,13 +220,25 @@
 <div class="viewcode-block" id="ModeDecayStudy">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ModeDecayStudy">[docs]</a>
 <span class="k">class</span> <span class="nc">ModeDecayStudy</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">CapacitanceMatrixStudy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for mode decay studies using capacitance matrix simulation.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for studies that analyze mode decay using capacitance simulations.</span>
 
-<span class="sd">    Since the capacitance should be evaluated at the frequency of the mode, each decay analysis</span>
-<span class="sd">    should be done in a separate ModeDecayStudy.</span>
+<span class="sd">    This class extends CapacitanceMatrixStudy to provide a common interface for</span>
+<span class="sd">    different types of decay studies. Specific decay mechanisms (such as decay into</span>
+<span class="sd">    charge lines or waveguides) are implemented by subclasses.</span>
+
+<span class="sd">    Since capacitance values should be evaluated at the frequency of the specific mode,</span>
+<span class="sd">    each decay analysis should be performed in a separate ModeDecayStudy instance.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        mode (str): The mode name mode_freq_GHz (float): The mode frequency in GHz</span>
+<span class="sd">        mode (str): Name of the mode being analyzed (e.g., &quot;qubit_1&quot;).</span>
+<span class="sd">        mode_freq_GHz (float): Frequency of the mode in GHz.</span>
+<span class="sd">        qiskit_component_names (list): Components to include in simulation.</span>
+<span class="sd">        open_pins (list, optional): Pins to leave open. Defaults to [].</span>
+<span class="sd">        x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.</span>
+<span class="sd">        y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.</span>
+<span class="sd">        percent_error (float, optional): Target simulation error. Defaults to 0.5.</span>
+<span class="sd">        nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_decay_parameter_type</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># To be defined by subclasses</span>
@@ -240,7 +256,6 @@
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">qiskit_component_names</span><span class="o">=</span><span class="n">qiskit_component_names</span><span class="p">,</span>
-            <span class="n">mode_freq_GHz</span><span class="o">=</span><span class="n">mode_freq_GHz</span><span class="p">,</span>
             <span class="n">open_pins</span><span class="o">=</span><span class="n">open_pins</span><span class="p">,</span>
             <span class="n">x_buffer_width_mm</span><span class="o">=</span><span class="n">x_buffer_width_mm</span><span class="p">,</span>
             <span class="n">y_buffer_width_mm</span><span class="o">=</span><span class="n">y_buffer_width_mm</span><span class="p">,</span>
@@ -248,17 +263,19 @@
             <span class="n">nbr_passes</span><span class="o">=</span><span class="n">nbr_passes</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">freq_GHz</span> <span class="o">=</span> <span class="n">mode_freq_GHz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode_freq_GHz</span> <span class="o">=</span> <span class="n">mode_freq_GHz</span>
 
 <div class="viewcode-block" id="ModeDecayStudy.get_decay_parameter_value">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ModeDecayStudy.get_decay_parameter_value">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">get_decay_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the simulated parameter value.</span>
-<span class="sd">        This method should be implemented by subclasses.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate and return the decay parameter value for this mode.</span>
+
+<span class="sd">        This abstract method must be implemented by subclasses to compute</span>
+<span class="sd">        specific decay parameters (T1, kappa, etc.) from the capacitance matrix.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            float: The simulated parameter value.</span>
+<span class="sd">            float: The calculated decay parameter value in appropriate units.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
@@ -266,10 +283,10 @@
 <div class="viewcode-block" id="ModeDecayStudy.get_decay_parameter_type">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ModeDecayStudy.get_decay_parameter_type">[docs]</a>
     <span class="k">def</span> <span class="nf">get_decay_parameter_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the type of parameter this study optimizes.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the type of decay parameter this study calculates.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The parameter type.</span>
+<span class="sd">            str: Parameter type identifier (e.g., &quot;charge_line_limited_t1&quot;, &quot;kappa&quot;).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decay_parameter_type</span></div>
 </div>
@@ -279,18 +296,38 @@
 <div class="viewcode-block" id="ModeDecayIntoChargeLineStudy">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ModeDecayIntoChargeLineStudy">[docs]</a>
 <span class="k">class</span> <span class="nc">ModeDecayIntoChargeLineStudy</span><span class="p">(</span><span class="n">ModeDecayStudy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mode decay into charge line study by capacitance matrix simulation.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Study for calculating T1 relaxation time due to decay into a charge line.</span>
 
-<span class="sd">    Since the capacitance should be evaluated at the frequency of the mode, each decay analysis</span>
-<span class="sd">    should be done in a separate ModeDecayIntoChargeLineStudy.</span>
+<span class="sd">    This class calculates the T1 relaxation time limit for a mode (typically a qubit)</span>
+<span class="sd">    due to its coupling to a charge line. The calculation accounts for the capacitance</span>
+<span class="sd">    between the mode&#39;s islands and the charge line, using either a grounded or floating</span>
+<span class="sd">    island model depending on the physical configuration.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        mode (str): The mode name mode_freq_GHz (float): The mode frequency in GHz</span>
-<span class="sd">        mode_capacitance_name (str or List[str]): capacitance name of mode, if grounded: 1 string of</span>
-<span class="sd">            island name, if floating: list of 2 strings of respective islands names</span>
-<span class="sd">        charge_line_capacitance_name (str): capacitance name of charge line</span>
-<span class="sd">        charge_line_impedance_Ohm (float): charge line impedance in Ohm</span>
-<span class="sd">        ground_plane_capacitance_name (str, optional): capacitance name of ground plane</span>
+<span class="sd">        mode (str): Name of the mode being analyzed (e.g., &quot;qubit_1&quot;).</span>
+<span class="sd">        mode_freq_GHz (float): Frequency of the mode in GHz.</span>
+<span class="sd">        mode_capacitance_name (str or List[str]): Capacitance name(s) of the mode&#39;s islands:</span>
+
+<span class="sd">            - For a grounded design: provide a single string with the island name</span>
+<span class="sd">            - For a floating design: provide a list of two strings with the island names</span>
+
+<span class="sd">        charge_line_capacitance_name (str): Capacitance name of the charge line.</span>
+<span class="sd">        charge_line_impedance_Ohm (float): Impedance of the charge line in Ohms.</span>
+<span class="sd">        qiskit_component_names (list): Components to include in simulation.</span>
+<span class="sd">        open_pins (list, optional): Pins to leave open. Defaults to [].</span>
+<span class="sd">        ground_plane_capacitance_name (str, optional): Capacitance name of the ground plane.</span>
+<span class="sd">            Required for floating island calculations.</span>
+<span class="sd">        x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.</span>
+<span class="sd">        y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.</span>
+<span class="sd">        percent_error (float, optional): Target simulation error. Defaults to 0.5.</span>
+<span class="sd">        nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        The calculation method differs between grounded and floating designs:</span>
+
+<span class="sd">        - Grounded design: Single island capacitively coupled to charge line</span>
+<span class="sd">        - Floating design: Two islands (e.g., split transmon) coupled to charge line</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_decay_parameter_type</span> <span class="o">=</span> <span class="n">CHARGE_LINE_LIMITED_T1</span>  <span class="c1"># type: ignore</span>
@@ -329,14 +366,27 @@
 <div class="viewcode-block" id="ModeDecayIntoChargeLineStudy.get_t1_limit_due_to_decay_into_charge_line">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ModeDecayIntoChargeLineStudy.get_t1_limit_due_to_decay_into_charge_line">[docs]</a>
     <span class="k">def</span> <span class="nf">get_t1_limit_due_to_decay_into_charge_line</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the T1 limit due to decay into charge line decay</span>
-<span class="sd">        and populates the t1_limit_due_to_decay_into_charge_line attribute.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the T1 relaxation time limit due to charge line coupling..</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            float: The T1 limit due to decay into charge line decay (s).</span>
+<span class="sd">            float: The T1 limit in seconds.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            AssertionError: If capacitance_matrix_fF is not set when trying to access T1 limit.</span>
+<span class="sd">            AssertionError: If capacitance_matrix_fF has not been set (run simulate_capacitance_matrix first).</span>
+<span class="sd">            NotImplementedError: If mode_capacitance_name has an invalid format.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            For grounded designs (single island), the function calculates T1 using:</span>
+
+<span class="sd">            - The total island self-capacitance</span>
+<span class="sd">            - The coupling capacitance to the charge line</span>
+
+<span class="sd">            For floating designs (two islands), the function uses:</span>
+
+<span class="sd">            - The coupling capacitance between islands</span>
+<span class="sd">            - The capacitances between each island and ground</span>
+<span class="sd">            - The capacitances between each island and the charge line</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">capacitance_matrix_fF</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -363,7 +413,7 @@
                 <span class="n">calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline</span><span class="p">(</span>
                     <span class="n">mode_capacitance_fF</span><span class="o">=</span><span class="n">Csum</span><span class="p">,</span>
                     <span class="n">mode_capacitance_to_charge_line_fF</span><span class="o">=</span><span class="n">Ccoupling</span><span class="p">,</span>
-                    <span class="n">mode_freq_GHz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq_GHz</span><span class="p">,</span>
+                    <span class="n">mode_freq_GHz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mode_freq_GHz</span><span class="p">,</span>
                     <span class="n">charge_line_impedance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">charge_line_impedance_Ohm</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
@@ -389,7 +439,7 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">t1_limit_due_to_decay_into_charge_line</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">calculate_t1_limit_floating_lumped_mode_decay_into_chargeline</span><span class="p">(</span>
-                    <span class="n">mode_freq_GHz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq_GHz</span><span class="p">,</span>
+                    <span class="n">mode_freq_GHz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mode_freq_GHz</span><span class="p">,</span>
                     <span class="n">cap_island_a_island_b_fF</span><span class="o">=</span><span class="n">CJ</span><span class="p">,</span>
                     <span class="n">cap_island_a_ground_fF</span><span class="o">=</span><span class="n">Ca0</span><span class="p">,</span>
                     <span class="n">cap_island_a_line_fF</span><span class="o">=</span><span class="n">Ca1</span><span class="p">,</span>
@@ -410,10 +460,10 @@
 <div class="viewcode-block" id="ModeDecayIntoChargeLineStudy.get_decay_parameter_value">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ModeDecayIntoChargeLineStudy.get_decay_parameter_value">[docs]</a>
     <span class="k">def</span> <span class="nf">get_decay_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the optimized parameter value (T1 limit).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the T1 limit due to charge line coupling.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            float: The T1 limit due to decay into charge line.</span>
+<span class="sd">            float: The T1 limit in seconds.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_t1_limit_due_to_decay_into_charge_line</span><span class="p">()</span></div>
 </div>
@@ -423,19 +473,37 @@
 <div class="viewcode-block" id="ResonatorDecayIntoWaveguideStudy">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ResonatorDecayIntoWaveguideStudy">[docs]</a>
 <span class="k">class</span> <span class="nc">ResonatorDecayIntoWaveguideStudy</span><span class="p">(</span><span class="n">ModeDecayStudy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resonator decay into waveguide study by capacitance matrix simulation.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Study for calculating resonator decay rate (kappa) into a waveguide.</span>
 
-<span class="sd">    Currently uses a simplified model, assuming that the resonator and waveguide have the same</span>
-<span class="sd">    impedance. Since the capacitance should be evaluated at the frequency of the mode, each decay</span>
-<span class="sd">    analysis should be done in a separate ResonatorDecayIntoWaveguideStudy.</span>
-
+<span class="sd">    This class calculates the decay rate (kappa) of a resonator mode into a</span>
+<span class="sd">    coupled waveguide based on the capacitance between them. The calculation</span>
+<span class="sd">    uses a simplified model assuming the resonator and waveguide have the same</span>
+<span class="sd">    impedance.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        mode (str): The mode name mode_freq_GHz (float): The mode frequency in GHz resonator_name</span>
-<span class="sd">        (str): capacitance name of resonator waveguide_name (str): capacitance name of waveguide</span>
-<span class="sd">        impedance_ohm (float): impedance of the waveguide and the resonator in Ohm resonator_type</span>
-<span class="sd">        (Literal[&quot;lambda_4&quot;, &quot;lambda_2&quot;]): specifies the type of resonator to be lambda/4 or</span>
-<span class="sd">        lambda/2</span>
+<span class="sd">        mode (str): Name of the resonator mode being analyzed.</span>
+<span class="sd">        mode_freq_GHz (float): Frequency of the resonator mode in GHz.</span>
+<span class="sd">        resonator_name (str): Capacitance name of the resonator in the simulation.</span>
+<span class="sd">        waveguide_name (str): Capacitance name of the waveguide in the simulation.</span>
+<span class="sd">        impedance_ohm (float): Impedance of both the waveguide and resonator in Ohms.</span>
+<span class="sd">        qiskit_component_names (list): Components to include in simulation.</span>
+<span class="sd">        resonator_type (Literal[&quot;lambda_4&quot;, &quot;lambda_2&quot;]): Type of resonator:</span>
+
+<span class="sd">            - &quot;lambda_4&quot;: Quarter-wavelength resonator</span>
+<span class="sd">            - &quot;lambda_2&quot;: Half-wavelength resonator</span>
+
+<span class="sd">        open_pins (list, optional): Pins to leave open. Defaults to [].</span>
+<span class="sd">        x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.</span>
+<span class="sd">        y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.</span>
+<span class="sd">        percent_error (float, optional): Target simulation error. Defaults to 0.5.</span>
+<span class="sd">        nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        The calculation differs between quarter-wavelength and half-wavelength resonators:</span>
+
+<span class="sd">        - Quarter-wavelength (lambda/4): kappa value is doubled compared to half-wavelength</span>
+<span class="sd">        - Half-wavelength (lambda/2): standard calculation</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_decay_parameter_type</span> <span class="o">=</span> <span class="n">KAPPA</span>  <span class="c1"># type: ignore</span>
@@ -474,22 +542,33 @@
 <div class="viewcode-block" id="ResonatorDecayIntoWaveguideStudy.get_kappa_estimate">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ResonatorDecayIntoWaveguideStudy.get_kappa_estimate">[docs]</a>
     <span class="k">def</span> <span class="nf">get_kappa_estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the estimated kappa (decay rate) of the resonator into the waveguide.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the resonator decay rate (kappa) into the waveguide.</span>
 
-<span class="sd">        Currently uses a simplified model, assuming that the resonator and waveguide have the same</span>
-<span class="sd">        impedance.</span>
+<span class="sd">        This method extracts the coupling capacitance between the resonator and waveguide</span>
+<span class="sd">        from the simulation results and calculates the decay rate using a simplified model.</span>
+<span class="sd">        The calculation assumes the resonator and waveguide have the same impedance.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            float: The estimated kappa (Hz).</span>
+<span class="sd">            float: The estimated kappa (decay rate) in Hz.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            AssertionError: If capacitance_matrix_fF is not set when trying to access kappa.</span>
+<span class="sd">            AssertionError: If capacitance_matrix_fF has not been set (run simulate_capacitance_matrix first).</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            The formula used is: κ = Z₀²·ω³·C²/π/(2π)</span>
+<span class="sd">            Where:</span>
+
+<span class="sd">            - Z₀ is the impedance (ohms)</span>
+<span class="sd">            - ω is the angular frequency (2π·f)</span>
+<span class="sd">            - C is the coupling capacitance (fF)</span>
+
+<span class="sd">            For quarter-wavelength resonators, the result is doubled.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">capacitance_matrix_fF</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="p">),</span> <span class="s2">&quot;capacitance_matrix_fF is not set, you need to run .simulate_capacitance_matrix().&quot;</span>
 
-        <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_GHz</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode_freq_GHz</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
 
         <span class="n">Ccoupling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">capacitance_matrix_fF</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">resonator_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveguide_name</span><span class="p">]</span>
@@ -509,10 +588,10 @@
 <div class="viewcode-block" id="ResonatorDecayIntoWaveguideStudy.get_decay_parameter_value">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ResonatorDecayIntoWaveguideStudy.get_decay_parameter_value">[docs]</a>
     <span class="k">def</span> <span class="nf">get_decay_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the optimized parameter value (kappa).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the resonator decay rate (kappa) into the waveguide.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            float: The estimated kappa.</span>
+<span class="sd">            float: The estimated kappa (decay rate) in Hz.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_kappa_estimate</span><span class="p">()</span></div>
 </div>

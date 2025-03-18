@@ -50,15 +50,17 @@
               <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-with-pip">Installation with pip</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#installation-from-github-repository">Installation from github repository</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation-from-github-repository">Installation from GitHub Repository</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#clone-the-repository">Clone the Repository</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-a-virtual-environment">Create a Virtual Environment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#user-installation">User Installation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#developer-installation">Developer Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-documentation">Building Documentation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#installation-of-ansys-hfss">Installation of Ansys HFSS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizer 101</a></li>
@@ -95,18 +97,28 @@
              
   <section id="installation">
 <span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
-<p>This installation guide will help you install the package QDesignOptimizer on your system.</p>
+<p>This guide will help you install the <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> package and its dependencies on your system.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Python 3.10 (required)</p></li>
+<li><p>pip or poetry package manager</p></li>
+<li><p>Git (for installation from repository)</p></li>
+<li><p>Ansys HFSS. <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> has been tested with Ansys Electronics Desktop 2021 R2.</p></li>
+</ul>
+</section>
 <section id="installation-with-pip">
 <h2>Installation with pip<a class="headerlink" href="#installation-with-pip" title="Link to this heading"></a></h2>
-<p>The user can install the package QDesignOptimizer via the python package manager pip. After that, install qiskit-metal on top without dependencies to avoid conflicts.</p>
+<p>The simplest way to install <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> is via the Python package manager pip:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>qdesignoptimizer
 pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
 </pre></div>
 </div>
+<p>Note that at the moment Qiskit Metal must be installed separately and without dependencies to make it work properly.</p>
 </section>
 <section id="installation-from-github-repository">
-<h2>Installation from github repository<a class="headerlink" href="#installation-from-github-repository" title="Link to this heading"></a></h2>
-<p>The user can install the QDesignOptimizer directly from the github repository. To do so, follow the steps below:</p>
+<h2>Installation from GitHub Repository<a class="headerlink" href="#installation-from-github-repository" title="Link to this heading"></a></h2>
+<p>For the latest version or if you want to contribute to development, you can install directly from the GitHub repository.</p>
 <section id="clone-the-repository">
 <h3>Clone the Repository<a class="headerlink" href="#clone-the-repository" title="Link to this heading"></a></h3>
 <p>First, clone the repository and navigate to its directory:</p>
@@ -117,12 +129,17 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 </section>
 <section id="create-a-virtual-environment">
 <h3>Create a Virtual Environment<a class="headerlink" href="#create-a-virtual-environment" title="Link to this heading"></a></h3>
-<p>It is strongly recommended that you install the project in a separate virtual environment, which must use python3.10. This project is packaged with <cite>poetry &lt;https://python-poetry.org/&gt;</cite>, which handles the environment setup for you. If you instead use conda, you can create the environment from the provided environment.yml file:</p>
+<p>It is strongly recommended to install the project in a separate virtual environment using Python 3.10. You have several options:</p>
+<p><strong>Option 1: Using Poetry (Recommended)</strong></p>
+<p>This project is packaged with <a class="reference external" href="https://python-poetry.org/">poetry</a>, which handles the environment setup for you.</p>
+<p><strong>Option 2: Using Conda</strong></p>
+<p>Create the environment from the provided environment.yml file:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
 conda<span class="w"> </span>activate<span class="w"> </span>qdesignenv
 </pre></div>
 </div>
-<p>You can also create the environment using venv:</p>
+<p><strong>Option 3: Using venv</strong></p>
+<p>Create and activate a virtual environment using Python’s built-in venv module:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create new virtual environment</span>
 python3.10<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>qdesignenv
 
@@ -130,10 +147,11 @@ python3.10<span class="w"> </span>-m<span class="w"> </span>venv<span class="w">
 <span class="c1"># On Linux/MacOS:</span>
 <span class="nb">source</span><span class="w"> </span>qdesignenv/bin/activate
 <span class="c1"># On Windows:</span>
-qdesign-env<span class="se">\\</span>Scripts<span class="se">\\</span>activate
+qdesignenv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate
 
 <span class="c1"># Verify Python version</span>
 python<span class="w"> </span>--version
+
 <span class="c1"># Install poetry if not already available</span>
 pip<span class="w"> </span>install<span class="w"> </span>poetry
 </pre></div>
@@ -149,7 +167,7 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 </section>
 <section id="developer-installation">
 <h3>Developer Installation<a class="headerlink" href="#developer-installation" title="Link to this heading"></a></h3>
-<p>For developers, who want to contribute to the project, install with additional development dependencies:</p>
+<p>For developers who want to contribute to the project, install with additional development dependencies:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>docs,analysis
 pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
 pre-commit<span class="w"> </span>install
@@ -162,12 +180,28 @@ pre-commit<span class="w"> </span>install
 <li><p>Analysis and testing tools</p></li>
 <li><p>Pre-commit hooks for code quality</p></li>
 </ul>
-<p>In order to build the documentation yourself, you also need to install <a class="reference external" href="https://pandoc.org/">pandoc</a> (And you probably need to restart your PC to set the path variables correctly). You can build the documentation by running <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">run</span> <span class="pre">sphinx-build</span> <span class="pre">-b</span> <span class="pre">html</span> <span class="pre">docs/source</span> <span class="pre">docs/_build/htm</span></code>.</p>
+</section>
+<section id="building-documentation">
+<h3>Building Documentation<a class="headerlink" href="#building-documentation" title="Link to this heading"></a></h3>
+<p>To build the documentation yourself:</p>
+<ol class="arabic simple">
+<li><p>Install <a class="reference external" href="https://pandoc.org/">pandoc</a> (you may need to restart your computer to set path variables correctly)</p></li>
+<li><p>Run the following command:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>run<span class="w"> </span>sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/source<span class="w"> </span>docs/_build/html
+</pre></div>
+</div>
 </section>
 </section>
-<section id="installation-of-ansys-hfss">
-<h2>Installation of Ansys HFSS<a class="headerlink" href="#installation-of-ansys-hfss" title="Link to this heading"></a></h2>
-<p>This version of qdesignoptimizer has been tested with Ansys Electronics Desktop 2021 R2.</p>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<p><strong>Common Issues:</strong></p>
+<ul class="simple">
+<li><p><strong>Python Version Mismatch</strong>: Ensure you’re using Python 3.10</p></li>
+<li><p><strong>Dependency Conflicts</strong>: If you encounter dependency conflicts, try installing in a fresh virtual environment</p></li>
+<li><p><strong>Ansys Connection Issues</strong>: Make sure Ansys HFSS is correctly installed and licensed</p></li>
+</ul>
+<p>For more help, please open an issue on the <a class="reference external" href="https://github.com/202Q-lab/QDesignOptimizer/issues">GitHub repository</a>.</p>
 </section>
 </section>
 

@@ -81,41 +81,60 @@
            <div itemprop="articleBody">
              
   <h1>Source code for qdesignoptimizer.utils.utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Utility functions for geometry calculations and runtime operations.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utility functions for geometry calculations and runtime operations in quantum circuit designs.</span>
+
+<span class="sd">This module provides helper functions for common geometric calculations needed in</span>
+<span class="sd">quantum circuit design and simulation, such as finding junction positions, calculating</span>
+<span class="sd">midpoints, normalizing vectors, and performing rotations. It also includes utilities</span>
+<span class="sd">for string parsing of values with units and process management.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 
 <div class="viewcode-block" id="close_ansys">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.close_ansys">[docs]</a>
-<span class="k">def</span> <span class="nf">close_ansys</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Close Ansys by killing the active process. Only works on Windows.&quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">close_ansys</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Terminate all running Ansys HFSS processes using Windows task management.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This function only works on Windows operating systems.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;taskkill /f /im ansysedt.exe&quot;</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="get_junction_position">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_junction_position">[docs]</a>
-<span class="k">def</span> <span class="nf">get_junction_position</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">qcomponent</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the position of the Josephson junction in a component.</span>
+<span class="k">def</span> <span class="nf">get_junction_position</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">qcomponent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the position of a Josephson junction in a quantum component.</span>
 
-<span class="sd">    Useful for finding where a flux line could be placed.</span>
+<span class="sd">    Extracts the geometric coordinates of a Josephson junction from a quantum</span>
+<span class="sd">    component&#39;s geometry tables. This is particularly useful for determining</span>
+<span class="sd">    where flux lines should be placed in relation to the junction.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        design (QDesign): The Qiskit metal design.</span>
-<span class="sd">        qcomponent (QComponent): The component to calculate the junction position for.</span>
+<span class="sd">        design: The Qiskit Metal design containing the component.</span>
+<span class="sd">        qcomponent: The quantum component containing the junction.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        tuple: The x and y coordinates of the junction as strings ending with &quot;mm&quot;,</span>
-<span class="sd">               to be used as qcomponents options.</span>
+<span class="sd">        A tuple of (x, y) coordinates as strings with &quot;mm&quot; units,</span>
+<span class="sd">        suitable for use in QComponent options.</span>
 
-<span class="sd">    Raises:</span>
-<span class="sd">        AssertionError: If the component does not have a junction.</span>
-<span class="sd">        AssertionError: If the component has more than one junction.</span>
+<span class="sd">    Note:</span>
+<span class="sd">        Supports only components containing a single junction.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; x_pos, y_pos = get_junction_position(design, transmon)</span>
+<span class="sd">        &gt;&gt;&gt; print(x_pos, y_pos)</span>
+<span class="sd">        &#39;2.5mm&#39; &#39;3.7mm&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="n">junction_table</span> <span class="o">=</span> <span class="n">design</span><span class="o">.</span><span class="n">qgeometry</span><span class="o">.</span><span class="n">tables</span><span class="p">[</span><span class="s2">&quot;junction&quot;</span><span class="p">]</span>
     <span class="n">rect_jj_junction</span> <span class="o">=</span> <span class="n">junction_table</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
         <span class="n">junction_table</span><span class="p">[</span><span class="s2">&quot;component&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">qcomponent</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;geometry&quot;</span>
@@ -123,22 +142,28 @@
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rect_jj_junction</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only supports a single junction per component&quot;</span>
     <span class="n">coords</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rect_jj_junction</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">mm&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">mm&quot;</span></div>
 
 
 
 <div class="viewcode-block" id="get_middle_point">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_middle_point">[docs]</a>
-<span class="k">def</span> <span class="nf">get_middle_point</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the middle point between two points.</span>
+<span class="k">def</span> <span class="nf">get_middle_point</span><span class="p">(</span>
+    <span class="n">point1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">point2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the midpoint between two points in a 2D plane.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        point1 (tuple): The first point.</span>
-<span class="sd">        point2 (tuple): The second point.</span>
+<span class="sd">        point1: The (x, y) coordinates of the first point.</span>
+<span class="sd">        point2: The (x, y) coordinates of the second point.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        tuple: The middle point.</span>
+<span class="sd">        The (x, y) coordinates of the midpoint.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; get_middle_point((0, 0), (10, 20))</span>
+<span class="sd">        (5.0, 10.0)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">point1</span>
     <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">point2</span>
@@ -148,15 +173,25 @@
 
 <div class="viewcode-block" id="get_normalized_vector">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_normalized_vector">[docs]</a>
-<span class="k">def</span> <span class="nf">get_normalized_vector</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the normalized vector between two points.</span>
+<span class="k">def</span> <span class="nf">get_normalized_vector</span><span class="p">(</span>
+    <span class="n">point1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">point2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the normalized unit vector pointing from point1 to point2.</span>
+
+<span class="sd">    Computes a vector of length 1 that points in the direction from</span>
+<span class="sd">    the first point to the second point in a 2D plane.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        point1 (tuple): The first point.</span>
-<span class="sd">        point2 (tuple): The second point.</span>
+<span class="sd">        point1: The (x, y) coordinates of the origin point.</span>
+<span class="sd">        point2: The (x, y) coordinates of the target point.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        tuple: The normalized vector.</span>
+<span class="sd">        A tuple (dx, dy) representing the normalized vector components.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; get_normalized_vector((0, 0), (3, 4))</span>
+<span class="sd">        (0.6, 0.8)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">point1</span>
     <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">point2</span>
@@ -169,18 +204,27 @@
 
 <div class="viewcode-block" id="rotate_point">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.rotate_point">[docs]</a>
-<span class="k">def</span> <span class="nf">rotate_point</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">rotation_center</span><span class="p">,</span> <span class="n">angle_rad</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">rotate_point</span><span class="p">(</span>
+    <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">rotation_center</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">angle_rad</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Rotate a point counterclockwise by a given angle around a given center.</span>
+<span class="sd">    Rotate a point counterclockwise around a center point by a specified angle.</span>
 
-<span class="sd">    The angle should be given in radians.</span>
+<span class="sd">    Applies a 2D rotation transformation to a point around a specified center</span>
+<span class="sd">    using standard rotation matrix operations.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        point (np.array): The point to rotate.</span>
-<span class="sd">        rotation_center (np.array): The center of rotation.</span>
-<span class="sd">        angle_rad (float): The angle of rotation in radians.</span>
+<span class="sd">        point: A numpy array [x, y] representing the point to rotate.</span>
+<span class="sd">        rotation_center: A numpy array [x, y] representing the center of rotation.</span>
+<span class="sd">        angle_rad: The angle of rotation in radians (positive for counterclockwise).</span>
+
 <span class="sd">    Returns:</span>
-<span class="sd">        np.array: The rotated point.</span>
+<span class="sd">        A numpy array with the coordinates of the rotated point.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; rotate_point(np.array([1, 0]), np.array([0, 0]), np.pi/2)</span>
+<span class="sd">        array([0., 1.])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Translate the point so that the rotation center is at the origin</span>
     <span class="n">point_translated</span> <span class="o">=</span> <span class="n">point</span> <span class="o">-</span> <span class="n">rotation_center</span>
@@ -203,12 +247,30 @@
 
 <div class="viewcode-block" id="get_value_and_unit">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_value_and_unit">[docs]</a>
-<span class="k">def</span> <span class="nf">get_value_and_unit</span><span class="p">(</span><span class="n">val_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the value and unit from string.&quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">get_value_and_unit</span><span class="p">(</span><span class="n">val_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract numerical value and unit from a string representation.</span>
+
+<span class="sd">    Parses a string containing a number followed by an optional unit</span>
+<span class="sd">    (e.g., &quot;10.5mm&quot;) and separates it into the numerical value and unit string.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        val_unit: A string representing a value with optional unit (e.g., &quot;10.5mm&quot;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A tuple (value, unit) where value is a float and unit is a string.</span>
+<span class="sd">        If no unit is present, the unit string will be empty..</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; get_value_and_unit(&quot;10.5mm&quot;)</span>
+<span class="sd">        (10.5, &#39;mm&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; get_value_and_unit(&quot;42&quot;)</span>
+<span class="sd">        (42.0, &#39;&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">while</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]):</span>
+            <span class="k">while</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">val_unit</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]):</span>
                 <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
 
             <span class="n">unit</span> <span class="o">=</span> <span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="n">idx</span><span class="p">:]</span>
@@ -224,20 +286,35 @@
 
 <div class="viewcode-block" id="sum_expression">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.sum_expression">[docs]</a>
-<span class="k">def</span> <span class="nf">sum_expression</span><span class="p">(</span><span class="n">vals</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum a list of values and units.</span>
+<span class="k">def</span> <span class="nf">sum_expression</span><span class="p">(</span><span class="n">vals</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the sum of values with consistent units.</span>
+
+<span class="sd">    Takes a list of strings representing values with units (e.g., [&quot;10mm&quot;, &quot;5mm&quot;]),</span>
+<span class="sd">    extracts the numerical values while preserving the unit, computes their sum,</span>
+<span class="sd">    and returns the result with the same unit.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        vals (list): A list of values and units.</span>
+<span class="sd">        vals: A list of strings representing values with the same unit.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: The sum of the values with unit.</span>
+<span class="sd">        A string representing the sum with the preserved unit.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If the units of the provided values are not the same.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; sum_expression([&quot;10mm&quot;, &quot;5mm&quot;, &quot;2.5mm&quot;])</span>
+<span class="sd">        &#39;17.5mm&#39;</span>
+<span class="sd">        &gt;&gt;&gt; sum_expression([&quot;1.2GHz&quot;, &quot;0.8GHz&quot;])</span>
+<span class="sd">        &#39;2.0GHz&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">sum_val</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">sum_val</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">unit_0</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-        <span class="n">val</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">unit_0</span> <span class="o">==</span> <span class="n">unit</span><span class="p">,</span> <span class="s2">&quot;Units must be the same&quot;</span>
+
+    <span class="k">for</span> <span class="n">val_str</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">get_value_and_unit</span><span class="p">(</span><span class="n">val_str</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">unit_0</span> <span class="o">==</span> <span class="n">unit</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Units must be the same: </span><span class="si">{</span><span class="n">unit_0</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">sum_val</span> <span class="o">+=</span> <span class="n">val</span>
         <span class="n">sum_unit</span> <span class="o">=</span> <span class="n">unit</span>
 
