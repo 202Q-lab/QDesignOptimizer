@@ -88,6 +88,7 @@ def plot_optimization_results(
     plot_variance: bool = True,
     plot_design_variables: Optional[Literal["chronological", "sorted"]] = None,
     opt_target_list: Optional[List[OptTarget]] = None,
+    plot_settings: Optional[dict] = None,
     save_figures: bool = True,
 ) -> None:
     """
@@ -135,6 +136,11 @@ def plot_optimization_results(
         results.append(np.load(file, allow_pickle=True)[0])
     results = np.array(results)
 
+    if plot_settings is None:
+        plt_set = results[0]["plot_settings"]
+    else:
+        plt_set = plot_settings
+
     # Verify consistency of loaded results
     for result in results:
         assert (
@@ -148,7 +154,7 @@ def plot_optimization_results(
     plot_progress(
         [result["optimization_results"] for result in results],
         results[0]["system_target_params"],
-        results[0]["plot_settings"],
+        plt_set,
         save_figures=save_figures,
         plot_variance=plot_variance,
         plot_design_variables=plot_design_variables,

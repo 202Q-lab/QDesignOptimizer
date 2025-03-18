@@ -753,7 +753,7 @@ def plot_progress(
 
     # Create standard parameter plots
     for plot_name, plot_setting in plot_settings.items():
-        fig, axs = plt.subplots(len(plot_setting))
+        fig, axs = plt.subplots(len(plot_setting), figsize=(6.4, 2.4*len(plot_setting)))
         plotter.plot_standard(fig, axs, plot_setting, plot_name)
 
         # Create additional plot types if requested
