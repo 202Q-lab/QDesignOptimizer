@@ -11,7 +11,7 @@ For the installation we refer back to the installation guide :ref:`installation`
 
 Project structure
 =================
-Every optimization project requires a set of files defined the optimization problem:
+Every optimization project requires a set of files defining the optimization problem:
 
 .. code-block::
 
@@ -184,7 +184,7 @@ Parameter Targets
         param(n.RESONATOR_1, n.FREQ): 6e9,
         param(n.RESONATOR_1, n.KAPPA): 1e6,
         param_nonlin(n.QUBIT_1, n.QUBIT_1): 200e6,  # Qubit anharmonicity
-        param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonaotr chi
+        param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonator chi
         param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"): -3, # fF
     }
 
