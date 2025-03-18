@@ -215,9 +215,20 @@ def add_chargeline(design: DesignPlanar, group: int):
     launch_options["pos_y"] = ["-2mm", "2mm"][nbr_idx]
     LaunchpadWirebond(design, n.name_lp(lp_nbr), options=launch_options)
 
+    x_cl_absolute = (
+        str(design.parse_value(n.design_var_cl_pos_x(qubit)) * 1000)
+        + "um"
+        + ["-2350um", "-2350um"][nbr_idx]  # transmon position + pocket width/2
+    )
+    y_cl_absolute = (
+        str(design.parse_value(n.design_var_cl_pos_y(qubit)) * 1000)
+        + "um"
+        + ["-1500um", "+1500um"][nbr_idx]
+    )
+
     otg_options = dict(
-        pos_x=n.design_var_cl_pos_x(qubit),
-        pos_y=n.design_var_cl_pos_y(qubit),
+        pos_x=x_cl_absolute,
+        pos_y=y_cl_absolute,
         orientation="0",
         width=LINE_50_OHM_WIDTH,
         gap=LINE_50_OHM_GAP,
@@ -243,10 +254,12 @@ def add_chargeline(design: DesignPlanar, group: int):
 
     RoutePathfinder(design, n.name_charge_line(group), options=options_chargeline)
 
+
 # Function for meshing names for mapping for finer meshing
 def CoupledLineTee_mesh_names(comp_names):
     all_names_to_mesh = [f"prime_cpw_{comp_names}", f"second_cpw_{comp_names}"]
     return all_names_to_mesh
+
 
 # Function to render the design
 def render_qiskit_metal_design(design, gui):
