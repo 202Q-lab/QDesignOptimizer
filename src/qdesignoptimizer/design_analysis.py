@@ -288,7 +288,7 @@ class DesignAnalysis:
                 MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
                 RefineInside=True,
             )
-
+            
         # run eigenmode analysis
         self.setup.analyze()
         eig_results = self.eig_solver.get_frequencies()
