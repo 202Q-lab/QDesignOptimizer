@@ -172,17 +172,18 @@ def get_mini_study_scattering_analysis(group :int):
         resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
         qiskit_component_names = [n.name_mode(resonator), n.name_tee(group)]
         design_name="get_mini_study_scattering_analysis",
-        scattering_studies =[ ScatteringStudy(nbr_passes = 40,
-                                             max_delta_s =0.005,
-                                             basis_order = 1,
-                                             qiskit_component_names=qiskit_component_names,
-                                              port_list=[
-                                                    (n.name_tee(group), "prime_end", 50),
-                                                    (n.name_tee(group), "prime_start", 50),
-                                                ],
-                                                open_pins=[],
-                                                mode=[resonator],
-                                                freq_span_ghz = 2,)]
+        # scattering_studies =[ ScatteringStudy(nbr_passes = 40,
+        #                                      max_delta_s =0.005,
+        #                                      basis_order = 1,
+        #                                      solution_type = "fast",
+        #                                      qiskit_component_names=qiskit_component_names,
+        #                                       port_list=[
+        #                                             (n.name_tee(group), "prime_end", 50),
+        #                                             (n.name_tee(group), "prime_start", 50),
+        #                                         ],
+        #                                         open_pins=[(n.name_mode(resonator), "start")],
+        #                                         mode=[resonator],
+        #                                         freq_span_ghz = 2,)]
 
 
         
@@ -194,11 +195,11 @@ def get_mini_study_scattering_analysis(group :int):
             (n.name_tee(group), "prime_end", 50),
             (n.name_tee(group), "prime_start", 50),
         ],
-        open_pins=[],
+        open_pins=[(n.name_mode(resonator), "start")],
         modes=[resonator],
         jj_setup={},
         design_name=design_name,
         build_fine_mesh=True,
-        scattering_studies =scattering_studies,
+        # scattering_studies =scattering_studies,
         **CONVERGENCE
     )

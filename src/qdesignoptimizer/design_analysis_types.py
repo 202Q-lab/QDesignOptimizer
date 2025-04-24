@@ -85,6 +85,7 @@ class ScatteringStudy:
         port_list: list = [],
         mode: Mode = [],
         freq_span_ghz: float = 2,
+        solution_type : Literal["fast", "accurate"] = "fast",
     ):
         """Scattering study for DesignAnalysis.
 
@@ -107,6 +108,7 @@ class ScatteringStudy:
         self.port_list = port_list
         self.mode = mode
         self.freq_span_ghz = freq_span_ghz
+        self.solution_type = solution_type
 
 
 class MiniStudy:

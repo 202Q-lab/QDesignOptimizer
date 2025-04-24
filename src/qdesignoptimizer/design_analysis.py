@@ -522,16 +522,18 @@ class DesignAnalysis:
         mode_freq = self.system_optimized_params[component+'_freq']
         GHz = 1e9
         self.kappa_target = self.system_target_params[component+'_kappa']
-        setup.freq_ghz = mode_freq / GHz
-        count = 25000#min(25000, 100*int(5 * (stop_ghz - start_ghz) / (self.kappa_target / GHz)))
+        # setup.freq_ghz = mode_freq / GHz
+        count = 100 #min(25000, int(5 * (stop_ghz - start_ghz) / (self.kappa_target / GHz)))
+        step_size = (stop_ghz - start_ghz) / count
+        print ("step_size KHz", step_size*1e9/1e3)
         print(start_ghz, stop_ghz, count)
         sweep = self.scattering_renderer.add_sweep(
             setup_name=self.scattering_renderer.pinfo.setup.name,
             start_ghz=start_ghz,
             stop_ghz=stop_ghz,
             name="Sweep",
-            count=count,
-            type="Fast")
+            count = count,
+            type="Discrete",)
         
         pinfo_setup = self.scattering_renderer.pinfo.setup
 
@@ -540,7 +542,7 @@ class DesignAnalysis:
         setup.basis_order = basis_order
 
         print("pinfo_setup")
-        pinfo_setup.solution_freq = f"{mode_freq/1e9}GHz"
+        pinfo_setup.solution_freq = f"{(stop_ghz+start_ghz)/2}GHz" # setting it to minimum wavelength
         print("solution_freq default", pinfo_setup.solution_freq)
         self.scattering_renderer.analyze_sweep(sweep.name, 'Setup')
 
@@ -560,7 +562,7 @@ class DesignAnalysis:
 
         return probe_freq, Sij_raw
 
-    def get_new_range(self,probe_freq, Sij,range_factor):
+    def get_new_range(self,probe_freq, Sij,range_factor,kappa_target):
         
         # finding the direction of the peak
         direction = self._find_peak_direction(Sij)
@@ -574,34 +576,55 @@ class DesignAnalysis:
 
         return starting_freq, ending_freq, peak_freq, peak_idx
 
-    def plot_sij(self, probe_freq,Sij_raw,starting_freq,ending_freq,mode_freq):
-        fig,ax = plt.subplots(1,3)
-        ax[0].plot(probe_freq,20*np.log10(np.abs(Sij_raw)))
-        ax[0].set_title('Sij vs Frequency')
-        ax[0].axvline(x=mode_freq, color='g', linestyle='--')
-        ax[0].axvline(x=starting_freq, color='r', linestyle='--')
-        ax[0].axvline(x=ending_freq, color='r', linestyle='--')
-        ax[0].set_xlabel('Frequency (Hz)')
-        ax[0].set_ylabel('Sij')
+    def plot_sij(self, port,title = ''):
+        # Extracting data
+            real = port.z_data_raw.real
+            imag = port.z_data_raw.imag
+            real2 = port.z_data_sim.real
+            imag2 = port.z_data_sim.imag
 
-        ax[1].plot(probe_freq,np.angle(Sij_raw))
-        ax[1].set_title('Phase of Sij vs Frequency')
-        ax[1].set_xlabel('Frequency (Hz)')
-        ax[1].set_ylabel('Phase of Sij')
+            # Setting a clean style
+            plt.style.use('ggplot')
 
-        ax[2].plot(np.real(Sij_raw),np.imag(Sij_raw))
-        ax[2].set_title('Real vs Imaginary part of Sij')
-        ax[2].set_xlabel('Real part of Sij')
-        ax[2].set_ylabel('Imaginary part of Sij')
+            # Creating subplots with a better layout
+            fig, axs = plt.subplots(2, 2, figsize=(12, 8), constrained_layout=True)
 
-        fig.tight_layout()
-        plt.show()
+            # Subplot 1: Complex plane (Re vs Im)
+            axs[0, 0].plot(real, imag, label='Raw Data', color='blue', linestyle='-', marker='o', markersize=4)
+            axs[0, 0].plot(real2, imag2, label='Fit', color='orange', linestyle='--', marker='x', markersize=4)
+            axs[0, 0].set_xlabel('Re(S21)', fontsize=12)
+            axs[0, 0].set_ylabel('Im(S21)', fontsize=12)
+            axs[0, 0].legend(fontsize=10)
+            axs[0, 0].set_title('Complex Plane', fontsize=14)
+
+            # Subplot 2: Magnitude vs Frequency
+            axs[0, 1].plot(port.f_data * 1e-9, np.abs(port.z_data_raw), label='Raw Data', color='green', linewidth=1.5)
+            axs[0, 1].plot(port.f_data * 1e-9, np.abs(port.z_data_sim), label='Fit', color='red', linestyle='--', linewidth=1.5)
+            axs[0, 1].set_xlabel('f (GHz)', fontsize=12)
+            axs[0, 1].set_ylabel('|S21|', fontsize=12)
+            axs[0, 1].legend(fontsize=10)
+            axs[0, 1].set_title('Magnitude vs Frequency', fontsize=14)
+
+            # Subplot 3: Phase vs Frequency
+            axs[1, 0].plot(port.f_data * 1e-9, np.angle(port.z_data_raw), label='Raw Data', color='purple', linewidth=1.5)
+            axs[1, 0].plot(port.f_data * 1e-9, np.angle(port.z_data_sim), label='Fit', color='brown', linestyle='--', linewidth=1.5)
+            axs[1, 0].set_xlabel('f (GHz)', fontsize=12)
+            axs[1, 0].set_ylabel('arg(|S21|)', fontsize=12)
+            axs[1, 0].legend(fontsize=10)
+            axs[1, 0].set_title('Phase vs Frequency', fontsize=14)
+
+            # Removing the unused subplot
+            fig.delaxes(axs[1, 1])
 
 
+            # Adding a global title
+            fig.suptitle(title, fontsize=16)
+
+            # Displaying the plot
+            plt.show()
 
 
-
-    def run_decay(self, scatter_study: ScatteringStudy ):
+    def run_decay(self, scatter_study: ScatteringStudy , return_sij = True):
         plt.close()
         self.scattering_solver = ScatteringImpedanceSim(self.design, "hfss")
         self.scattering_renderer = self.scattering_solver.renderer
@@ -632,13 +655,14 @@ class DesignAnalysis:
             raise ValueError("Only 1 or 2 ports supported")
         
         for component in scatter_study.mode:
-            print("====================================")
+            print("=============================================")
             print(f"Running scattering analysis for {component}")
-            print("====================================")
+            print("=============================================")
 
             assert RESONATOR in component, \
             f"Scattering analysis only support RES_KAPPA, please extend the functionality for {component}."
 
+            # First run eigenmode before scattering analysis
             start_freq = self.system_optimized_params[component+'_freq'] - scatter_study.freq_span_ghz/2*1e9
             stop_freq = self.system_optimized_params[component+'_freq'] + scatter_study.freq_span_ghz/2*1e9
 
@@ -654,6 +678,10 @@ class DesignAnalysis:
             Sij = 20*np.log10(np.absolute(Sij_raw))
             port.add_data(probe_freq, Sij_raw)
             port.autofit()
+            kappa_target = port.fitresults['fr']/port.fitresults['absQc']
+            print(f'Kappa simualted is {kappa_target}')
+            # self.plot_sij(port,title = 'First run')
+
 
             start_freq, stop_freq, peak_freq, peak_idx = self.get_new_range(probe_freq, Sij,5)
 
@@ -670,6 +698,7 @@ class DesignAnalysis:
             port.add_data(probe_freq, Sij_raw)
             port.autofit()
             
+            
 
             kappa_target = port.fitresults['fr']/port.fitresults['absQc']
 
@@ -677,11 +706,20 @@ class DesignAnalysis:
 
             scattering_results = {
                 "Freq. (Hz)": port.fitresults['fr'],
-                "Kappa (Hz)": kappa_target
+                "Kappas (Hz)": kappa_target
             }
             self.scattering_results = pd.DataFrame(scattering_results, index=[0])
-            self._update_optimised_scattering_params(self.scattering_results)
-            self.renderer.clean_active_design()
+            # self._update_optimised_scattering_params(self.scattering_results)
+
+            self.plot_sij(port,title = 'Second run')
+
+            if return_sij:
+                return probe_freq, Sij_raw
+            
+
+
+            
+            # 
 
             
             
@@ -712,7 +750,7 @@ class DesignAnalysis:
 
     def _update_optimised_scattering_params(self, scattering_results: pd.DataFrame):
         for idx, (mode, freq) in enumerate(self.get_simulated_modes_sorted()):
-            decay = scattering_results["Kappa (Hz)"][idx]
+            decay = scattering_results["Kappas (Hz)"][idx]
             if param(mode, KAPPA) in self.system_target_params:
                 self.system_optimized_params[param(mode, KAPPA)] = decay
 

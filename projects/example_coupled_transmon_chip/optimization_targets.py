@@ -114,7 +114,7 @@ def get_opt_target_scattering_analysis(
             target_param_type=n.KAPPA,
             involved_modes=[resonator],
             design_var=n.design_var_coupl_length(identifier_1=resonator, identifier_2="tee"),
-            design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
+            design_var_constraint={"larger_than": "1um", "smaller_than": "2500um"},
             prop_to=lambda p, v: v[n.design_var_coupl_length(identifier_1=resonator, identifier_2="tee")],
             independent_target=True,
 

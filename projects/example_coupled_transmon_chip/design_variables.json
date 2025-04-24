@@ -11,16 +11,12 @@
     "design_var_lj_qubit_2": "9.1nH",
     "design_var_cj_qubit_1": "0fF",
     "design_var_cj_qubit_2": "0fF",
-
     "design_var_length_resonator_1": "7500um",
     "design_var_length_resonator_2": "6500um",
     "design_var_length_coupler_1to2": "4000um",
-
     "design_var_coupl_length_qubit_1_resonator_1": "100um",
     "design_var_coupl_length_qubit_2_resonator_2": "100um",
-
     "design_var_coupl_length_resonator_1_tee": "170um",
     "design_var_coupl_length_resonator_2_tee": "160um"
-
-
 }
+
