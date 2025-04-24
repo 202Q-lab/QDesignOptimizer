@@ -50,7 +50,10 @@ def get_opt_targets_2qubits_resonator_coupler(
             involved_modes=[n.COUPLER_12],
             design_var=n.design_var_length(n.COUPLER_12),
             design_var_constraint={"larger_than": "50um", "smaller_than": "10000um"},
-            prop_to=lambda p, v: 1 / v[n.design_var_length(n.COUPLER_12)],
+            prop_to=lambda p, v: 1
+            / v[
+                n.design_var_length(n.COUPLER_12)
+            ],  # This is where the physics of the parameter relation is defined.
             independent_target=True,
         )
         opt_targets.append(opt_target_coupler)

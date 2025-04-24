@@ -42,7 +42,7 @@ def create_chip_base(
     design.chips.main.size.size_x = chip_type.size_x
     design.chips.main.size.size_y = chip_type.size_y
     design.chips.main.size.size_z = chip_type.size_z
-    design.overwrite_enabled = True
+    design.overwrite_enabled = True  # To modify and tune the design
     design.render_mode = "simulate"
 
     gui = None
