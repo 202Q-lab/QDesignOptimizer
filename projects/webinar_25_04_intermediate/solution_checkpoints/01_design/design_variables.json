@@ -1,4 +1,6 @@
 {
+    "design_var_length_resonator_1": "7500um",
+    "design_var_length_resonator_2": "6500um",
     "design_var_width_qubit_1": "400um",
     "design_var_width_qubit_2": "400um",
     "design_var_cl_pos_x_qubit_1": "-100um",
