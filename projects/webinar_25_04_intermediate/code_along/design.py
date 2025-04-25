@@ -94,7 +94,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
         ),
         fillet=BEND_RADIUS,
         hfss_wire_bonds=True,
-        total_length="6000",
+        total_length=n.design_var_length(resonator),
         lead=dict(start_straight="600um", end_straight="100um"),
         trace_width=RESONATOR_WIDTH,
         trace_gap=RESONATOR_GAP,
