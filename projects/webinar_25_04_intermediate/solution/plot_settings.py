@@ -9,7 +9,6 @@ from qdesignoptimizer.utils.names_parameters import (
 
 def get_plot_settings_resonator(group: int):
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
-    qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     return {
         "FREQUENCIES": [
             OptPltSet(
@@ -17,10 +16,7 @@ def get_plot_settings_resonator(group: int):
                 param(resonator, n.FREQ),
                 y_label="Resonator Frequency",
                 unit="GHz",
-            ),
-            OptPltSet(
-                n.ITERATION, param(qubit, n.FREQ), y_label="Qubit Frequency", unit="GHz"
-            ),
+            )
         ]
     }
 

@@ -19,10 +19,9 @@ def get_mini_study_resonator_only(group: int):
         open_pins=[],
         modes=[resonator],
         design_name="mini_study_resonator_only",
+        jj_setup=None,
         build_fine_mesh=True,
         adjustment_rate=1,
-        nbr_passes=7,
-        delta_f=0.001,
     )
 
 
@@ -42,10 +41,8 @@ def get_mini_study_resonator_qubit(group: int):
         ],
         open_pins=[],
         modes=[qubit, resonator],
-        jj_setup=junction_setup(qubit),
         design_name="mini_study_qubit_resonator",
+        jj_setup=junction_setup(qubit),
         build_fine_mesh=True,
-        adjustment_rate=1,
-        nbr_passes=7,
-        delta_f=0.03,
+        adjustment_rate=0.9,
     )

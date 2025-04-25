@@ -68,7 +68,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
             ),
         ),
         gds_cell_name=f"Manhattan_{group}",
-        hfss_inductance="12nH",
+        hfss_inductance=n.design_var_lj(qubit),
         hfss_capacitance=n.design_var_cj(qubit),
     )
 
@@ -255,38 +255,3 @@ def add_chargeline(design: DesignPlanar, group: int):
     )
 
     RoutePathfinder(design, n.name_charge_line(group), options=options_chargeline)
-
-
-def render_qiskit_metal_design(design, gui):
-    add_transmon_plus_resonator(design, group=n.NBR_1)
-    add_transmon_plus_resonator(design, group=n.NBR_2)
-
-    add_coupler(design)
-
-    add_route_interconnects(design)
-
-    add_launch_pads(design)
-
-    add_chargeline(design, group=n.NBR_1)
-    add_chargeline(design, group=n.NBR_2)
-
-    gui.rebuild()
-    gui.autoscale()
-
-
-def create_chip_and_gui():
-    # Initialize the chip and open the Qiskit Metal GUI.
-    chip_type = ChipType(
-        size_x="10mm", size_y="10mm", size_z="-300um", material="silicon"
-    )
-    design, gui = create_chip_base(
-        chip_name=n.CHIP_NAME, chip_type=chip_type, open_gui=True
-    )
-
-    # Pick the values for the design variables defined in the .json file
-    # and add them to the design object created by Qiskit Metal
-    with open("design_variables.json") as in_file:
-        initial_design_variables = json.load(in_file)
-    n.add_design_variables_to_design(design, initial_design_variables)
-
-    return design, gui
