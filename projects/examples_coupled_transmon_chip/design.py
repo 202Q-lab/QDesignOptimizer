@@ -95,7 +95,6 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
             end_pin=dict(component=cltee.name, pin="second_end"),
         ),
         fillet=BEND_RADIUS,
-        hfss_wire_bonds=True,
         total_length=n.design_var_length(resonator),
         lead=dict(start_straight="600um", end_straight="100um"),
         trace_width=RESONATOR_WIDTH,
@@ -264,16 +263,16 @@ def CoupledLineTee_mesh_names(comp_names):
 # Function to render the design
 def render_qiskit_metal_design(design, gui):
     add_transmon_plus_resonator(design, group=n.NBR_1)
-    add_transmon_plus_resonator(design, group=n.NBR_2)
+    # add_transmon_plus_resonator(design, group=n.NBR_2)
 
-    add_coupler(design)
+    # add_coupler(design)
 
-    add_route_interconnects(design)
+    # add_route_interconnects(design)
 
-    add_launch_pads(design)
+    # add_launch_pads(design)
 
-    add_chargeline(design, group=n.NBR_1)
-    add_chargeline(design, group=n.NBR_2)
+    # add_chargeline(design, group=n.NBR_1)
+    # add_chargeline(design, group=n.NBR_2)
 
     gui.rebuild()
     gui.autoscale()

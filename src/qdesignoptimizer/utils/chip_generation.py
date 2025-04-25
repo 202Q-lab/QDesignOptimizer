@@ -51,3 +51,6 @@ def create_chip_base(
         gui.toggle_docks()
 
     return design, gui
+
+design = DesignPlanar()
+gui = MetalGUI(design)
