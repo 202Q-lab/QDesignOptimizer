@@ -1,9 +1,12 @@
 """Tools for creating and configuring basic chips in Qiskit Metal designs."""
 
+import json
 from dataclasses import dataclass
 
 from qiskit_metal import MetalGUI
 from qiskit_metal.designs.design_planar import DesignPlanar
+
+from qdesignoptimizer.utils.names_design_variables import add_design_variables_to_design
 
 
 @dataclass
@@ -50,4 +53,19 @@ def create_chip_base(
         gui = MetalGUI(design)
         gui.toggle_docks()
 
+    return design, gui
+
+
+def create_chip_and_gui(chip_name, chip_type, open_gui):    
+
+    # Creating design and gui
+    design, gui = create_chip_base(
+        chip_name=chip_name, chip_type=chip_type, open_gui=open_gui
+        )
+
+    # Introducing variables for the design
+    with open("design_variables.json") as in_file:
+        initial_design_variables = json.load(in_file)
+    add_design_variables_to_design(design, initial_design_variables)
+    
     return design, gui
