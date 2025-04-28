@@ -81,7 +81,9 @@ def setup(app):
     def all_but_ipynb(dir, contents):
         result = []
         for c in contents:
-            if os.path.isfile(os.path.join(dir, c)) and (not c.endswith(".ipynb")):
+            if os.path.isfile(os.path.join(dir, c)) and (
+                not (c.endswith(".ipynb") or c.endswith(".png"))
+            ):
                 result += [c]
         return result
 
