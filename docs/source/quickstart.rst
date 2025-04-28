@@ -32,7 +32,7 @@ Project setup
 
 Mode Names and Component Names
 ------------------------------
-| For the success of the optimization it is essential that the user uses the correct references for modes and design objects throughout the project folder. To assist with and streamline the naming, we suggest a naming convention and introduce utility functions. A collection of common Qiskit Metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. Note that the user does not need to follow the recommended naming convention.
+| For the success of the optimization it is essential that the user uses the correct references for modes and QComponents of the design throughout the project folder. To assist with and streamline the naming, we suggest a naming convention and introduce utility functions. A collection of common Qiskit Metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. Note that the user does not need to follow the recommended naming convention.
 | For mode names, which are used in the ``mini_studies.py`` and ``optimization_targets.py``, we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``, for example ``qubit_1``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As an identifier we suggest a count of the component group or of the component in a group of components.
 | For Qiskit Metal component names, which are used in ``mini_studies.py`` and ``design.py``, we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``. 
 
@@ -40,7 +40,7 @@ Mode Names and Component Names
 Design Variable Names and Values
 --------------------------------
 | Design variable names are string identifiers (for geometric lengths, Josephson junction inductances etc.) specified in the Qiskit Metal design. The design variables can be varied by the optimizer during the optimization to reach the target parameters. For the design variable names we suggest a naming convention of the form ``design_var_`` followed by an identifier which indicates what the design variable controls, for example ``design_var_length_resonator_1``. A collection of common design variable names can be directly called from ``utils.names_design_variables.py``. User specific component names can be added in and called from ``names.py`` in the project folder.
-| To render the Qiskit Metal design, the user must provide initial values based on a sensible guess for all design variables, which by convention are written in ``design_variables.json`` in the project folder (the naming must match!) and provided to the optimizer. 
+| To render the Qiskit Metal design, the user must provide initial values based on a sensible guess for all design variables, which by convention are written in ``design_variables.json`` in the project folder and provided to the optimizer. Also here it is important that the design variables used in the ``.json`` file and in the ``optimization_targets.py`` file and in the ``design.py`` files match, such that the optimizer can automatically read and update them.
 
 Design
 ------
