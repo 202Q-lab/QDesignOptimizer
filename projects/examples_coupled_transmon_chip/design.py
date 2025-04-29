@@ -7,6 +7,7 @@ from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
+from qdesignoptimizer.utils.chip_generation import ChipType
 from qdesignoptimizer.utils.utils import sum_expression
 
 # Fixed design constants
@@ -17,6 +18,8 @@ RESONATOR_WIDTH = "20um"
 RESONATOR_GAP = "20um"
 
 BEND_RADIUS = "99um"
+
+chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
 
 
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):

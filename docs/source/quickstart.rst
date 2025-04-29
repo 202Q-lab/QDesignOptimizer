@@ -17,14 +17,13 @@ Every optimization project requires a set of files defining the optimization pro
 
     project_root/
     ├── design_variables.json
-    ├── design_variable_names.py
-    ├── design_constants.py
     ├── design.py
     ├── main.ipynb
     ├── mini_studies.py
+    ├── names.py
     ├── optimization_targets.py
-    ├── plot_settings.py
     ├── parameter_targets.py
+    ├── plot_settings.py
 
 Hereafter, we will refer to each file individually and highlight the important concepts to set up the project.
 
@@ -33,14 +32,15 @@ Project setup
 
 Mode Names and Component Names
 ------------------------------
-| For mode names we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``, for example ``qubit_1``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As an identifier we suggest a count of the component group or of the component in a group of components.
-| For Qiskit Metal component names we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``. A collection of common Qiskit Metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``.
+| For the success of the optimization it is essential that the user uses the correct references for modes and QComponents of the design throughout the project folder. To assist with and streamline the naming, we suggest a naming convention and introduce utility functions. A collection of common Qiskit Metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. Note that the user does not need to follow the recommended naming convention.
+| For mode names, which are used in the ``mini_studies.py`` and ``optimization_targets.py``, we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``, for example ``qubit_1``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As an identifier we suggest a count of the component group or of the component in a group of components.
+| For Qiskit Metal component names, which are used in ``mini_studies.py`` and ``design.py``, we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``.
 
 
 Design Variable Names and Values
 --------------------------------
 | Design variable names are string identifiers (for geometric lengths, Josephson junction inductances etc.) specified in the Qiskit Metal design. The design variables can be varied by the optimizer during the optimization to reach the target parameters. For the design variable names we suggest a naming convention of the form ``design_var_`` followed by an identifier which indicates what the design variable controls, for example ``design_var_length_resonator_1``. A collection of common design variable names can be directly called from ``utils.names_design_variables.py``. User specific component names can be added in and called from ``names.py`` in the project folder.
-| To render the Qiskit Metal design, the user must provide initial values based on a sensible guess for all design variables, which by convention are written in ``design_variables.json`` in the project folder and provided to the optimizer.
+| To render the Qiskit Metal design, the user must provide initial values based on a sensible guess for all design variables, which by convention are written in ``design_variables.json`` in the project folder and provided to the optimizer. Also here it is important that the design variables used in the ``.json`` file and in the ``optimization_targets.py`` file and in the ``design.py`` files match, such that the optimizer can automatically read and update them.
 
 Design
 ------
@@ -64,15 +64,12 @@ Finally, the design can be instantiated by the ``create_chip_base`` method and r
 
 .. code-block:: python
 
-    import design as d
     import names as n
-    from qdesignoptimizer.utils.utils_design import create_chip_base, ChipType
+    from design import render_qiskit_metal_design
+    from qdesignoptimizer.utils.chip_generation import create_chip_base, ChipType
 
-    CHIP_NAME = "transmon_chip"
-    OPEN_GUI = True
-    chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um")
-    design, gui = create_chip_base(chip_name=CHIP_NAME, chip_type=chip_type, open_gui=OPEN_GUI)
-    n.add_design_variables_to_design(design, dv)
+    chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
+    design, gui = create_chip_base(n.CHIP_NAME, chip_type, open_gui=True, design_variables_file="my_design_variables.json")
 
     def render_qiskit_metal_design(design, gui):
         d.add_transmon_plus_resonator(design, group=n.NBR_1)
@@ -81,7 +78,6 @@ Finally, the design can be instantiated by the ``create_chip_base`` method and r
         gui.autoscale()
 
     render_qiskit_metal_design(design, gui)
-    # This line will render the qiskit design in the gui, which is useful when developing the design.
 
 .. _opttarget:
 
