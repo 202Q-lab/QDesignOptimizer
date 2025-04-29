@@ -125,9 +125,11 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">chip_initialization</span> <span class="kn">import</span> <span class="n">create_chip_and_gui</span>
+
 <span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_and_gui</span><span class="p">()</span>
 
 <span class="kn">from</span> <span class="nn">design</span> <span class="kn">import</span> <span class="n">render_qiskit_metal_design</span>
+
 <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -186,6 +188,7 @@
 
 <span class="c1"># Closing Ansys hfss</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
+
 <span class="n">close_ansys</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -195,8 +198,8 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
-        <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
-    <span class="p">)</span>
+    <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
+<span class="p">)</span>
 
 <span class="c1"># map for finer meshing</span>
 <span class="n">meshing_map</span> <span class="o">=</span> <span class="p">[</span>
@@ -223,10 +226,10 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
-<span class="n">group_runs</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">15</span>
 <span class="n">group_passes</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group_runs</span><span class="p">):</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span><span class="n">group_passes</span><span class="p">)</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_delta_f</span><span class="p">(</span><span class="n">delta_f</span><span class="p">)</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>

@@ -286,10 +286,10 @@ Optimization Workflow
     )
 
     # optimization
-    group_runs = 10
+    nbr_iterations = 10
     group_passes = 14
     delta_f = 0.001
-    for i in range(group_runs):
+    for i in range(nbr_iterations):
         design_analysis.update_nbr_passes(group_passes)
         design_analysis.update_delta_f(delta_f)
         design_analysis.optimize_target({}, {})

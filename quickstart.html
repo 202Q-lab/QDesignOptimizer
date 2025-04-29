@@ -405,10 +405,10 @@
 <span class="p">)</span>
 
 <span class="c1"># optimization</span>
-<span class="n">group_runs</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">group_passes</span> <span class="o">=</span> <span class="mi">14</span>
 <span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group_runs</span><span class="p">):</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span><span class="n">group_passes</span><span class="p">)</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_delta_f</span><span class="p">(</span><span class="n">delta_f</span><span class="p">)</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>
