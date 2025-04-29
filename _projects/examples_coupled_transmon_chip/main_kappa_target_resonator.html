@@ -27,7 +27,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Eigenmode simulation of single qubit with readout resonator" href="main_capacitance_target_resonator.html" />
+    <link rel="next" title="Optimization of readout resonator coupling with capacitance target" href="main_capacitance_target_resonator.html" />
     <link rel="prev" title="Capacitive simulation of qubit decay in charge line" href="main_charge_line_decay_single_qubit.html" /> 
 </head>
 
@@ -58,7 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">QDO QuickStart</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../examples.html">Examples</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="main_eigenmode_single_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
-<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
 <li class="toctree-l3"><a class="reference internal" href="main_charge_line_decay_single_qubit.html">Capacitive simulation of qubit decay in charge line</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Resonator Kappa through capacitance matrix simulation</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Rendering-the-design">Rendering the design</a></li>
@@ -68,9 +68,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#Results">Results</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Update-parameters">Update parameters</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Close">Close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Example-result">Example result</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Optimization of readout resonator coupling with capacitance target</a></li>
 </ul>
 </li>
 </ul>
@@ -125,9 +126,11 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">chip_initialization</span> <span class="kn">import</span> <span class="n">create_chip_and_gui</span>
+
 <span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_and_gui</span><span class="p">()</span>
 
 <span class="kn">from</span> <span class="nn">design</span> <span class="kn">import</span> <span class="n">render_qiskit_metal_design</span>
+
 <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -151,8 +154,9 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
 <span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_res_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
-<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
-
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span>
+    <span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span>
 
 <span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_target_res_kappa_feedline</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
 </pre></div>
@@ -174,6 +178,7 @@
 
 <span class="c1"># Closing Ansys hfss</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
+
 <span class="n">close_ansys</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -184,7 +189,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
     <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
-    <span class="p">)</span>
+<span class="p">)</span>
 
 <span class="n">design_analysis</span> <span class="o">=</span> <span class="n">DesignAnalysis</span><span class="p">(</span>
     <span class="n">design_analysis_state</span><span class="p">,</span>
@@ -205,7 +210,7 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
-<span class="n">group_runs</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">group_runs</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">group_passes_cap</span> <span class="o">=</span> <span class="mi">8</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group_runs</span><span class="p">):</span>
@@ -254,6 +259,10 @@
 </div>
 </div>
 </section>
+<section id="Example-result">
+<h2>Example result<a class="headerlink" href="#Example-result" title="Link to this heading"></a></h2>
+<p><img alt="image info" src="../../_images/kappa_target_resonator.png" /></p>
+</section>
 </section>
 
 
@@ -261,7 +270,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="main_charge_line_decay_single_qubit.html" class="btn btn-neutral float-left" title="Capacitive simulation of qubit decay in charge line" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="main_capacitance_target_resonator.html" class="btn btn-neutral float-right" title="Eigenmode simulation of single qubit with readout resonator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="main_capacitance_target_resonator.html" class="btn btn-neutral float-right" title="Optimization of readout resonator coupling with capacitance target" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

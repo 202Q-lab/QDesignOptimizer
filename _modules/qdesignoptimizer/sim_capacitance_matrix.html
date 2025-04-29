@@ -236,6 +236,12 @@
 <span class="sd">        open_pins (list, optional): Pins to leave open. Defaults to [].</span>
 <span class="sd">        x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.</span>
 <span class="sd">        y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.</span>
+<span class="sd">        render_qiskit_metal (Callable, optional): Function for rendering the design before</span>
+<span class="sd">            simulation. If None, the function from DesignAnalysisState will be used when this</span>
+<span class="sd">            study is part of a DesignAnalysis optimization. Takes the form</span>
+<span class="sd">            ``render_qiskit_metal(design, **kwargs)``.</span>
+<span class="sd">        render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal</span>
+<span class="sd">            function. Defaults to an empty dict.</span>
 <span class="sd">        percent_error (float, optional): Target simulation error. Defaults to 0.5.</span>
 <span class="sd">        nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.</span>
 
@@ -251,6 +257,8 @@
         <span class="n">open_pins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">x_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">y_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">render_qiskit_metal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">render_qiskit_metal_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">percent_error</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
         <span class="n">nbr_passes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
     <span class="p">):</span>
@@ -259,6 +267,8 @@
             <span class="n">open_pins</span><span class="o">=</span><span class="n">open_pins</span><span class="p">,</span>
             <span class="n">x_buffer_width_mm</span><span class="o">=</span><span class="n">x_buffer_width_mm</span><span class="p">,</span>
             <span class="n">y_buffer_width_mm</span><span class="o">=</span><span class="n">y_buffer_width_mm</span><span class="p">,</span>
+            <span class="n">render_qiskit_metal</span><span class="o">=</span><span class="n">render_qiskit_metal</span><span class="p">,</span>
+            <span class="n">render_qiskit_metal_kwargs</span><span class="o">=</span><span class="n">render_qiskit_metal_kwargs</span><span class="p">,</span>
             <span class="n">percent_error</span><span class="o">=</span><span class="n">percent_error</span><span class="p">,</span>
             <span class="n">nbr_passes</span><span class="o">=</span><span class="n">nbr_passes</span><span class="p">,</span>
         <span class="p">)</span>
@@ -319,6 +329,12 @@
 <span class="sd">            Required for floating island calculations.</span>
 <span class="sd">        x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.</span>
 <span class="sd">        y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.</span>
+<span class="sd">        render_qiskit_metal (Callable, optional): Function for rendering the design before</span>
+<span class="sd">            simulation. If None, the function from DesignAnalysisState will be used when this</span>
+<span class="sd">            study is part of a DesignAnalysis optimization. Takes the form</span>
+<span class="sd">            ``render_qiskit_metal(design, **kwargs)``.</span>
+<span class="sd">        render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal</span>
+<span class="sd">            function. Defaults to an empty dict.</span>
 <span class="sd">        percent_error (float, optional): Target simulation error. Defaults to 0.5.</span>
 <span class="sd">        nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.</span>
 
@@ -344,6 +360,8 @@
         <span class="n">ground_plane_capacitance_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">x_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">y_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">render_qiskit_metal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">render_qiskit_metal_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">percent_error</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
         <span class="n">nbr_passes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
     <span class="p">):</span>
@@ -354,6 +372,8 @@
             <span class="n">open_pins</span><span class="o">=</span><span class="n">open_pins</span><span class="p">,</span>
             <span class="n">x_buffer_width_mm</span><span class="o">=</span><span class="n">x_buffer_width_mm</span><span class="p">,</span>
             <span class="n">y_buffer_width_mm</span><span class="o">=</span><span class="n">y_buffer_width_mm</span><span class="p">,</span>
+            <span class="n">render_qiskit_metal</span><span class="o">=</span><span class="n">render_qiskit_metal</span><span class="p">,</span>
+            <span class="n">render_qiskit_metal_kwargs</span><span class="o">=</span><span class="n">render_qiskit_metal_kwargs</span><span class="p">,</span>
             <span class="n">percent_error</span><span class="o">=</span><span class="n">percent_error</span><span class="p">,</span>
             <span class="n">nbr_passes</span><span class="o">=</span><span class="n">nbr_passes</span><span class="p">,</span>
         <span class="p">)</span>
@@ -495,6 +515,12 @@
 <span class="sd">        open_pins (list, optional): Pins to leave open. Defaults to [].</span>
 <span class="sd">        x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.</span>
 <span class="sd">        y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.</span>
+<span class="sd">        render_qiskit_metal (Callable, optional): Function for rendering the design before</span>
+<span class="sd">            simulation. If None, the function from DesignAnalysisState will be used when this</span>
+<span class="sd">            study is part of a DesignAnalysis optimization. Takes the form</span>
+<span class="sd">            ``render_qiskit_metal(design, **kwargs)``.</span>
+<span class="sd">        render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal</span>
+<span class="sd">            function. Defaults to an empty dict.</span>
 <span class="sd">        percent_error (float, optional): Target simulation error. Defaults to 0.5.</span>
 <span class="sd">        nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.</span>
 
@@ -520,6 +546,8 @@
         <span class="n">open_pins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">x_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">y_buffer_width_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">render_qiskit_metal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">render_qiskit_metal_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">percent_error</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
         <span class="n">nbr_passes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
     <span class="p">):</span>
@@ -530,6 +558,8 @@
             <span class="n">open_pins</span><span class="o">=</span><span class="n">open_pins</span><span class="p">,</span>
             <span class="n">x_buffer_width_mm</span><span class="o">=</span><span class="n">x_buffer_width_mm</span><span class="p">,</span>
             <span class="n">y_buffer_width_mm</span><span class="o">=</span><span class="n">y_buffer_width_mm</span><span class="p">,</span>
+            <span class="n">render_qiskit_metal</span><span class="o">=</span><span class="n">render_qiskit_metal</span><span class="p">,</span>
+            <span class="n">render_qiskit_metal_kwargs</span><span class="o">=</span><span class="n">render_qiskit_metal_kwargs</span><span class="p">,</span>
             <span class="n">percent_error</span><span class="o">=</span><span class="n">percent_error</span><span class="p">,</span>
             <span class="n">nbr_passes</span><span class="o">=</span><span class="n">nbr_passes</span><span class="p">,</span>
         <span class="p">)</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eigenmode simulation of single qubit with readout resonator &mdash; qdesignoptimizer · 0.0.1</title>
+  <title>Optimization of readout resonator coupling with capacitance target &mdash; qdesignoptimizer · 0.0.1</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -58,10 +58,10 @@
 <li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">QDO QuickStart</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../examples.html">Examples</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="main_eigenmode_single_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
-<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
 <li class="toctree-l3"><a class="reference internal" href="main_charge_line_decay_single_qubit.html">Capacitive simulation of qubit decay in charge line</a></li>
 <li class="toctree-l3"><a class="reference internal" href="main_kappa_target_resonator.html">Resonator Kappa through capacitance matrix simulation</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Eigenmode simulation of single qubit with readout resonator</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Optimization of readout resonator coupling with capacitance target</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Rendering-the-design">Rendering the design</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Creating-the-study-and-optimization-targets">Creating the study and optimization targets</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Creating-design-analysis-objects">Creating design analysis objects</a></li>
@@ -69,6 +69,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#Results">Results</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Update-parameters">Update parameters</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Close">Close</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Example-result">Example result</a></li>
 </ul>
 </li>
 </ul>
@@ -98,7 +99,7 @@
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../userguide.html">User Guide</a></li>
           <li class="breadcrumb-item"><a href="../../examples.html">Examples</a></li>
-      <li class="breadcrumb-item active">Eigenmode simulation of single qubit with readout resonator</li>
+      <li class="breadcrumb-item active">Optimization of readout resonator coupling with capacitance target</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -107,8 +108,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Eigenmode-simulation-of-single-qubit-with-readout-resonator">
-<h1>Eigenmode simulation of single qubit with readout resonator<a class="headerlink" href="#Eigenmode-simulation-of-single-qubit-with-readout-resonator" title="Link to this heading"></a></h1>
+  <section id="Optimization-of-readout-resonator-coupling-with-capacitance-target">
+<h1>Optimization of readout resonator coupling with capacitance target<a class="headerlink" href="#Optimization-of-readout-resonator-coupling-with-capacitance-target" title="Link to this heading"></a></h1>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -125,9 +126,11 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">chip_initialization</span> <span class="kn">import</span> <span class="n">create_chip_and_gui</span>
+
 <span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_and_gui</span><span class="p">()</span>
 
 <span class="kn">from</span> <span class="nn">design</span> <span class="kn">import</span> <span class="n">render_qiskit_metal_design</span>
+
 <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -151,7 +154,9 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
 <span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_resonator_capacitance</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
-<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span>
+    <span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span>
 
 <span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_target_capacitance</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
 </pre></div>
@@ -173,6 +178,7 @@
 
 <span class="c1"># Closing Ansys hfss</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
+
 <span class="n">close_ansys</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -183,7 +189,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
     <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
-    <span class="p">)</span>
+<span class="p">)</span>
 
 <span class="n">design_analysis</span> <span class="o">=</span> <span class="n">DesignAnalysis</span><span class="p">(</span>
     <span class="n">design_analysis_state</span><span class="p">,</span>
@@ -250,6 +256,10 @@
 </pre></div>
 </div>
 </div>
+</section>
+<section id="Example-result">
+<h2>Example result<a class="headerlink" href="#Example-result" title="Link to this heading"></a></h2>
+<p><img alt="image info" src="../../_images/capacitance_target_resonator.png" /></p>
 </section>
 </section>
 
