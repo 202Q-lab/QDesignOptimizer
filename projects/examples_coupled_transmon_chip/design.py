@@ -7,7 +7,7 @@ from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
-from qdesignoptimizer.utils.utils import get_value_and_unit
+from qdesignoptimizer.utils.utils import sum_expression
 
 # Fixed design constants
 LINE_50_OHM_WIDTH = "16.51um"
@@ -214,17 +214,15 @@ def add_chargeline(design: DesignPlanar, group: int):
     )
     launch_options["pos_y"] = ["-2mm", "2mm"][nbr_idx]
     LaunchpadWirebond(design, n.name_lp(lp_nbr), options=launch_options)
+    x_cl_offset = ["-2350um", "-2350um"][nbr_idx]
+    x_cl_absolute = sum_expression(
+        [design.variables[n.design_var_cl_pos_x(qubit)], x_cl_offset]
+    )  # transmon position + pocket width/2
 
-    x_cl_absolute = (
-        str(design.parse_value(n.design_var_cl_pos_x(qubit)) * 1000)
-        + "um"
-        + ["-2350um", "-2350um"][nbr_idx]  # transmon position + pocket width/2
-    )
-    y_cl_absolute = (
-        str(design.parse_value(n.design_var_cl_pos_y(qubit)) * 1000)
-        + "um"
-        + ["-1500um", "+1500um"][nbr_idx]
-    )
+    y_cl_offset = ["-1500um", "+1500um"][nbr_idx]
+    y_cl_absolute = sum_expression(
+        [design.variables[n.design_var_cl_pos_y(qubit)], y_cl_offset]
+    )  # transmon position + pocket height/2
 
     otg_options = dict(
         pos_x=x_cl_absolute,
