@@ -10,7 +10,7 @@ Prerequisites
 =============
 
 - Python 3.10 (required)
-- pip or poetry package manager. We recommend creating a virtual environment by following the steps below. 
+- pip or poetry package manager. We recommend creating a virtual environment by following the steps below.
 - Git (for installation from repository)
 - Ansys HFSS. ``qdesignoptimizer`` has been tested with Ansys Electronics Desktop 2021 R2.
 
@@ -59,7 +59,7 @@ Create the environment from the provided environment.yml file:
     conda env create -f environment.yml
     conda activate qdesignenv
 
-Note that the C++ extension from the latest distribution of Visual Studio Installer is required for the successful installation of pyside2, which is part of the the environment.yml file. You can download the software from `microsoft <https://visualstudio.microsoft.com/downloads/>`_. 
+Note that the C++ developer tools from the latest distribution of Visual Studio Installer are required for the successful installation of pyside2, which is part of the the environment.yml file. You can download the software from `microsoft <https://visualstudio.microsoft.com/downloads/>`_.
 
 **Option 3: Using venv**
 
