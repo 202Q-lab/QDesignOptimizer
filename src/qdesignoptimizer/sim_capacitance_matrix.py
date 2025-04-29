@@ -142,6 +142,12 @@ class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
         open_pins (list, optional): Pins to leave open. Defaults to [].
         x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.
         y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.
+        render_qiskit_metal (Callable, optional): Function for rendering the design before
+            simulation. If None, the function from DesignAnalysisState will be used when this
+            study is part of a DesignAnalysis optimization. Takes the form
+            ``render_qiskit_metal(design, **kwargs)``.
+        render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal
+            function. Defaults to an empty dict.
         percent_error (float, optional): Target simulation error. Defaults to 0.5.
         nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.
 
@@ -157,6 +163,8 @@ class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
         open_pins: Optional[list] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
+        render_qiskit_metal: Optional[Callable] = None,
+        render_qiskit_metal_kwargs: Optional[dict] = None,
         percent_error: float = 0.5,
         nbr_passes: int = 10,
     ):
@@ -165,6 +173,8 @@ class ModeDecayStudy(ABC, CapacitanceMatrixStudy):
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
             y_buffer_width_mm=y_buffer_width_mm,
+            render_qiskit_metal=render_qiskit_metal,
+            render_qiskit_metal_kwargs=render_qiskit_metal_kwargs,
             percent_error=percent_error,
             nbr_passes=nbr_passes,
         )
@@ -216,6 +226,12 @@ class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
             Required for floating island calculations.
         x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.
         y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.
+        render_qiskit_metal (Callable, optional): Function for rendering the design before
+            simulation. If None, the function from DesignAnalysisState will be used when this
+            study is part of a DesignAnalysis optimization. Takes the form
+            ``render_qiskit_metal(design, **kwargs)``.
+        render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal
+            function. Defaults to an empty dict.
         percent_error (float, optional): Target simulation error. Defaults to 0.5.
         nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.
 
@@ -241,6 +257,8 @@ class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
         ground_plane_capacitance_name: Optional[str] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
+        render_qiskit_metal: Optional[Callable] = None,
+        render_qiskit_metal_kwargs: Optional[dict] = None,
         percent_error: float = 0.5,
         nbr_passes: int = 10,
     ):
@@ -251,6 +269,8 @@ class ModeDecayIntoChargeLineStudy(ModeDecayStudy):
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
             y_buffer_width_mm=y_buffer_width_mm,
+            render_qiskit_metal=render_qiskit_metal,
+            render_qiskit_metal_kwargs=render_qiskit_metal_kwargs,
             percent_error=percent_error,
             nbr_passes=nbr_passes,
         )
@@ -383,6 +403,12 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         open_pins (list, optional): Pins to leave open. Defaults to [].
         x_buffer_width_mm (float, optional): X buffer width in mm. Defaults to 2.
         y_buffer_width_mm (float, optional): Y buffer width in mm. Defaults to 2.
+        render_qiskit_metal (Callable, optional): Function for rendering the design before
+            simulation. If None, the function from DesignAnalysisState will be used when this
+            study is part of a DesignAnalysis optimization. Takes the form
+            ``render_qiskit_metal(design, **kwargs)``.
+        render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal
+            function. Defaults to an empty dict.
         percent_error (float, optional): Target simulation error. Defaults to 0.5.
         nbr_passes (int, optional): Maximum simulation passes. Defaults to 10.
 
@@ -408,6 +434,8 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         open_pins: Optional[list] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
+        render_qiskit_metal: Optional[Callable] = None,
+        render_qiskit_metal_kwargs: Optional[dict] = None,
         percent_error: float = 0.5,
         nbr_passes: int = 10,
     ):
@@ -418,6 +446,8 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
             open_pins=open_pins,
             x_buffer_width_mm=x_buffer_width_mm,
             y_buffer_width_mm=y_buffer_width_mm,
+            render_qiskit_metal=render_qiskit_metal,
+            render_qiskit_metal_kwargs=render_qiskit_metal_kwargs,
             percent_error=percent_error,
             nbr_passes=nbr_passes,
         )

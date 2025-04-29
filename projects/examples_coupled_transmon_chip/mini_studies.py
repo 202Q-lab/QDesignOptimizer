@@ -147,6 +147,7 @@ def get_mini_study_res_feedline(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
+        render_qiskit_metal_kwargs={"capacitance": True},
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,
@@ -176,6 +177,7 @@ def get_mini_study_resonator_capacitance(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
+        render_qiskit_metal_kwargs={"capacitance": True},
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,
@@ -184,7 +186,6 @@ def get_mini_study_resonator_capacitance(group: int):
         modes=[],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
         jj_setup={},
         design_name="get_mini_study_capacitance",
-        adjustment_rate=1,
         hfss_wire_bond_size=3,
         capacitance_matrix_studies=[cap_study],
         **CONVERGENCE,
