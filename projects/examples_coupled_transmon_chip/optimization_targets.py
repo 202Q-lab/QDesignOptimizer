@@ -86,7 +86,7 @@ def get_opt_target_qubit_T1_limit_via_charge_posx(
         involved_modes=[qubit],
         design_var=n.design_var_cl_pos_x(qubit),
         design_var_constraint={"larger_than": "-1000um", "smaller_than": "-5um"},
-        prop_to=lambda p, v: (v[n.design_var_cl_pos_x(qubit)]) ** 2,
+        prop_to=lambda p, v: -v[n.design_var_cl_pos_x(qubit)] ** 3,
         independent_target=True,
     )
 

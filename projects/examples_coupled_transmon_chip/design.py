@@ -264,18 +264,19 @@ def CoupledLineTee_mesh_names(comp_names):
 
 
 # Function to render the design
-def render_qiskit_metal_design(design, gui):
+def render_qiskit_metal_design(design, gui, capacitance=False):
     add_transmon_plus_resonator(design, group=n.NBR_1)
     add_transmon_plus_resonator(design, group=n.NBR_2)
-
     add_coupler(design)
-
     add_route_interconnects(design)
-
     add_launch_pads(design)
-
     add_chargeline(design, group=n.NBR_1)
     add_chargeline(design, group=n.NBR_2)
+
+    if capacitance == True:
+        for component in design.components.values():
+            if "hfss_wire_bonds" in component.options:
+                component.options["hfss_wire_bonds"] = False
 
     gui.rebuild()
     gui.autoscale()
