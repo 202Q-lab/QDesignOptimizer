@@ -23,7 +23,7 @@ Every optimization project requires a set of files defining the optimization pro
     ├── names.py
     ├── optimization_targets.py
     ├── parameter_targets.py
-    ├── plot_settings.py    
+    ├── plot_settings.py
 
 Hereafter, we will refer to each file individually and highlight the important concepts to set up the project.
 
@@ -34,7 +34,7 @@ Mode Names and Component Names
 ------------------------------
 | For the success of the optimization it is essential that the user uses the correct references for modes and QComponents of the design throughout the project folder. To assist with and streamline the naming, we suggest a naming convention and introduce utility functions. A collection of common Qiskit Metal component names can be directly called from ``utils.names_qiskit_components`` or custom-made in the project file ``names.py``. Note that the user does not need to follow the recommended naming convention.
 | For mode names, which are used in the ``mini_studies.py`` and ``optimization_targets.py``, we suggest a naming convention of the form ``mode_name_identifier`` composed by the convenience function ``mode(mode_type, identifier)`` in ``utils.names_parameters.py``, for example ``qubit_1``. The mode type can for example be ``resonator``, ``qubit``, ``cavity``, or ``coupler``. As an identifier we suggest a count of the component group or of the component in a group of components.
-| For Qiskit Metal component names, which are used in ``mini_studies.py`` and ``design.py``, we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``. 
+| For Qiskit Metal component names, which are used in ``mini_studies.py`` and ``design.py``, we suggest a naming convention of the form ``name_identifier``, for example ``name_qubit_1`` or ``name_tee_1``. The identifier can refer to mode name such as ``qubit_1`` or ``resonator_1``.
 
 
 Design Variable Names and Values
@@ -60,16 +60,16 @@ Design
 
     RouteMeander(design, n.name_mode(resonator), options=resonator_options)
 
-Finally, the design can be instantiated by the ``create_chip_and_gui`` method and rendered with the components and the design variables. A wrapper function (by convention called ``render_qiskit_metal_design``), must be created such that it can be passed into the optimizer. A minimal example looks like this:
+Finally, the design can be instantiated by the ``create_chip_base`` method and rendered with the components and the design variables. A wrapper function (by convention called ``render_qiskit_metal_design``), must be created such that it can be passed into the optimizer. A minimal example looks like this:
 
 .. code-block:: python
 
     import names as n
     from design import render_qiskit_metal_design
-    from qdesignoptimizer.utils.chip_generation import create_chip_and_gui, ChipType
+    from qdesignoptimizer.utils.chip_generation import create_chip_base, ChipType
 
     chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
-    design, gui = create_chip_and_gui(n.CHIP_NAME, chip_type, open_gui=True)
+    design, gui = create_chip_base(n.CHIP_NAME, chip_type, open_gui=True, design_variables_file="my_design_variables.json")
 
     def render_qiskit_metal_design(design, gui):
         d.add_transmon_plus_resonator(design, group=n.NBR_1)
@@ -282,10 +282,10 @@ Optimization Workflow
     )
 
     # optimization
-    group_runs = 10
+    nbr_iterations = 10
     group_passes = 14
     delta_f = 0.001
-    for i in range(group_runs):
+    for i in range(nbr_iterations):
         design_analysis.update_nbr_passes(group_passes)
         design_analysis.update_delta_f(delta_f)
         design_analysis.optimize_target({}, {})

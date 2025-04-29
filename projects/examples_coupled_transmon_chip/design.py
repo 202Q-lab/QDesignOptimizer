@@ -7,6 +7,7 @@ from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
+from qdesignoptimizer.utils.chip_generation import ChipType
 from qdesignoptimizer.utils.utils import sum_expression
 
 # Fixed design constants
