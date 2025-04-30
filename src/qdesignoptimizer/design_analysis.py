@@ -11,7 +11,7 @@ import scipy
 import scipy.optimize
 from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
-
+import names as n
 import qdesignoptimizer
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
@@ -116,20 +116,21 @@ class DesignAnalysis:
 
         self.optimization_results: list[dict] = []
         self.minimization_results: list[dict] = []
+        self.setup_eigenmode()
 
-        self.renderer.start()
-        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
+        # self.renderer.start()
+        # self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
 
-        self.pinfo = self.renderer.pinfo
-        self.setup = self.pinfo.setup
-        self.setup.n_modes = len(self.mini_study.modes)
-        self.setup.passes = self.mini_study.nbr_passes
-        self.setup.delta_f = self.mini_study.delta_f
-        self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
-        self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
-        self.renderer.options["max_mesh_length_port"] = (
-            self.mini_study.max_mesh_length_port
-        )
+        # self.pinfo = self.renderer.pinfo
+        # self.setup = self.pinfo.setup
+        # self.setup.n_modes = len(self.mini_study.modes)
+        # self.setup.passes = self.mini_study.nbr_passes
+        # self.setup.delta_f = self.mini_study.delta_f
+        # self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
+        # self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
+        # self.renderer.options["max_mesh_length_port"] = (
+        #     self.mini_study.max_mesh_length_port
+        # )
         self._validate_opt_targets()
 
         assert (
@@ -255,13 +256,48 @@ class DesignAnalysis:
     def get_port_gap_names(self):
         """Get names of all endcap ports in the design."""
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
+    
+    def setup_eigenmode(self):
+        hfss = Hfss(designname=self.mini_study.design_name, 
+                    solution_type="Eigenmode",new_desktop_session=True,)
+        self.eig_solver = EPRanalysis(self.design, "hfss")
+        self.eig_solver.sim.setup.name = "Resonator_setup"
+        self.renderer = self.eig_solver.sim.renderer
+        log.info(
+            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
+        )
+        self.eig_solver.setup.sweep_variable = "dummy"
+        self.renderer = self.eig_solver.sim.renderer
+        self.renderer.start()
+        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode",)
+        self.pinfo = self.renderer.pinfo
+        self.setup = self.pinfo.setup 
+        self.setup.n_modes = len(self.mini_study.modes)
+        self.setup.passes = self.mini_study.nbr_passes
+        self.setup.delta_f = self.mini_study.delta_f
+        self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
+        self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
+        self.renderer.options["max_mesh_length_port"] = (
+            self.mini_study.max_mesh_length_port
+        )
+        return hfss
+        # self.renderer.options["keep_originals"] = True
 
     def run_eigenmodes(self):
         """Simulate eigenmodes."""
+        hfss = self.setup_eigenmode()
         self.update_var({}, {})
         self.pinfo.validate_junction_info()
 
-        hfss = Hfss()
+        
+        self.eig_solver = EPRanalysis(self.design, "hfss")
+        self.eig_solver.sim.setup.name = "Resonator_setup"
+        self.renderer = self.eig_solver.sim.renderer
+        log.info(
+            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
+        )
+        self.eig_solver.setup.sweep_variable = "dummy"
+        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
         self.renderer.clean_active_design()
         self.render_qiskit_metal(
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
@@ -277,7 +313,7 @@ class DesignAnalysis:
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
         )
-
+        
         # set custom air bridges
         for component_name in self.mini_study.qiskit_component_names:
             if hasattr(
@@ -765,6 +801,28 @@ class DesignAnalysis:
                     deepcopy(capacitance_matrix)
                 )
 
+        ######################  scattering studies
+        if self.mini_study.scattering_parameters_studies is not None:
+            iteration_result["kappa_scattering_parameters"] = []
+            for scattering_study in self.mini_study.scattering_parameters_studies:
+                scattering_study.set_render_qiskit_metal(self.render_qiskit_metal)
+                mode_index = self.mini_study.modes.index(scattering_study.component_of_interest)
+                Sij = scattering_study.simulate_scattering_parameters(
+                    design=self.design,
+                    hfss_design_name=self.mini_study.design_name+"_scattering",
+                    center_frequency=self.eig_result["Freq. (GHz)"][mode_index],
+                    bandwidth=0.5
+                )
+                kappa = scattering_study.get_kappa()
+                iteration_result["scattering_parameters_kappa"].append((param(scattering_study.component_of_interest, KAPPA), kappa))
+                iteration_result['scattering_parameters_Sij'].append((scattering_study.component_of_interest, Sij))
+                self.system_optimized_params[param(scattering_study.component_of_interest, KAPPA)] = kappa
+                print(f"Scattering study for {scattering_study.component_of_interest} yields kappa =  {kappa} Hz")
+                scattering_study.plot(title=f"Scattering study for {scattering_study.component_of_interest}",
+                                      Sij= ['S21'])
+            self.setup_eigenmode()
+        #######################  scattering studies
+
         iteration_result["design_variables"] = dict(deepcopy(self.design.variables))
         iteration_result["system_optimized_params"] = deepcopy(
             self.system_optimized_params
@@ -780,6 +838,7 @@ class DesignAnalysis:
                 "design_analysis_version": self.design_analysis_version,
             }
         ]
+
         if self.save_path is not None:
             np.save(self.save_path, np.array(simulation), allow_pickle=True)
 
@@ -872,6 +931,7 @@ class DesignAnalysis:
         """
         if self.save_path is None:
             raise ValueError("A path must be specified to save screenshot.")
-        gui.autoscale()
+        if gui :
+            gui.autoscale()
         name = self.save_path + f"_{run+1}" if run is not None else self.save_path
         gui.screenshot(name=name, display=False)

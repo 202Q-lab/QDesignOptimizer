@@ -174,7 +174,9 @@ class MiniStudy:
             run the capacitance matrix studies.
         capacitance_matrix_studies (List[CapacitanceMatrixStudy]): List of capacitance matrix
             studies to run.
-
+        scattering_parameters_studies (List[CapacitanceMatrixStudy]): List of scattering parameters
+            studies to run.
+            These studies are run after the eigenmode simulations. 
 
     Example:
         .. code-block:: python
@@ -216,6 +218,7 @@ class MiniStudy:
         render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
         run_capacitance_studies_only: bool = False,
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
+        scattering_parameters_studies: Optional[List[CapacitanceMatrixStudy]] = None,
     ):
         """Initialize a MiniStudy for electromagnetic simulation configuration."""
         self.qiskit_component_names = qiskit_component_names
@@ -244,6 +247,9 @@ class MiniStudy:
         self.run_capacitance_studies_only = run_capacitance_studies_only
         self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
             capacitance_matrix_studies or []
+        )
+        self.scattering_parameters_studies: List[CapacitanceMatrixStudy] = (
+            scattering_parameters_studies or []
         )
 
 

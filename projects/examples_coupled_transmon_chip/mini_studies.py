@@ -10,6 +10,7 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
+from qdesignoptimizer.sim_scattering_parameters import ScatteringParametersStudy
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 
@@ -189,4 +190,42 @@ def get_mini_study_resonator_capacitance(group: int):
         hfss_wire_bond_size=3,
         capacitance_matrix_studies=[cap_study],
         **CONVERGENCE,
+    )
+
+
+def get_mini_study_qb_res_with_scattering_parameters_study(group: int):
+    qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
+    resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
+
+    scattering_study = ScatteringParametersStudy(
+        qiskit_component_names=[
+            n.name_mode(qubit),
+            n.name_mode(resonator),
+            n.name_tee(group),
+        ],
+        open_pins=[],
+        port_list=[
+            (n.name_tee(group), "prime_end", 50),
+            (n.name_tee(group), "prime_start", 50),
+        ],
+        component_of_interest=n.RESONATOR_1
+    )
+    return MiniStudy(
+        qiskit_component_names=[
+            n.name_mode(qubit),
+            n.name_mode(resonator),
+            n.name_tee(group),
+        ],
+        port_list=[
+            (n.name_tee(group), "prime_end", 50),
+            (n.name_tee(group), "prime_start", 50),
+        ],
+        open_pins=[],
+        modes=[qubit,resonator],
+        jj_setup={**junction_setup(qubit)},
+        design_name="get_mini_study_qb_res",
+        adjustment_rate=1,
+        build_fine_mesh=True,
+        **CONVERGENCE,
+        scattering_parameters_studies=[scattering_study],
     )

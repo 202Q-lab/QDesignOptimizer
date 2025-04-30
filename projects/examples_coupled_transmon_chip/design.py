@@ -98,7 +98,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
             end_pin=dict(component=cltee.name, pin="second_end"),
         ),
         fillet=BEND_RADIUS,
-        hfss_wire_bonds=True,
+        hfss_wire_bonds=False,
         total_length=n.design_var_length(resonator),
         lead=dict(start_straight="600um", end_straight="100um"),
         trace_width=RESONATOR_WIDTH,
@@ -276,6 +276,6 @@ def render_qiskit_metal_design(design, gui, capacitance=False):
         for component in design.components.values():
             if "hfss_wire_bonds" in component.options:
                 component.options["hfss_wire_bonds"] = False
-
-    gui.rebuild()
-    gui.autoscale()
+    if gui:
+        gui.rebuild()
+        gui.autoscale()
