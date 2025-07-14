@@ -21,6 +21,13 @@ BEND_RADIUS = "99um"
 
 chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
 
+# interface participation ratios
+interfaces = {"substrate_air" : {'eps_r': 11.4}, 
+            "metal_substrate": {'eps_r' : 11.4}, 
+            "underside_surface": {'eps_r' : 11.4},
+            "metal_air": {'eps_r':11.4}
+            }
+
 
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     nbr_idx = group - 1  # zero indexed
@@ -98,7 +105,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
             end_pin=dict(component=cltee.name, pin="second_end"),
         ),
         fillet=BEND_RADIUS,
-        hfss_wire_bonds=True,
+        hfss_wire_bonds=False,
         total_length=n.design_var_length(resonator),
         lead=dict(start_straight="600um", end_straight="100um"),
         trace_width=RESONATOR_WIDTH,

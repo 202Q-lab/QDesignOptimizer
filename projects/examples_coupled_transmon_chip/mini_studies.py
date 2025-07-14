@@ -10,6 +10,7 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
+from design import interfaces
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 
@@ -35,6 +36,9 @@ def get_mini_study_qb_res(group: int):
         adjustment_rate=1,
         build_fine_mesh=True,
         **CONVERGENCE,
+        interfaces = interfaces,
+        sheet_thickness = 0.0002, # unit mm
+        sheet_material = 'Niobium, pure',
     )
 
 

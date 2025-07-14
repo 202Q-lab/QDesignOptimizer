@@ -7,10 +7,13 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 import pyEPR as epr
+from pyEPR._config_default import config
 import scipy
 import scipy.optimize
 from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
+import io
+from contextlib import redirect_stdout
 
 import qdesignoptimizer
 from qdesignoptimizer.design_analysis_types import (
@@ -37,6 +40,8 @@ from qdesignoptimizer.utils.names_parameters import (
     param_nonlin,
 )
 from qdesignoptimizer.utils.utils import get_value_and_unit
+
+
 
 
 class DesignAnalysis:
@@ -255,13 +260,16 @@ class DesignAnalysis:
     def get_port_gap_names(self):
         """Get names of all endcap ports in the design."""
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
+    
+    
+
 
     def run_eigenmodes(self):
         """Simulate eigenmodes."""
         self.update_var({}, {})
         self.pinfo.validate_junction_info()
 
-        hfss = Hfss()
+        self.hfss = Hfss()
         self.renderer.clean_active_design()
         self.render_qiskit_metal(
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
@@ -279,25 +287,26 @@ class DesignAnalysis:
         )
 
         # set custom air bridges
-        for component_name in self.mini_study.qiskit_component_names:
-            if hasattr(
-                self.design.components[component_name], "get_air_bridge_coordinates"
-            ):
-                for coord in self.design.components[
-                    component_name
-                ].get_air_bridge_coordinates():
-                    hfss.modeler.create_bondwire(
-                        coord[0],
-                        coord[1],
-                        h1=0.005,
-                        h2=0.000,
-                        alpha=90,
-                        beta=45,
-                        diameter=0.005,
-                        bond_type=0,
-                        name="mybox1",
-                        matname="aluminum",
-                    )
+        # todo: bring back the custom air bridges
+        # for component_name in self.mini_study.qiskit_component_names:
+        #     if hasattr(
+        #         self.design.components[component_name], "get_air_bridge_coordinates"
+        #     ):
+        #         for coord in self.design.components[
+        #             component_name
+        #         ].get_air_bridge_coordinates():
+        #             self.hfss.modeler.create_bondwire(
+        #                 coord[0],
+        #                 coord[1],
+        #                 h1=0.005,
+        #                 h2=0.000,
+        #                 alpha=90,
+        #                 beta=45,
+        #                 diameter=0.005,
+        #                 bond_type=0,
+        #                 name="mybox1",
+        #                 matname="aluminum",
+        #             )
 
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
@@ -307,13 +316,16 @@ class DesignAnalysis:
             and len(self.mini_study.port_list) > 0
         )
 
-        if restrict_mesh:
-            self.renderer.modeler.mesh_length(
-                "fine_mesh",
-                fine_mesh_names,
-                MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
-                RefineInside=True,
-            )
+        # if restrict_mesh:
+        # todo: bring back the fine mesh
+        #     self.renderer.modeler.mesh_length(
+        #         "fine_mesh",
+        #         fine_mesh_names,
+        #         MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
+        #         RefineInside=True,
+        #     )
+
+        self._surface_rendering_for_surface_participation_ratios()
 
         # run eigenmode analysis
         self.setup.analyze()
@@ -377,6 +389,56 @@ class DesignAnalysis:
             add_msg = " However, a linear element was found."
         log.warning("No junctions found, skipping EPR analysis.%s", add_msg)
         return None
+    
+    def _surface_rendering_for_surface_participation_ratios(self):
+        # todo: have this run and allow for chi estimates. the try and execpt statement is annoying. 
+
+        metal = self.hfss.modeler.get_objects_in_group("Perfect E")
+        self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_surface','metal_air'])
+
+        if 'substrate_air' in self.mini_study.interfaces.keys():
+            self.hfss.modeler.section('main','XY')
+            cloned_polygon_names = []
+            for i,c in enumerate(metal):
+                if c[:10]!='JJ_rect_Lj':
+                    self.hfss.modeler.clone(c)
+                    cloned_polygon_names.append(c+'1')                
+                    self.hfss.modeler.subtract('main_Section1',cloned_polygon_names[-1],False)
+            self.hfss.modeler.subtract('main_Section1',metal,True)
+            self.hfss.modeler.create_group('main_Section1',group_name='substrate_air')
+
+        if 'metal_substrate' in self.mini_study.interfaces.keys() :            
+            cloned_polygon_name = []
+            for i,c in enumerate(metal):
+                if c[:10] != 'JJ_rect_Lj':
+                    self.hfss.modeler.clone(c)
+                    cloned_polygon_name.append(c+'2')            
+            self.hfss.modeler.unite(cloned_polygon_name,False)
+            self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_substrate')
+
+        if 'metal_air' in self.mini_study.interfaces.keys():
+            cloned_polygon_name = []
+            for i,c in enumerate(metal):
+                if c[:10] != 'JJ_rect_Lj':
+                    cloned_polygon_name.append(c)
+            print('sheet_thickness', self.mini_study.sheet_thickness)
+            metal_air = self.hfss.modeler.unite(cloned_polygon_name,False)
+            metal_air = self.hfss.modeler.thicken_sheet(metal_air,self.mini_study.sheet_thickness,bBothSides=True)
+            metal_air = self.hfss.modeler.translate(metal_air,[0,0,self.mini_study.sheet_thickness/2])
+            self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_air')
+            objects = self.hfss.modeler.get_objects_in_group('metal_air')
+            metal_air = self.hfss.assign_material(objects,self.mini_study.sheet_material)
+
+        if 'underside_surface' in self.mini_study.interfaces.keys() :
+            self.hfss.modeler.section('main','XY')
+            self.hfss.modeler.move('main_Section2',[0,0,self.design._chips['main']['size']['size_z']])
+            self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_surface')
+            
+        if  self.mini_study.interfaces != {}:
+            self.pinfo.dissipative['dielectric_surfaces'] =[]
+            for interface in self.mini_study.interfaces.keys():
+                print('interface',interface)
+                self.pinfo.dissipative['dielectric_surfaces'].append(*self.hfss.modeler.get_objects_in_group(interface))
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -748,6 +810,12 @@ class DesignAnalysis:
 
             iteration_result["cross_kerrs"] = deepcopy(self.cross_kerrs)
 
+            # Surface participation ratio
+            if self.mini_study.interfaces != []:
+                self.pratio = self.get_pratio()
+            else:
+                self.pratio = None
+
         if self.mini_study.capacitance_matrix_studies is not None:
             iteration_result["capacitance_matrix"] = []
             for capacitance_study in self.mini_study.capacitance_matrix_studies:
@@ -875,3 +943,58 @@ class DesignAnalysis:
         gui.autoscale()
         name = self.save_path + f"_{run+1}" if run is not None else self.save_path
         gui.screenshot(name=name, display=False)
+
+    def _get_dielectric_p_ratio(self):
+
+        p_dielectric = {}
+        for mode in self.pinfo.setup.n_modes:
+            with io.StringIO() as buf, redirect_stdout(buf):
+                q_dielectric = self.eprd.get_Qdielectric(dielectric='main',
+                                        mode=mode,
+                                        variation=None)[0]
+                print(f'Q_dielectric = {q_dielectric}')
+            p_dielectric[mode] = 1/(q_dielectric*config.dissipation.tan_delta_sapp)
+        
+        return p_dielectric
+    
+    def _get_surface_p_ratio (self,name,mode,dirt_properties,variation=None):
+        """Get surface participation ratio.
+        """
+        with io.StringIO() as buf, redirect_stdout(buf):
+            q_surf = self.eprd.get_Qsurface(mode=mode,
+                                            variation=variation,
+                                            name=name)
+        psurf = 1/(q_surf[0]*config.dissipation.tan_delta_surf)
+        # psurf = psurf/(config.dissipation.th*config.dissipation.eps_r)
+        # psurf =  psurf * 1e-9 # dielectric thickness in 1 nm
+        print(f'P_surf = {psurf}')
+        return psurf
+
+    def get_pratio(self):
+        """Computes the surfaces participation ratio for a given interface. And also for every junction."""
+
+        p_ratio_dict = {}
+        for surface in self.mini_study.interfaces:
+            surface_dict ={}
+            for mode in self.pinfo.setup.n_modes:
+                print(f'Calculating P_surf for {surface} and mode {mode}')
+                surface_dict[mode] = self._get_surface_p_ratio(name = self.hfss.modeler.get_objects_in_group(surface)[0],
+                                                               mode = mode,
+                                                               dirt_properties = {'thickness_dielectric':1e-9,
+                                                                                 'eps_r':1}) 
+
+            p_ratio_dict[surface] = surface_dict
+
+        p_ratio_dict['Junction(inductive energy)'] = {}
+        for mode in self.pinfo.setup.n_modes:
+            j_ratio = self.eprd.calc_p_junction_single(mode=mode, variation=None)
+            for key in j_ratio:
+                p_ratio = j_ratio[key] 
+
+            p_ratio_dict['Junction(inductive energy)'][mode] = p_ratio
+
+            # calculating junction's participation ratio
+
+        p_ratio_dict['dielectric'] = self._get_dielectric_p_ratio()
+           
+        return p_ratio_dict
