@@ -221,7 +221,7 @@ class MiniStudy:
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
         interfaces: List[str] = [],
         sheet_material: str = 'Aluminum',
-        sheet_thickness: str = 0.000150, # unit mm
+        sheet_thickness: float = 0.000150, # unit mm
     ):
         """Initialize a MiniStudy for electromagnetic simulation configuration."""
         self.qiskit_component_names = qiskit_component_names
