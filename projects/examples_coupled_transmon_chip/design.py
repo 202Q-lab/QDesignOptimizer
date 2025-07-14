@@ -22,10 +22,10 @@ BEND_RADIUS = "99um"
 chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
 
 # interface participation ratios
-interfaces = {"substrate_air" : {'eps_r': 11.4}, 
-            "metal_substrate": {'eps_r' : 11.4}, 
-            "underside_surface": {'eps_r' : 11.4},
-            "metal_air": {'eps_r':11.4}
+interfaces = {"substrate_air" : {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1}, 
+            "metal_substrate": {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1}, 
+            "underside_surface": {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1},
+            "metal_air": {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1}
             }
 
 

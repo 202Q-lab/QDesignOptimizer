@@ -38,7 +38,7 @@ def get_mini_study_qb_res(group: int):
         **CONVERGENCE,
         interfaces = interfaces,
         sheet_thickness = 0.0002, # unit mm
-        sheet_material = 'Niobium, pure',
+        sheet_material = 'Aluminum',
     )
 
 

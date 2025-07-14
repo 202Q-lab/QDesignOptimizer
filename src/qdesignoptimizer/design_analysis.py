@@ -239,7 +239,8 @@ class DesignAnalysis:
         }
 
     def get_fine_mesh_names(self):
-        """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names". This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class."""
+        """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names". 
+        This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class."""
         finer_mesh_names = []
         for component in self.mini_study.qiskit_component_names:
             if hasattr(self.design.components[component], "get_meshing_names"):
@@ -285,28 +286,33 @@ class DesignAnalysis:
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
         )
+        
+        # affects the fracturing, if interfaces are defined in mini_study
+        # shall not be used with auto-wire bonds
+        # does not allow for fine meshing or custom-airbridges, but could be generalized later
+        self._surface_rendering_for_surface_participation_ratios()
 
         # set custom air bridges
-        # todo: bring back the custom air bridges
-        # for component_name in self.mini_study.qiskit_component_names:
-        #     if hasattr(
-        #         self.design.components[component_name], "get_air_bridge_coordinates"
-        #     ):
-        #         for coord in self.design.components[
-        #             component_name
-        #         ].get_air_bridge_coordinates():
-        #             self.hfss.modeler.create_bondwire(
-        #                 coord[0],
-        #                 coord[1],
-        #                 h1=0.005,
-        #                 h2=0.000,
-        #                 alpha=90,
-        #                 beta=45,
-        #                 diameter=0.005,
-        #                 bond_type=0,
-        #                 name="mybox1",
-        #                 matname="aluminum",
-        #             )
+        if self.mini_study.interfaces == []:
+            for component_name in self.mini_study.qiskit_component_names:
+                if hasattr(
+                    self.design.components[component_name], "get_air_bridge_coordinates"
+                ):
+                    for coord in self.design.components[
+                        component_name
+                    ].get_air_bridge_coordinates():
+                        self.hfss.modeler.create_bondwire(
+                            coord[0],
+                            coord[1],
+                            h1=0.005,
+                            h2=0.000,
+                            alpha=90,
+                            beta=45,
+                            diameter=0.005,
+                            bond_type=0,
+                            name="mybox1",
+                            matname="aluminum",
+                        )
 
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
@@ -316,16 +322,13 @@ class DesignAnalysis:
             and len(self.mini_study.port_list) > 0
         )
 
-        # if restrict_mesh:
-        # todo: bring back the fine mesh
-        #     self.renderer.modeler.mesh_length(
-        #         "fine_mesh",
-        #         fine_mesh_names,
-        #         MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
-        #         RefineInside=True,
-        #     )
-
-        self._surface_rendering_for_surface_participation_ratios()
+        if restrict_mesh and self.mini_study.interfaces == []:
+            self.renderer.modeler.mesh_length(
+                "fine_mesh",
+                fine_mesh_names,
+                MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
+                RefineInside=True,
+            )        
 
         # run eigenmode analysis
         self.setup.analyze()
@@ -360,28 +363,22 @@ class DesignAnalysis:
         if junction_found:
             self.eig_solver.setup.junctions = jj_setups_to_include_in_epr
 
-            if not no_junctions:
-                try:
-                    self.eprd = epr.DistributedAnalysis(self.pinfo)
-                    self.eig_solver.clear_data()
-
-                    self.eig_solver.get_stored_energy(no_junctions)
-                    self.eprd.do_EPR_analysis()
-                    self.epra = epr.QuantumAnalysis(self.eprd.data_filename)
-                    self.epra.analyze_all_variations(
-                        cos_trunc=self.mini_study.cos_trunc,
-                        fock_trunc=self.mini_study.fock_trunc,
-                    )
-                    self.epra.plot_hamiltonian_results()
-                    freqs = self.epra.get_frequencies(numeric=True)
-                    chis = self.epra.get_chis(numeric=True)
-                    self._update_optimized_params_epr(freqs, chis)
-                except AttributeError:
-                    log.error(
-                        "Please install a more recent version of pyEPR (>=0.8.5.3)"
-                    )
+            if not no_junctions:               
+                self.eprd = epr.DistributedAnalysis(self.pinfo)
+                self.eig_solver.clear_data()
+                self.eig_solver.get_stored_energy(no_junctions)
+                self.eprd.do_EPR_analysis()
+                self.epra = epr.QuantumAnalysis(self.eprd.data_filename)
+                self.epra.analyze_all_variations(
+                    cos_trunc=self.mini_study.cos_trunc,
+                    fock_trunc=self.mini_study.fock_trunc,
+                )
+                self.epra.plot_hamiltonian_results()
+                freqs = self.epra.get_frequencies(numeric=True)
+                chis = self.epra.get_chis(numeric=True)
 
             self.eig_solver.setup.junctions = self.mini_study.jj_setup
+            self._update_optimized_params_epr(freqs, chis)            
 
             return chis
         add_msg = ""
@@ -435,10 +432,12 @@ class DesignAnalysis:
             self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_surface')
             
         if  self.mini_study.interfaces != {}:
-            self.pinfo.dissipative['dielectric_surfaces'] =[]
+            self.pinfo.dissipative['dielectric_surfaces'] = {}
             for interface in self.mini_study.interfaces.keys():
-                print('interface',interface)
-                self.pinfo.dissipative['dielectric_surfaces'].append(*self.hfss.modeler.get_objects_in_group(interface))
+                print('interface', interface)
+                for i in self.hfss.modeler.get_objects_in_group(interface):
+                    self.pinfo.dissipative['dielectric_surfaces'][i] = self.mini_study.interfaces[interface]
+                    print(f"Assigning {self.mini_study.interfaces[interface]} to {i} with properties {self.pinfo.dissipative['dielectric_surfaces'][i]}")
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -957,14 +956,14 @@ class DesignAnalysis:
         
         return p_dielectric
     
-    def _get_surface_p_ratio (self,name,mode,dirt_properties,variation=None):
+    def _get_surface_p_ratio(self, name, mode, variation=None):
         """Get surface participation ratio.
         """
         with io.StringIO() as buf, redirect_stdout(buf):
-            q_surf = self.eprd.get_Qsurface(mode=mode,
+            psurf = 1/self.eprd.get_Qsurface(mode=mode,
                                             variation=variation,
-                                            name=name)
-        psurf = 1/(q_surf[0]*config.dissipation.tan_delta_surf)
+                                            name=name) # we set tand = 1 in the design file 
+        # psurf = 1/(q_surf[0]*config.dissipation.tan_delta_surf)
         # psurf = psurf/(config.dissipation.th*config.dissipation.eps_r)
         # psurf =  psurf * 1e-9 # dielectric thickness in 1 nm
         print(f'P_surf = {psurf}')
@@ -979,9 +978,7 @@ class DesignAnalysis:
             for mode in self.pinfo.setup.n_modes:
                 print(f'Calculating P_surf for {surface} and mode {mode}')
                 surface_dict[mode] = self._get_surface_p_ratio(name = self.hfss.modeler.get_objects_in_group(surface)[0],
-                                                               mode = mode,
-                                                               dirt_properties = {'thickness_dielectric':1e-9,
-                                                                                 'eps_r':1}) 
+                                                               mode = mode) 
 
             p_ratio_dict[surface] = surface_dict
 
