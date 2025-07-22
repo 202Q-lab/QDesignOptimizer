@@ -387,7 +387,6 @@ def get_opt_targets_qb_res_transmission(
                     qubit,
                     resonator,
                     design_var_res_qb_coupl_length=design_var_res_qb_coupl_length,
-                    design_var_qubit_width=design_var_qubit_width,
                     design_var_constraint=design_var_constraint_res_qb_coupl_length
                 )
             )

@@ -33,7 +33,7 @@ def get_mini_study_qb_res(group: int):
         jj_setup={**junction_setup(qubit)},
         design_name="get_mini_study_qb_res",
         adjustment_rate=1,
-        build_fine_mesh=True,
+        build_fine_mesh=False,
         **CONVERGENCE,
     )
 
