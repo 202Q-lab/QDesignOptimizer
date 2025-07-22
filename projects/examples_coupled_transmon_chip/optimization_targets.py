@@ -71,6 +71,7 @@ def get_opt_targets_2qubits_resonator_coupler(
                 opt_target_resonator_kappa=opt_target_resonator_kappa,
                 opt_target_resonator_qubit_chi=opt_target_resonator_qubit_chi,
                 use_simple_resonator_qubit_chi_relation=use_simple_resonator_qubit_chi_relation,
+                design_var_constraint_qubit_width= {"larger_than": "1um", "smaller_than": "500um"},                
             )
         )
 
