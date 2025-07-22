@@ -16,7 +16,7 @@ PLOT_SETTINGS = {
             n.ITERATION, param(n.RESONATOR_1, n.KAPPA), y_label="RES Kappa", unit="MHz"
         ),
         OptPltSet(
-            n.design_var_length(n.RESONATOR_1),
+            n.design_var_coupl_length(n.RESONATOR_1, "tee"),
             param(n.RESONATOR_1, n.KAPPA),
             y_label="RES Kappa",
             unit="MHz",

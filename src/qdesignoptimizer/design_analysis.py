@@ -349,25 +349,20 @@ class DesignAnalysis:
             self.eig_solver.setup.junctions = jj_setups_to_include_in_epr
 
             if not no_junctions:
-                try:
-                    self.eprd = epr.DistributedAnalysis(self.pinfo)
-                    self.eig_solver.clear_data()
+                self.eprd = epr.DistributedAnalysis(self.pinfo)
+                self.eig_solver.clear_data()
 
-                    self.eig_solver.get_stored_energy(no_junctions)
-                    self.eprd.do_EPR_analysis()
-                    self.epra = epr.QuantumAnalysis(self.eprd.data_filename)
-                    self.epra.analyze_all_variations(
-                        cos_trunc=self.mini_study.cos_trunc,
-                        fock_trunc=self.mini_study.fock_trunc,
-                    )
-                    self.epra.plot_hamiltonian_results()
-                    freqs = self.epra.get_frequencies(numeric=True)
-                    chis = self.epra.get_chis(numeric=True)
-                    self._update_optimized_params_epr(freqs, chis)
-                except AttributeError:
-                    log.error(
-                        "Please install a more recent version of pyEPR (>=0.8.5.3)"
-                    )
+                self.eig_solver.get_stored_energy(no_junctions)
+                self.eprd.do_EPR_analysis()
+                self.epra = epr.QuantumAnalysis(self.eprd.data_filename)
+                self.epra.analyze_all_variations(
+                    cos_trunc=self.mini_study.cos_trunc,
+                    fock_trunc=self.mini_study.fock_trunc,
+                )
+                self.epra.plot_hamiltonian_results()
+                freqs = self.epra.get_frequencies(numeric=True)
+                chis = self.epra.get_chis(numeric=True)
+                self._update_optimized_params_epr(freqs, chis)
 
             self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
