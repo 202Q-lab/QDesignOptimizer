@@ -181,7 +181,7 @@ class MiniStudy:
             run the capacitance matrix studies.
         capacitance_matrix_studies (List[CapacitanceMatrixStudy]): List of capacitance matrix
             studies to run.
-        interfaces (List[str]): interfaces used in participation ratio simulation
+        interfaces (Dict[str, InterfaceProperties]): interfaces used in participation ratio simulation
         sheet_material (str): sheet material used in participation ratio simulation
         sheet_thickness (float): sheet thickness used in participation ratio simulation
 
@@ -226,7 +226,7 @@ class MiniStudy:
         render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
         run_capacitance_studies_only: bool = False,
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
-        interfaces: List[str] = [],
+        interfaces: Optional[Dict[str, InterfaceProperties]] = None,
         sheet_material: str = 'Aluminum',
         sheet_thickness: float = 0.000150, # unit mm
     ):
@@ -258,7 +258,7 @@ class MiniStudy:
         self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
             capacitance_matrix_studies or []
         )
-        self.interfaces = interfaces
+        self.interfaces = interfaces or {}
         self.sheet_thickness = sheet_thickness
         self.sheet_material = sheet_material
 

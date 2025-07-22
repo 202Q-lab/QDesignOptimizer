@@ -43,9 +43,6 @@ from qdesignoptimizer.utils.names_parameters import (
 )
 from qdesignoptimizer.utils.utils import get_value_and_unit
 
-
-
-
 class DesignAnalysis:
     """Manager for quantum circuit design optimization and electromagnetic simulation.
 
@@ -317,10 +314,7 @@ class DesignAnalysis:
                         matname="aluminum",
                     )
             
-
         # interfaces will be rendered if interfaces are defined in mini_study
-        # shall not be used with auto-wire bonds -> set hfss_wire_bonds=False
-        # does not allow for fine meshing or custom-airbridges, but could be generalized later
         self._surface_rendering_for_surface_participation_ratios()
                 
         # set fine mesh
@@ -331,14 +325,19 @@ class DesignAnalysis:
             and len(self.mini_study.port_list) > 0
         )
 
-        if restrict_mesh and not self.mini_study.interfaces:
-            log.warning("Interfaces should be empty when using fine mesh.")
-            self.renderer.modeler.mesh_length(
-                "fine_mesh",
-                fine_mesh_names,
-                MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
-                RefineInside=True,
-            )        
+        if restrict_mesh:
+            if self.mini_study.interfaces:
+                log.warning(
+                    "Interfaces should be empty when using fine mesh. "
+                    "Fine mesh will not be applied."
+                )
+            else:
+                self.renderer.modeler.mesh_length(
+                    "fine_mesh",
+                    fine_mesh_names,
+                    MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
+                    RefineInside=True,
+                )        
 
         # run eigenmode analysis
         self.setup.analyze()
@@ -398,6 +397,12 @@ class DesignAnalysis:
         return None
     
     def _surface_rendering_for_surface_participation_ratios(self):
+        """Render surfaces for surface participation ratio analysis.
+        This function creates groups for different surfaces based on the interfaces defined in the mini_study.
+        It handles the creation of groups for substrate-air, metal-substrate, metal-air, and underside surfaces.
+        It also assigns materials to the metal-air group based on the sheet material defined in the mini_study.
+        It also assigns interface properties using InterfaceProperties dataclass to pinfo for the Qanalysis.
+        """
 
         metal = self.hfss.modeler.get_objects_in_group("Perfect E")
         self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_surface','metal_air'])

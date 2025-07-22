@@ -1,5 +1,7 @@
-import names as n
 import numpy as np
+from typing import Optional
+
+import names as n
 import parameter_targets as pt
 
 from qdesignoptimizer.design_analysis_types import MiniStudy
@@ -10,20 +12,10 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
-from qdesignoptimizer.design_analysis_types import InterfaceProperties
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 
-# interface participation ratios
-interfaces = {
-    "substrate_air": InterfaceProperties(eps_r=11.4, th=1e-6, tan_delta_surf=1),
-    "metal_substrate": InterfaceProperties(eps_r=11.4, th=1e-6, tan_delta_surf=1),
-    "underside_surface": InterfaceProperties(eps_r=11.4, th=1e-6, tan_delta_surf=1),
-    "metal_air": InterfaceProperties(eps_r=11.4, th=1e-6, tan_delta_surf=1),
-}
-
-
-def get_mini_study_qb_res(group: int):
+def get_mini_study_qb_res(group: int, interfaces: Optional[dict] = None):
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
 
