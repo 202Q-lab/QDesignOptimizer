@@ -1,11 +1,18 @@
 """Data structures for organizing quantum circuit design optimization workflows."""
 
 from typing import Callable, Dict, List, Literal, Optional, Union
+from dataclasses import dataclass
 
 from qiskit_metal.designs.design_base import QDesign
 
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.utils.names_parameters import Mode
+
+@dataclass
+class InterfaceProperties:
+    eps_r: float
+    th: float
+    tan_delta_surf: float
 
 
 class MeshingMap:

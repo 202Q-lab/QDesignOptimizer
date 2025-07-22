@@ -14,6 +14,8 @@ from pyaedt import Hfss
 from qiskit_metal.analyses.quantization import EPRanalysis
 import io
 from contextlib import redirect_stdout
+from dataclasses import asdict
+
 
 import qdesignoptimizer
 from qdesignoptimizer.design_analysis_types import (
@@ -280,40 +282,47 @@ class DesignAnalysis:
         self.renderer.options["wb_threshold"] = self.mini_study.hfss_wire_bond_threshold
         self.renderer.options["wb_offset"] = self.mini_study.hfss_wire_bond_offset
 
+        # check for no hfss wire bonds in surface participation ratio analysis
+        if self.mini_study.interfaces:
+            for component in self.mini_study.qiskit_component_names:
+                if "hfss_wire_bonds" in self.design.components[component].options:
+                    assert not self.design.components[component].options["hfss_wire_bonds"], f"hfss_wire_bonds in {component} must be set to False for surface participation ratio analysis."
+
         # render design in HFSS
         self.renderer.render_design(
             selection=self.mini_study.qiskit_component_names,
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
-        )
-        
-        # affects the fracturing, if interfaces are defined in mini_study
-        # shall not be used with auto-wire bonds
+        )        
+                    
+        # set custom air bridges
+        for component_name in self.mini_study.qiskit_component_names:
+            if hasattr(
+                self.design.components[component_name], "get_air_bridge_coordinates"
+            ):
+                assert not self.mini_study.interfaces, "Expected interfaces to be empty."
+                for coord in self.design.components[
+                    component_name
+                ].get_air_bridge_coordinates():
+                    self.hfss.modeler.create_bondwire(
+                        coord[0],
+                        coord[1],
+                        h1=0.005,
+                        h2=0.000,
+                        alpha=90,
+                        beta=45,
+                        diameter=0.005,
+                        bond_type=0,
+                        name="mybox1",
+                        matname="aluminum",
+                    )
+            
+
+        # interfaces will be rendered if interfaces are defined in mini_study
+        # shall not be used with auto-wire bonds -> set hfss_wire_bonds=False
         # does not allow for fine meshing or custom-airbridges, but could be generalized later
         self._surface_rendering_for_surface_participation_ratios()
-
-        # set custom air bridges
-        if self.mini_study.interfaces == []:
-            for component_name in self.mini_study.qiskit_component_names:
-                if hasattr(
-                    self.design.components[component_name], "get_air_bridge_coordinates"
-                ):
-                    for coord in self.design.components[
-                        component_name
-                    ].get_air_bridge_coordinates():
-                        self.hfss.modeler.create_bondwire(
-                            coord[0],
-                            coord[1],
-                            h1=0.005,
-                            h2=0.000,
-                            alpha=90,
-                            beta=45,
-                            diameter=0.005,
-                            bond_type=0,
-                            name="mybox1",
-                            matname="aluminum",
-                        )
-
+                
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
@@ -322,7 +331,8 @@ class DesignAnalysis:
             and len(self.mini_study.port_list) > 0
         )
 
-        if restrict_mesh and self.mini_study.interfaces == []:
+        if restrict_mesh and not self.mini_study.interfaces:
+            log.warning("Interfaces should be empty when using fine mesh.")
             self.renderer.modeler.mesh_length(
                 "fine_mesh",
                 fine_mesh_names,
@@ -388,7 +398,6 @@ class DesignAnalysis:
         return None
     
     def _surface_rendering_for_surface_participation_ratios(self):
-        # todo: have this run and allow for chi estimates. the try and execpt statement is annoying. 
 
         metal = self.hfss.modeler.get_objects_in_group("Perfect E")
         self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_surface','metal_air'])
@@ -431,13 +440,13 @@ class DesignAnalysis:
             self.hfss.modeler.move('main_Section2',[0,0,self.design._chips['main']['size']['size_z']])
             self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_surface')
             
-        if  self.mini_study.interfaces != {}:
+        # Assign interface properties using InterfaceProperties dataclass
+        if self.mini_study.interfaces:
             self.pinfo.dissipative['dielectric_surfaces'] = {}
             for interface in self.mini_study.interfaces.keys():
-                print('interface', interface)
-                for i in self.hfss.modeler.get_objects_in_group(interface):
-                    self.pinfo.dissipative['dielectric_surfaces'][i] = self.mini_study.interfaces[interface]
-                    print(f"Assigning {self.mini_study.interfaces[interface]} to {i} with properties {self.pinfo.dissipative['dielectric_surfaces'][i]}")
+                interface_props = self.mini_study.interfaces[interface]
+                for obj_name in self.hfss.modeler.get_objects_in_group(interface):
+                    self.pinfo.dissipative['dielectric_surfaces'][obj_name] = asdict(interface_props)
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -810,10 +819,10 @@ class DesignAnalysis:
             iteration_result["cross_kerrs"] = deepcopy(self.cross_kerrs)
 
             # Surface participation ratio
-            if self.mini_study.interfaces != []:
-                self.pratio = self.get_pratio()
+            if self.mini_study.interfaces:
+                self.surface_p_ratio = self.get_surface_p_ratio()
             else:
-                self.pratio = None
+                self.surface_p_ratio = None
 
         if self.mini_study.capacitance_matrix_studies is not None:
             iteration_result["capacitance_matrix"] = []
@@ -944,6 +953,8 @@ class DesignAnalysis:
         gui.screenshot(name=name, display=False)
 
     def _get_dielectric_p_ratio(self):
+        """Get dielectric participation ratio taking into account the dielectric loss tangent.
+        """
 
         p_dielectric = {}
         for mode in self.pinfo.setup.n_modes:
@@ -963,14 +974,11 @@ class DesignAnalysis:
             psurf = 1/self.eprd.get_Qsurface(mode=mode,
                                             variation=variation,
                                             name=name) # we set tand = 1 in the design file 
-        # psurf = 1/(q_surf[0]*config.dissipation.tan_delta_surf)
-        # psurf = psurf/(config.dissipation.th*config.dissipation.eps_r)
-        # psurf =  psurf * 1e-9 # dielectric thickness in 1 nm
         print(f'P_surf = {psurf}')
         return psurf
 
-    def get_pratio(self):
-        """Computes the surfaces participation ratio for a given interface. And also for every junction."""
+    def get_surface_p_ratio(self):
+        """Computes the surfaces participation ratio for all given interfaces. And also for every junction."""
 
         p_ratio_dict = {}
         for surface in self.mini_study.interfaces:
@@ -989,8 +997,6 @@ class DesignAnalysis:
                 p_ratio = j_ratio[key] 
 
             p_ratio_dict['Junction(inductive energy)'][mode] = p_ratio
-
-            # calculating junction's participation ratio
 
         p_ratio_dict['dielectric'] = self._get_dielectric_p_ratio()
            

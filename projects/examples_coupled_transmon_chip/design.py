@@ -10,6 +10,7 @@ from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 from qdesignoptimizer.utils.chip_generation import ChipType
 from qdesignoptimizer.utils.utils import sum_expression
 
+
 # Fixed design constants
 LINE_50_OHM_WIDTH = "16.51um"
 LINE_50_OHM_GAP = "10um"
@@ -20,14 +21,6 @@ RESONATOR_GAP = "20um"
 BEND_RADIUS = "99um"
 
 chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
-
-# interface participation ratios
-interfaces = {"substrate_air" : {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1}, 
-            "metal_substrate": {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1}, 
-            "underside_surface": {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1},
-            "metal_air": {'eps_r': 11.4,'th' :1e-6,'tan_delta_surf':1}
-            }
-
 
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     nbr_idx = group - 1  # zero indexed
@@ -105,7 +98,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
             end_pin=dict(component=cltee.name, pin="second_end"),
         ),
         fillet=BEND_RADIUS,
-        hfss_wire_bonds=False,
+        hfss_wire_bonds=True,
         total_length=n.design_var_length(resonator),
         lead=dict(start_straight="600um", end_straight="100um"),
         trace_width=RESONATOR_WIDTH,
@@ -252,7 +245,7 @@ def add_chargeline(design: DesignPlanar, group: int):
 
     options_chargeline = dict(
         fillet="90um",
-        hfss_wire_bonds=False,
+        hfss_wire_bonds=True,
         trace_width=LINE_50_OHM_WIDTH,
         trace_gap=LINE_50_OHM_GAP,
         pin_inputs=pins_top,
@@ -270,7 +263,7 @@ def CoupledLineTee_mesh_names(comp_names):
 
 
 # Function to render the design
-def render_qiskit_metal_design(design, gui, capacitance=False):
+def render_qiskit_metal_design(design, gui, capacitance_or_surface_p_ratio=False):
     add_transmon_plus_resonator(design, group=n.NBR_1)
     add_transmon_plus_resonator(design, group=n.NBR_2)
     add_coupler(design)
@@ -279,7 +272,7 @@ def render_qiskit_metal_design(design, gui, capacitance=False):
     add_chargeline(design, group=n.NBR_1)
     add_chargeline(design, group=n.NBR_2)
 
-    if capacitance == True:
+    if capacitance_or_surface_p_ratio == True:
         for component in design.components.values():
             if "hfss_wire_bonds" in component.options:
                 component.options["hfss_wire_bonds"] = False
