@@ -280,7 +280,7 @@ class DesignAnalysis:
         self.renderer.options["wb_offset"] = self.mini_study.hfss_wire_bond_offset
 
         # check for no hfss wire bonds in surface participation ratio analysis
-        if self.mini_study.interfaces:
+        if self.mini_study.surface_properties.interfaces:
             for component in self.mini_study.qiskit_component_names:
                 if "hfss_wire_bonds" in self.design.components[component].options:
                     assert not self.design.components[component].options["hfss_wire_bonds"], f"hfss_wire_bonds in {component} must be set to False for surface participation ratio analysis."
@@ -297,7 +297,7 @@ class DesignAnalysis:
             if hasattr(
                 self.design.components[component_name], "get_air_bridge_coordinates"
             ):
-                assert not self.mini_study.interfaces, "Expected interfaces to be empty."
+                assert not self.mini_study.surface_properties.interfaces, "Expected interfaces to be empty."
                 for coord in self.design.components[
                     component_name
                 ].get_air_bridge_coordinates():
@@ -326,10 +326,9 @@ class DesignAnalysis:
         )
 
         if restrict_mesh:
-            if self.mini_study.interfaces:
-                log.warning(
-                    "Interfaces should be empty when using fine mesh. "
-                    "Fine mesh will not be applied."
+            if self.mini_study.surface_properties.interfaces:
+                log.error(
+                    "Interfaces must be empty when using fine mesh. "
                 )
             else:
                 self.renderer.modeler.mesh_length(
@@ -385,9 +384,9 @@ class DesignAnalysis:
                 self.epra.plot_hamiltonian_results()
                 freqs = self.epra.get_frequencies(numeric=True)
                 chis = self.epra.get_chis(numeric=True)
+                self._update_optimized_params_epr(freqs, chis) 
 
-            self.eig_solver.setup.junctions = self.mini_study.jj_setup
-            self._update_optimized_params_epr(freqs, chis)            
+            self.eig_solver.setup.junctions = self.mini_study.jj_setup                       
 
             return chis
         add_msg = ""
@@ -407,50 +406,50 @@ class DesignAnalysis:
         metal = self.hfss.modeler.get_objects_in_group("Perfect E")
         self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_surface','metal_air'])
 
-        if 'substrate_air' in self.mini_study.interfaces.keys():
-            self.hfss.modeler.section('main','XY')
-            cloned_polygon_names = []
-            for i,c in enumerate(metal):
-                if c[:10]!='JJ_rect_Lj':
-                    self.hfss.modeler.clone(c)
-                    cloned_polygon_names.append(c+'1')                
-                    self.hfss.modeler.subtract('main_Section1',cloned_polygon_names[-1],False)
-            self.hfss.modeler.subtract('main_Section1',metal,True)
-            self.hfss.modeler.create_group('main_Section1',group_name='substrate_air')
+        # substrate-air
+        self.hfss.modeler.section('main','XY')
+        cloned_polygon_names = []
+        for i,c in enumerate(metal):
+            if c[:10]!='JJ_rect_Lj':
+                self.hfss.modeler.clone(c)
+                cloned_polygon_names.append(c+'1')                
+                self.hfss.modeler.subtract('main_Section1',cloned_polygon_names[-1],False)
+        self.hfss.modeler.subtract('main_Section1',metal,True)
+        self.hfss.modeler.create_group('main_Section1',group_name='substrate_air')
 
-        if 'metal_substrate' in self.mini_study.interfaces.keys() :            
-            cloned_polygon_name = []
-            for i,c in enumerate(metal):
-                if c[:10] != 'JJ_rect_Lj':
-                    self.hfss.modeler.clone(c)
-                    cloned_polygon_name.append(c+'2')            
-            self.hfss.modeler.unite(cloned_polygon_name,False)
-            self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_substrate')
+        # metal-substrate
+        cloned_polygon_name = []
+        for i,c in enumerate(metal):
+            if c[:10] != 'JJ_rect_Lj':
+                self.hfss.modeler.clone(c)
+                cloned_polygon_name.append(c+'2')            
+        self.hfss.modeler.unite(cloned_polygon_name,False)
+        self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_substrate')
 
-        if 'metal_air' in self.mini_study.interfaces.keys():
-            cloned_polygon_name = []
-            for i,c in enumerate(metal):
-                if c[:10] != 'JJ_rect_Lj':
-                    cloned_polygon_name.append(c)
-            print('sheet_thickness', self.mini_study.sheet_thickness)
-            metal_air = self.hfss.modeler.unite(cloned_polygon_name,False)
-            metal_air = self.hfss.modeler.thicken_sheet(metal_air,self.mini_study.sheet_thickness,bBothSides=True)
-            metal_air = self.hfss.modeler.translate(metal_air,[0,0,self.mini_study.sheet_thickness/2])
-            self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_air')
-            objects = self.hfss.modeler.get_objects_in_group('metal_air')
-            metal_air = self.hfss.assign_material(objects,self.mini_study.sheet_material)
+        # metal-air
+        cloned_polygon_name = []
+        for i,c in enumerate(metal):
+            if c[:10] != 'JJ_rect_Lj':
+                cloned_polygon_name.append(c)
+        print('sheet_thickness', self.mini_study.surface_properties.sheet_thickness)
+        metal_air = self.hfss.modeler.unite(cloned_polygon_name,False)
+        metal_air = self.hfss.modeler.thicken_sheet(metal_air,self.mini_study.surface_properties.sheet_thickness,bBothSides=True)
+        metal_air = self.hfss.modeler.translate(metal_air,[0,0,self.mini_study.surface_properties.sheet_thickness/2])
+        self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_air')
+        objects = self.hfss.modeler.get_objects_in_group('metal_air')
+        metal_air = self.hfss.assign_material(objects,self.mini_study.surface_properties.sheet_material)
 
-        if 'underside_surface' in self.mini_study.interfaces.keys() :
-            self.hfss.modeler.section('main','XY')
-            self.hfss.modeler.move('main_Section2',[0,0,self.design._chips['main']['size']['size_z']])
-            self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_surface')
+        # underside surface
+        self.hfss.modeler.section('main','XY')
+        self.hfss.modeler.move('main_Section2',[0,0,self.design._chips['main']['size']['size_z']])
+        self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_surface')
             
         # Assign interface properties using InterfaceProperties dataclass
-        if self.mini_study.interfaces:
+        if self.mini_study.surface_properties.interfaces:
             self.pinfo.dissipative['dielectric_surfaces'] = {}
-            for interface in self.mini_study.interfaces.keys():
-                interface_props = self.mini_study.interfaces[interface]
-                for obj_name in self.hfss.modeler.get_objects_in_group(interface):
+            for interface_name in self.mini_study.surface_properties.interfaces.keys():
+                interface_props = getattr(self.mini_study.surface_properties.interfaces, interface_name)
+                for obj_name in self.hfss.modeler.get_objects_in_group(interface_name):
                     self.pinfo.dissipative['dielectric_surfaces'][obj_name] = asdict(interface_props)
 
     def get_simulated_modes_sorted(self):
@@ -824,7 +823,7 @@ class DesignAnalysis:
             iteration_result["cross_kerrs"] = deepcopy(self.cross_kerrs)
 
             # Surface participation ratio
-            if self.mini_study.interfaces:
+            if self.mini_study.surface_properties.interfaces:
                 self.surface_p_ratio = self.get_surface_p_ratio()
             else:
                 self.surface_p_ratio = None
@@ -986,14 +985,14 @@ class DesignAnalysis:
         """Computes the surfaces participation ratio for all given interfaces. And also for every junction."""
 
         p_ratio_dict = {}
-        for surface in self.mini_study.interfaces:
+        for interface_name in self.mini_study.surface_properties.interfaces.keys():
             surface_dict ={}
             for mode in self.pinfo.setup.n_modes:
-                print(f'Calculating P_surf for {surface} and mode {mode}')
-                surface_dict[mode] = self._get_surface_p_ratio(name = self.hfss.modeler.get_objects_in_group(surface)[0],
+                print(f'Calculating P_surf for {interface_name} and mode {mode}')
+                surface_dict[mode] = self._get_surface_p_ratio(name = self.hfss.modeler.get_objects_in_group(interface_name)[0],
                                                                mode = mode) 
 
-            p_ratio_dict[surface] = surface_dict
+            p_ratio_dict[interface_name] = surface_dict
 
         p_ratio_dict['Junction(inductive energy)'] = {}
         for mode in self.pinfo.setup.n_modes:

@@ -1,7 +1,7 @@
 """Data structures for organizing quantum circuit design optimization workflows."""
 
 from typing import Callable, Dict, List, Literal, Optional, Union
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -14,6 +14,23 @@ class InterfaceProperties:
     th: float
     tan_delta_surf: float
 
+@dataclass
+class Interfaces:
+    substrate_air: InterfaceProperties
+    metal_substrate: InterfaceProperties
+    underside_surface: InterfaceProperties
+    metal_air: InterfaceProperties
+
+    def keys(self):
+        """Iterator that yields interface names like dict.keys()"""
+        for field in fields(self):
+            yield field.name
+
+@dataclass
+class SurfaceProperties:
+    interfaces: Interfaces
+    sheet_material: str = 'Aluminum'  
+    sheet_thickness: float = 0.000150  # unit mm
 
 class MeshingMap:
     """
@@ -181,10 +198,8 @@ class MiniStudy:
             run the capacitance matrix studies.
         capacitance_matrix_studies (List[CapacitanceMatrixStudy]): List of capacitance matrix
             studies to run.
-        interfaces (Dict[str, InterfaceProperties]): interfaces used in participation ratio simulation
-        sheet_material (str): sheet material used in participation ratio simulation
-        sheet_thickness (float): sheet thickness used in participation ratio simulation
-
+        surface_properties (SurfaceProperties): Surface properties for the design, including
+            interfaces, sheet material, and thickness.     
 
     Example:
         .. code-block:: python
@@ -226,9 +241,7 @@ class MiniStudy:
         render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
         run_capacitance_studies_only: bool = False,
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
-        interfaces: Optional[Dict[str, InterfaceProperties]] = None,
-        sheet_material: str = 'Aluminum',
-        sheet_thickness: float = 0.000150, # unit mm
+        surface_properties: Optional[SurfaceProperties] = None,
     ):
         """Initialize a MiniStudy for electromagnetic simulation configuration."""
         self.qiskit_component_names = qiskit_component_names
@@ -258,9 +271,11 @@ class MiniStudy:
         self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
             capacitance_matrix_studies or []
         )
-        self.interfaces = interfaces or {}
-        self.sheet_thickness = sheet_thickness
-        self.sheet_material = sheet_material
+        self.surface_properties = surface_properties
+        self.interfaces = surface_properties.interfaces if surface_properties else None
+        self.sheet_thickness = surface_properties.sheet_thickness if surface_properties else 0.000150
+        self.sheet_material = surface_properties.sheet_material if surface_properties else 'Aluminum'
+
 
 
 class DesignAnalysisState:

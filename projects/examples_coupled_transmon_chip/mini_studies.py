@@ -12,10 +12,11 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
+from qdesignoptimizer.design_analysis_types import SurfaceProperties
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 
-def get_mini_study_qb_res(group: int, interfaces: Optional[dict] = None):
+def get_mini_study_qb_res(group: int, surface_properties:  Optional[SurfaceProperties] = None):
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
 
@@ -36,9 +37,7 @@ def get_mini_study_qb_res(group: int, interfaces: Optional[dict] = None):
         adjustment_rate=1,
         build_fine_mesh=True,
         **CONVERGENCE,
-        interfaces = interfaces,
-        sheet_thickness = 0.0002, # unit mm
-        sheet_material = 'Aluminum',
+        surface_properties=surface_properties,
     )
 
 
