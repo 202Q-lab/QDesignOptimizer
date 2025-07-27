@@ -293,3 +293,43 @@ Optimization Workflow
 
 
 The optimizer outputs a ``.npy`` file with the target parameters and design variables evaluated after each iteration. In addition, the optimizer can output a new ``.json`` file with the updated design parameters and a snapshot of the Qiskit Metal gui to visually follow the progress. The user can also choose to update the initial ``design_variables.json`` file by running ``design_analysis.overwrite_parameters()``.
+
+Surface participation ratio simulations
+---------------------------------------
+| The qdesignoptimizer computes surface participation ratios, which measure the fraction of a mode's electric field energy located at chip surfaces. This analysis is essential for understanding surface loss mechanisms in quantum devices, based on the pyEPR framework.
+The surface participation ratio is defined as::
+
+    p_surf = U_surf / U_E
+
+where ``U_surf`` is the electric field energy at the surface interface and ``U_E`` is the total electric field energy of the mode.
+
+The surface quality factor is calculated as::
+
+    Qsurf = 1 / (p_surf × tan_delta_surf)
+
+For participation ratio analysis, setting ``tan_delta_surf = 1`` makes the participation ratio equal to the inverse quality factor contribution.
+
+Surface properties must be defined in the ``MiniStudy`` class using ``SurfaceProperties`` objects::
+
+    surface_props = SurfaceProperties(
+        interfaces=[interface1, interface2, ...],
+        sheet_material="material_name", 
+        sheet_thickness=thickness_value
+    )
+
+Each interface requires an ``InterfaceProperties`` object::
+
+    interface = InterfaceProperties(
+        name="substrate_interface",           # Must match HFSS group names
+        relative_permittivity=εr,
+        loss_tangent=tan_δ,
+        thickness=t_layer
+    )
+
+The analysis returns a dictionary containing:
+
+* **Interface contributions**: Participation ratios for each defined surface
+* **Junction contributions**: Inductive energy from Josephson junctions  
+* **Dielectric contributions**: Bulk dielectric loss contributions
+
+This enables quantitative assessment of surface loss mechanisms and guides design optimization for improved coherence times.

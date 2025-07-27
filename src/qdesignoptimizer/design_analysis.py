@@ -961,12 +961,12 @@ class DesignAnalysis:
         """
 
         p_dielectric = {}
-        for mode in self.pinfo.setup.n_modes:
+        for mode in range(int(self.pinfo.setup.n_modes)):
+            self.eprd.set_mode(mode)
             with io.StringIO() as buf, redirect_stdout(buf):
                 q_dielectric = self.eprd.get_Qdielectric(dielectric='main',
                                         mode=mode,
                                         variation=None)[0]
-                print(f'Q_dielectric = {q_dielectric}')
             p_dielectric[mode] = 1/(q_dielectric*config.dissipation.tan_delta_sapp)
         
         return p_dielectric
@@ -978,30 +978,33 @@ class DesignAnalysis:
             psurf = 1/self.eprd.get_Qsurface(mode=mode,
                                             variation=variation,
                                             name=name) # we set tand = 1 in the design file 
-        print(f'P_surf = {psurf}')
-        return psurf
+        return psurf.iloc[0]  # Return the second element which is the participation ratio value
 
     def get_surface_p_ratio(self):
         """Computes the surfaces participation ratio for all given interfaces. And also for every junction."""
-
         p_ratio_dict = {}
+        
+        # Initialize the structure for interfaces
         for interface_name in self.mini_study.surface_properties.interfaces.keys():
-            surface_dict ={}
-            for mode in self.pinfo.setup.n_modes:
-                print(f'Calculating P_surf for {interface_name} and mode {mode}')
-                surface_dict[mode] = self._get_surface_p_ratio(name = self.hfss.modeler.get_objects_in_group(interface_name)[0],
-                                                               mode = mode) 
-
-            p_ratio_dict[interface_name] = surface_dict
-
+            p_ratio_dict[interface_name] = {}
+            for mode in range(int(self.pinfo.setup.n_modes)):
+                self.eprd.set_mode(mode)
+                p_ratio_dict[interface_name][mode] = self._get_surface_p_ratio(
+                    name=self.hfss.modeler.get_objects_in_group(interface_name)[0],
+                    mode=mode
+                )
+        
+        # Handle junction data
+        # can only handle a single junction type for now
         p_ratio_dict['Junction(inductive energy)'] = {}
-        for mode in self.pinfo.setup.n_modes:
+        for mode in range(int(self.pinfo.setup.n_modes)):
+            self.eprd.set_mode(mode)
             j_ratio = self.eprd.calc_p_junction_single(mode=mode, variation=None)
             for key in j_ratio:
-                p_ratio = j_ratio[key] 
-
+                p_ratio = j_ratio[key]
             p_ratio_dict['Junction(inductive energy)'][mode] = p_ratio
-
+        
+        # Handle dielectric data
         p_ratio_dict['dielectric'] = self._get_dielectric_p_ratio()
-           
+        
         return p_ratio_dict
