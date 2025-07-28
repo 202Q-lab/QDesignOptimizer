@@ -38,7 +38,7 @@ class SurfaceProperties:
     Complete surface characterization including all interfaces and metal sheet properties.
     """
     interfaces: Interfaces # Collection of all interface properties
-    sheet_material: str = 'Aluminum'   # Conductor material type 
+    sheet_material: str = 'Aluminum'   # Conductor material type (must be included in or added to ANSYS HFSS material library)
     sheet_thickness: float = 0.000150  # Metal sheet thickness [mm]
 
 class MeshingMap:
