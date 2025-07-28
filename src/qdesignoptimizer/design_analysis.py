@@ -280,7 +280,7 @@ class DesignAnalysis:
         self.renderer.options["wb_offset"] = self.mini_study.hfss_wire_bond_offset
 
         # check for no hfss wire bonds in surface participation ratio analysis
-        if self.mini_study.surface_properties.interfaces:
+        if self.mini_study.surface_properties:
             for component in self.mini_study.qiskit_component_names:
                 if "hfss_wire_bonds" in self.design.components[component].options:
                     assert not self.design.components[component].options["hfss_wire_bonds"], f"hfss_wire_bonds in {component} must be set to False for surface participation ratio analysis."
@@ -293,7 +293,7 @@ class DesignAnalysis:
         )        
                     
         # set custom air bridges (only if no interfaces are defined in mini_study)
-        if not self.mini_study.surface_properties.interfaces:
+        if not self.mini_study.surface_properties:
             for component_name in self.mini_study.qiskit_component_names:                
                 if hasattr(
                     self.design.components[component_name], "get_air_bridge_coordinates"
@@ -315,7 +315,8 @@ class DesignAnalysis:
                         )
             
         # interfaces will be rendered if interfaces are defined in mini_study
-        self._surface_rendering_for_surface_participation_ratios()
+        if self.mini_study.surface_properties:
+            self._surface_rendering_for_surface_participation_ratios()
                 
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
@@ -326,7 +327,7 @@ class DesignAnalysis:
         )
 
         if restrict_mesh:
-            if self.mini_study.surface_properties.interfaces:
+            if self.mini_study.surface_properties:
                 log.error(
                     "Interfaces must be empty when using fine mesh. "
                 )
@@ -822,7 +823,7 @@ class DesignAnalysis:
             iteration_result["cross_kerrs"] = deepcopy(self.cross_kerrs)
 
             # Surface participation ratio
-            if self.mini_study.surface_properties.interfaces:
+            if self.mini_study.surface_properties:
                 self.surface_p_ratio = self.get_surface_p_ratio()
             else:
                 self.surface_p_ratio = None
