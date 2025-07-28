@@ -292,27 +292,27 @@ class DesignAnalysis:
             open_pins=self.mini_study.open_pins,
         )        
                     
-        # set custom air bridges
-        for component_name in self.mini_study.qiskit_component_names:
-            if hasattr(
-                self.design.components[component_name], "get_air_bridge_coordinates"
-            ):
-                assert not self.mini_study.surface_properties.interfaces, "Expected interfaces to be empty."
-                for coord in self.design.components[
-                    component_name
-                ].get_air_bridge_coordinates():
-                    self.hfss.modeler.create_bondwire(
-                        coord[0],
-                        coord[1],
-                        h1=0.005,
-                        h2=0.000,
-                        alpha=90,
-                        beta=45,
-                        diameter=0.005,
-                        bond_type=0,
-                        name="mybox1",
-                        matname="aluminum",
-                    )
+        # set custom air bridges (only if no interfaces are defined in mini_study)
+        if not self.mini_study.surface_properties.interfaces:
+            for component_name in self.mini_study.qiskit_component_names:                
+                if hasattr(
+                    self.design.components[component_name], "get_air_bridge_coordinates"
+                ):
+                    for coord in self.design.components[
+                        component_name
+                    ].get_air_bridge_coordinates():
+                        self.hfss.modeler.create_bondwire(
+                            coord[0],
+                            coord[1],
+                            h1=0.005,
+                            h2=0.000,
+                            alpha=90,
+                            beta=45,
+                            diameter=0.005,
+                            bond_type=0,
+                            name="mybox1",
+                            matname="aluminum",
+                        )
             
         # interfaces will be rendered if interfaces are defined in mini_study
         self._surface_rendering_for_surface_participation_ratios()
@@ -404,7 +404,7 @@ class DesignAnalysis:
         """
 
         metal = self.hfss.modeler.get_objects_in_group("Perfect E")
-        self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_surface','metal_air'])
+        self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_air','metal_air'])
 
         # substrate-air
         self.hfss.modeler.section('main','XY')
@@ -431,10 +431,9 @@ class DesignAnalysis:
         for i,c in enumerate(metal):
             if c[:10] != 'JJ_rect_Lj':
                 cloned_polygon_name.append(c)
-        print('sheet_thickness', self.mini_study.surface_properties.sheet_thickness)
         metal_air = self.hfss.modeler.unite(cloned_polygon_name,False)
         metal_air = self.hfss.modeler.thicken_sheet(metal_air,self.mini_study.surface_properties.sheet_thickness,bBothSides=True)
-        metal_air = self.hfss.modeler.translate(metal_air,[0,0,self.mini_study.surface_properties.sheet_thickness/2])
+        metal_air = self.hfss.modeler.move(metal_air,[0,0,self.mini_study.surface_properties.sheet_thickness/2])
         self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_air')
         objects = self.hfss.modeler.get_objects_in_group('metal_air')
         metal_air = self.hfss.assign_material(objects,self.mini_study.surface_properties.sheet_material)
@@ -442,7 +441,7 @@ class DesignAnalysis:
         # underside surface
         self.hfss.modeler.section('main','XY')
         self.hfss.modeler.move('main_Section2',[0,0,self.design._chips['main']['size']['size_z']])
-        self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_surface')
+        self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_air')
             
         # Assign interface properties using InterfaceProperties dataclass
         if self.mini_study.surface_properties.interfaces:

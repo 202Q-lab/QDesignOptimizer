@@ -1,6 +1,6 @@
 """Data structures for organizing quantum circuit design optimization workflows."""
 
-from typing import Callable, Dict, List, Literal, Optional, Union
+from typing import Callable, Dict, List, Literal, Optional, Union, Iterator
 from dataclasses import dataclass, fields
 
 from qiskit_metal.designs.design_base import QDesign
@@ -10,27 +10,36 @@ from qdesignoptimizer.utils.names_parameters import Mode
 
 @dataclass
 class InterfaceProperties:
-    eps_r: float
-    th: float
-    tan_delta_surf: float
+    """
+    Properties defining the electrical characteristics of an interface between materials.
+    """
+    eps_r: float # Relative permittivity (dielectric constant) [dimensionless]
+    th: float # Thickness [millimeters]
+    tan_delta_surf: float # Surface loss tangent [dimensionless]
 
 @dataclass
 class Interfaces:
-    substrate_air: InterfaceProperties
-    metal_substrate: InterfaceProperties
-    underside_surface: InterfaceProperties
-    metal_air: InterfaceProperties
+    """
+    Collection of interface properties for different material boundaries in a stackup.
+    """
+    substrate_air: InterfaceProperties # Interface between substrate and air
+    metal_substrate: InterfaceProperties # Interface between metal and substrate
+    underside_air: InterfaceProperties # Interface between underside and surface
+    metal_air: InterfaceProperties # Interface between metal and air
 
-    def keys(self):
+    def keys(self) -> Iterator[str]:
         """Iterator that yields interface names like dict.keys()"""
         for field in fields(self):
             yield field.name
 
 @dataclass
 class SurfaceProperties:
-    interfaces: Interfaces
-    sheet_material: str = 'Aluminum'  
-    sheet_thickness: float = 0.000150  # unit mm
+    """
+    Complete surface characterization including all interfaces and metal sheet properties.
+    """
+    interfaces: Interfaces # Collection of all interface properties
+    sheet_material: str = 'Aluminum'   # Conductor material type 
+    sheet_thickness: float = 0.000150  # Metal sheet thickness [mm]
 
 class MeshingMap:
     """
