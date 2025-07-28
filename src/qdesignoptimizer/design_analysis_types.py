@@ -1,7 +1,7 @@
 """Data structures for organizing quantum circuit design optimization workflows."""
 
 from typing import Callable, Dict, List, Literal, Optional, Union, Iterator
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -13,19 +13,23 @@ class InterfaceProperties:
     """
     Properties defining the electrical characteristics of an interface between materials.
     """
-    eps_r: float # Relative permittivity (dielectric constant) [dimensionless]
-    th: float # Thickness [millimeters]
-    tan_delta_surf: float # Surface loss tangent [dimensionless]
+    eps_r: float = 11.4 # Relative permittivity (dielectric constant) [dimensionless]
+    th: float = 1e-6 # Thickness [millimeters]
+    tan_delta_surf: float = 1.0 # Surface loss tangent [dimensionless]
+
+def default_interface_properties() -> InterfaceProperties:
+    """Return a default set of interface properties."""
+    return InterfaceProperties(eps_r=11.4, th=1e-6, tan_delta_surf=1.0)
 
 @dataclass
 class Interfaces:
     """
     Collection of interface properties for different material boundaries in a stackup.
     """
-    substrate_air: InterfaceProperties # Interface between substrate and air
-    metal_substrate: InterfaceProperties # Interface between metal and substrate
-    underside_air: InterfaceProperties # Interface between underside and surface
-    metal_air: InterfaceProperties # Interface between metal and air
+    substrate_air: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between substrate and air
+    metal_substrate: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between metal and substrate
+    underside_air: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between underside and surface
+    metal_air: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between metal and air
 
     def keys(self) -> Iterator[str]:
         """Iterator that yields interface names like dict.keys()"""
@@ -37,7 +41,7 @@ class SurfaceProperties:
     """
     Complete surface characterization including all interfaces and metal sheet properties.
     """
-    interfaces: Interfaces # Collection of all interface properties
+    interfaces: Interfaces = field(default_factory=Interfaces) # Collection of all interface properties
     sheet_material: str = 'Aluminum'   # Conductor material type (must be included in or added to ANSYS HFSS material library)
     sheet_thickness: float = 0.000150  # Metal sheet thickness [mm]
 
