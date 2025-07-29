@@ -407,31 +407,31 @@ class DesignAnalysis:
         metal = self.hfss.modeler.get_objects_in_group("Perfect E")
         self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_air','metal_air'])
 
+        # Filter out JJ_rect_Lj objects once
+        filtered_metal = [obj for obj in metal if not obj.startswith('JJ_rect_Lj')]
+
         # substrate-air
         self.hfss.modeler.section('main','XY')
         cloned_polygon_names = []
-        for i,c in enumerate(metal):
-            if c[:10]!='JJ_rect_Lj':
-                self.hfss.modeler.clone(c)
-                cloned_polygon_names.append(c+'1')                
-                self.hfss.modeler.subtract('main_Section1',cloned_polygon_names[-1],False)
-        self.hfss.modeler.subtract('main_Section1',metal,True)
+        for obj in filtered_metal:
+            self.hfss.modeler.clone(obj)
+            cloned_polygon_names.append(obj+'1')
+            self.hfss.modeler.subtract('main_Section1',cloned_polygon_names[-1],False)
+        self.hfss.modeler.subtract('main_Section1',filtered_metal,True)
         self.hfss.modeler.create_group('main_Section1',group_name='substrate_air')
 
         # metal-substrate
         cloned_polygon_name = []
-        for i,c in enumerate(metal):
-            if c[:10] != 'JJ_rect_Lj':
-                self.hfss.modeler.clone(c)
-                cloned_polygon_name.append(c+'2')            
+        for obj in filtered_metal:
+            self.hfss.modeler.clone(obj)
+            cloned_polygon_name.append(obj+'2')
         self.hfss.modeler.unite(cloned_polygon_name,False)
         self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_substrate')
 
         # metal-air
         cloned_polygon_name = []
-        for i,c in enumerate(metal):
-            if c[:10] != 'JJ_rect_Lj':
-                cloned_polygon_name.append(c)
+        for obj in filtered_metal:
+            cloned_polygon_name.append(obj)
         metal_air = self.hfss.modeler.unite(cloned_polygon_name,False)
         metal_air = self.hfss.modeler.thicken_sheet(metal_air,self.mini_study.surface_properties.sheet_thickness,bBothSides=True)
         metal_air = self.hfss.modeler.move(metal_air,[0,0,self.mini_study.surface_properties.sheet_thickness/2])
