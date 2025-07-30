@@ -12,10 +12,15 @@ from qdesignoptimizer.utils.names_parameters import Mode
 class InterfaceProperties:
     """
     Properties defining the electrical characteristics of an interface between materials.
+
+    Arg:
+        eps_r (float): Relative permittivity (dielectric constant) of the material. [dimensionless]
+        th (float): Thickness of the material layer in millimeters. [mm]
+        tan_delta_surf (float): Surface loss tangent, representing the losses at the interface. [dimensionless]
     """
-    eps_r: float = 11.4 # Relative permittivity (dielectric constant) [dimensionless]
-    th: float = 1e-6 # Thickness [millimeters]
-    tan_delta_surf: float = 1.0 # Surface loss tangent [dimensionless]
+    eps_r: float = 11.4
+    th: float = 1e-6
+    tan_delta_surf: float = 1.0
 
 def default_interface_properties() -> InterfaceProperties:
     """Return a default set of interface properties."""
@@ -25,11 +30,17 @@ def default_interface_properties() -> InterfaceProperties:
 class Interfaces:
     """
     Collection of interface properties for different material boundaries in a stackup.
+
+    Args:
+        substrate_air (InterfaceProperties): Interface between substrate and air.
+        metal_substrate (InterfaceProperties): Interface between metal and substrate.   
+        underside_air (InterfaceProperties): Interface between underside and surface.
+        metal_air (InterfaceProperties): Interface between metal and air.
     """
-    substrate_air: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between substrate and air
-    metal_substrate: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between metal and substrate
-    underside_air: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between underside and surface
-    metal_air: InterfaceProperties = field(default_factory=default_interface_properties) # Interface between metal and air
+    substrate_air: InterfaceProperties = field(default_factory=default_interface_properties)
+    metal_substrate: InterfaceProperties = field(default_factory=default_interface_properties)
+    underside_air: InterfaceProperties = field(default_factory=default_interface_properties)
+    metal_air: InterfaceProperties = field(default_factory=default_interface_properties)
 
     def keys(self) -> Iterator[str]:
         """Iterator that yields interface names like dict.keys()"""
@@ -212,7 +223,8 @@ class MiniStudy:
         capacitance_matrix_studies (List[CapacitanceMatrixStudy]): List of capacitance matrix
             studies to run.
         surface_properties (SurfaceProperties): Surface properties for the design, including
-            interfaces, sheet material, and thickness.     
+            interfaces, sheet material, and thickness. When specified, the MiniStudy does not allow
+            for the definition of a fine mesh or the use of (custom) wire bonds/air bridges.
 
     Example:
         .. code-block:: python
