@@ -10,6 +10,7 @@ from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 from qdesignoptimizer.utils.chip_generation import ChipType
 from qdesignoptimizer.utils.utils import sum_expression
 
+
 # Fixed design constants
 LINE_50_OHM_WIDTH = "16.51um"
 LINE_50_OHM_GAP = "10um"
@@ -20,7 +21,6 @@ RESONATOR_GAP = "20um"
 BEND_RADIUS = "99um"
 
 chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
-
 
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     nbr_idx = group - 1  # zero indexed
@@ -245,7 +245,7 @@ def add_chargeline(design: DesignPlanar, group: int):
 
     options_chargeline = dict(
         fillet="90um",
-        hfss_wire_bonds=False,
+        hfss_wire_bonds=True,
         trace_width=LINE_50_OHM_WIDTH,
         trace_gap=LINE_50_OHM_GAP,
         pin_inputs=pins_top,
@@ -263,7 +263,7 @@ def CoupledLineTee_mesh_names(comp_names):
 
 
 # Function to render the design
-def render_qiskit_metal_design(design, gui, capacitance=False):
+def render_qiskit_metal_design(design, gui, capacitance_or_surface_p_ratio=False):
     add_transmon_plus_resonator(design, group=n.NBR_1)
     add_transmon_plus_resonator(design, group=n.NBR_2)
     add_coupler(design)
@@ -272,7 +272,7 @@ def render_qiskit_metal_design(design, gui, capacitance=False):
     add_chargeline(design, group=n.NBR_1)
     add_chargeline(design, group=n.NBR_2)
 
-    if capacitance == True:
+    if capacitance_or_surface_p_ratio == True:
         for component in design.components.values():
             if "hfss_wire_bonds" in component.options:
                 component.options["hfss_wire_bonds"] = False
