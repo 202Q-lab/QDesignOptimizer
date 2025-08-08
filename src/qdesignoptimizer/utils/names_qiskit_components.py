@@ -33,6 +33,10 @@ def name_tee(identifier: Union[str, int]) -> QiskitComponentName:
     """Create a component name for a tee junction."""
     return f"name_tee{identifier}_"
 
+def name_short(identifier: Union[str, int]) -> QiskitComponentName:
+    """Create a component name for a shorted termination."""
+    return f"name_short{identifier}_"
+
 
 def name_lp(identifier: Union[str, int]) -> QiskitComponentName:
     """Create a component name for a launch pad."""
