@@ -1,12 +1,60 @@
 """Data structures for organizing quantum circuit design optimization workflows."""
 
-from typing import Callable, Dict, List, Literal, Optional, Union
+from typing import Callable, Dict, List, Literal, Optional, Union, Iterator
+from dataclasses import dataclass, fields, field
 
 from qiskit_metal.designs.design_base import QDesign
 
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
 from qdesignoptimizer.utils.names_parameters import Mode
 
+@dataclass
+class InterfaceProperties:
+    """
+    Properties defining the electrical characteristics of an interface between materials.
+
+    Arg:
+        eps_r (float): Relative permittivity (dielectric constant) of the material. [dimensionless]
+        th (float): Thickness of the material layer in millimeters. [mm]
+        tan_delta_surf (float): Surface loss tangent, representing the losses at the interface. [dimensionless]
+    """
+    eps_r: float = 11.4
+    th: float = 1e-6
+    tan_delta_surf: float = 1.0
+
+def default_interface_properties() -> InterfaceProperties:
+    """Return a default set of interface properties."""
+    return InterfaceProperties(eps_r=11.4, th=1e-6, tan_delta_surf=1.0)
+
+@dataclass
+class Interfaces:
+    """
+    Collection of interface properties for different material boundaries in a stackup.
+
+    Args:
+        substrate_air (InterfaceProperties): Interface between substrate and air.
+        metal_substrate (InterfaceProperties): Interface between metal and substrate.   
+        underside_air (InterfaceProperties): Interface between underside and surface.
+        metal_air (InterfaceProperties): Interface between metal and air.
+    """
+    substrate_air: InterfaceProperties = field(default_factory=default_interface_properties)
+    metal_substrate: InterfaceProperties = field(default_factory=default_interface_properties)
+    underside_air: InterfaceProperties = field(default_factory=default_interface_properties)
+    metal_air: InterfaceProperties = field(default_factory=default_interface_properties)
+
+    def keys(self) -> Iterator[str]:
+        """Iterator that yields interface names like dict.keys()"""
+        for field in fields(self):
+            yield field.name
+
+@dataclass
+class SurfaceProperties:
+    """
+    Complete surface characterization including all interfaces and metal sheet properties.
+    """
+    interfaces: Interfaces = field(default_factory=Interfaces) # Collection of all interface properties
+    sheet_material: str = 'Aluminum'   # Conductor material type (must be included in or added to ANSYS HFSS material library)
+    sheet_thickness: float = 0.000150  # Metal sheet thickness [mm]
 
 class MeshingMap:
     """
@@ -174,7 +222,9 @@ class MiniStudy:
             run the capacitance matrix studies.
         capacitance_matrix_studies (List[CapacitanceMatrixStudy]): List of capacitance matrix
             studies to run.
-
+        surface_properties (SurfaceProperties): Surface properties for the design, including
+            interfaces, sheet material, and thickness. When specified, the MiniStudy does not allow
+            for the definition of a fine mesh or the use of (custom) wire bonds/air bridges.
 
     Example:
         .. code-block:: python
@@ -216,6 +266,7 @@ class MiniStudy:
         render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
         run_capacitance_studies_only: bool = False,
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
+        surface_properties: Optional[SurfaceProperties] = None,
     ):
         """Initialize a MiniStudy for electromagnetic simulation configuration."""
         self.qiskit_component_names = qiskit_component_names
@@ -245,6 +296,11 @@ class MiniStudy:
         self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
             capacitance_matrix_studies or []
         )
+        self.surface_properties = surface_properties
+        self.interfaces = surface_properties.interfaces if surface_properties else None
+        self.sheet_thickness = surface_properties.sheet_thickness if surface_properties else 0.000150
+        self.sheet_material = surface_properties.sheet_material if surface_properties else 'Aluminum'
+
 
 
 class DesignAnalysisState:
