@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qdesignoptimizer.design_analysis module &mdash; qdesignoptimizer · 0.0.1</title>
+  <title>qdesignoptimizer.design_analysis module &mdash; qdesignoptimizer · 0.0.2</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -158,7 +158,8 @@ the optimization of superconducting circuit parameters.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_fine_mesh_names">
 <span class="sig-name descname"><span class="pre">get_fine_mesh_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_fine_mesh_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_fine_mesh_names" title="Link to this definition"></a></dt>
-<dd><p>The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name “get_meshing_names”. This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.</p>
+<dd><p>The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name “get_meshing_names”.
+This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -297,6 +298,12 @@ Mismatched orders will cause incorrect parameter mapping.</p>
 <span class="sig-name descname"><span class="pre">screenshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gui</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.screenshot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.screenshot" title="Link to this definition"></a></dt>
 <dd><p>Take and save a screenshot of the current qiskit-metal design.</p>
 <p>Useful for tracking how the geometry is updated during optimization.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_surface_p_ratio">
+<span class="sig-name descname"><span class="pre">get_surface_p_ratio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_surface_p_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_surface_p_ratio" title="Link to this definition"></a></dt>
+<dd><p>Computes the surfaces participation ratio for all given interfaces. And also for every junction.</p>
 </dd></dl>
 
 </dd></dl>

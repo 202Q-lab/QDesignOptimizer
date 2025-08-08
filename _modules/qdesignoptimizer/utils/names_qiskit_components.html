@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qdesignoptimizer.utils.names_qiskit_components &mdash; qdesignoptimizer · 0.0.1</title>
+  <title>qdesignoptimizer.utils.names_qiskit_components &mdash; qdesignoptimizer · 0.0.2</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -101,7 +101,7 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_id">[docs]</a>
 <span class="k">def</span> <span class="nf">name_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name from a generic identifier.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -109,7 +109,7 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_mode">[docs]</a>
 <span class="k">def</span> <span class="nf">name_mode</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Mode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name from a mode identifier.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -117,7 +117,7 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_mode_to_mode">[docs]</a>
 <span class="k">def</span> <span class="nf">name_mode_to_mode</span><span class="p">(</span><span class="n">identifier_1</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span> <span class="n">identifier_2</span><span class="p">:</span> <span class="n">Mode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name representing a connection between two modes.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_</span><span class="si">{</span><span class="n">identifier_1</span><span class="si">}</span><span class="s2">_to_</span><span class="si">{</span><span class="n">identifier_2</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_</span><span class="si">{</span><span class="n">identifier_1</span><span class="si">}</span><span class="s2">_to_</span><span class="si">{</span><span class="n">identifier_2</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -125,7 +125,14 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_tee">[docs]</a>
 <span class="k">def</span> <span class="nf">name_tee</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a tee junction.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_tee</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_tee</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
+
+
+<div class="viewcode-block" id="name_short">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_short">[docs]</a>
+<span class="k">def</span> <span class="nf">name_short</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a shorted termination.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_short</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -133,7 +140,7 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_lp">[docs]</a>
 <span class="k">def</span> <span class="nf">name_lp</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a launch pad.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_lp</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_lp</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -141,7 +148,7 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_charge_line">[docs]</a>
 <span class="k">def</span> <span class="nf">name_charge_line</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a charge line.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_charge_line</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_charge_line</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -149,7 +156,7 @@
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_flux_line">[docs]</a>
 <span class="k">def</span> <span class="nf">name_flux_line</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a flux line.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_flux_line_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_flux_line_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -159,7 +166,7 @@
     <span class="n">lp_identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">tee_identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a connection between a launch pad and tee junction.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_lp</span><span class="si">{</span><span class="n">lp_identifier</span><span class="si">}</span><span class="s2">_to_tee</span><span class="si">{</span><span class="n">tee_identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_lp</span><span class="si">{</span><span class="n">lp_identifier</span><span class="si">}</span><span class="s2">_to_tee</span><span class="si">{</span><span class="n">tee_identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -169,7 +176,7 @@
     <span class="n">tee_identifier1</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">tee_identifier2</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a connection between two tee junctions.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_tee</span><span class="si">{</span><span class="n">tee_identifier1</span><span class="si">}</span><span class="s2">_to_tee</span><span class="si">{</span><span class="n">tee_identifier2</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_tee</span><span class="si">{</span><span class="n">tee_identifier1</span><span class="si">}</span><span class="s2">_to_tee</span><span class="si">{</span><span class="n">tee_identifier2</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 
 
@@ -179,7 +186,7 @@
     <span class="n">lp_identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">chargeline_identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QiskitComponentName</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a component name for a connection between a launch pad and charge line.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_lp</span><span class="si">{</span><span class="n">lp_identifier</span><span class="si">}</span><span class="s2">_to_chargeline</span><span class="si">{</span><span class="n">chargeline_identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;name_lp</span><span class="si">{</span><span class="n">lp_identifier</span><span class="si">}</span><span class="s2">_to_chargeline</span><span class="si">{</span><span class="n">chargeline_identifier</span><span class="si">}</span><span class="s2">_&quot;</span></div>
 
 </pre></div>
 

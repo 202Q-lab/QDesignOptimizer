@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Capacitive simulation of qubit decay in charge line &mdash; qdesignoptimizer · 0.0.1</title>
+  <title>Capacitive simulation of qubit decay in charge line &mdash; qdesignoptimizer · 0.0.2</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -16,7 +16,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -126,13 +126,12 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">chip_initialization</span> <span class="kn">import</span> <span class="n">create_chip_and_gui</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
+<span class="kn">import</span> <span class="nn">design</span> <span class="k">as</span> <span class="nn">d</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.chip_generation</span> <span class="kn">import</span> <span class="n">create_chip_base</span>
 
-<span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_and_gui</span><span class="p">()</span>
-
-<span class="kn">from</span> <span class="nn">design</span> <span class="kn">import</span> <span class="n">render_qiskit_metal_design</span>
-
-<span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+<span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_base</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">CHIP_NAME</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">chip_type</span><span class="p">,</span> <span class="n">open_gui</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -143,8 +142,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
-<span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
 <span class="kn">import</span> <span class="nn">optimization_targets</span> <span class="k">as</span> <span class="nn">ot</span>
 </pre></div>
 </div>
@@ -155,7 +153,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
 <span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_qb_charge_line</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
-<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">render_qiskit_metal_design</span><span class="p">(</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span>
     <span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span>
 

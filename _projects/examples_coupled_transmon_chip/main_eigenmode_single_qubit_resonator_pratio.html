@@ -26,9 +26,7 @@
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Eigenmode simulation of coupled qubits" href="main_eigenmode_two_qubit_resonator.html" />
-    <link rel="prev" title="Examples" href="../../examples.html" /> 
+    <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,30 +49,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizer 101</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../userguide.html">User Guide</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">QDO QuickStart</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../../examples.html">Examples</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Eigenmode simulation of single qubit with readout resonator</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#Rendering-the-design">Rendering the design</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Creating-the-study-and-optimization-targets">Creating the study and optimization targets</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Creating-design-analysis-objects">Creating design analysis objects</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Optimization-step">Optimization step</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Results">Results</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Update-parameters">Update parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Close">Close</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
-<li class="toctree-l3"><a class="reference internal" href="main_charge_line_decay_single_qubit.html">Capacitive simulation of qubit decay in charge line</a></li>
-<li class="toctree-l3"><a class="reference internal" href="main_kappa_target_resonator.html">Resonator Kappa through capacitance matrix simulation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Optimization of readout resonator coupling with capacitance target</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API reference</span></p>
@@ -96,8 +74,6 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../userguide.html">User Guide</a></li>
-          <li class="breadcrumb-item"><a href="../../examples.html">Examples</a></li>
       <li class="breadcrumb-item active">Eigenmode simulation of single qubit with readout resonator</li>
       <li class="wy-breadcrumbs-aside">
       </li>
@@ -142,6 +118,9 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
 <span class="kn">import</span> <span class="nn">optimization_targets</span> <span class="k">as</span> <span class="nn">ot</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SurfaceProperties</span><span class="p">,</span> <span class="n">InterfaceProperties</span><span class="p">,</span> <span class="n">Interfaces</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -149,9 +128,28 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># surface properties</span>
+<span class="n">surface_properties</span> <span class="o">=</span> <span class="n">SurfaceProperties</span><span class="p">(</span>
+    <span class="n">interfaces</span><span class="o">=</span><span class="n">Interfaces</span><span class="p">(</span>
+        <span class="n">substrate_air</span><span class="o">=</span><span class="n">InterfaceProperties</span><span class="p">(</span><span class="n">eps_r</span><span class="o">=</span><span class="mf">11.4</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">tan_delta_surf</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">metal_substrate</span><span class="o">=</span><span class="n">InterfaceProperties</span><span class="p">(</span><span class="n">eps_r</span><span class="o">=</span><span class="mf">11.4</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">tan_delta_surf</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">underside_air</span><span class="o">=</span><span class="n">InterfaceProperties</span><span class="p">(</span><span class="n">eps_r</span><span class="o">=</span><span class="mf">11.4</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">tan_delta_surf</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">metal_air</span><span class="o">=</span><span class="n">InterfaceProperties</span><span class="p">(</span><span class="n">eps_r</span><span class="o">=</span><span class="mf">11.4</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">tan_delta_surf</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">sheet_material</span><span class="o">=</span><span class="s1">&#39;Aluminum&#39;</span><span class="p">,</span>
+    <span class="n">sheet_thickness</span><span class="o">=</span><span class="mf">0.000150</span>  <span class="c1"># unit mm</span>
+<span class="p">)</span>
+<br/><br/><br/></pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
-<span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_qb_res</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
-<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+<span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_qb_res</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">,</span> <span class="n">surface_properties</span><span class="o">=</span><span class="n">surface_properties</span><span class="p">)</span>
+<span class="n">MINI_STUDY</span><span class="o">.</span><span class="n">build_fine_mesh</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="n">capacitance_or_surface_p_ratio</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
 <span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_targets_2qubits_resonator_coupler</span><span class="p">(</span>
@@ -181,7 +179,8 @@
 
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis</span> <span class="kn">import</span> <span class="n">DesignAnalysis</span><span class="p">,</span> <span class="n">DesignAnalysisState</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="n">MeshingMap</span>
-<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_save_path</span><span class="p">,</span> <span class="n">close_ansys</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_save_path</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
 
 <span class="n">close_ansys</span><span class="p">()</span>
 </pre></div>
@@ -221,13 +220,22 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
 <span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">group_passes</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">group_passes</span> <span class="o">=</span> <span class="mi">7</span>
 <span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span><span class="n">group_passes</span><span class="p">)</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_delta_f</span><span class="p">(</span><span class="n">delta_f</span><span class="p">)</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_ratio</span><span class="o">=</span><span class="n">design_analysis</span><span class="o">.</span><span class="n">get_surface_p_ratio</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Surface p-ratio: </span><span class="si">{</span><span class="n">p_ratio</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -284,10 +292,7 @@
 
            </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../../examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="main_eigenmode_two_qubit_resonator.html" class="btn btn-neutral float-right" title="Eigenmode simulation of coupled qubits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
+          <footer>
 
   <hr/>
 

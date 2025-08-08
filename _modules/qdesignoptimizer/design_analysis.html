@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qdesignoptimizer.design_analysis &mdash; qdesignoptimizer · 0.0.1</title>
+  <title>qdesignoptimizer.design_analysis &mdash; qdesignoptimizer · 0.0.2</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -90,10 +90,15 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">pyEPR</span> <span class="k">as</span> <span class="nn">epr</span>
+<span class="kn">from</span> <span class="nn">pyEPR._config_default</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">import</span> <span class="nn">scipy</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span>
 <span class="kn">from</span> <span class="nn">pyaedt</span> <span class="kn">import</span> <span class="n">Hfss</span>
 <span class="kn">from</span> <span class="nn">qiskit_metal.analyses.quantization</span> <span class="kn">import</span> <span class="n">EPRanalysis</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">redirect_stdout</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">asdict</span>
+
 
 <span class="kn">import</span> <span class="nn">qdesignoptimizer</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="p">(</span>
@@ -120,7 +125,6 @@
     <span class="n">param_nonlin</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_value_and_unit</span>
-
 
 <div class="viewcode-block" id="DesignAnalysis">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis">[docs]</a>
@@ -333,7 +337,8 @@
 <div class="viewcode-block" id="DesignAnalysis.get_fine_mesh_names">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_fine_mesh_names">[docs]</a>
     <span class="k">def</span> <span class="nf">get_fine_mesh_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name &quot;get_meshing_names&quot;. This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name &quot;get_meshing_names&quot;. </span>
+<span class="sd">        This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.&quot;&quot;&quot;</span>
         <span class="n">finer_mesh_names</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component</span><span class="p">],</span> <span class="s2">&quot;get_meshing_names&quot;</span><span class="p">):</span>
@@ -358,6 +363,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get names of all endcap ports in the design.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;endcap_</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">port_list</span><span class="p">]</span></div>
 
+    
+    
+
 
 <div class="viewcode-block" id="DesignAnalysis.run_eigenmodes">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.run_eigenmodes">[docs]</a>
@@ -366,7 +374,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update_var</span><span class="p">({},</span> <span class="p">{})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">validate_junction_info</span><span class="p">()</span>
 
-        <span class="n">hfss</span> <span class="o">=</span> <span class="n">Hfss</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span> <span class="o">=</span> <span class="n">Hfss</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">clean_active_design</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">render_qiskit_metal</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">render_qiskit_metal_eigenmode_kw_args</span>
@@ -376,34 +384,45 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;wb_threshold&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">hfss_wire_bond_threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;wb_offset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">hfss_wire_bond_offset</span>
 
+        <span class="c1"># check for no hfss wire bonds in surface participation ratio analysis</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;hfss_wire_bonds&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component</span><span class="p">]</span><span class="o">.</span><span class="n">options</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component</span><span class="p">]</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;hfss_wire_bonds&quot;</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;hfss_wire_bonds in </span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2"> must be set to False for surface participation ratio analysis.&quot;</span>
+
         <span class="c1"># render design in HFSS</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render_design</span><span class="p">(</span>
             <span class="n">selection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">,</span>
             <span class="n">port_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">port_list</span><span class="p">,</span>
             <span class="n">open_pins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">open_pins</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># set custom air bridges</span>
-        <span class="k">for</span> <span class="n">component_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component_name</span><span class="p">],</span> <span class="s2">&quot;get_air_bridge_coordinates&quot;</span>
-            <span class="p">):</span>
-                <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span>
-                    <span class="n">component_name</span>
-                <span class="p">]</span><span class="o">.</span><span class="n">get_air_bridge_coordinates</span><span class="p">():</span>
-                    <span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">create_bondwire</span><span class="p">(</span>
-                        <span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                        <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                        <span class="n">h1</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
-                        <span class="n">h2</span><span class="o">=</span><span class="mf">0.000</span><span class="p">,</span>
-                        <span class="n">alpha</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-                        <span class="n">beta</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
-                        <span class="n">diameter</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
-                        <span class="n">bond_type</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;mybox1&quot;</span><span class="p">,</span>
-                        <span class="n">matname</span><span class="o">=</span><span class="s2">&quot;aluminum&quot;</span><span class="p">,</span>
-                    <span class="p">)</span>
-
+        <span class="p">)</span>        
+                    
+        <span class="c1"># set custom air bridges (only if no interfaces are defined in mini_study)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">component_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">qiskit_component_names</span><span class="p">:</span>                
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">component_name</span><span class="p">],</span> <span class="s2">&quot;get_air_bridge_coordinates&quot;</span>
+                <span class="p">):</span>
+                    <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">components</span><span class="p">[</span>
+                        <span class="n">component_name</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">get_air_bridge_coordinates</span><span class="p">():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">create_bondwire</span><span class="p">(</span>
+                            <span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                            <span class="n">h1</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+                            <span class="n">h2</span><span class="o">=</span><span class="mf">0.000</span><span class="p">,</span>
+                            <span class="n">alpha</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
+                            <span class="n">beta</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
+                            <span class="n">diameter</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+                            <span class="n">bond_type</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;mybox1&quot;</span><span class="p">,</span>
+                            <span class="n">matname</span><span class="o">=</span><span class="s2">&quot;aluminum&quot;</span><span class="p">,</span>
+                        <span class="p">)</span>
+            
+        <span class="c1"># interfaces will be rendered if interfaces are defined in mini_study</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_surface_rendering_for_surface_participation_ratios</span><span class="p">()</span>
+                
         <span class="c1"># set fine mesh</span>
         <span class="n">fine_mesh_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_fine_mesh_names</span><span class="p">()</span>
         <span class="n">restrict_mesh</span> <span class="o">=</span> <span class="p">(</span>
@@ -413,12 +432,17 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">restrict_mesh</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">mesh_length</span><span class="p">(</span>
-                <span class="s2">&quot;fine_mesh&quot;</span><span class="p">,</span>
-                <span class="n">fine_mesh_names</span><span class="p">,</span>
-                <span class="n">MaxLength</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">max_mesh_length_lines_to_ports</span><span class="p">,</span>
-                <span class="n">RefineInside</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Interfaces must be empty when using fine mesh. &quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">mesh_length</span><span class="p">(</span>
+                    <span class="s2">&quot;fine_mesh&quot;</span><span class="p">,</span>
+                    <span class="n">fine_mesh_names</span><span class="p">,</span>
+                    <span class="n">MaxLength</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">max_mesh_length_lines_to_ports</span><span class="p">,</span>
+                    <span class="n">RefineInside</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>        
 
         <span class="c1"># run eigenmode analysis</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>
@@ -456,28 +480,22 @@
         <span class="k">if</span> <span class="n">junction_found</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="n">jj_setups_to_include_in_epr</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">no_junctions</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">DistributedAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">no_junctions</span><span class="p">:</span>               
+                <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">DistributedAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">get_stored_energy</span><span class="p">(</span><span class="n">no_junctions</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">do_EPR_analysis</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">epra</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">QuantumAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">data_filename</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">analyze_all_variations</span><span class="p">(</span>
+                    <span class="n">cos_trunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">cos_trunc</span><span class="p">,</span>
+                    <span class="n">fock_trunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">fock_trunc</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">plot_hamiltonian_results</span><span class="p">()</span>
+                <span class="n">freqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_frequencies</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">chis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_chis</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_optimized_params_epr</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">chis</span><span class="p">)</span> 
 
-                    <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">get_stored_energy</span><span class="p">(</span><span class="n">no_junctions</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">do_EPR_analysis</span><span class="p">()</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">epra</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">QuantumAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">data_filename</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">analyze_all_variations</span><span class="p">(</span>
-                        <span class="n">cos_trunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">cos_trunc</span><span class="p">,</span>
-                        <span class="n">fock_trunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">fock_trunc</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">plot_hamiltonian_results</span><span class="p">()</span>
-                    <span class="n">freqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_frequencies</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="n">chis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_chis</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_update_optimized_params_epr</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">chis</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                        <span class="s2">&quot;Please install a more recent version of pyEPR (&gt;=0.8.5.3)&quot;</span>
-                    <span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span>                       
 
             <span class="k">return</span> <span class="n">chis</span>
         <span class="n">add_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
@@ -486,6 +504,62 @@
         <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No junctions found, skipping EPR analysis.</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">add_msg</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
+    
+    <span class="k">def</span> <span class="nf">_surface_rendering_for_surface_participation_ratios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Render surfaces for surface participation ratio analysis.</span>
+<span class="sd">        This function creates groups for different surfaces based on the interfaces defined in the mini_study.</span>
+<span class="sd">        It handles the creation of groups for substrate-air, metal-substrate, metal-air, and underside surfaces.</span>
+<span class="sd">        It also assigns materials to the metal-air group based on the sheet material defined in the mini_study.</span>
+<span class="sd">        It also assigns interface properties using InterfaceProperties dataclass to pinfo for the Qanalysis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">metal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">get_objects_in_group</span><span class="p">(</span><span class="s2">&quot;Perfect E&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">ungroup</span><span class="p">([</span><span class="s1">&#39;substrate_air&#39;</span><span class="p">,</span><span class="s1">&#39;metal_substrate&#39;</span><span class="p">,</span><span class="s1">&#39;underside_air&#39;</span><span class="p">,</span><span class="s1">&#39;metal_air&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Filter out JJ_rect_Lj objects once</span>
+        <span class="n">filtered_metal</span> <span class="o">=</span> <span class="p">[</span><span class="n">obj</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">metal</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;JJ_rect_Lj&#39;</span><span class="p">)]</span>
+
+        <span class="c1"># substrate-air</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">section</span><span class="p">(</span><span class="s1">&#39;main&#39;</span><span class="p">,</span><span class="s1">&#39;XY&#39;</span><span class="p">)</span>
+        <span class="n">cloned_polygon_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">filtered_metal</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="n">cloned_polygon_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="o">+</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="s1">&#39;main_Section1&#39;</span><span class="p">,</span><span class="n">cloned_polygon_names</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="s1">&#39;main_Section1&#39;</span><span class="p">,</span><span class="n">filtered_metal</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;main_Section1&#39;</span><span class="p">,</span><span class="n">group_name</span><span class="o">=</span><span class="s1">&#39;substrate_air&#39;</span><span class="p">)</span>
+
+        <span class="c1"># metal-substrate</span>
+        <span class="n">cloned_polygon_name</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">filtered_metal</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="n">cloned_polygon_name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="o">+</span><span class="s1">&#39;2&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">unite</span><span class="p">(</span><span class="n">cloned_polygon_name</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">cloned_polygon_name</span><span class="p">,</span><span class="n">group_name</span><span class="o">=</span><span class="s1">&#39;metal_substrate&#39;</span><span class="p">)</span>
+
+        <span class="c1"># metal-air</span>
+        <span class="n">cloned_polygon_name</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">filtered_metal</span><span class="p">:</span>
+            <span class="n">cloned_polygon_name</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">metal_air</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">unite</span><span class="p">(</span><span class="n">cloned_polygon_name</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">metal_air</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">thicken_sheet</span><span class="p">(</span><span class="n">metal_air</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="o">.</span><span class="n">sheet_thickness</span><span class="p">,</span><span class="n">bBothSides</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">metal_air</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">metal_air</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="o">.</span><span class="n">sheet_thickness</span><span class="o">/</span><span class="mi">2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">cloned_polygon_name</span><span class="p">,</span><span class="n">group_name</span><span class="o">=</span><span class="s1">&#39;metal_air&#39;</span><span class="p">)</span>
+        <span class="n">objects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">get_objects_in_group</span><span class="p">(</span><span class="s1">&#39;metal_air&#39;</span><span class="p">)</span>
+        <span class="n">metal_air</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">assign_material</span><span class="p">(</span><span class="n">objects</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="o">.</span><span class="n">sheet_material</span><span class="p">)</span>
+
+        <span class="c1"># underside surface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">section</span><span class="p">(</span><span class="s1">&#39;main&#39;</span><span class="p">,</span><span class="s1">&#39;XY&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="s1">&#39;main_Section2&#39;</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">_chips</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;size&#39;</span><span class="p">][</span><span class="s1">&#39;size_z&#39;</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">create_group</span><span class="p">([</span><span class="s1">&#39;main_Section2&#39;</span><span class="p">],</span> <span class="n">group_name</span> <span class="o">=</span> <span class="s1">&#39;underside_air&#39;</span><span class="p">)</span>
+            
+        <span class="c1"># Assign interface properties using InterfaceProperties dataclass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="o">.</span><span class="n">interfaces</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">dissipative</span><span class="p">[</span><span class="s1">&#39;dielectric_surfaces&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">interface_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">interface_props</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="o">.</span><span class="n">interfaces</span><span class="p">,</span> <span class="n">interface_name</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">obj_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">get_objects_in_group</span><span class="p">(</span><span class="n">interface_name</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">dissipative</span><span class="p">[</span><span class="s1">&#39;dielectric_surfaces&#39;</span><span class="p">][</span><span class="n">obj_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span><span class="n">interface_props</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DesignAnalysis.get_simulated_modes_sorted">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_simulated_modes_sorted">[docs]</a>
@@ -868,6 +942,12 @@
 
             <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;cross_kerrs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cross_kerrs</span><span class="p">)</span>
 
+            <span class="c1"># Surface participation ratio</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">surface_p_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_surface_p_ratio</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">surface_p_ratio</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">iteration_result</span><span class="p">[</span><span class="s2">&quot;capacitance_matrix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">capacitance_study</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">capacitance_matrix_studies</span><span class="p">:</span>
@@ -1010,6 +1090,62 @@
         <span class="n">gui</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">run</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span>
         <span class="n">gui</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_dielectric_p_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get dielectric participation ratio taking into account the dielectric loss tangent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">p_dielectric</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">n_modes</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span> <span class="k">as</span> <span class="n">buf</span><span class="p">,</span> <span class="n">redirect_stdout</span><span class="p">(</span><span class="n">buf</span><span class="p">):</span>
+                <span class="n">q_dielectric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">get_Qdielectric</span><span class="p">(</span><span class="n">dielectric</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span>
+                                        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                                        <span class="n">variation</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">p_dielectric</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">q_dielectric</span><span class="o">*</span><span class="n">config</span><span class="o">.</span><span class="n">dissipation</span><span class="o">.</span><span class="n">tan_delta_sapp</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">p_dielectric</span>
+    
+    <span class="k">def</span> <span class="nf">_get_surface_p_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">variation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get surface participation ratio.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span> <span class="k">as</span> <span class="n">buf</span><span class="p">,</span> <span class="n">redirect_stdout</span><span class="p">(</span><span class="n">buf</span><span class="p">):</span>
+            <span class="n">psurf</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">get_Qsurface</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                                            <span class="n">variation</span><span class="o">=</span><span class="n">variation</span><span class="p">,</span>
+                                            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="c1"># we set tand = 1 in the design file </span>
+        <span class="k">return</span> <span class="n">psurf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Return the second element which is the participation ratio value</span>
+
+<div class="viewcode-block" id="DesignAnalysis.get_surface_p_ratio">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_surface_p_ratio">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_surface_p_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the surfaces participation ratio for all given interfaces. And also for every junction.&quot;&quot;&quot;</span>
+        <span class="n">p_ratio_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># Initialize the structure for interfaces</span>
+        <span class="k">for</span> <span class="n">interface_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">surface_properties</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">p_ratio_dict</span><span class="p">[</span><span class="n">interface_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">n_modes</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+                <span class="n">p_ratio_dict</span><span class="p">[</span><span class="n">interface_name</span><span class="p">][</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_surface_p_ratio</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hfss</span><span class="o">.</span><span class="n">modeler</span><span class="o">.</span><span class="n">get_objects_in_group</span><span class="p">(</span><span class="n">interface_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="n">mode</span>
+                <span class="p">)</span>
+        
+        <span class="c1"># Handle junction data</span>
+        <span class="c1"># can only handle a single junction type for now</span>
+        <span class="n">p_ratio_dict</span><span class="p">[</span><span class="s1">&#39;Junction(inductive energy)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">n_modes</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+            <span class="n">j_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">calc_p_junction_single</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">variation</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">j_ratio</span><span class="p">:</span>
+                <span class="n">p_ratio</span> <span class="o">=</span> <span class="n">j_ratio</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">p_ratio_dict</span><span class="p">[</span><span class="s1">&#39;Junction(inductive energy)&#39;</span><span class="p">][</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_ratio</span>
+        
+        <span class="c1"># Handle dielectric data</span>
+        <span class="n">p_ratio_dict</span><span class="p">[</span><span class="s1">&#39;dielectric&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dielectric_p_ratio</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">p_ratio_dict</span></div>
 </div>
 
 </pre></div>

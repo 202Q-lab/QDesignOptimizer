@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation &mdash; qdesignoptimizer · 0.0.1</title>
+  <title>Installation &mdash; qdesignoptimizer · 0.0.2</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/documentation_options.js?v=e3a6060d"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -53,8 +53,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-with-pip">Installation with pip</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-from-github-repository">Installation from GitHub Repository</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#clone-the-repository">Clone the Repository</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#create-a-virtual-environment">Create a Virtual Environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cloning-the-repository">Cloning the Repository</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-virtual-environment">Creating a Virtual Environment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#user-installation">User Installation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#developer-installation">Developer Installation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#building-documentation">Building Documentation</a></li>
@@ -102,7 +102,7 @@
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Python 3.10 (required)</p></li>
-<li><p>pip or poetry package manager</p></li>
+<li><p>pip or poetry package manager. We recommend creating a virtual environment by following the steps below.</p></li>
 <li><p>Git (for installation from repository)</p></li>
 <li><p>Ansys HFSS. <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> has been tested with Ansys Electronics Desktop 2021 R2.</p></li>
 </ul>
@@ -118,17 +118,17 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 </section>
 <section id="installation-from-github-repository">
 <h2>Installation from GitHub Repository<a class="headerlink" href="#installation-from-github-repository" title="Link to this heading"></a></h2>
-<p>For the latest version or if you want to contribute to development, you can install directly from the GitHub repository.</p>
-<section id="clone-the-repository">
-<h3>Clone the Repository<a class="headerlink" href="#clone-the-repository" title="Link to this heading"></a></h3>
+<p>For the latest version or if you want to contribute to development, you can directly clone and install from the GitHub repository.</p>
+<section id="cloning-the-repository">
+<h3>Cloning the Repository<a class="headerlink" href="#cloning-the-repository" title="Link to this heading"></a></h3>
 <p>First, clone the repository and navigate to its directory:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/202Q-lab/QDesignOptimizer
 <span class="nb">cd</span><span class="w"> </span>QDesignOptimizer
 </pre></div>
 </div>
 </section>
-<section id="create-a-virtual-environment">
-<h3>Create a Virtual Environment<a class="headerlink" href="#create-a-virtual-environment" title="Link to this heading"></a></h3>
+<section id="creating-a-virtual-environment">
+<h3>Creating a Virtual Environment<a class="headerlink" href="#creating-a-virtual-environment" title="Link to this heading"></a></h3>
 <p>It is strongly recommended to install the project in a separate virtual environment using Python 3.10. You have several options:</p>
 <p><strong>Option 1: Using Poetry (Recommended)</strong></p>
 <p>This project is packaged with <a class="reference external" href="https://python-poetry.org/">poetry</a>, which handles the environment setup for you.</p>
@@ -138,6 +138,7 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 conda<span class="w"> </span>activate<span class="w"> </span>qdesignenv
 </pre></div>
 </div>
+<p>Note that the C++ developer tools from the latest distribution of Visual Studio Installer are required for the successful installation of pyside2, which is part of the the environment.yml file. You can download the software from <a class="reference external" href="https://visualstudio.microsoft.com/downloads/">microsoft</a>.</p>
 <p><strong>Option 3: Using venv</strong></p>
 <p>Create and activate a virtual environment using Python’s built-in venv module:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create new virtual environment</span>
@@ -185,7 +186,7 @@ pre-commit<span class="w"> </span>install
 <h3>Building Documentation<a class="headerlink" href="#building-documentation" title="Link to this heading"></a></h3>
 <p>To build the documentation yourself:</p>
 <ol class="arabic simple">
-<li><p>Install <a class="reference external" href="https://pandoc.org/">pandoc</a> (you may need to restart your computer to set path variables correctly)</p></li>
+<li><p>Install <a class="reference external" href="https://pandoc.org/">pandoc</a> (you may need to restart your computer to correctly set the path variables).</p></li>
 <li><p>Run the following command:</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>run<span class="w"> </span>sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/source<span class="w"> </span>docs/_build/html
