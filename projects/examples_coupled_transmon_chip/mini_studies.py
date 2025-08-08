@@ -35,7 +35,7 @@ def get_mini_study_qb_res(group: int, surface_properties:  Optional[SurfacePrope
         jj_setup={**junction_setup(qubit)},
         design_name="get_mini_study_qb_res",
         adjustment_rate=1,
-        build_fine_mesh=False,
+        build_fine_mesh=True,
         **CONVERGENCE,
         surface_properties=surface_properties,
     )
