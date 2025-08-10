@@ -123,6 +123,7 @@
     <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">design_var_qubit_lj</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_lj</span><span class="p">,</span>
     <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+    <span class="n">design_var_constraint</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create an optimization target for qubit frequency via Josephson inductance.</span>
@@ -138,18 +139,20 @@
 <span class="sd">            variable name for qubit Josephson inductance. Defaults to n.design_var_lj.</span>
 <span class="sd">        design_var_qubit_width (Callable, optional): Function to generate the design</span>
 <span class="sd">            variable name for qubit width. Defaults to n.design_var_width.</span>
+<span class="sd">        design_var_constraint (dict | None, optional): Constraints for the design variable.</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - The target uses the relationship f ∝ 1/√(L·C), where C scales with width.</span>
-<span class="sd">        - Valid inductance range is constrained between 0.1nH and 400nH.</span>
 <span class="sd">        - This is marked as a dependent target since frequency depends on multiple</span>
 <span class="sd">          design variables and physical parameters.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">design_var_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">design_var_constraint</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;0.1nH&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;400nH&quot;</span><span class="p">}</span>    
     <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
         <span class="n">target_param_type</span><span class="o">=</span><span class="n">FREQ</span><span class="p">,</span>
         <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">],</span>
         <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_qubit_lj</span><span class="p">(</span><span class="n">qubit</span><span class="p">),</span>
-        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;0.1nH&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;400nH&quot;</span><span class="p">},</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint</span><span class="p">,</span>
         <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="mi">1</span>
         <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_lj</span><span class="p">(</span><span class="n">qubit</span><span class="p">)]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">)]),</span>
         <span class="n">independent_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -162,6 +165,7 @@
 <span class="k">def</span> <span class="nf">get_opt_target_qubit_anharmonicity_via_capacitance_width</span><span class="p">(</span>
     <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+    <span class="n">design_var_constraint</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create an optimization target for qubit anharmonicity via capacitive pad width.</span>
@@ -175,18 +179,20 @@
 <span class="sd">        qubit (Mode): The qubit mode identifier.</span>
 <span class="sd">        design_var_qubit_width (Callable, optional): Function to generate the design</span>
 <span class="sd">            variable name for qubit width. Defaults to n.design_var_width.</span>
+<span class="sd">        design_var_constraint (dict | None, optional): Constraints for the design variable.</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - The target uses the relationship α ∝ 1/C, where C scales with width.</span>
-<span class="sd">        - Valid width range is constrained between 5µm and 1000µm.</span>
 <span class="sd">        - This is marked as an independent target since anharmonicity depends</span>
 <span class="sd">          only on the capacitance width.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">design_var_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">design_var_constraint</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
         <span class="n">target_param_type</span><span class="o">=</span><span class="n">NONLIN</span><span class="p">,</span>
         <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">,</span> <span class="n">qubit</span><span class="p">],</span>
         <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">),</span>
-        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">},</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint</span><span class="p">,</span>
         <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">)],</span>
         <span class="n">independent_target</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -198,6 +204,7 @@
 <span class="k">def</span> <span class="nf">get_opt_target_res_freq_via_length</span><span class="p">(</span>
     <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">design_var_res_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_length</span><span class="p">,</span>
+    <span class="n">design_var_constraint</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create an optimization target for resonator frequency via length.</span>
@@ -210,18 +217,20 @@
 <span class="sd">        resonator (Mode): The resonator mode identifier.</span>
 <span class="sd">        design_var_res_length (Callable, optional): Function to generate the design</span>
 <span class="sd">            variable name for resonator length. Defaults to n.design_var_length.</span>
+<span class="sd">        design_var_constraint (dict | None, optional): Constraints for the design variable.</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - The target uses the relationship f ∝ 1/L, where L is the resonator length.</span>
-<span class="sd">        - Valid length range is constrained between 500µm and 15000µm.</span>
 <span class="sd">        - This is marked as an independent target since frequency depends only on</span>
 <span class="sd">          the resonator&#39;s length.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">design_var_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">design_var_constraint</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;15000um&quot;</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
         <span class="n">target_param_type</span><span class="o">=</span><span class="n">FREQ</span><span class="p">,</span>
         <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">resonator</span><span class="p">],</span>
         <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">),</span>
-        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;500um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;15000um&quot;</span><span class="p">},</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint</span><span class="p">,</span>
         <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_res_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">)],</span>
         <span class="n">independent_target</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -234,6 +243,7 @@
     <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">resonator_coupled_identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">design_var_res_coupl_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
+    <span class="n">design_var_constraint</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create an optimization target for resonator linewidth via coupling length.</span>
@@ -249,18 +259,20 @@
 <span class="sd">            resonator is coupled (e.g., a feedline or transmission line).</span>
 <span class="sd">        design_var_res_coupl_length (Callable, optional): Function to generate the design</span>
 <span class="sd">            variable name for coupling length. Defaults to n.design_var_coupl_length.</span>
+<span class="sd">        design_var_constraint (dict | None, optional): Constraints for the design variable.</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - The target uses the relationship κ ∝ L², where L is the coupling length.</span>
-<span class="sd">        - Valid coupling length range is constrained between 20µm and 1000µm.</span>
 <span class="sd">        - This is marked as an independent target since kappa depends only on</span>
 <span class="sd">          the coupling length.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">design_var_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">design_var_constraint</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;20um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
         <span class="n">target_param_type</span><span class="o">=</span><span class="n">KAPPA</span><span class="p">,</span>
         <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">resonator</span><span class="p">],</span>
         <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">resonator_coupled_identifier</span><span class="p">),</span>
-        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;20um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">},</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint</span><span class="p">,</span>
         <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span>
             <span class="n">design_var_res_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">resonator_coupled_identifier</span><span class="p">)</span>
         <span class="p">]</span>
@@ -277,6 +289,7 @@
     <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">design_var_res_qb_coupl_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
     <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+    <span class="n">design_var_constraint</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create an optimization target for qubit-resonator dispersive shift.</span>
@@ -293,6 +306,7 @@
 <span class="sd">            variable name for qubit-resonator coupling length. Defaults to n.design_var_coupl_length.</span>
 <span class="sd">        design_var_qubit_width (Callable, optional): Function to generate the design</span>
 <span class="sd">            variable name for qubit width. Defaults to n.design_var_width.</span>
+<span class="sd">        design_var_constraint (dict | None, optional): Constraints for the design variable.</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - The target uses the relationship χ ∝ g²α/(Δ·(Δ-α)), where:</span>
@@ -300,15 +314,16 @@
 <span class="sd">          - g is the coupling strength (proportional to coupling length / qubit width)</span>
 <span class="sd">          - α is the qubit anharmonicity</span>
 <span class="sd">          - Δ is the detuning between qubit and resonator frequencies</span>
-<span class="sd">        - Valid coupling length range is constrained between 5µm and 1000µm.</span>
 <span class="sd">        - This is marked as a dependent target since chi depends on multiple</span>
 <span class="sd">          design variables and physical parameters.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">design_var_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">design_var_constraint</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
         <span class="n">target_param_type</span><span class="o">=</span><span class="n">NONLIN</span><span class="p">,</span>
         <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">,</span> <span class="n">resonator</span><span class="p">],</span>
         <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">),</span>
-        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">},</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint</span><span class="p">,</span>
         <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
             <span class="n">v</span><span class="p">[</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)]</span>
             <span class="o">/</span> <span class="n">v</span><span class="p">[</span><span class="n">design_var_qubit_width</span><span class="p">(</span><span class="n">qubit</span><span class="p">)]</span>
@@ -330,7 +345,7 @@
     <span class="n">qubit</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">resonator</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
     <span class="n">design_var_res_qb_coupl_length</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
-    <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
+    <span class="n">design_var_constraint</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptTarget</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a simplified optimization target for qubit-resonator dispersive shift.</span>
@@ -349,21 +364,23 @@
 <span class="sd">        design_var_qubit_width (Callable, optional): Function to generate the design</span>
 <span class="sd">            variable name for qubit width. Not used in this simplified model, but</span>
 <span class="sd">            included for API compatibility.</span>
+<span class="sd">        design_var_constraint (dict | None, optional): Constraints for the design variable.</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        - This simplified model uses the relationship χ ∝ coupling_length, making</span>
 <span class="sd">          the dispersive shift directly proportional to the coupling length.</span>
-<span class="sd">        - Valid coupling length range is constrained between 5µm and 1000µm.</span>
 <span class="sd">        - This is marked as a dependent target to maintain consistency with the</span>
 <span class="sd">          full model, although it has a simpler relationship.</span>
 <span class="sd">        - Use this simplified model when a coarse approximation is sufficient or</span>
 <span class="sd">          when the full parameter dependencies are not critical.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">design_var_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">design_var_constraint</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">OptTarget</span><span class="p">(</span>
         <span class="n">target_param_type</span><span class="o">=</span><span class="n">NONLIN</span><span class="p">,</span>
         <span class="n">involved_modes</span><span class="o">=</span><span class="p">[</span><span class="n">qubit</span><span class="p">,</span> <span class="n">resonator</span><span class="p">],</span>
         <span class="n">design_var</span><span class="o">=</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">),</span>
-        <span class="n">design_var_constraint</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;larger_than&quot;</span><span class="p">:</span> <span class="s2">&quot;5um&quot;</span><span class="p">,</span> <span class="s2">&quot;smaller_than&quot;</span><span class="p">:</span> <span class="s2">&quot;1000um&quot;</span><span class="p">},</span>
+        <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint</span><span class="p">,</span>
         <span class="n">prop_to</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
             <span class="n">v</span><span class="p">[</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">(</span><span class="n">resonator</span><span class="p">,</span> <span class="n">qubit</span><span class="p">)]</span>
         <span class="p">),</span>
@@ -388,6 +405,12 @@
     <span class="n">design_var_qubit_width</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_width</span><span class="p">,</span>
     <span class="n">design_var_res_length</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_length</span><span class="p">,</span>
     <span class="n">design_var_res_coupl_length</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
+    <span class="n">design_var_res_qb_coupl_length</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">design_var_coupl_length</span><span class="p">,</span>
+    <span class="n">design_var_constraint_qubit_lj</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">design_var_constraint_qubit_width</span><span class="p">:</span>  <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">design_var_constraint_res_length</span><span class="p">:</span>  <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">design_var_constraint_res_coupl_length</span><span class="p">:</span>  <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">design_var_constraint_res_qb_coupl_length</span><span class="p">:</span>  <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a comprehensive set of optimization targets for a qubit-resonator system.</span>
@@ -419,6 +442,18 @@
 <span class="sd">            variable name for resonator length. Defaults to n.design_var_length.</span>
 <span class="sd">        design_var_res_coupl_length (Callable, optional): Function to generate the design</span>
 <span class="sd">            variable name for coupling length. Defaults to n.design_var_coupl_length.</span>
+<span class="sd">        design_var_res_qb_coupl_length (Callable, optional): Function to generate the design</span>
+<span class="sd">            variable name for qubit-resonator coupling length. Defaults to n.design_var_coupl_length.</span>
+<span class="sd">        design_var_constraint_qubit_lj (dict | None, optional): Constraints for the qubit</span>
+<span class="sd">            Josephson inductance design variable. Defaults to None.</span>
+<span class="sd">        design_var_constraint_qubit_width (dict | None, optional): Constraints for the qubit</span>
+<span class="sd">            width design variable. Defaults to None.</span>
+<span class="sd">        design_var_constraint_res_length (dict | None, optional): Constraints for the resonator</span>
+<span class="sd">            length design variable. Defaults to None.</span>
+<span class="sd">        design_var_constraint_res_coupl_length (dict | None, optional): Constraints for the resonator</span>
+<span class="sd">            coupling length design variable. Defaults to None.</span>
+<span class="sd">        design_var_constraint_res_qb_coupl_length (dict | None, optional): Constraints for the qubit-resonator</span>
+<span class="sd">            coupling length design variable. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        List[OptTarget]: A list of optimization targets for the qubit-resonator system.</span>
@@ -445,12 +480,14 @@
                 <span class="n">qubit</span><span class="p">,</span>
                 <span class="n">design_var_qubit_lj</span><span class="o">=</span><span class="n">design_var_qubit_lj</span><span class="p">,</span>
                 <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint_qubit_lj</span>
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">opt_target_qubit_anharm</span><span class="p">:</span>
         <span class="n">opt_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">get_opt_target_qubit_anharmonicity_via_capacitance_width</span><span class="p">(</span>
-                <span class="n">qubit</span><span class="p">,</span> <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span>
+                <span class="n">qubit</span><span class="p">,</span> <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint_qubit_width</span>
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">opt_target_resonator_freq</span><span class="p">:</span>
@@ -458,6 +495,7 @@
             <span class="n">get_opt_target_res_freq_via_length</span><span class="p">(</span>
                 <span class="n">resonator</span><span class="p">,</span>
                 <span class="n">design_var_res_length</span><span class="o">=</span><span class="n">design_var_res_length</span><span class="p">,</span>
+                <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint_res_length</span>
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">opt_target_resonator_kappa</span><span class="p">:</span>
@@ -466,6 +504,7 @@
                 <span class="n">resonator</span><span class="p">,</span>
                 <span class="n">resonator_coupled_identifier</span><span class="p">,</span>
                 <span class="n">design_var_res_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
+                <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint_res_coupl_length</span>
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">opt_target_resonator_qubit_chi</span><span class="p">:</span>
@@ -474,8 +513,8 @@
                 <span class="n">get_opt_target_res_qub_chi_via_coupl_length_simple</span><span class="p">(</span>
                     <span class="n">qubit</span><span class="p">,</span>
                     <span class="n">resonator</span><span class="p">,</span>
-                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
-                    <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">,</span>
+                    <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint_res_qb_coupl_length</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -483,8 +522,9 @@
                 <span class="n">get_opt_target_res_qub_chi_via_coupl_length</span><span class="p">(</span>
                     <span class="n">qubit</span><span class="p">,</span>
                     <span class="n">resonator</span><span class="p">,</span>
-                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_coupl_length</span><span class="p">,</span>
+                    <span class="n">design_var_res_qb_coupl_length</span><span class="o">=</span><span class="n">design_var_res_qb_coupl_length</span><span class="p">,</span>
                     <span class="n">design_var_qubit_width</span><span class="o">=</span><span class="n">design_var_qubit_width</span><span class="p">,</span>
+                    <span class="n">design_var_constraint</span><span class="o">=</span><span class="n">design_var_constraint_res_qb_coupl_length</span>
                 <span class="p">)</span>
             <span class="p">)</span>
     <span class="k">return</span> <span class="n">opt_targets</span></div>
