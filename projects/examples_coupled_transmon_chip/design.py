@@ -7,7 +7,9 @@ from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 
-from qdesignoptimizer.utils.utils import get_value_and_unit
+from qdesignoptimizer.utils.chip_generation import ChipType
+from qdesignoptimizer.utils.utils import sum_expression
+
 
 # Fixed design constants
 LINE_50_OHM_WIDTH = "16.51um"
@@ -18,6 +20,7 @@ RESONATOR_GAP = "20um"
 
 BEND_RADIUS = "99um"
 
+chip_type = ChipType(size_x="10mm", size_y="10mm", size_z="-300um", material="silicon")
 
 def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     nbr_idx = group - 1  # zero indexed
@@ -213,17 +216,15 @@ def add_chargeline(design: DesignPlanar, group: int):
     )
     launch_options["pos_y"] = ["-2mm", "2mm"][nbr_idx]
     LaunchpadWirebond(design, n.name_lp(lp_nbr), options=launch_options)
+    x_cl_offset = ["-2350um", "-2350um"][nbr_idx]
+    x_cl_absolute = sum_expression(
+        [design.variables[n.design_var_cl_pos_x(qubit)], x_cl_offset]
+    )  # transmon position + pocket width/2
 
-    x_cl_absolute = (
-        str(design.parse_value(n.design_var_cl_pos_x(qubit)) * 1000)
-        + "um"
-        + ["-2350um", "-2350um"][nbr_idx]  # transmon position + pocket width/2
-    )
-    y_cl_absolute = (
-        str(design.parse_value(n.design_var_cl_pos_y(qubit)) * 1000)
-        + "um"
-        + ["-1500um", "+1500um"][nbr_idx]
-    )
+    y_cl_offset = ["-1500um", "+1500um"][nbr_idx]
+    y_cl_absolute = sum_expression(
+        [design.variables[n.design_var_cl_pos_y(qubit)], y_cl_offset]
+    )  # transmon position + pocket height/2
 
     otg_options = dict(
         pos_x=x_cl_absolute,
@@ -243,7 +244,7 @@ def add_chargeline(design: DesignPlanar, group: int):
 
     options_chargeline = dict(
         fillet="90um",
-        hfss_wire_bonds=False,
+        hfss_wire_bonds=True,
         trace_width=LINE_50_OHM_WIDTH,
         trace_gap=LINE_50_OHM_GAP,
         pin_inputs=pins_top,
@@ -261,18 +262,19 @@ def CoupledLineTee_mesh_names(comp_names):
 
 
 # Function to render the design
-def render_qiskit_metal_design(design, gui):
+def render_qiskit_metal_design(design, gui, capacitance_or_surface_p_ratio=False):
     add_transmon_plus_resonator(design, group=n.NBR_1)
-    # add_transmon_plus_resonator(design, group=n.NBR_2)
+    add_transmon_plus_resonator(design, group=n.NBR_2)
+    add_coupler(design)
+    add_route_interconnects(design)
+    add_launch_pads(design)
+    add_chargeline(design, group=n.NBR_1)
+    add_chargeline(design, group=n.NBR_2)
 
-    # add_coupler(design)
-
-    # add_route_interconnects(design)
-
-    # add_launch_pads(design)
-
-    # add_chargeline(design, group=n.NBR_1)
-    # add_chargeline(design, group=n.NBR_2)
+    if capacitance_or_surface_p_ratio == True:
+        for component in design.components.values():
+            if "hfss_wire_bonds" in component.options:
+                component.options["hfss_wire_bonds"] = False
 
     gui.rebuild()
     gui.autoscale()

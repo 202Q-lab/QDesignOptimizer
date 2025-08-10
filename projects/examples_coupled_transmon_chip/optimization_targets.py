@@ -71,6 +71,8 @@ def get_opt_targets_2qubits_resonator_coupler(
                 opt_target_resonator_kappa=opt_target_resonator_kappa,
                 opt_target_resonator_qubit_chi=opt_target_resonator_qubit_chi,
                 use_simple_resonator_qubit_chi_relation=use_simple_resonator_qubit_chi_relation,
+                design_var_constraint_qubit_width= {"larger_than": "1um", "smaller_than": "900um"},   
+                design_var_constraint_res_coupl_length={"larger_than": "1um", "smaller_than": "1500um"},             
             )
         )
 
@@ -86,7 +88,7 @@ def get_opt_target_qubit_T1_limit_via_charge_posx(
         involved_modes=[qubit],
         design_var=n.design_var_cl_pos_x(qubit),
         design_var_constraint={"larger_than": "-1000um", "smaller_than": "-5um"},
-        prop_to=lambda p, v: (v[n.design_var_cl_pos_x(qubit)]) ** 2,
+        prop_to=lambda p, v: -v[n.design_var_cl_pos_x(qubit)] ** 3,
         independent_target=True,
     )
 

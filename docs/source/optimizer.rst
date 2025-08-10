@@ -111,7 +111,7 @@ The number of independent design variables :math:`N` must match the number of pa
 Factorization of Update Step
 ----------------------------
 
-| The nonlinear minimization step is simplified by exploiting the independence of some design variables in the physical relations. Involving this factorization, we can decompose the original N-dimensional optimization problem into a sequence of lower-dimensional subproblems, which significantly reduces the computational complexity and can be solved faster.
+| The nonlinear minimization step can be simplified by exploiting the independence of some of the design variables used in the physical relations. Involving this factorization, we can decompose the original N-dimensional optimization problem into a sequence of lower-dimensional subproblems, which significantly reduces the computational complexity and can be solved faster.
 | Specifically in the example discussed in :ref:`qickstart` we observe that:
 
 - The resonance frequency of the resonator :math:`f_{res}` depends solely on the resonator length :math:`l_{res}`

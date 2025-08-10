@@ -38,6 +38,7 @@ def get_opt_target_qubit_freq_via_lj(
     qubit: Mode,
     design_var_qubit_lj: Callable = n.design_var_lj,
     design_var_qubit_width: Callable = n.design_var_width,
+    design_var_constraint: dict | None = None,
 ) -> OptTarget:
     """
     Create an optimization target for qubit frequency via Josephson inductance.
@@ -53,18 +54,20 @@ def get_opt_target_qubit_freq_via_lj(
             variable name for qubit Josephson inductance. Defaults to n.design_var_lj.
         design_var_qubit_width (Callable, optional): Function to generate the design
             variable name for qubit width. Defaults to n.design_var_width.
+        design_var_constraint (dict | None, optional): Constraints for the design variable.
 
     Notes:
         - The target uses the relationship f ∝ 1/√(L·C), where C scales with width.
-        - Valid inductance range is constrained between 0.1nH and 400nH.
         - This is marked as a dependent target since frequency depends on multiple
           design variables and physical parameters.
     """
+    if design_var_constraint is None:
+        design_var_constraint = {"larger_than": "0.1nH", "smaller_than": "400nH"}    
     return OptTarget(
         target_param_type=FREQ,
         involved_modes=[qubit],
         design_var=design_var_qubit_lj(qubit),
-        design_var_constraint={"larger_than": "0.1nH", "smaller_than": "400nH"},
+        design_var_constraint=design_var_constraint,
         prop_to=lambda p, v: 1
         / np.sqrt(v[design_var_qubit_lj(qubit)] * v[design_var_qubit_width(qubit)]),
         independent_target=False,
@@ -74,6 +77,7 @@ def get_opt_target_qubit_freq_via_lj(
 def get_opt_target_qubit_anharmonicity_via_capacitance_width(
     qubit: Mode,
     design_var_qubit_width: Callable = n.design_var_width,
+    design_var_constraint: dict | None = None,
 ) -> OptTarget:
     """
     Create an optimization target for qubit anharmonicity via capacitive pad width.
@@ -87,18 +91,20 @@ def get_opt_target_qubit_anharmonicity_via_capacitance_width(
         qubit (Mode): The qubit mode identifier.
         design_var_qubit_width (Callable, optional): Function to generate the design
             variable name for qubit width. Defaults to n.design_var_width.
+        design_var_constraint (dict | None, optional): Constraints for the design variable.
 
     Notes:
         - The target uses the relationship α ∝ 1/C, where C scales with width.
-        - Valid width range is constrained between 5µm and 1000µm.
         - This is marked as an independent target since anharmonicity depends
           only on the capacitance width.
     """
+    if design_var_constraint is None:
+        design_var_constraint = {"larger_than": "5um", "smaller_than": "1000um"}
     return OptTarget(
         target_param_type=NONLIN,
         involved_modes=[qubit, qubit],
         design_var=design_var_qubit_width(qubit),
-        design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
+        design_var_constraint=design_var_constraint,
         prop_to=lambda p, v: 1 / v[design_var_qubit_width(qubit)],
         independent_target=True,
     )
@@ -107,6 +113,7 @@ def get_opt_target_qubit_anharmonicity_via_capacitance_width(
 def get_opt_target_res_freq_via_length(
     resonator: Mode,
     design_var_res_length: Callable = n.design_var_length,
+    design_var_constraint: dict | None = None,
 ) -> OptTarget:
     """
     Create an optimization target for resonator frequency via length.
@@ -119,18 +126,20 @@ def get_opt_target_res_freq_via_length(
         resonator (Mode): The resonator mode identifier.
         design_var_res_length (Callable, optional): Function to generate the design
             variable name for resonator length. Defaults to n.design_var_length.
+        design_var_constraint (dict | None, optional): Constraints for the design variable.
 
     Notes:
         - The target uses the relationship f ∝ 1/L, where L is the resonator length.
-        - Valid length range is constrained between 500µm and 15000µm.
         - This is marked as an independent target since frequency depends only on
           the resonator's length.
     """
+    if design_var_constraint is None:
+        design_var_constraint = {"larger_than": "5um", "smaller_than": "15000um"}
     return OptTarget(
         target_param_type=FREQ,
         involved_modes=[resonator],
         design_var=design_var_res_length(resonator),
-        design_var_constraint={"larger_than": "500um", "smaller_than": "15000um"},
+        design_var_constraint=design_var_constraint,
         prop_to=lambda p, v: 1 / v[design_var_res_length(resonator)],
         independent_target=True,
     )
@@ -140,6 +149,7 @@ def get_opt_target_res_kappa_via_coupl_length(
     resonator: Mode,
     resonator_coupled_identifier: str,
     design_var_res_coupl_length: Callable = n.design_var_coupl_length,
+    design_var_constraint: dict | None = None,
 ) -> OptTarget:
     """
     Create an optimization target for resonator linewidth via coupling length.
@@ -155,18 +165,20 @@ def get_opt_target_res_kappa_via_coupl_length(
             resonator is coupled (e.g., a feedline or transmission line).
         design_var_res_coupl_length (Callable, optional): Function to generate the design
             variable name for coupling length. Defaults to n.design_var_coupl_length.
+        design_var_constraint (dict | None, optional): Constraints for the design variable.
 
     Notes:
         - The target uses the relationship κ ∝ L², where L is the coupling length.
-        - Valid coupling length range is constrained between 20µm and 1000µm.
         - This is marked as an independent target since kappa depends only on
           the coupling length.
     """
+    if design_var_constraint is None:
+        design_var_constraint = {"larger_than": "20um", "smaller_than": "1000um"}
     return OptTarget(
         target_param_type=KAPPA,
         involved_modes=[resonator],
         design_var=design_var_res_coupl_length(resonator, resonator_coupled_identifier),
-        design_var_constraint={"larger_than": "20um", "smaller_than": "1000um"},
+        design_var_constraint=design_var_constraint,
         prop_to=lambda p, v: v[
             design_var_res_coupl_length(resonator, resonator_coupled_identifier)
         ]
@@ -180,6 +192,7 @@ def get_opt_target_res_qub_chi_via_coupl_length(
     resonator: Mode,
     design_var_res_qb_coupl_length: Callable = n.design_var_coupl_length,
     design_var_qubit_width: Callable = n.design_var_width,
+    design_var_constraint: dict | None = None,
 ) -> OptTarget:
     """
     Create an optimization target for qubit-resonator dispersive shift.
@@ -196,6 +209,7 @@ def get_opt_target_res_qub_chi_via_coupl_length(
             variable name for qubit-resonator coupling length. Defaults to n.design_var_coupl_length.
         design_var_qubit_width (Callable, optional): Function to generate the design
             variable name for qubit width. Defaults to n.design_var_width.
+        design_var_constraint (dict | None, optional): Constraints for the design variable.
 
     Notes:
         - The target uses the relationship χ ∝ g²α/(Δ·(Δ-α)), where:
@@ -203,15 +217,16 @@ def get_opt_target_res_qub_chi_via_coupl_length(
           - g is the coupling strength (proportional to coupling length / qubit width)
           - α is the qubit anharmonicity
           - Δ is the detuning between qubit and resonator frequencies
-        - Valid coupling length range is constrained between 5µm and 1000µm.
         - This is marked as a dependent target since chi depends on multiple
           design variables and physical parameters.
     """
+    if design_var_constraint is None:
+        design_var_constraint = {"larger_than": "5um", "smaller_than": "1000um"}
     return OptTarget(
         target_param_type=NONLIN,
         involved_modes=[qubit, resonator],
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
-        design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
+        design_var_constraint=design_var_constraint,
         prop_to=lambda p, v: np.abs(
             v[design_var_res_qb_coupl_length(resonator, qubit)]
             / v[design_var_qubit_width(qubit)]
@@ -230,7 +245,7 @@ def get_opt_target_res_qub_chi_via_coupl_length_simple(
     qubit: Mode,
     resonator: Mode,
     design_var_res_qb_coupl_length: Callable = n.design_var_coupl_length,
-    design_var_qubit_width: Callable = n.design_var_width,
+    design_var_constraint: dict | None = None,
 ) -> OptTarget:
     """
     Create a simplified optimization target for qubit-resonator dispersive shift.
@@ -249,21 +264,23 @@ def get_opt_target_res_qub_chi_via_coupl_length_simple(
         design_var_qubit_width (Callable, optional): Function to generate the design
             variable name for qubit width. Not used in this simplified model, but
             included for API compatibility.
+        design_var_constraint (dict | None, optional): Constraints for the design variable.
 
     Notes:
         - This simplified model uses the relationship χ ∝ coupling_length, making
           the dispersive shift directly proportional to the coupling length.
-        - Valid coupling length range is constrained between 5µm and 1000µm.
         - This is marked as a dependent target to maintain consistency with the
           full model, although it has a simpler relationship.
         - Use this simplified model when a coarse approximation is sufficient or
           when the full parameter dependencies are not critical.
     """
+    if design_var_constraint is None:
+        design_var_constraint = {"larger_than": "5um", "smaller_than": "1000um"}
     return OptTarget(
         target_param_type=NONLIN,
         involved_modes=[qubit, resonator],
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
-        design_var_constraint={"larger_than": "5um", "smaller_than": "1000um"},
+        design_var_constraint=design_var_constraint,
         prop_to=lambda p, v: np.abs(
             v[design_var_res_qb_coupl_length(resonator, qubit)]
         ),
@@ -285,6 +302,12 @@ def get_opt_targets_qb_res_transmission(
     design_var_qubit_width: Callable[[str], str] = n.design_var_width,
     design_var_res_length: Callable[[str], str] = n.design_var_length,
     design_var_res_coupl_length: Callable[[str, str], str] = n.design_var_coupl_length,
+    design_var_res_qb_coupl_length: Callable[[str, str], str] = n.design_var_coupl_length,
+    design_var_constraint_qubit_lj: dict | None = None,
+    design_var_constraint_qubit_width:  dict | None = None,
+    design_var_constraint_res_length:  dict | None = None,
+    design_var_constraint_res_coupl_length:  dict | None = None,
+    design_var_constraint_res_qb_coupl_length:  dict | None = None
 ) -> List[OptTarget]:
     """
     Create a comprehensive set of optimization targets for a qubit-resonator system.
@@ -316,6 +339,18 @@ def get_opt_targets_qb_res_transmission(
             variable name for resonator length. Defaults to n.design_var_length.
         design_var_res_coupl_length (Callable, optional): Function to generate the design
             variable name for coupling length. Defaults to n.design_var_coupl_length.
+        design_var_res_qb_coupl_length (Callable, optional): Function to generate the design
+            variable name for qubit-resonator coupling length. Defaults to n.design_var_coupl_length.
+        design_var_constraint_qubit_lj (dict | None, optional): Constraints for the qubit
+            Josephson inductance design variable. Defaults to None.
+        design_var_constraint_qubit_width (dict | None, optional): Constraints for the qubit
+            width design variable. Defaults to None.
+        design_var_constraint_res_length (dict | None, optional): Constraints for the resonator
+            length design variable. Defaults to None.
+        design_var_constraint_res_coupl_length (dict | None, optional): Constraints for the resonator
+            coupling length design variable. Defaults to None.
+        design_var_constraint_res_qb_coupl_length (dict | None, optional): Constraints for the qubit-resonator
+            coupling length design variable. Defaults to None.
 
     Returns:
         List[OptTarget]: A list of optimization targets for the qubit-resonator system.
@@ -342,12 +377,14 @@ def get_opt_targets_qb_res_transmission(
                 qubit,
                 design_var_qubit_lj=design_var_qubit_lj,
                 design_var_qubit_width=design_var_qubit_width,
+                design_var_constraint=design_var_constraint_qubit_lj
             )
         )
     if opt_target_qubit_anharm:
         opt_targets.append(
             get_opt_target_qubit_anharmonicity_via_capacitance_width(
-                qubit, design_var_qubit_width=design_var_qubit_width
+                qubit, design_var_qubit_width=design_var_qubit_width,
+                design_var_constraint=design_var_constraint_qubit_width
             )
         )
     if opt_target_resonator_freq:
@@ -355,6 +392,7 @@ def get_opt_targets_qb_res_transmission(
             get_opt_target_res_freq_via_length(
                 resonator,
                 design_var_res_length=design_var_res_length,
+                design_var_constraint=design_var_constraint_res_length
             )
         )
     if opt_target_resonator_kappa:
@@ -363,6 +401,7 @@ def get_opt_targets_qb_res_transmission(
                 resonator,
                 resonator_coupled_identifier,
                 design_var_res_coupl_length=design_var_res_coupl_length,
+                design_var_constraint=design_var_constraint_res_coupl_length
             )
         )
     if opt_target_resonator_qubit_chi:
@@ -371,8 +410,8 @@ def get_opt_targets_qb_res_transmission(
                 get_opt_target_res_qub_chi_via_coupl_length_simple(
                     qubit,
                     resonator,
-                    design_var_res_qb_coupl_length=design_var_res_coupl_length,
-                    design_var_qubit_width=design_var_qubit_width,
+                    design_var_res_qb_coupl_length=design_var_res_qb_coupl_length,
+                    design_var_constraint=design_var_constraint_res_qb_coupl_length
                 )
             )
         else:
@@ -380,8 +419,9 @@ def get_opt_targets_qb_res_transmission(
                 get_opt_target_res_qub_chi_via_coupl_length(
                     qubit,
                     resonator,
-                    design_var_res_qb_coupl_length=design_var_res_coupl_length,
+                    design_var_res_qb_coupl_length=design_var_res_qb_coupl_length,
                     design_var_qubit_width=design_var_qubit_width,
+                    design_var_constraint=design_var_constraint_res_qb_coupl_length
                 )
             )
     return opt_targets

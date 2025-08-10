@@ -1,5 +1,7 @@
-import names as n
 import numpy as np
+from typing import Optional
+
+import names as n
 import parameter_targets as pt
 
 from qdesignoptimizer.design_analysis_types import MiniStudy
@@ -10,11 +12,11 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
+from qdesignoptimizer.design_analysis_types import SurfaceProperties
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 
-
-def get_mini_study_qb_res(group: int):
+def get_mini_study_qb_res(group: int, surface_properties:  Optional[SurfaceProperties] = None):
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
 
@@ -35,6 +37,7 @@ def get_mini_study_qb_res(group: int):
         adjustment_rate=1,
         build_fine_mesh=True,
         **CONVERGENCE,
+        surface_properties=surface_properties,
     )
 
 
@@ -147,6 +150,7 @@ def get_mini_study_res_feedline(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
+        render_qiskit_metal_kwargs={"capacitance": True},
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,
@@ -176,6 +180,7 @@ def get_mini_study_resonator_capacitance(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
+        render_qiskit_metal_kwargs={"capacitance": True},
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,
@@ -184,7 +189,6 @@ def get_mini_study_resonator_capacitance(group: int):
         modes=[],  # No mode frequencies to run only capacitance studies and not eigenmode/epr
         jj_setup={},
         design_name="get_mini_study_capacitance",
-        adjustment_rate=1,
         hfss_wire_bond_size=3,
         capacitance_matrix_studies=[cap_study],
         **CONVERGENCE,

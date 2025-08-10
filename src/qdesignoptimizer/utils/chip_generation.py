@@ -1,9 +1,13 @@
 """Tools for creating and configuring basic chips in Qiskit Metal designs."""
 
+import json
 from dataclasses import dataclass
+from typing import Optional
 
 from qiskit_metal import MetalGUI
 from qiskit_metal.designs.design_planar import DesignPlanar
+
+from qdesignoptimizer.utils.names_design_variables import add_design_variables_to_design
 
 
 @dataclass
@@ -17,7 +21,10 @@ class ChipType:
 
 
 def create_chip_base(
-    chip_name: str, chip_type: ChipType, open_gui: bool = True
+    chip_name: str,
+    chip_type: ChipType,
+    open_gui: bool = True,
+    design_variables_file: Optional[str] = "design_variables.json",
 ) -> tuple[DesignPlanar, MetalGUI]:
     """
     Create and return a basic Qiskit Metal planar chip design.
@@ -25,7 +32,8 @@ def create_chip_base(
     Args:
         chip_name (str): The name to assign to the chip design.
         chip_type (ChipType): The physical dimensions and material of the chip.
-        open_gui (bool, optional): Whether to open the Qiskit Metal GUI. Defaults to True.
+        open_gui (bool): Whether to open the Qiskit Metal GUI. Defaults to True.
+        design_variables_file (str, optional): If not None, load the design variables from this file after creating the chip.
 
     Returns:
         tuple[DesignPlanar, MetalGUI]: A tuple containing:
@@ -49,6 +57,11 @@ def create_chip_base(
     if open_gui:
         gui = MetalGUI(design)
         gui.toggle_docks()
+
+    if design_variables_file is not None:
+        with open(design_variables_file) as in_file:
+            initial_design_variables = json.load(in_file)
+        add_design_variables_to_design(design, initial_design_variables)
 
     return design, gui
 

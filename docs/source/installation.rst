@@ -10,7 +10,7 @@ Prerequisites
 =============
 
 - Python 3.10 (required)
-- pip or poetry package manager
+- pip or poetry package manager. We recommend creating a virtual environment by following the steps below.
 - Git (for installation from repository)
 - Ansys HFSS. ``qdesignoptimizer`` has been tested with Ansys Electronics Desktop 2021 R2.
 
@@ -29,10 +29,10 @@ Note that at the moment Qiskit Metal must be installed separately and without de
 Installation from GitHub Repository
 ===================================
 
-For the latest version or if you want to contribute to development, you can install directly from the GitHub repository.
+For the latest version or if you want to contribute to development, you can directly clone and install from the GitHub repository.
 
-Clone the Repository
---------------------
+Cloning the Repository
+----------------------
 
 First, clone the repository and navigate to its directory:
 
@@ -41,8 +41,8 @@ First, clone the repository and navigate to its directory:
     git clone https://github.com/202Q-lab/QDesignOptimizer
     cd QDesignOptimizer
 
-Create a Virtual Environment
-----------------------------
+Creating a Virtual Environment
+------------------------------
 
 It is strongly recommended to install the project in a separate virtual environment using Python 3.10. You have several options:
 
@@ -58,6 +58,8 @@ Create the environment from the provided environment.yml file:
 
     conda env create -f environment.yml
     conda activate qdesignenv
+
+Note that the C++ developer tools from the latest distribution of Visual Studio Installer are required for the successful installation of pyside2, which is part of the the environment.yml file. You can download the software from `microsoft <https://visualstudio.microsoft.com/downloads/>`_.
 
 **Option 3: Using venv**
 
@@ -113,7 +115,7 @@ Building Documentation
 
 To build the documentation yourself:
 
-1. Install `pandoc <https://pandoc.org/>`_ (you may need to restart your computer to set path variables correctly)
+1. Install `pandoc <https://pandoc.org/>`_ (you may need to restart your computer to correctly set the path variables).
 2. Run the following command:
 
 .. code-block:: bash
