@@ -444,7 +444,7 @@ class OptimizationPlotter:
             )
 
     def _plot_single_param(
-        self, ax: Axes, config: OptPltSet, y_param: str, color: str
+        self, ax: Axes, config: OptPltSet, y_param: str, color: str, **kwargs: Any
     ) -> None:
         """Plot a single parameter series.
 
@@ -467,7 +467,7 @@ class OptimizationPlotter:
                 normalized_std = y_std / config.normalization
 
                 ax.plot(
-                    x_values, normalized_mean, "o-", label="optimized mean", color=color
+                    x_values, normalized_mean, "o-", label="optimized mean", color=color, **kwargs
                 )
 
                 ax.fill_between(
@@ -501,7 +501,7 @@ class OptimizationPlotter:
                     if self.num_runs > 1:
                         run_label += f" {run_idx+1}"
 
-                    ax.plot(x_values, normalized_y, "o-", label=run_label, color=color)
+                    ax.plot(x_values, normalized_y, "o-", label=run_label, color=color, **kwargs)
 
                     self._plot_target(
                         ax,
@@ -565,7 +565,7 @@ class OptimizationPlotter:
             )
 
     def _plot_param_vs_design_var(
-        self, ax: Axes, config: OptPltSet, y_param: str, color: str, sort_by_x: bool
+        self, ax: Axes, config: OptPltSet, y_param: str, color: str, sort_by_x: bool, **kwargs: Any
     ) -> None:
         """Plot a parameter vs. its associated design variable.
 
@@ -600,7 +600,7 @@ class OptimizationPlotter:
             if self.num_runs > 1:
                 run_label += f" {run_idx+1}"
 
-            ax.plot(x_values, normalized_y, "o-", label=run_label, color=color)
+            ax.plot(x_values, normalized_y, "o-", label=run_label, color=color, **kwargs)
 
             if x_values:
                 self._plot_target(
