@@ -228,14 +228,18 @@ def get_opt_target_res_qub_chi_via_coupl_length(
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
         design_var_constraint=design_var_constraint,
         prop_to=lambda p, v: np.abs(
-            v[design_var_res_qb_coupl_length(resonator, qubit)] ** 2
-            / v[design_var_qubit_width(qubit)]
+            (
+                v[design_var_res_qb_coupl_length(resonator, qubit)]
+                / v[design_var_qubit_width(qubit)]
+            )
+            ** 2
             * p[param_nonlin(qubit, qubit)]
             / (
                 p[param(qubit, FREQ)]
                 - p[param(resonator, FREQ)]
                 - p[param_nonlin(qubit, qubit)]
             )
+            / (p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
         ),
         independent_target=False,
     )
