@@ -227,16 +227,25 @@ def get_opt_target_res_qub_chi_via_coupl_length(
         involved_modes=[qubit, resonator],
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
         design_var_constraint=design_var_constraint,
-        prop_to=lambda p, v: np.abs(
-            v[design_var_res_qb_coupl_length(resonator, qubit)]
-            / v[design_var_qubit_width(qubit)]
+        prop_to=lambda p, v: (v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)])**2
             * p[param_nonlin(qubit, qubit)]
-            / (
-                p[param(qubit, FREQ)]
-                - p[param(resonator, FREQ)]
-                - p[param_nonlin(qubit, qubit)]
-            )
-        ),
+            / ((p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
+            * (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)])),
+        # (v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)])**2
+        #     * p[param_nonlin(qubit, qubit)]
+        #     / ((p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
+        #     * (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)])),
+        # np.abs(
+        #     v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)]
+        #     * p[param_nonlin(qubit, qubit)]
+        #     / ((p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
+        #     * (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)]))
+        # ),
+        # np.abs(
+        #     v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)]
+        #     * p[param_nonlin(qubit, qubit)]
+        #     / (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)])
+        # )
         independent_target=False,
     )
 
@@ -281,9 +290,10 @@ def get_opt_target_res_qub_chi_via_coupl_length_simple(
         involved_modes=[qubit, resonator],
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
         design_var_constraint=design_var_constraint,
-        prop_to=lambda p, v: np.sqrt(v[design_var_res_qb_coupl_length(resonator, qubit)]) ,
+        prop_to=lambda p, v: v[design_var_res_qb_coupl_length(resonator, qubit)]**3 ,
         # np.abs(v[design_var_res_qb_coupl_length(resonator, qubit)])
         # v[design_var_res_qb_coupl_length(resonator, qubit)]**2
+        # v[design_var_res_qb_coupl_length(resonator, qubit)]**3
         # np.log(v[design_var_res_qb_coupl_length(resonator, qubit)])
         # np.sqrt(v[design_var_res_qb_coupl_length(resonator, qubit)])
         independent_target=False,
