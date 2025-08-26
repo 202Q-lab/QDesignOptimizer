@@ -62,7 +62,7 @@ def get_opt_target_qubit_freq_via_lj(
           design variables and physical parameters.
     """
     if design_var_constraint is None:
-        design_var_constraint = {"larger_than": "0.1nH", "smaller_than": "400nH"}    
+        design_var_constraint = {"larger_than": "0.1nH", "smaller_than": "400nH"}
     return OptTarget(
         target_param_type=FREQ,
         involved_modes=[qubit],
@@ -227,25 +227,20 @@ def get_opt_target_res_qub_chi_via_coupl_length(
         involved_modes=[qubit, resonator],
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
         design_var_constraint=design_var_constraint,
-        prop_to=lambda p, v: (v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)])**2
+        prop_to=lambda p, v: np.abs(
+            (
+                v[design_var_res_qb_coupl_length(resonator, qubit)]
+                / v[design_var_qubit_width(qubit)]
+            )
+            ** 2
             * p[param_nonlin(qubit, qubit)]
-            / ((p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
-            * (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)])),
-        # (v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)])**2
-        #     * p[param_nonlin(qubit, qubit)]
-        #     / ((p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
-        #     * (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)])),
-        # np.abs(
-        #     v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)]
-        #     * p[param_nonlin(qubit, qubit)]
-        #     / ((p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
-        #     * (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)]))
-        # ),
-        # np.abs(
-        #     v[design_var_res_qb_coupl_length(resonator, qubit)] / v[design_var_qubit_width(qubit)]
-        #     * p[param_nonlin(qubit, qubit)]
-        #     / (p[param(qubit, FREQ)] - p[param(resonator, FREQ)] - p[param_nonlin(qubit, qubit)])
-        # )
+            / (
+                p[param(qubit, FREQ)]
+                - p[param(resonator, FREQ)]
+                - p[param_nonlin(qubit, qubit)]
+            )
+            / (p[param(qubit, FREQ)] - p[param(resonator, FREQ)])
+        ),
         independent_target=False,
     )
 
@@ -290,7 +285,7 @@ def get_opt_target_res_qub_chi_via_coupl_length_simple(
         involved_modes=[qubit, resonator],
         design_var=design_var_res_qb_coupl_length(resonator, qubit),
         design_var_constraint=design_var_constraint,
-        prop_to=lambda p, v: v[design_var_res_qb_coupl_length(resonator, qubit)]**3 ,
+        prop_to=lambda p, v: v[design_var_res_qb_coupl_length(resonator, qubit)] ** 3,
         # np.abs(v[design_var_res_qb_coupl_length(resonator, qubit)])
         # v[design_var_res_qb_coupl_length(resonator, qubit)]**2
         # v[design_var_res_qb_coupl_length(resonator, qubit)]**3
@@ -314,12 +309,14 @@ def get_opt_targets_qb_res_transmission(
     design_var_qubit_width: Callable[[str], str] = n.design_var_width,
     design_var_res_length: Callable[[str], str] = n.design_var_length,
     design_var_res_coupl_length: Callable[[str, str], str] = n.design_var_coupl_length,
-    design_var_res_qb_coupl_length: Callable[[str, str], str] = n.design_var_coupl_length,
+    design_var_res_qb_coupl_length: Callable[
+        [str, str], str
+    ] = n.design_var_coupl_length,
     design_var_constraint_qubit_lj: dict | None = None,
-    design_var_constraint_qubit_width:  dict | None = None,
-    design_var_constraint_res_length:  dict | None = None,
-    design_var_constraint_res_coupl_length:  dict | None = None,
-    design_var_constraint_res_qb_coupl_length:  dict | None = None
+    design_var_constraint_qubit_width: dict | None = None,
+    design_var_constraint_res_length: dict | None = None,
+    design_var_constraint_res_coupl_length: dict | None = None,
+    design_var_constraint_res_qb_coupl_length: dict | None = None,
 ) -> List[OptTarget]:
     """
     Create a comprehensive set of optimization targets for a qubit-resonator system.
@@ -389,14 +386,15 @@ def get_opt_targets_qb_res_transmission(
                 qubit,
                 design_var_qubit_lj=design_var_qubit_lj,
                 design_var_qubit_width=design_var_qubit_width,
-                design_var_constraint=design_var_constraint_qubit_lj
+                design_var_constraint=design_var_constraint_qubit_lj,
             )
         )
     if opt_target_qubit_anharm:
         opt_targets.append(
             get_opt_target_qubit_anharmonicity_via_capacitance_width(
-                qubit, design_var_qubit_width=design_var_qubit_width,
-                design_var_constraint=design_var_constraint_qubit_width
+                qubit,
+                design_var_qubit_width=design_var_qubit_width,
+                design_var_constraint=design_var_constraint_qubit_width,
             )
         )
     if opt_target_resonator_freq:
@@ -404,7 +402,7 @@ def get_opt_targets_qb_res_transmission(
             get_opt_target_res_freq_via_length(
                 resonator,
                 design_var_res_length=design_var_res_length,
-                design_var_constraint=design_var_constraint_res_length
+                design_var_constraint=design_var_constraint_res_length,
             )
         )
     if opt_target_resonator_kappa:
@@ -413,7 +411,7 @@ def get_opt_targets_qb_res_transmission(
                 resonator,
                 resonator_coupled_identifier,
                 design_var_res_coupl_length=design_var_res_coupl_length,
-                design_var_constraint=design_var_constraint_res_coupl_length
+                design_var_constraint=design_var_constraint_res_coupl_length,
             )
         )
     if opt_target_resonator_qubit_chi:
@@ -423,7 +421,7 @@ def get_opt_targets_qb_res_transmission(
                     qubit,
                     resonator,
                     design_var_res_qb_coupl_length=design_var_res_qb_coupl_length,
-                    design_var_constraint=design_var_constraint_res_qb_coupl_length
+                    design_var_constraint=design_var_constraint_res_qb_coupl_length,
                 )
             )
         else:
@@ -433,7 +431,7 @@ def get_opt_targets_qb_res_transmission(
                     resonator,
                     design_var_res_qb_coupl_length=design_var_res_qb_coupl_length,
                     design_var_qubit_width=design_var_qubit_width,
-                    design_var_constraint=design_var_constraint_res_qb_coupl_length
+                    design_var_constraint=design_var_constraint_res_qb_coupl_length,
                 )
             )
     return opt_targets

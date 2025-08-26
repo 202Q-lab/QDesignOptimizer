@@ -1,0 +1,21 @@
+{
+    "design_var_width_qubit_1": "170um",
+    "design_var_width_qubit_2": "170um",
+    "design_var_length_coupler_1to2": "250um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "10nH",
+    "design_var_lj_qubit_2": "12nH",
+    "design_var_lj_coupler_1to2": "2.0nH",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cj_coupler_1to2": "0fF",
+    "design_var_length_resonator_1": "4200um",
+    "design_var_length_resonator_2": "4200um",
+    "design_var_coupl_length_qubit_1_resonator_1": "50um",
+    "design_var_coupl_length_qubit_2_resonator_2": "50um",
+    "design_var_coupl_length_coupler_1to2_qubit_1": "13um",
+    "design_var_coupl_length_coupler_1to2_qubit_2": "15um",
+    "design_var_coupl_length_resonator_1_tee": "400um",
+    "design_var_coupl_length_resonator_2_tee": "160um"
+}
