@@ -147,27 +147,11 @@ class ANModOptimizer:
             design_vars_updated[design_var] = val
             units[design_var] = unit
 
-        independent_targets = [
-            target for target in self.opt_targets if target.independent_target
-        ]
+        minimization_targets = self.group_targets(self.opt_targets)
 
-        if independent_targets:
-            for independent_target in independent_targets:
-                minimization_result = self._minimize_for_design_vars(
-                    [independent_target],
-                    design_vars_current,
-                    design_vars_updated,
-                    system_params_current,
-                    system_params_targets_met,
-                )
-                minimization_results.append(minimization_result)
-
-        dependent_targets = [
-            target for target in self.opt_targets if not target.independent_target
-        ]
-        if dependent_targets:
+        for targets in minimization_targets:
             minimization_result = self._minimize_for_design_vars(
-                dependent_targets,
+                targets,
                 design_vars_current,
                 design_vars_updated,
                 system_params_current,
@@ -191,6 +175,32 @@ class ANModOptimizer:
                 constrained_val_and_unit
             )
         return design_vars_updated_constrained_str, minimization_results
+
+    @staticmethod
+    def group_targets(optimization_targets: List[OptTarget]) -> List[List[OptTarget]]:
+        """Group optimization targets based on their independent_target attribute."""
+        target_groups: dict[int, List[OptTarget]] = {}
+        dependent_targets: list[OptTarget] = []
+        minimization_targets: list[list[OptTarget]] = []
+
+        for target in optimization_targets:
+            if target.independent_target is True:
+                minimization_targets.append([target])
+            elif target.independent_target is False:
+                dependent_targets.append(target)
+            elif isinstance(target.independent_target, int):
+                if target.independent_target not in target_groups:
+                    target_groups[target.independent_target] = []
+                target_groups[target.independent_target].append(target)
+            else:
+                raise ValueError(
+                    f"Invalid value for independent_target: {target.independent_target}. Must be bool or int."
+                )
+
+        minimization_targets.extend(list(target_groups.values()))
+        minimization_targets.append(dependent_targets)
+
+        return minimization_targets
 
     def _constrain_design_value(
         self,
