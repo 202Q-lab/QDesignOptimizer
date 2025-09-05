@@ -53,6 +53,18 @@ Parameter = str
         >>> "qubit_1_to_resonator_1_nonlin"  # Cross-Kerr interaction
 """
 
+DesignVariable = str
+"""Type representing a design variable name, formed by concatenating a unique mode name with a design variable type.
+
+    The design variable name uniquely identifies a physical quantity associated with
+    one or more modes in the system.
+
+    Examples:
+        >>> "qubit_freq"      # Frequency of a qubit
+        >>> "qubit_1_kappa"   # Decay rate of qubit 1
+        >>> "qubit_1_to_resonator_1_nonlin"  # Cross-Kerr interaction
+"""
+
 
 def mode(
     mode_type: str,
