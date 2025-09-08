@@ -152,6 +152,7 @@ def param(
         'resonator_a_kappa'
     """
     assert param_type in [
+        "",
         "freq",
         "kappa",
         "charge_line_limited_t1",

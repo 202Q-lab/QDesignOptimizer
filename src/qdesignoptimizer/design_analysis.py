@@ -1,21 +1,21 @@
 """Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations."""
 
+import io
 import json
+from contextlib import redirect_stdout
 from copy import deepcopy
+from dataclasses import asdict
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 import pyEPR as epr
-from pyEPR._config_default import config
 from pyaedt import Hfss
+from pyEPR._config_default import config
 from qiskit_metal.analyses.quantization import EPRanalysis
-import io
-from contextlib import redirect_stdout
-from dataclasses import asdict
-
 
 import qdesignoptimizer
+from qdesignoptimizer.anmod_optimizer import ANModOptimizer
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
@@ -39,7 +39,7 @@ from qdesignoptimizer.utils.names_parameters import (
     param_capacitance,
     param_nonlin,
 )
-from qdesignoptimizer.anmod_optimizer import ANModOptimizer
+
 
 class DesignAnalysis:
     """Manager for quantum circuit design optimization and electromagnetic simulation.
@@ -116,7 +116,7 @@ class DesignAnalysis:
         self.meshing_map: List[MeshingMap] = meshing_map or []
         self.minimization_tol = minimization_tol
 
-        self.optimizer = ANModOptimizer(
+        self.anmod_optimizer = ANModOptimizer(
             opt_targets=self.opt_targets,
             system_target_params=self.system_target_params,
             minimization_tol=self.minimization_tol,
@@ -242,8 +242,9 @@ class DesignAnalysis:
         }
 
     def get_fine_mesh_names(self):
-        """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names". 
-        This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class."""
+        """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names".
+        This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.
+        """
         finer_mesh_names = []
         for component in self.mini_study.qiskit_component_names:
             if hasattr(self.design.components[component], "get_meshing_names"):
@@ -264,9 +265,6 @@ class DesignAnalysis:
     def get_port_gap_names(self):
         """Get names of all endcap ports in the design."""
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
-    
-    
-
 
     def run_eigenmodes(self):
         """Simulate eigenmodes."""
@@ -287,18 +285,20 @@ class DesignAnalysis:
         if self.mini_study.surface_properties:
             for component in self.mini_study.qiskit_component_names:
                 if "hfss_wire_bonds" in self.design.components[component].options:
-                    assert not self.design.components[component].options["hfss_wire_bonds"], f"hfss_wire_bonds in {component} must be set to False for surface participation ratio analysis."
+                    assert not self.design.components[component].options[
+                        "hfss_wire_bonds"
+                    ], f"hfss_wire_bonds in {component} must be set to False for surface participation ratio analysis."
 
         # render design in HFSS
         self.renderer.render_design(
             selection=self.mini_study.qiskit_component_names,
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
-        )        
-                    
+        )
+
         # set custom air bridges (only if no interfaces are defined in mini_study)
         if not self.mini_study.surface_properties:
-            for component_name in self.mini_study.qiskit_component_names:                
+            for component_name in self.mini_study.qiskit_component_names:
                 if hasattr(
                     self.design.components[component_name], "get_air_bridge_coordinates"
                 ):
@@ -317,11 +317,11 @@ class DesignAnalysis:
                             name="mybox1",
                             matname="aluminum",
                         )
-            
+
         # interfaces will be rendered if interfaces are defined in mini_study
         if self.mini_study.surface_properties:
             self._surface_rendering_for_surface_participation_ratios()
-                
+
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
@@ -332,16 +332,14 @@ class DesignAnalysis:
 
         if restrict_mesh:
             if self.mini_study.surface_properties:
-                log.error(
-                    "Interfaces must be empty when using fine mesh. "
-                )
+                log.error("Interfaces must be empty when using fine mesh. ")
             else:
                 self.renderer.modeler.mesh_length(
                     "fine_mesh",
                     fine_mesh_names,
                     MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
                     RefineInside=True,
-                )        
+                )
 
         # run eigenmode analysis
         self.setup.analyze()
@@ -376,7 +374,7 @@ class DesignAnalysis:
         if junction_found:
             self.eig_solver.setup.junctions = jj_setups_to_include_in_epr
 
-            if not no_junctions:               
+            if not no_junctions:
                 self.eprd = epr.DistributedAnalysis(self.pinfo)
                 self.eig_solver.clear_data()
                 self.eig_solver.get_stored_energy(no_junctions)
@@ -389,9 +387,9 @@ class DesignAnalysis:
                 self.epra.plot_hamiltonian_results()
                 freqs = self.epra.get_frequencies(numeric=True)
                 chis = self.epra.get_chis(numeric=True)
-                self._update_optimized_params_epr(freqs, chis) 
+                self._update_optimized_params_epr(freqs, chis)
 
-            self.eig_solver.setup.junctions = self.mini_study.jj_setup                       
+            self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
             return chis
         add_msg = ""
@@ -399,7 +397,7 @@ class DesignAnalysis:
             add_msg = " However, a linear element was found."
         log.warning("No junctions found, skipping EPR analysis.%s", add_msg)
         return None
-    
+
     def _surface_rendering_for_surface_participation_ratios(self):
         """Render surfaces for surface participation ratio analysis.
         This function creates groups for different surfaces based on the interfaces defined in the mini_study.
@@ -409,52 +407,70 @@ class DesignAnalysis:
         """
 
         metal = self.hfss.modeler.get_objects_in_group("Perfect E")
-        self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_air','metal_air'])
+        self.hfss.modeler.ungroup(
+            ["substrate_air", "metal_substrate", "underside_air", "metal_air"]
+        )
 
         # Filter out JJ_rect_Lj objects once
-        filtered_metal = [obj for obj in metal if not obj.startswith('JJ_rect_Lj')]
+        filtered_metal = [obj for obj in metal if not obj.startswith("JJ_rect_Lj")]
 
         # substrate-air
-        self.hfss.modeler.section('main','XY')
+        self.hfss.modeler.section("main", "XY")
         cloned_polygon_names = []
         for obj in filtered_metal:
             self.hfss.modeler.clone(obj)
-            cloned_polygon_names.append(obj+'1')
-            self.hfss.modeler.subtract('main_Section1',cloned_polygon_names[-1],False)
-        self.hfss.modeler.subtract('main_Section1',filtered_metal,True)
-        self.hfss.modeler.create_group('main_Section1',group_name='substrate_air')
+            cloned_polygon_names.append(obj + "1")
+            self.hfss.modeler.subtract("main_Section1", cloned_polygon_names[-1], False)
+        self.hfss.modeler.subtract("main_Section1", filtered_metal, True)
+        self.hfss.modeler.create_group("main_Section1", group_name="substrate_air")
 
         # metal-substrate
         cloned_polygon_name = []
         for obj in filtered_metal:
             self.hfss.modeler.clone(obj)
-            cloned_polygon_name.append(obj+'2')
-        self.hfss.modeler.unite(cloned_polygon_name,False)
-        self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_substrate')
+            cloned_polygon_name.append(obj + "2")
+        self.hfss.modeler.unite(cloned_polygon_name, False)
+        self.hfss.modeler.create_group(
+            cloned_polygon_name, group_name="metal_substrate"
+        )
 
         # metal-air
         cloned_polygon_name = []
         for obj in filtered_metal:
             cloned_polygon_name.append(obj)
-        metal_air = self.hfss.modeler.unite(cloned_polygon_name,False)
-        metal_air = self.hfss.modeler.thicken_sheet(metal_air,self.mini_study.surface_properties.sheet_thickness,bBothSides=True)
-        metal_air = self.hfss.modeler.move(metal_air,[0,0,self.mini_study.surface_properties.sheet_thickness/2])
-        self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_air')
-        objects = self.hfss.modeler.get_objects_in_group('metal_air')
-        metal_air = self.hfss.assign_material(objects,self.mini_study.surface_properties.sheet_material)
+        metal_air = self.hfss.modeler.unite(cloned_polygon_name, False)
+        metal_air = self.hfss.modeler.thicken_sheet(
+            metal_air,
+            self.mini_study.surface_properties.sheet_thickness,
+            bBothSides=True,
+        )
+        metal_air = self.hfss.modeler.move(
+            metal_air, [0, 0, self.mini_study.surface_properties.sheet_thickness / 2]
+        )
+        self.hfss.modeler.create_group(cloned_polygon_name, group_name="metal_air")
+        objects = self.hfss.modeler.get_objects_in_group("metal_air")
+        metal_air = self.hfss.assign_material(
+            objects, self.mini_study.surface_properties.sheet_material
+        )
 
         # underside surface
-        self.hfss.modeler.section('main','XY')
-        self.hfss.modeler.move('main_Section2',[0,0,self.design._chips['main']['size']['size_z']])
-        self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_air')
-            
+        self.hfss.modeler.section("main", "XY")
+        self.hfss.modeler.move(
+            "main_Section2", [0, 0, self.design._chips["main"]["size"]["size_z"]]
+        )
+        self.hfss.modeler.create_group(["main_Section2"], group_name="underside_air")
+
         # Assign interface properties using InterfaceProperties dataclass
         if self.mini_study.surface_properties.interfaces:
-            self.pinfo.dissipative['dielectric_surfaces'] = {}
+            self.pinfo.dissipative["dielectric_surfaces"] = {}
             for interface_name in self.mini_study.surface_properties.interfaces.keys():
-                interface_props = getattr(self.mini_study.surface_properties.interfaces, interface_name)
+                interface_props = getattr(
+                    self.mini_study.surface_properties.interfaces, interface_name
+                )
                 for obj_name in self.hfss.modeler.get_objects_in_group(interface_name):
-                    self.pinfo.dissipative['dielectric_surfaces'][obj_name] = asdict(interface_props)
+                    self.pinfo.dissipative["dielectric_surfaces"][obj_name] = asdict(
+                        interface_props
+                    )
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -550,7 +566,7 @@ class DesignAnalysis:
             self.system_optimized_params[param(capacitance_study.mode, param_type)] = (
                 param_value
             )
-   
+
     def optimize_target(
         self, updated_design_vars_input: dict, system_optimized_params: dict
     ):
@@ -576,7 +592,11 @@ class DesignAnalysis:
             self.is_system_optimized_params_initialized = True
         self.update_var(updated_design_vars_input, system_optimized_params)
 
-        updated_design_vars, minimization_results = self.optimizer.calculate_target_design_var(self.system_optimized_params, self.design.variables)
+        updated_design_vars, minimization_results = (
+            self.anmod_optimizer.calculate_target_design_var(
+                self.system_optimized_params, self.design.variables
+            )
+        )
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
@@ -730,33 +750,33 @@ class DesignAnalysis:
         gui.screenshot(name=name, display=False)
 
     def _get_dielectric_p_ratio(self):
-        """Get dielectric participation ratio taking into account the dielectric loss tangent.
-        """
+        """Get dielectric participation ratio taking into account the dielectric loss tangent."""
 
         p_dielectric = {}
         for mode in range(int(self.pinfo.setup.n_modes)):
             self.eprd.set_mode(mode)
             with io.StringIO() as buf, redirect_stdout(buf):
-                q_dielectric = self.eprd.get_Qdielectric(dielectric='main',
-                                        mode=mode,
-                                        variation=None)[0]
-            p_dielectric[mode] = 1/(q_dielectric*config.dissipation.tan_delta_sapp)
-        
+                q_dielectric = self.eprd.get_Qdielectric(
+                    dielectric="main", mode=mode, variation=None
+                )[0]
+            p_dielectric[mode] = 1 / (q_dielectric * config.dissipation.tan_delta_sapp)
+
         return p_dielectric
-    
+
     def _get_surface_p_ratio(self, name, mode, variation=None):
-        """Get surface participation ratio.
-        """
+        """Get surface participation ratio."""
         with io.StringIO() as buf, redirect_stdout(buf):
-            psurf = 1/self.eprd.get_Qsurface(mode=mode,
-                                            variation=variation,
-                                            name=name) # we set tand = 1 in the design file 
-        return psurf.iloc[0]  # Return the second element which is the participation ratio value
+            psurf = 1 / self.eprd.get_Qsurface(
+                mode=mode, variation=variation, name=name
+            )  # we set tand = 1 in the design file
+        return psurf.iloc[
+            0
+        ]  # Return the second element which is the participation ratio value
 
     def get_surface_p_ratio(self):
         """Computes the surfaces participation ratio for all given interfaces. And also for every junction."""
         p_ratio_dict = {}
-        
+
         # Initialize the structure for interfaces
         for interface_name in self.mini_study.surface_properties.interfaces.keys():
             p_ratio_dict[interface_name] = {}
@@ -764,20 +784,20 @@ class DesignAnalysis:
                 self.eprd.set_mode(mode)
                 p_ratio_dict[interface_name][mode] = self._get_surface_p_ratio(
                     name=self.hfss.modeler.get_objects_in_group(interface_name)[0],
-                    mode=mode
+                    mode=mode,
                 )
-        
+
         # Handle junction data
         # can only handle a single junction type for now
-        p_ratio_dict['Junction(inductive energy)'] = {}
+        p_ratio_dict["Junction(inductive energy)"] = {}
         for mode in range(int(self.pinfo.setup.n_modes)):
             self.eprd.set_mode(mode)
             j_ratio = self.eprd.calc_p_junction_single(mode=mode, variation=None)
             for key in j_ratio:
                 p_ratio = j_ratio[key]
-            p_ratio_dict['Junction(inductive energy)'][mode] = p_ratio
-        
+            p_ratio_dict["Junction(inductive energy)"][mode] = p_ratio
+
         # Handle dielectric data
-        p_ratio_dict['dielectric'] = self._get_dielectric_p_ratio()
-        
+        p_ratio_dict["dielectric"] = self._get_dielectric_p_ratio()
+
         return p_ratio_dict

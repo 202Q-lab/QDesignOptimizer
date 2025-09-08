@@ -8,13 +8,11 @@ for string parsing of values with units and process management.
 """
 
 import os
-from typing import List, Tuple
-
 import time
+from typing import List, Tuple
 
 import numpy as np
 
-from typing import Optional
 
 def close_ansys() -> None:
     """
@@ -150,7 +148,7 @@ def rotate_point(
     return rotated_point
 
 
-def get_value_and_unit(val_unit: str) -> Tuple[float, str]:
+def get_value_and_unit(val_unit: str | float | int) -> Tuple[float, str]:
     """
     Extract numerical value and unit from a string representation.
 
@@ -167,11 +165,11 @@ def get_value_and_unit(val_unit: str) -> Tuple[float, str]:
     Example:
         >>> get_value_and_unit("10.5mm")
         (10.5, 'mm')
-        >>> get_value_and_unit("42")
+        >>> get_value_and_unit(42)
         (42.0, '')
     """
     try:
-        if str.isalpha(val_unit[-1]):
+        if isinstance(val_unit, str) and str.isalpha(val_unit[-1]):
             idx = 1
             while idx < len(val_unit) and str.isalpha(val_unit[-idx - 1]):
                 idx += 1
@@ -179,7 +177,7 @@ def get_value_and_unit(val_unit: str) -> Tuple[float, str]:
             unit = val_unit[-idx:]
             val = float(val_unit.replace(unit, ""))
         else:
-            val = float(val_unit)
+            val = float(val_unit.strip(" ") if isinstance(val_unit, str) else val_unit)
             unit = ""
         return val, unit
     except Exception as exc:
@@ -219,6 +217,7 @@ def sum_expression(vals: List[str]) -> str:
         sum_unit = unit
 
     return f"{sum_val}{sum_unit}"
+
 
 def get_save_path(out_folder: str, chip_name: str, time_format: str = "%Y%m%d-%H%M%S"):
     """Create a path to save simulation results by appending the start time of the simulation to the identifier name."""

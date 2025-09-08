@@ -4,6 +4,7 @@ from typing import List
 import scipy
 import scipy.optimize
 
+import qdesignoptimizer
 from qdesignoptimizer.design_analysis_types import OptTarget
 from qdesignoptimizer.logger import log
 from qdesignoptimizer.utils.names_parameters import (
@@ -36,6 +37,7 @@ class ANModOptimizer:
         self.system_target_params = system_target_params
         self.adjustment_rate = adjustment_rate
         self.minimization_tol = minimization_tol
+        self.anmod_version = qdesignoptimizer.__version__
 
     def _minimize_for_design_vars(
         self,
@@ -133,10 +135,6 @@ class ANModOptimizer:
         # TODO: Refactor to avoid deepcopies
         design_vars_current_str = deepcopy(variables_with_units)
 
-        if not self.is_system_optimized_params_initialized:
-            self.is_system_optimized_params_initialized = True
-            return design_vars_current_str
-
         # Fetch the numeric values of the design variables
         design_vars_current = {}
         design_vars_updated = {}
@@ -147,9 +145,9 @@ class ANModOptimizer:
             design_vars_updated[design_var] = val
             units[design_var] = unit
 
-        minimization_targets = self.group_targets(self.opt_targets)
+        minimization_target_groups = self.group_targets(self.opt_targets)
 
-        for targets in minimization_targets:
+        for targets in minimization_target_groups:
             minimization_result = self._minimize_for_design_vars(
                 targets,
                 design_vars_current,
@@ -198,7 +196,8 @@ class ANModOptimizer:
                 )
 
         minimization_targets.extend(list(target_groups.values()))
-        minimization_targets.append(dependent_targets)
+        if len(dependent_targets) > 0:
+            minimization_targets.append(dependent_targets)
 
         return minimization_targets
 
