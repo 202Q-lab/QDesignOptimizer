@@ -168,6 +168,8 @@ class ScaledSystem:
         # U_i = [0.5, 1.0]§
         self._x = rng.uniform(0.5, 1.0, size=(n, m))
         self._y = rng.uniform(0.5, 1.0, size=(n, m))
+        self._h_ij_factor = np.zeros((n, m))
+        self._g_ij_approx_over_g_factor = np.zeros((n, m))
         self.y_target_value = rng.uniform(0.5, 1.0, size=(n, m))
         self.flattened_y_target = self.create_flattened_y_target()
 
@@ -190,6 +192,12 @@ class ScaledSystem:
 
     def get_flattened_x(self) -> np.ndarray:
         return self.flatten(self._x, "dv_", "")
+
+    def get_flattened_h(self) -> np.ndarray:
+        return self.flatten(self._h_ij_factor, "", "_")
+
+    def get_flattened_g_approx_over_g(self) -> np.ndarray:
+        return self.flatten(self._g_ij_approx_over_g_factor, "", "_")
 
     def set_updated_design_vars(self, updated_design_vars: Dict[str, float]):
         """
@@ -214,6 +222,14 @@ class ScaledSystem:
             y_values = self._y
         return np.prod(np.power(self._x[i, :], self.alpha[i, j, :])) * np.prod(
             np.power(y_values[i, :], self.beta[i, j, :])
+        )
+
+    def _g_ij_approx(self, i, j, y_values=None) -> float:
+        """Calculate g(i,j) = ∏_k x_{i,k}^{alpha_approx{i,j,k}} * ∏_k y_{i,k}^{beta_{i,j,k}}"""
+        if y_values is None:
+            y_values = self._y
+        return np.prod(np.power(self._x[i, :], self.alpha_approx[i, j, :])) * np.prod(
+            np.power(y_values[i, :], self.beta_approx[i, j, :])
         )
 
     def _h_ij(self, i, j, y_values) -> callable:
@@ -270,9 +286,15 @@ class ScaledSystem:
     def _solve_yij_equal_gij_hij_perturbatively(self, tol=1e-12):
         residual = tol + 1.0
         y_pert = self._y.copy()
+
         while residual > tol:
             for i, j in np.ndindex(self.n_clusters, self.m_per_cluster):
-                y_pert[i, j] = self._g_ij(i, j, y_pert) * self._h_ij(i, j, y_pert)
+                h_ij = self._h_ij(i, j, y_pert)
+                y_pert[i, j] = self._g_ij(i, j, y_pert) * h_ij
+                self._h_ij_factor[i, j] = h_ij
+                self._g_ij_approx_over_g_factor[i, j] = self._g_ij_approx(
+                    i, j, y_pert
+                ) / self._g_ij(i, j, y_pert)
             residual = np.sum((self._y - y_pert) ** 2)
             self._y = y_pert.copy()
 

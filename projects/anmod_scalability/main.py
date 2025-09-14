@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from check_convergence import check_convergence, print_convergence_summary
 from plot_convergence import plot_all_convergence_ratios
 from plot_settings import get_plot_settings
 from scaled_system_definition import ScaledSystem, get_prop_to
@@ -27,11 +28,15 @@ def aggregate_results(
 ):
     design_variables = deepcopy(sys.get_flattened_x())
     system_optimized_params = deepcopy(sys.get_flattened_y())
+    h_factor = deepcopy(sys.get_flattened_h())
+    g_approx_over_g_factor = deepcopy(sys.get_flattened_g_approx_over_g())
 
     iteration_result = {}
     iteration_result["design_variables"] = design_variables
     iteration_result["system_optimized_params"] = system_optimized_params
     iteration_result["minimization_results"] = minimization_results
+    iteration_result["h_factor"] = h_factor
+    iteration_result["g_approx_over_g_factor"] = g_approx_over_g_factor
 
     optimization_results.append(iteration_result)
 
@@ -39,7 +44,7 @@ def aggregate_results(
 # ---------------- Example usage ----------------
 if __name__ == "__main__":
     sys = ScaledSystem(
-        n_clusters=333,
+        n_clusters=1000,
         m_per_cluster=3,
         epsilon=0.05,
         exponent_approx_to_1_over=4,
@@ -77,21 +82,28 @@ if __name__ == "__main__":
         sys.set_updated_design_vars(updated_design_vars)
         aggregate_results(optimization_results, sys, minimization_results)
 
-        plot_all_convergence_ratios(optimization_results, system_target_params)
+    plot_all_convergence_ratios(optimization_results, system_target_params)
 
-        # plot_settings = get_plot_settings(sys.n_clusters, sys.m_per_cluster)
-        # simulation = [
-        #     {
-        #         "optimization_results": optimization_results,
-        #         "system_target_params": system_target_params,
-        #         "plot_settings": plot_settings,
-        #         "design_analysis_version": anmod.anmod_version,
-        #     }
-        # ]
+    convergence_iteration, convergence_status = check_convergence(
+        optimization_results, system_target_params, tolerance=0.001
+    )
+    print_convergence_summary(
+        convergence_iteration, convergence_status, tolerance=0.001
+    )
 
-        # plot_progress(
-        #         [optimization_results],
-        #         system_target_params,
-        #         plot_settings,
-        #         block_plots=True
-        #     )
+    # plot_settings = get_plot_settings(sys.n_clusters, sys.m_per_cluster)
+    # simulation = [
+    #     {
+    #         "optimization_results": optimization_results,
+    #         "system_target_params": system_target_params,
+    #         "plot_settings": plot_settings,
+    #         "design_analysis_version": anmod.anmod_version,
+    #     }
+    # ]
+
+    # plot_progress(
+    #         [optimization_results],
+    #         system_target_params,
+    #         plot_settings,
+    #         block_plots=True
+    #     )
