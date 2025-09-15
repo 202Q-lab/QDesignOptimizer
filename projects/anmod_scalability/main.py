@@ -29,6 +29,7 @@ def aggregate_results(
     design_variables = deepcopy(sys.get_flattened_x())
     system_optimized_params = deepcopy(sys.get_flattened_y())
     h_factor = deepcopy(sys.get_flattened_h())
+    g_approx_factor = deepcopy(sys.get_flattened_g_factor())
     g_approx_over_g_factor = deepcopy(sys.get_flattened_g_approx_over_g())
 
     iteration_result = {}
@@ -36,6 +37,7 @@ def aggregate_results(
     iteration_result["system_optimized_params"] = system_optimized_params
     iteration_result["minimization_results"] = minimization_results
     iteration_result["h_factor"] = h_factor
+    iteration_result["g_approx_factor"] = g_approx_factor
     iteration_result["g_approx_over_g_factor"] = g_approx_over_g_factor
 
     optimization_results.append(iteration_result)

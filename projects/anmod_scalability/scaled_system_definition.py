@@ -169,6 +169,7 @@ class ScaledSystem:
         self._x = rng.uniform(0.5, 1.0, size=(n, m))
         self._y = rng.uniform(0.5, 1.0, size=(n, m))
         self._h_ij_factor = np.zeros((n, m))
+        self._g_ij_approx_factor = np.zeros((n, m))
         self._g_ij_approx_over_g_factor = np.zeros((n, m))
         self.y_target_value = rng.uniform(0.5, 1.0, size=(n, m))
         self.flattened_y_target = self.create_flattened_y_target()
@@ -195,6 +196,9 @@ class ScaledSystem:
 
     def get_flattened_h(self) -> np.ndarray:
         return self.flatten(self._h_ij_factor, "", "_")
+
+    def get_flattened_g_factor(self) -> np.ndarray:
+        return self.flatten(self._g_ij_approx_factor, "", "_")
 
     def get_flattened_g_approx_over_g(self) -> np.ndarray:
         return self.flatten(self._g_ij_approx_over_g_factor, "", "_")
@@ -292,6 +296,7 @@ class ScaledSystem:
                 h_ij = self._h_ij(i, j, y_pert)
                 y_pert[i, j] = self._g_ij(i, j, y_pert) * h_ij
                 self._h_ij_factor[i, j] = h_ij
+                self._g_ij_approx_factor[i, j] = self._g_ij_approx(i, j, y_pert)
                 self._g_ij_approx_over_g_factor[i, j] = self._g_ij_approx(
                     i, j, y_pert
                 ) / self._g_ij(i, j, y_pert)

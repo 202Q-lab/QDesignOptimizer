@@ -17,11 +17,15 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
     """
     # Get all parameter names from the first iteration
     param_names = list(optimization_results[0]["system_optimized_params"].keys())
+    dv_names = list(optimization_results[0]["design_variables"].keys())
     n_iterations = len(optimization_results)
     iterations = range(n_iterations)
 
     # Create 2x2 subplot matrix
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+    fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(
+        3, 2, figsize=(16, 12)
+    )  #    plot evolution of design variables
+    # plot f_k+1 / f_k
 
     # ===== Upper Right: y/y_target convergence =====
     ax1.set_title("Convergence: y/y_target vs Iterations", fontsize=14)
@@ -50,8 +54,34 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
     ax1.set_yscale("log")
     ax1.grid(True, alpha=0.3)
 
+    ax2.set_title("Convergence: y/y_target vs Iterations", fontsize=14)
+
+    for dv_name in dv_names:
+        ratios = []
+        final_val = optimization_results[-1]["design_variables"][dv_name]
+
+        for iter_result in optimization_results:
+            optimized_val = iter_result["design_variables"][dv_name]
+            ratio = optimized_val / final_val
+            ratios.append(ratio)
+
+        ax2.plot(
+            iterations,
+            ratios,
+            "o-",
+            linewidth=1.5,
+            markersize=4,
+            label=dv_name,
+            alpha=0.7,
+        )
+
+    ax2.set_xlabel("Iteration", fontsize=12)
+    ax2.set_ylabel("y/y_target Ratio", fontsize=12)
+    ax2.set_yscale("log")
+    ax2.grid(True, alpha=0.3)
+
     # ===== Lower Left: Histogram of last iteration's h_factors =====
-    ax2.set_title("Distribution of g_ij^approx/g_ij (Last Iteration)", fontsize=14)
+    ax3.set_title("Distribution of g_ij^approx/g_ij (Last Iteration)", fontsize=14)
 
     # Get last iteration's h_factors
     last_g_approx_over_g_factors = []
@@ -61,19 +91,19 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         )
 
     # Create histogram
-    ax2.hist(
+    ax3.hist(
         last_g_approx_over_g_factors,
         bins=min(30, len(param_names) // 2),
         alpha=0.7,
         edgecolor="black",
     )
-    ax2.set_xlabel("g_ij^approx/g_ij Value", fontsize=12)
-    ax2.set_ylabel("Number of occurrences", fontsize=12)
-    ax2.set_yscale("log")
-    ax2.grid(True, alpha=0.3)
+    ax3.set_xlabel("g_ij^approx/g_ij Value", fontsize=12)
+    ax3.set_ylabel("Number of occurrences", fontsize=12)
+    ax3.set_yscale("log")
+    ax3.grid(True, alpha=0.3)
 
     # ===== Lower Left: Histogram of last iteration's h_factors =====
-    ax3.set_title("Distribution of h_factors (Last Iteration)", fontsize=14)
+    ax4.set_title("Distribution of h_factors (Last Iteration)", fontsize=14)
 
     # Get last iteration's h_factors
     last_h_factors = []
@@ -81,19 +111,19 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         last_h_factors.append(optimization_results[-1]["h_factor"][param_name])
 
     # Create histogram
-    ax3.hist(
+    ax4.hist(
         last_h_factors,
         bins=min(30, len(param_names) // 2),
         alpha=0.7,
         edgecolor="black",
     )
-    ax3.set_xlabel("h_ij Value", fontsize=12)
-    ax3.set_ylabel("Number of occurrences", fontsize=12)
-    ax3.set_yscale("log")
-    ax3.grid(True, alpha=0.3)
+    ax4.set_xlabel("h_ij Value", fontsize=12)
+    ax4.set_ylabel("Number of occurrences", fontsize=12)
+    ax4.set_yscale("log")
+    ax4.grid(True, alpha=0.3)
 
     # ===== Lower Left: Histogram of last iteration's h_factors =====
-    ax4.set_title("Distribution of h_factors (Last Iteration)", fontsize=14)
+    ax5.set_title("Distribution of h_factors (Last Iteration)", fontsize=14)
 
     # Get last iteration's h_factors
     last_conbined_factors = []
@@ -104,16 +134,38 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         )
 
     # Create histogram
-    ax4.hist(
+    ax5.hist(
         last_conbined_factors,
         bins=min(30, len(param_names) // 2),
         alpha=0.7,
         edgecolor="black",
     )
-    ax4.set_xlabel("g_ij^approx/g * h_ij Value", fontsize=12)
-    ax4.set_ylabel("Number of occurrences", fontsize=12)
-    ax4.set_yscale("log")
-    ax4.grid(True, alpha=0.3)
+    ax5.set_xlabel("g_ij^approx/g * h_ij Value", fontsize=12)
+    ax5.set_ylabel("Number of occurrences", fontsize=12)
+    ax5.set_yscale("log")
+    ax5.grid(True, alpha=0.3)
+
+    ax6.set_title("Distribution of h_factors (Last Iteration)", fontsize=14)
+
+    # Get last iteration's h_factors
+    last_conbined_factors = []
+    for param_name in param_names:
+        last_conbined_factors.append(
+            optimization_results[-1]["g_approx_over_g_factor"][param_name]
+            * optimization_results[-1]["h_factor"][param_name]
+        )
+
+    # Create histogram
+    ax6.hist(
+        last_conbined_factors,
+        bins=min(30, len(param_names) // 2),
+        alpha=0.7,
+        edgecolor="black",
+    )
+    ax6.set_xlabel("f_ij(yt)", fontsize=12)
+    ax6.set_ylabel("Number of occurrences", fontsize=12)
+    ax6.set_yscale("log")
+    ax6.grid(True, alpha=0.3)
 
     # Adjust layout and show
     plt.tight_layout()
