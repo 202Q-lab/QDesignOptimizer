@@ -27,18 +27,26 @@ def aggregate_results(
     optimization_results: list, sys: ScaledSystem, minimization_results: any
 ):
     design_variables = deepcopy(sys.get_flattened_x())
-    system_optimized_params = deepcopy(sys.get_flattened_y())
-    h_factor = deepcopy(sys.get_flattened_h())
-    g_approx_factor = deepcopy(sys.get_flattened_g_factor())
-    g_approx_over_g_factor = deepcopy(sys.get_flattened_g_approx_over_g())
+    system_optimized_params = deepcopy(sys.get_flattened_yk())
+    h_ij_factor_at_yk_xk = deepcopy(sys.get_flattened_h_ij_factor_at_yk_xk())
+    g_ij_approx_factor_at_yk_xk = deepcopy(
+        sys.get_flattened_g_ij_approx_factor_at_yk_xk()
+    )
+    g_ij_approx_factor_at_ytarget_xk = deepcopy(
+        sys.get_flattened_g_ij_approx_factor_at_ytarget_xk()
+    )
+    g_ij_factor_at_yk_xk = deepcopy(sys.get_flattened_g_ij_factor_at_yk_xk())
 
     iteration_result = {}
     iteration_result["design_variables"] = design_variables
     iteration_result["system_optimized_params"] = system_optimized_params
     iteration_result["minimization_results"] = minimization_results
-    iteration_result["h_factor"] = h_factor
-    iteration_result["g_approx_factor"] = g_approx_factor
-    iteration_result["g_approx_over_g_factor"] = g_approx_over_g_factor
+    iteration_result["h_ij_factor_at_yk_xk"] = h_ij_factor_at_yk_xk
+    iteration_result["g_ij_approx_factor_at_yk_xk"] = g_ij_approx_factor_at_yk_xk
+    iteration_result["g_ij_approx_factor_at_ytarget_xk"] = (
+        g_ij_approx_factor_at_ytarget_xk
+    )
+    iteration_result["g_ij_factor_at_yk_xk"] = g_ij_factor_at_yk_xk
 
     optimization_results.append(iteration_result)
 
@@ -76,11 +84,12 @@ if __name__ == "__main__":
     NBR_ITERATIONS = 10
     for it in range(NBR_ITERATIONS):
         sys.gather_info_for_y_given_x()
-        system_optimized_params = sys.get_flattened_y()
+        system_optimized_params = sys.get_flattened_yk()
         updated_design_vars, minimization_results = anmod.calculate_target_design_var(
             system_optimized_params=system_optimized_params,
             variables_with_units=sys.get_flattened_x(),
         )
+        print(f"--- Iteration {it+1}/{NBR_ITERATIONS} ---")
         sys.set_updated_design_vars(updated_design_vars)
         aggregate_results(optimization_results, sys, minimization_results)
 

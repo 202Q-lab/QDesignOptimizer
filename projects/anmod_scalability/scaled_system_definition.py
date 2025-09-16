@@ -124,21 +124,14 @@ class ScaledSystem:
                             self.sample_range_alpha_ij_neq_k, size=1, rng=rng
                         )
                     self.alpha[i, j, k] = alpha
-                    # if k != j + 1:
-                    #     self.alpha[i, j, k] = temp
 
-        # Zero super-diagonal (j, j+1) for alpha
-        # idx = np.arange(m-1)  # indices 0 to m-2
-        # self.alpha[:, idx, idx+1] = 0.0  # alpha[i, j, j+1] = 0 for j < m-1
         self.alpha_approx = exponent_approx_to_1_over_round(
             self.alpha, self.exponent_approx_to_1_over
         )
 
-        # U_beta  = [-0.6, -0.3] ∪ [ 0.3,  0.6]
         self.beta = sample_uniform_from_union(
             self.sample_range_beta, size=(n, m, m), rng=rng
         )
-        # Zero the self-coupling diagonal so that ∏_k includes a harmless factor 1 at k=j
         idx = np.arange(m)
         self.beta[:, idx, idx] = 0.0  # diagonal: beta[i, j, j] = 0
         self.beta_approx = exponent_approx_to_1_over_round(
@@ -165,14 +158,13 @@ class ScaledSystem:
                         )
 
         # --- Initial design variables and target parameters ---
-        # U_i = [0.5, 1.0]§
         self._x = rng.uniform(0.5, 1.0, size=(n, m))
         self._y = rng.uniform(0.5, 1.0, size=(n, m))
-        self._h_ij_factor = np.zeros((n, m))
-        self._g_ij_approx_factor = np.zeros((n, m))
-        self._g_ij_approx_over_g_factor = np.zeros((n, m))
+        self._h_ij_factor_at_yk_xk = np.zeros((n, m))
+        self._g_ij_approx_factor_at_yk_xk = np.zeros((n, m))
+        self._g_ij_approx_factor_at_ytarget_xk = np.zeros((n, m))
+        self._g_ij_factor_at_yk_xk = np.zeros((n, m))
         self.y_target_value = rng.uniform(0.5, 1.0, size=(n, m))
-        self.flattened_y_target = self.create_flattened_y_target()
 
     def flatten(self, vec, prefix, suffix) -> np.ndarray:
         """Return y as a flattened array of shape (n_clusters * m_per_cluster,)"""
@@ -182,26 +174,26 @@ class ScaledSystem:
             for j in range(self.m_per_cluster)
         }
 
-    def get_flattened_y(self) -> np.ndarray:
-        return self.flatten(self._y, "", "_")
-
-    def create_flattened_y_target(self) -> np.ndarray:
+    def get_flattened_yk(self) -> np.ndarray:
         return self.flatten(self._y, "", "_")
 
     def get_flattened_y_target(self) -> np.ndarray:
-        return self.flattened_y_target
+        return self.flatten(self.y_target_value, "", "_")
 
     def get_flattened_x(self) -> np.ndarray:
         return self.flatten(self._x, "dv_", "")
 
-    def get_flattened_h(self) -> np.ndarray:
-        return self.flatten(self._h_ij_factor, "", "_")
+    def get_flattened_h_ij_factor_at_yk_xk(self) -> np.ndarray:
+        return self.flatten(self._h_ij_factor_at_yk_xk, "", "_")
 
-    def get_flattened_g_factor(self) -> np.ndarray:
-        return self.flatten(self._g_ij_approx_factor, "", "_")
+    def get_flattened_g_ij_approx_factor_at_yk_xk(self) -> np.ndarray:
+        return self.flatten(self._g_ij_approx_factor_at_yk_xk, "", "_")
 
-    def get_flattened_g_approx_over_g(self) -> np.ndarray:
-        return self.flatten(self._g_ij_approx_over_g_factor, "", "_")
+    def get_flattened_g_ij_approx_factor_at_ytarget_xk(self) -> np.ndarray:
+        return self.flatten(self._g_ij_approx_factor_at_ytarget_xk, "", "_")
+
+    def get_flattened_g_ij_factor_at_yk_xk(self) -> np.ndarray:
+        return self.flatten(self._g_ij_factor_at_yk_xk, "", "_")
 
     def set_updated_design_vars(self, updated_design_vars: Dict[str, float]):
         """
@@ -269,41 +261,42 @@ class ScaledSystem:
                     g_val = self._g_ij(cluster_i, param_j)
                     residuals[param_j] = (y_cluster[param_j] - g_val) ** 2
 
-                # Restore original cluster values
                 self._y[cluster_i, :] = old_cluster
                 return residuals
 
             # Initial guess for this cluster
             y0_cluster = self._y[cluster_i, :].copy()
-
-            # Solve the nonlinear system using modified Powell hybrid method
             result = root(cluster_residual, y0_cluster, method="hybr", tol=tol)
 
-            if not result.success:
-                print(
-                    f"Warning: Solver failed for cluster {cluster_i}. Message: {result.message}"
-                )
+            # if not result.success:
+            #     print(
+            #         f"Warning: Solver failed for cluster {cluster_i}. Message: {result.message}"
+            #     )
 
-            # Store the solution for this cluster
             self._y[cluster_i, :] = result.x
 
     def _solve_yij_equal_gij_hij_perturbatively(self, tol=1e-12):
         residual = tol + 1.0
         y_pert = self._y.copy()
 
+        # after the while loop has converged, y has converged to yk (iteration k)
         while residual > tol:
             for i, j in np.ndindex(self.n_clusters, self.m_per_cluster):
                 h_ij = self._h_ij(i, j, y_pert)
                 y_pert[i, j] = self._g_ij(i, j, y_pert) * h_ij
-                self._h_ij_factor[i, j] = h_ij
-                self._g_ij_approx_factor[i, j] = self._g_ij_approx(i, j, y_pert)
-                self._g_ij_approx_over_g_factor[i, j] = self._g_ij_approx(
+                self._g_ij_approx_factor_at_yk_xk[i, j] = self._g_ij_approx(
                     i, j, y_pert
-                ) / self._g_ij(i, j, y_pert)
+                )
+                self._g_ij_factor_at_yk_xk[i, j] = self._g_ij(i, j, y_pert)
+                self._h_ij_factor_at_yk_xk[i, j] = h_ij
             residual = np.sum((self._y - y_pert) ** 2)
             self._y = y_pert.copy()
 
     def gather_info_for_y_given_x(self, tol=1e-12):
+        for i, j in np.ndindex(self.n_clusters, self.m_per_cluster):
+            self._g_ij_approx_factor_at_ytarget_xk[i, j] = self._g_ij_approx(
+                i, j, self.y_target_value
+            )
         self._solve_yij_equal_gij(tol=tol)  # as initial guess for perturbative solution
         self._solve_yij_equal_gij_hij_perturbatively(tol=tol)
 
