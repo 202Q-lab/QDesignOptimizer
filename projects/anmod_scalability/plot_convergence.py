@@ -31,21 +31,21 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         }
     )
     # Create 2x2 subplot matrix
-    fig, ((ax_1, ax_2), (ax_3, ax_4), (ax_5, ax_6), (ax_7, ax_8)) = plt.subplots(
-        4, 2, figsize=(2 * 3.35, 2 * 6.7)
+    fig, ((ax_1, ax_2, ax_3, ax_4), (ax_5, ax_6, ax_7, ax_8)) = plt.subplots(
+        2, 4, figsize=(2 * 6.7, 2 * 3.35)
     )  #    plot evolution of design variables
     gs = fig.add_gridspec(
         1, 1, wspace=0.55, hspace=0.15, left=0.16, right=0.99, bottom=0.28, top=0.97
     )
     axes = [ax_1, ax_2, ax_3, ax_4, ax_5, ax_6, ax_7, ax_8]
 
-    ax_1.text(0.15, 0.85, "(a)", transform=ax_1.transAxes)
+    ax_1.text(0.8, 0.85, "(a)", transform=ax_1.transAxes)
     ax_2.text(0.8, 0.85, "(b)", transform=ax_2.transAxes)
-    ax_3.text(0.15, 0.85, "(c)", transform=ax_3.transAxes)
+    ax_3.text(0.8, 0.85, "(c)", transform=ax_3.transAxes)
     ax_4.text(0.8, 0.85, "(d)", transform=ax_4.transAxes)
-    ax_5.text(0.15, 0.85, "(e)", transform=ax_5.transAxes)
+    ax_5.text(0.8, 0.85, "(e)", transform=ax_5.transAxes)
     ax_6.text(0.8, 0.85, "(f)", transform=ax_6.transAxes)
-    ax_7.text(0.15, 0.85, "(g)", transform=ax_7.transAxes)
+    ax_7.text(0.8, 0.85, "(g)", transform=ax_7.transAxes)
     ax_8.text(0.8, 0.85, "(h)", transform=ax_8.transAxes)
     # plot f_k+1 / f_k
     ax7, ax8, ax1, ax2, ax3, ax4, ax5, ax6 = (
@@ -196,11 +196,11 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
     last_conbined_factors = []
     for param_name in param_names:
         last_conbined_factors.append(
-            optimization_results[-1]["g_ij_approx_factor_at_yk_xk"][param_name]
-            / (
+            (
                 optimization_results[-1]["g_ij_factor_at_yk_xk"][param_name]
                 * optimization_results[-1]["h_ij_factor_at_yk_xk"][param_name]
             )
+            / optimization_results[-1]["g_ij_approx_factor_at_yk_xk"][param_name]
         )
 
     ax5.hist(
@@ -209,37 +209,33 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         alpha=0.7,
         edgecolor="black",
     )
-    ax5.set_xlabel(r"Ratio $f_{i,j}^{approx, k} \ / \ f_{i,j}^{exact, k}$")
+    ax5.set_xlabel(r"Error factor $f_{i,j}^{error, k=10}$")
     ax5.set_ylabel("Count")
     ax5.set_yscale("log")
     ax5.grid(True, alpha=0.3)
     ax3.set_xticks([0.8, 1.0, 1.2])
 
+    approx_slope = (
+        np.max([*last_conbined_factors, *np.array(last_conbined_factors) ** -1]) - 1
+    )
+    max_start = 0
     # Compare the error made by the model given by
-    # f_ij^approx(y^target, x^(k+1)) f_ij^error(y^k,x^k) / f_ij^exact(y^(k+1), x^(k+1))
     for param_name in param_names:
         target_val = system_target_params[param_name]
         approx_ratio = []
         for iter in range(n_iterations):
-            if iter == n_iterations - 1:
-                continue  # Skip last iteration for k+1 access
-            approx_ratio.append(
-                optimization_results[iter + 1]["g_ij_approx_factor_at_ytarget_xk"][
-                    param_name
-                ]
-                * optimization_results[iter]["system_optimized_params"][param_name]
-                / (
-                    optimization_results[iter]["g_ij_approx_factor_at_yk_xk"][
-                        param_name
-                    ]
-                    * optimization_results[iter + 1]["system_optimized_params"][
-                        param_name
-                    ]
+            error_ratio = (
+                abs(
+                    optimization_results[iter]["system_optimized_params"][param_name]
+                    - target_val
                 )
+                / target_val
             )
+            max_start = max(max_start, error_ratio)
+            approx_ratio.append(error_ratio)
 
         ax6.plot(
-            iterations[0:-1],
+            iterations,
             approx_ratio,
             "o-",
             linewidth=1.5,
@@ -247,11 +243,18 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             label=param_name,
             alpha=0.7,
         )
+    ax6.plot(
+        iterations,
+        4 * max_start * approx_slope ** (iterations - 1),
+        "k--",
+        linewidth=1.5,
+        label="Estimated slope",
+    )
     ax6.set_xlabel("Iteration $k$")
-    ax6.set_ylabel(r"Update error $\delta_{i,j}$ ")
+    ax6.set_ylabel(r"Ratio |$y_{i,j}^{k}-y_{i,j}^{target} $| / $y_{i,j}^{target}$ ")
     ax6.set_yscale("log")
     ax6.grid(True, alpha=0.3)
-    ax6.set_yticks([0.5, 1.0, 3])
+    # ax6.set_yticks([0.5, 1.0, 3])
 
     from matplotlib.ticker import FuncFormatter
 
