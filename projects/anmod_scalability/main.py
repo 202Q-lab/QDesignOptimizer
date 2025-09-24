@@ -7,14 +7,14 @@ from scaled_system_definition import ScaledSystem, get_prop_to
 
 from qdesignoptimizer.anmod_optimizer import ANModOptimizer
 from qdesignoptimizer.design_analysis_types import OptTarget
-from qdesignoptimizer.utils.names_parameters import mode
+from qdesignoptimizer.utils.names_parameters import UNITLESS, mode
 
 
 def get_opt_target(i, j, sys: ScaledSystem) -> OptTarget:
     """Return the optimization target for parameter with composite index a=(i,j)."""
     mode_name = mode(f"{i},{j}")
     return OptTarget(
-        target_param_type="",
+        target_param_type=UNITLESS,
         involved_modes=[mode_name],
         design_var=f"dv_{i},{j}",
         design_var_constraint={"larger_than": 1e-8, "smaller_than": 100},

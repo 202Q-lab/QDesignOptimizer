@@ -9,6 +9,7 @@ CAVITY = "cavity"
 COUPLER = "coupler"
 
 # Parameter types
+UNITLESS: Literal[""] = ""
 FREQ: Literal["freq"] = "freq"
 KAPPA: Literal["kappa"] = "kappa"
 CHARGE_LINE_LIMITED_T1: Literal["charge_line_limited_t1"] = "charge_line_limited_t1"
@@ -152,7 +153,7 @@ def param(
         'resonator_a_kappa'
     """
     assert param_type in [
-        "",
+        "",  # unitless parameter
         "freq",
         "kappa",
         "charge_line_limited_t1",
