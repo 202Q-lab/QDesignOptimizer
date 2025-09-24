@@ -7,7 +7,7 @@ from qdesignoptimizer.sim_plot_progress import plot_progress
 
 def plot_all_convergence_ratios(optimization_results, system_target_params):
     """
-    Plot convergence analysis in a 2x2 matrix of subplots.
+    Plot convergence analysis.
 
     Parameters
     ----------
@@ -26,13 +26,13 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         {
             "font.family": "serif",
             "font.serif": ["Times New Roman"],
-            "font.size": 20,
+            "font.size": 35,
             "mathtext.fontset": "stix",
         }
     )
     # Create 2x2 subplot matrix
     fig, ((ax_1, ax_2, ax_3, ax_4), (ax_5, ax_6, ax_7, ax_8)) = plt.subplots(
-        2, 4, figsize=(2 * 6.7, 2 * 3.35)
+        2, 4, figsize=(3.5 * 6.7, 3.5 * 3.35)
     )  #    plot evolution of design variables
     gs = fig.add_gridspec(
         1, 1, wspace=0.55, hspace=0.15, left=0.16, right=0.99, bottom=0.28, top=0.97
@@ -73,8 +73,8 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             iterations,
             ratios,
             "o-",
-            linewidth=1.5,
-            markersize=4,
+            linewidth=1.5 * 2,
+            markersize=4 * 2,
             label=param_name,
             alpha=0.7,
         )
@@ -95,8 +95,8 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             iterations,
             ratios,
             "o-",
-            linewidth=1.5,
-            markersize=4,
+            linewidth=1.5 * 2,
+            markersize=4 * 2,
             label=dv_name,
             alpha=0.7,
         )
@@ -121,8 +121,8 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             iterations,
             ratios,
             "o-",
-            linewidth=1.5,
-            markersize=4,
+            linewidth=1.5 * 2,
+            markersize=4 * 2,
             label=param_name,
             alpha=0.7,
         )
@@ -145,8 +145,8 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             iterations,
             ratios,
             "o-",
-            linewidth=1.5,
-            markersize=4,
+            linewidth=1.5 * 2,
+            markersize=4 * 2,
             label=dv_name,
             alpha=0.7,
         )
@@ -203,6 +203,28 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             / optimization_results[-1]["g_ij_approx_factor_at_yk_xk"][param_name]
         )
 
+    largest_approximation_slope = 0
+    largest_approximation_slope_for_iteration_all = []
+    for iter in range(n_iterations):
+        largest_approximation_slope_for_iteration = 0
+        for param_name in param_names:
+            slope = abs(
+                optimization_results[iter]["g_ij_factor_at_yk_xk"][param_name]
+                * optimization_results[iter]["h_ij_factor_at_yk_xk"][param_name]
+                / optimization_results[iter]["g_ij_approx_factor_at_yk_xk"][param_name]
+                - 1
+            )
+            if slope > largest_approximation_slope:
+                largest_approximation_slope = slope
+            if slope > largest_approximation_slope_for_iteration:
+                largest_approximation_slope_for_iteration = slope
+        largest_approximation_slope_for_iteration_all.append(
+            {
+                "iteration": iter,
+                "param": param_name,
+                "slope": largest_approximation_slope_for_iteration,
+            }
+        )
     ax5.hist(
         last_conbined_factors,
         bins=min(30, len(param_names) // 2),
@@ -213,11 +235,8 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
     ax5.set_ylabel("Count")
     ax5.set_yscale("log")
     ax5.grid(True, alpha=0.3)
-    ax3.set_xticks([0.8, 1.0, 1.2])
+    ax5.set_xticks([1.0, 1.2, 1.4])
 
-    approx_slope = (
-        np.max([*last_conbined_factors, *np.array(last_conbined_factors) ** -1]) - 1
-    )
     max_start = 0
     # Compare the error made by the model given by
     for param_name in param_names:
@@ -238,23 +257,26 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             iterations,
             approx_ratio,
             "o-",
-            linewidth=1.5,
-            markersize=4,
+            linewidth=1.5 * 2,
+            markersize=4 * 2,
             label=param_name,
             alpha=0.7,
         )
+    largest_slope_last_iteration = largest_approximation_slope_for_iteration_all[-1][
+        "slope"
+    ]
     ax6.plot(
         iterations,
-        4 * max_start * approx_slope ** (iterations - 1),
+        4 * max_start * largest_slope_last_iteration ** (iterations - 1),
         "k--",
-        linewidth=1.5,
+        linewidth=1.5 * 2,
         label="Estimated slope",
     )
     ax6.set_xlabel("Iteration $k$")
     ax6.set_ylabel(r"Ratio |$y_{i,j}^{k}-y_{i,j}^{target} $| / $y_{i,j}^{target}$ ")
     ax6.set_yscale("log")
     ax6.grid(True, alpha=0.3)
-    # ax6.set_yticks([0.5, 1.0, 3])
+    ax6.set_yticks([1e-8, 1e-4, 1])
 
     from matplotlib.ticker import FuncFormatter
 
@@ -264,9 +286,18 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
     for ax in [ax_1, ax_2, ax_3, ax_4, ax_5, ax_6, ax_7, ax_8]:
         # pick one:
         # ax.yaxis.set_major_locator(dense_locator)   # or base_locator
-        ax.yaxis.set_major_formatter(FuncFormatter(plain_number))
+        if ax not in [ax_8]:
+            ax.yaxis.set_major_formatter(FuncFormatter(plain_number))
         # hide minor tick labels
         ax.yaxis.set_minor_formatter(FuncFormatter(lambda *_: ""))
 
+    print(largest_approximation_slope_for_iteration_all)
     plt.tight_layout()
+    plt.show(block=True)
+
+    plt.plot(
+        iterations,
+        [item["slope"] for item in largest_approximation_slope_for_iteration_all],
+        "o-",
+    )
     plt.show(block=True)

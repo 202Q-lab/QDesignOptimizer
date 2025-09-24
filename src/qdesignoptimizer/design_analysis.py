@@ -592,11 +592,17 @@ class DesignAnalysis:
             self.is_system_optimized_params_initialized = True
         self.update_var(updated_design_vars_input, system_optimized_params)
 
-        updated_design_vars, minimization_results = (
-            self.anmod_optimizer.calculate_target_design_var(
-                self.system_optimized_params, self.design.variables
+        if not self.is_system_optimized_params_initialized:
+            # bootstrap with initial design variables if no system_optimized_params exist
+            updated_design_vars = deepcopy(self.design.variables)
+            minimization_results = {}
+            self.is_system_optimized_params_initialized = True
+        else:
+            updated_design_vars, minimization_results = (
+                self.anmod_optimizer.calculate_target_design_var(
+                    self.system_optimized_params, self.design.variables
+                )
             )
-        )
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
