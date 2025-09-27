@@ -152,7 +152,7 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         )
 
     ax2.set_xlabel("Iteration $k$")
-    ax2.set_ylabel(r"Ratio $x_{i,j}\ / \ x_{i,j}^{k=9}$")
+    ax2.set_ylabel(r"Ratio $x_{i,j}\ / \ x_{i,j}^{k=10}$")
     ax2.set_yscale("log")
     ax2.grid(True, alpha=0.3)
     ax2.set_yticks([0.5, 1.0])
