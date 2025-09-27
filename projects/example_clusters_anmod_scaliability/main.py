@@ -19,7 +19,7 @@ def get_opt_target(i, j, sys: ScaledSystem) -> OptTarget:
         design_var=f"dv_{i},{j}",
         design_var_constraint={"larger_than": 1e-8, "smaller_than": 100},
         prop_to=get_prop_to(i, j, sys),
-        independent_target=i,
+        independent_target=f"{i}",
     )
 
 

@@ -137,9 +137,9 @@ class OptTarget:
             on a single variable each, all design variables must have consistent units. For example,
             ``func1(v[PARAM_X])*func2(PARAM_Y)`` can accept parameters with different units, while ``(v[PARAM_X] - v[PARAM_Y])`` requires
             ``PARAM_X`` and ``PARAM_Y`` to have the same units.
-        independent_target (bool | int): If True, this target only depends on a single design variable
+        independent_target (bool | str): If True, this target only depends on a single design variable
             and not on any system parameter. This allows the optimizer to solve this OptTarget
-            independently, making it faster and more robust. If an int is provided, all targets with the same int will be solved as an isolated system.
+            independently, making it faster and more robust. If a str is provided, all targets with the same str will be solved as an isolated system.
 
     Note:
         The `prop_to` function is crucial as it defines the physical relationship between
@@ -180,7 +180,7 @@ class OptTarget:
                 float | int,
             ]
         ] = None,
-        independent_target: bool | int = False,
+        independent_target: bool | str = False,
     ):
         """Initialize an optimization target."""
         self.target_param_type = target_param_type
