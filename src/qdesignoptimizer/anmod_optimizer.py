@@ -122,7 +122,7 @@ class ANModOptimizer:
         self,
         system_optimized_params: dict[Parameter, float | int],
         variables_with_units: dict[DesignVariable, str],
-    ) -> dict:
+    ) -> tuple[dict, list[dict]]:
         """Calculate the new design value for the optimization targets."""
         minimization_results: list[dict] = []
 
