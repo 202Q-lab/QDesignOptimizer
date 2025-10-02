@@ -25,7 +25,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="qdesignoptimizer.design_analysis_types module" href="qdesignoptimizer.design_analysis_types.html" />
-    <link rel="prev" title="qdesignoptimizer.utils.utils module" href="qdesignoptimizer.utils.utils.html" /> 
+    <link rel="prev" title="qdesignoptimizer.anmod_optimizer module" href="qdesignoptimizer.anmod_optimizer.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -60,6 +60,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="qdesignoptimizer.html">qdesignoptimizer package</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.html#subpackages">Subpackages</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="qdesignoptimizer.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.anmod_optimizer.html">qdesignoptimizer.anmod_optimizer module</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">qdesignoptimizer.design_analysis module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html">qdesignoptimizer.design_analysis_types module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.logger.html">qdesignoptimizer.logger module</a></li>
@@ -195,18 +196,6 @@ This function should return the list of part names, e.g. {name}_flux_line_left. 
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_parameter_value">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_parameter_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget" title="qdesignoptimizer.design_analysis_types.OptTarget"><span class="pre">OptTarget</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_parameter_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_parameter_value" title="Link to this definition"></a></dt>
-<dd><p>Return value of parameter from target specification.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.get_system_params_targets_met">
-<span class="sig-name descname"><span class="pre">get_system_params_targets_met</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.get_system_params_targets_met"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.get_system_params_targets_met" title="Link to this definition"></a></dt>
-<dd><p>Return organized dictionary of parameters given target specifications and current status.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target">
 <span class="sig-name descname"><span class="pre">optimize_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updated_design_vars_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_optimized_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qdesignoptimizer/design_analysis.html#DesignAnalysis.optimize_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target" title="Link to this definition"></a></dt>
 <dd><p>Run full optimization iteration to adjust design variables toward target parameters.</p>
@@ -314,7 +303,7 @@ Mismatched orders will cause incorrect parameter mapping.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="qdesignoptimizer.utils.utils.html" class="btn btn-neutral float-left" title="qdesignoptimizer.utils.utils module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="qdesignoptimizer.anmod_optimizer.html" class="btn btn-neutral float-left" title="qdesignoptimizer.anmod_optimizer module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="qdesignoptimizer.design_analysis_types.html" class="btn btn-neutral float-right" title="qdesignoptimizer.design_analysis_types module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

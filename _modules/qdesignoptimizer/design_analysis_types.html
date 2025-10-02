@@ -83,13 +83,14 @@
   <h1>Source code for qdesignoptimizer.design_analysis_types</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Data structures for organizing quantum circuit design optimization workflows.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterator</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">fields</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">qiskit_metal.designs.design_base</span> <span class="kn">import</span> <span class="n">QDesign</span>
 
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.sim_capacitance_matrix</span> <span class="kn">import</span> <span class="n">CapacitanceMatrixStudy</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.names_parameters</span> <span class="kn">import</span> <span class="n">Mode</span>
+
 
 <div class="viewcode-block" id="InterfaceProperties">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.InterfaceProperties">[docs]</a>
@@ -103,9 +104,11 @@
 <span class="sd">        th (float): Thickness of the material layer in millimeters. [mm]</span>
 <span class="sd">        tan_delta_surf (float): Surface loss tangent, representing the losses at the interface. [dimensionless]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">eps_r</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">11.4</span>
     <span class="n">th</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span>
     <span class="n">tan_delta_surf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span></div>
+
 
 
 <div class="viewcode-block" id="default_interface_properties">
@@ -113,6 +116,7 @@
 <span class="k">def</span> <span class="nf">default_interface_properties</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">InterfaceProperties</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a default set of interface properties.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">InterfaceProperties</span><span class="p">(</span><span class="n">eps_r</span><span class="o">=</span><span class="mf">11.4</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">tan_delta_surf</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="Interfaces">
@@ -124,13 +128,20 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        substrate_air (InterfaceProperties): Interface between substrate and air.</span>
-<span class="sd">        metal_substrate (InterfaceProperties): Interface between metal and substrate.   </span>
+<span class="sd">        metal_substrate (InterfaceProperties): Interface between metal and substrate.</span>
 <span class="sd">        underside_air (InterfaceProperties): Interface between underside and surface.</span>
 <span class="sd">        metal_air (InterfaceProperties): Interface between metal and air.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">substrate_air</span><span class="p">:</span> <span class="n">InterfaceProperties</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">default_interface_properties</span><span class="p">)</span>
-    <span class="n">metal_substrate</span><span class="p">:</span> <span class="n">InterfaceProperties</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">default_interface_properties</span><span class="p">)</span>
-    <span class="n">underside_air</span><span class="p">:</span> <span class="n">InterfaceProperties</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">default_interface_properties</span><span class="p">)</span>
+
+    <span class="n">substrate_air</span><span class="p">:</span> <span class="n">InterfaceProperties</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="n">default_interface_properties</span>
+    <span class="p">)</span>
+    <span class="n">metal_substrate</span><span class="p">:</span> <span class="n">InterfaceProperties</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="n">default_interface_properties</span>
+    <span class="p">)</span>
+    <span class="n">underside_air</span><span class="p">:</span> <span class="n">InterfaceProperties</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="n">default_interface_properties</span>
+    <span class="p">)</span>
     <span class="n">metal_air</span><span class="p">:</span> <span class="n">InterfaceProperties</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">default_interface_properties</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Interfaces.keys">
@@ -142,6 +153,7 @@
 </div>
 
 
+
 <div class="viewcode-block" id="SurfaceProperties">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SurfaceProperties">[docs]</a>
 <span class="nd">@dataclass</span>
@@ -149,9 +161,15 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Complete surface characterization including all interfaces and metal sheet properties.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">interfaces</span><span class="p">:</span> <span class="n">Interfaces</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Interfaces</span><span class="p">)</span> <span class="c1"># Collection of all interface properties</span>
-    <span class="n">sheet_material</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Aluminum&#39;</span>   <span class="c1"># Conductor material type (must be included in or added to ANSYS HFSS material library)</span>
+
+    <span class="n">interfaces</span><span class="p">:</span> <span class="n">Interfaces</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="n">Interfaces</span>
+    <span class="p">)</span>  <span class="c1"># Collection of all interface properties</span>
+    <span class="n">sheet_material</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;Aluminum&quot;</span>  <span class="c1"># Conductor material type (must be included in or added to ANSYS HFSS material library)</span>
+    <span class="p">)</span>
     <span class="n">sheet_thickness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.000150</span>  <span class="c1"># Metal sheet thickness [mm]</span></div>
+
 
 
 <div class="viewcode-block" id="MeshingMap">
@@ -222,9 +240,9 @@
 <span class="sd">            on a single variable each, all design variables must have consistent units. For example,</span>
 <span class="sd">            ``func1(v[PARAM_X])*func2(PARAM_Y)`` can accept parameters with different units, while ``(v[PARAM_X] - v[PARAM_Y])`` requires</span>
 <span class="sd">            ``PARAM_X`` and ``PARAM_Y`` to have the same units.</span>
-<span class="sd">        independent_target (bool): If True, this target only depends on a single design variable</span>
-<span class="sd">            and not on any system parameter.This allows the optimizer to solve this OptTarget</span>
-<span class="sd">            independently, making it faster and more robust.</span>
+<span class="sd">        independent_target (bool | str): If True, this target only depends on a single design variable</span>
+<span class="sd">            and not on any system parameter. This allows the optimizer to solve this OptTarget</span>
+<span class="sd">            independently, making it faster and more robust. If a str is provided, all targets with the same str will be solved as an isolated system.</span>
 
 <span class="sd">    Note:</span>
 <span class="sd">        The `prop_to` function is crucial as it defines the physical relationship between</span>
@@ -265,7 +283,7 @@
                 <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span>
             <span class="p">]</span>
         <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">independent_target</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">independent_target</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an optimization target.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_param_type</span> <span class="o">=</span> <span class="n">target_param_type</span>
@@ -404,9 +422,12 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_properties</span> <span class="o">=</span> <span class="n">surface_properties</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interfaces</span> <span class="o">=</span> <span class="n">surface_properties</span><span class="o">.</span><span class="n">interfaces</span> <span class="k">if</span> <span class="n">surface_properties</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sheet_thickness</span> <span class="o">=</span> <span class="n">surface_properties</span><span class="o">.</span><span class="n">sheet_thickness</span> <span class="k">if</span> <span class="n">surface_properties</span> <span class="k">else</span> <span class="mf">0.000150</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sheet_material</span> <span class="o">=</span> <span class="n">surface_properties</span><span class="o">.</span><span class="n">sheet_material</span> <span class="k">if</span> <span class="n">surface_properties</span> <span class="k">else</span> <span class="s1">&#39;Aluminum&#39;</span></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">sheet_thickness</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">surface_properties</span><span class="o">.</span><span class="n">sheet_thickness</span> <span class="k">if</span> <span class="n">surface_properties</span> <span class="k">else</span> <span class="mf">0.000150</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sheet_material</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">surface_properties</span><span class="o">.</span><span class="n">sheet_material</span> <span class="k">if</span> <span class="n">surface_properties</span> <span class="k">else</span> <span class="s2">&quot;Aluminum&quot;</span>
+        <span class="p">)</span></div>
 
 
 

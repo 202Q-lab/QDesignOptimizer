@@ -24,7 +24,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="qdesignoptimizer.design_analysis module" href="qdesignoptimizer.design_analysis.html" />
+    <link rel="next" title="qdesignoptimizer.anmod_optimizer module" href="qdesignoptimizer.anmod_optimizer.html" />
     <link rel="prev" title="qdesignoptimizer.utils.plotting module" href="qdesignoptimizer.utils.plotting.html" /> 
 </head>
 
@@ -218,7 +218,7 @@ using standard rotation matrix operations.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.utils.get_value_and_unit">
-<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_value_and_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/utils.html#get_value_and_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.utils.get_value_and_unit" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_value_and_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/utils.html#get_value_and_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.utils.get_value_and_unit" title="Link to this definition"></a></dt>
 <dd><p>Extract numerical value and unit from a string representation.</p>
 <p>Parses a string containing a number followed by an optional unit
 (e.g., “10.5mm”) and separates it into the numerical value and unit string.</p>
@@ -234,7 +234,7 @@ If no unit is present, the unit string will be empty..</p>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_value_and_unit</span><span class="p">(</span><span class="s2">&quot;10.5mm&quot;</span><span class="p">)</span>
 <span class="go">(10.5, &#39;mm&#39;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_value_and_unit</span><span class="p">(</span><span class="s2">&quot;42&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_value_and_unit</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="go">(42.0, &#39;&#39;)</span>
 </pre></div>
 </div>
@@ -280,7 +280,7 @@ and returns the result with the same unit.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="qdesignoptimizer.utils.plotting.html" class="btn btn-neutral float-left" title="qdesignoptimizer.utils.plotting module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="qdesignoptimizer.design_analysis.html" class="btn btn-neutral float-right" title="qdesignoptimizer.design_analysis module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="qdesignoptimizer.anmod_optimizer.html" class="btn btn-neutral float-right" title="qdesignoptimizer.anmod_optimizer module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

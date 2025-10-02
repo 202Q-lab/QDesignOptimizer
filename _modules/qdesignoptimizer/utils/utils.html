@@ -91,13 +91,11 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
-
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <div class="viewcode-block" id="close_ansys">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.close_ansys">[docs]</a>
@@ -250,7 +248,7 @@
 
 <div class="viewcode-block" id="get_value_and_unit">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_value_and_unit">[docs]</a>
-<span class="k">def</span> <span class="nf">get_value_and_unit</span><span class="p">(</span><span class="n">val_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">get_value_and_unit</span><span class="p">(</span><span class="n">val_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Extract numerical value and unit from a string representation.</span>
 
@@ -267,11 +265,11 @@
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; get_value_and_unit(&quot;10.5mm&quot;)</span>
 <span class="sd">        (10.5, &#39;mm&#39;)</span>
-<span class="sd">        &gt;&gt;&gt; get_value_and_unit(&quot;42&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; get_value_and_unit(42)</span>
 <span class="sd">        (42.0, &#39;&#39;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val_unit</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">while</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">val_unit</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(</span><span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]):</span>
                 <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -279,7 +277,7 @@
             <span class="n">unit</span> <span class="o">=</span> <span class="n">val_unit</span><span class="p">[</span><span class="o">-</span><span class="n">idx</span><span class="p">:]</span>
             <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val_unit</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val_unit</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val_unit</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val_unit</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">val_unit</span><span class="p">)</span>
             <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="n">unit</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
@@ -322,6 +320,7 @@
         <span class="n">sum_unit</span> <span class="o">=</span> <span class="n">unit</span>
 
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sum_val</span><span class="si">}{</span><span class="n">sum_unit</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
 
 
 <div class="viewcode-block" id="get_save_path">

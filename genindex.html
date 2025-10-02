@@ -113,6 +113,12 @@
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.add_design_variables_to_design">add_design_variables_to_design() (in module qdesignoptimizer.utils.names_design_variables)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#qdesignoptimizer.anmod_optimizer.ANModOptimizer">ANModOptimizer (class in qdesignoptimizer.anmod_optimizer)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum.ARB">ARB (qdesignoptimizer.sim_plot_progress.UnitEnum attribute)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="C">C</h2>
@@ -121,6 +127,8 @@
       <li><a href="api-reference/qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html#qdesignoptimizer.estimation.classical_model_decay_into_charge_line.calculate_t1_limit_floating_lumped_mode_decay_into_chargeline">calculate_t1_limit_floating_lumped_mode_decay_into_chargeline() (in module qdesignoptimizer.estimation.classical_model_decay_into_charge_line)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html#qdesignoptimizer.estimation.classical_model_decay_into_charge_line.calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline">calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline() (in module qdesignoptimizer.estimation.classical_model_decay_into_charge_line)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#qdesignoptimizer.anmod_optimizer.ANModOptimizer.calculate_target_design_var">calculate_target_design_var() (qdesignoptimizer.anmod_optimizer.ANModOptimizer method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.CAPACITANCE">CAPACITANCE (in module qdesignoptimizer.utils.names_parameters)</a>
 </li>
@@ -156,10 +164,10 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_coupl_length">design_var_coupl_length() (in module qdesignoptimizer.utils.names_design_variables)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_gap">design_var_gap() (in module qdesignoptimizer.utils.names_design_variables)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_length">design_var_length() (in module qdesignoptimizer.utils.names_design_variables)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_lj">design_var_lj() (in module qdesignoptimizer.utils.names_design_variables)</a>
@@ -169,6 +177,8 @@
       <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis">DesignAnalysis (class in qdesignoptimizer.design_analysis)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.DesignAnalysisState">DesignAnalysisState (class in qdesignoptimizer.design_analysis_types)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.DesignVariable">DesignVariable (in module qdesignoptimizer.utils.names_parameters)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.logger.html#qdesignoptimizer.logger.dict_log_format">dict_log_format() (in module qdesignoptimizer.logger)</a>
 </li>
@@ -238,10 +248,10 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width">get_opt_target_qubit_anharmonicity_via_capacitance_width() (in module qdesignoptimizer.utils.optimization_targets)</a>
 </li>
-      <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj">get_opt_target_qubit_freq_via_lj() (in module qdesignoptimizer.utils.optimization_targets)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj">get_opt_target_qubit_freq_via_lj() (in module qdesignoptimizer.utils.optimization_targets)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length">get_opt_target_res_freq_via_length() (in module qdesignoptimizer.utils.optimization_targets)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_kappa_via_coupl_length">get_opt_target_res_kappa_via_coupl_length() (in module qdesignoptimizer.utils.optimization_targets)</a>
@@ -252,12 +262,8 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_targets_qb_res_transmission">get_opt_targets_qb_res_transmission() (in module qdesignoptimizer.utils.optimization_targets)</a>
 </li>
-      <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_parameter_value">get_parameter_value() (qdesignoptimizer.design_analysis.DesignAnalysis static method)</a>
-
-      <ul>
-        <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.get_parameter_value">(qdesignoptimizer.sim_plot_progress.DataExtractor method)</a>
+      <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.get_parameter_value">get_parameter_value() (qdesignoptimizer.sim_plot_progress.DataExtractor method)</a>
 </li>
-      </ul></li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_port_gap_names">get_port_gap_names() (qdesignoptimizer.design_analysis.DesignAnalysis method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_save_path">get_save_path() (in module qdesignoptimizer.utils.utils)</a>
@@ -265,8 +271,6 @@
       <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_simulated_modes_sorted">get_simulated_modes_sorted() (qdesignoptimizer.design_analysis.DesignAnalysis method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_surface_p_ratio">get_surface_p_ratio() (qdesignoptimizer.design_analysis.DesignAnalysis method)</a>
-</li>
-      <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.get_system_params_targets_met">get_system_params_targets_met() (qdesignoptimizer.design_analysis.DesignAnalysis method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.ModeDecayIntoChargeLineStudy.get_t1_limit_due_to_decay_into_charge_line">get_t1_limit_due_to_decay_into_charge_line() (qdesignoptimizer.sim_capacitance_matrix.ModeDecayIntoChargeLineStudy method)</a>
 </li>
@@ -279,6 +283,8 @@
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptPltSet.get_y_label">get_y_label() (qdesignoptimizer.sim_plot_progress.OptPltSet method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum.GHZ">GHZ (qdesignoptimizer.sim_plot_progress.UnitEnum attribute)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#qdesignoptimizer.anmod_optimizer.ANModOptimizer.group_targets">group_targets() (qdesignoptimizer.anmod_optimizer.ANModOptimizer static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -367,6 +373,8 @@
 
       <ul>
         <li><a href="api-reference/qdesignoptimizer.html#module-qdesignoptimizer">qdesignoptimizer</a>
+</li>
+        <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#module-qdesignoptimizer.anmod_optimizer">qdesignoptimizer.anmod_optimizer</a>
 </li>
         <li><a href="api-reference/qdesignoptimizer.design_analysis.html#module-qdesignoptimizer.design_analysis">qdesignoptimizer.design_analysis</a>
 </li>
@@ -492,6 +500,13 @@
 
       <ul>
         <li><a href="api-reference/qdesignoptimizer.html#module-qdesignoptimizer">module</a>
+</li>
+      </ul></li>
+      <li>
+    qdesignoptimizer.anmod_optimizer
+
+      <ul>
+        <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#module-qdesignoptimizer.anmod_optimizer">module</a>
 </li>
       </ul></li>
       <li>
