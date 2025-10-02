@@ -4,61 +4,61 @@ from typing import Literal, Union
 
 from qiskit_metal.designs.design_planar import DesignPlanar
 
-from qdesignoptimizer.utils.names_parameters import Mode
+from qdesignoptimizer.utils.names_parameters import DesignVariable, Mode
 from qdesignoptimizer.utils.names_qiskit_components import name_mode
 
 
 def add_design_variables_to_design(
-    design: DesignPlanar, design_variables: dict[str, str]
+    design: DesignPlanar, design_variables: dict[DesignVariable, float]
 ):
     """Add design variables to a Qiskit Metal design so that the variables can be used in render.
 
     Args:
         design (DesignPlanar): A Qiskit Metal design.
-        design_variables (dict[str:str]): Design variables to add to the design.
+        design_variables (dict[DesignVariable, float]): Design variables to add to the design.
     """
     for key, val in {**design_variables}.items():
         design.variables[key] = val
 
 
 # Design variables
-def design_var_length(identifier: str):
+def design_var_length(identifier: str) -> DesignVariable:
     """Create standardized variable name for component length."""
     return f"design_var_length_{identifier}"
 
 
-def design_var_width(identifier: str):
+def design_var_width(identifier: str) -> DesignVariable:
     """Create standardized variable name for component width."""
     return f"design_var_width_{identifier}"
 
 
-def design_var_gap(identifier: str):
+def design_var_gap(identifier: str) -> DesignVariable:
     """Create standardized variable name for gap dimension."""
     return f"design_var_gap_{identifier}"
 
 
-def design_var_coupl_length(identifier_1: str, identifier_2: str):
+def design_var_coupl_length(identifier_1: str, identifier_2: str) -> DesignVariable:
     """Create standardized variable name for coupler length between two components."""
     identifier_first, identifier_second = sorted([identifier_1, identifier_2])
     return f"design_var_coupl_length_{identifier_first}_{identifier_second}"
 
 
-def design_var_lj(identifier: str):
+def design_var_lj(identifier: str) -> DesignVariable:
     """Create standardized variable name for Josephson inductance."""
     return f"design_var_lj_{identifier}"
 
 
-def design_var_cj(identifier: str):
+def design_var_cj(identifier: str) -> DesignVariable:
     """Create standardized variable name for Josephson capacitance."""
     return f"design_var_cj_{identifier}"
 
 
-def design_var_cl_pos_x(identifier: Union[str, int]):
+def design_var_cl_pos_x(identifier: Union[str, int]) -> DesignVariable:
     """Create standardized variable name for charge line x-position."""
     return f"design_var_cl_pos_x_{identifier}"
 
 
-def design_var_cl_pos_y(identifier: Union[str, int]):
+def design_var_cl_pos_y(identifier: Union[str, int]) -> DesignVariable:
     """Create standardized variable name for charge line y-position."""
     return f"design_var_cl_pos_y_{identifier}"
 

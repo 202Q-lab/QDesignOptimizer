@@ -1,23 +1,21 @@
 """Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations."""
 
+import io
 import json
+from contextlib import redirect_stdout
 from copy import deepcopy
+from dataclasses import asdict
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 import pyEPR as epr
-from pyEPR._config_default import config
-import scipy
-import scipy.optimize
 from pyaedt import Hfss
+from pyEPR._config_default import config
 from qiskit_metal.analyses.quantization import EPRanalysis
-import io
-from contextlib import redirect_stdout
-from dataclasses import asdict
-
 
 import qdesignoptimizer
+from qdesignoptimizer.anmod_optimizer import ANModOptimizer
 from qdesignoptimizer.design_analysis_types import (
     DesignAnalysisState,
     MeshingMap,
@@ -41,7 +39,7 @@ from qdesignoptimizer.utils.names_parameters import (
     param_capacitance,
     param_nonlin,
 )
-from qdesignoptimizer.utils.utils import get_value_and_unit
+
 
 class DesignAnalysis:
     """Manager for quantum circuit design optimization and electromagnetic simulation.
@@ -117,6 +115,12 @@ class DesignAnalysis:
         self.plot_settings = plot_settings
         self.meshing_map: List[MeshingMap] = meshing_map or []
         self.minimization_tol = minimization_tol
+
+        self.anmod_optimizer = ANModOptimizer(
+            opt_targets=self.opt_targets,
+            system_target_params=self.system_target_params,
+            minimization_tol=self.minimization_tol,
+        )
 
         self.optimization_results: list[dict] = []
         self.minimization_results: list[dict] = []
@@ -238,8 +242,9 @@ class DesignAnalysis:
         }
 
     def get_fine_mesh_names(self):
-        """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names". 
-        This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class."""
+        """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names".
+        This function should return the list of part names, e.g. {name}_flux_line_left. The second option is to specify the part names via the meshing_map as keyword in the DesginAnalysis class.
+        """
         finer_mesh_names = []
         for component in self.mini_study.qiskit_component_names:
             if hasattr(self.design.components[component], "get_meshing_names"):
@@ -260,9 +265,6 @@ class DesignAnalysis:
     def get_port_gap_names(self):
         """Get names of all endcap ports in the design."""
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
-    
-    
-
 
     def run_eigenmodes(self):
         """Simulate eigenmodes."""
@@ -283,18 +285,20 @@ class DesignAnalysis:
         if self.mini_study.surface_properties:
             for component in self.mini_study.qiskit_component_names:
                 if "hfss_wire_bonds" in self.design.components[component].options:
-                    assert not self.design.components[component].options["hfss_wire_bonds"], f"hfss_wire_bonds in {component} must be set to False for surface participation ratio analysis."
+                    assert not self.design.components[component].options[
+                        "hfss_wire_bonds"
+                    ], f"hfss_wire_bonds in {component} must be set to False for surface participation ratio analysis."
 
         # render design in HFSS
         self.renderer.render_design(
             selection=self.mini_study.qiskit_component_names,
             port_list=self.mini_study.port_list,
             open_pins=self.mini_study.open_pins,
-        )        
-                    
+        )
+
         # set custom air bridges (only if no interfaces are defined in mini_study)
         if not self.mini_study.surface_properties:
-            for component_name in self.mini_study.qiskit_component_names:                
+            for component_name in self.mini_study.qiskit_component_names:
                 if hasattr(
                     self.design.components[component_name], "get_air_bridge_coordinates"
                 ):
@@ -313,11 +317,11 @@ class DesignAnalysis:
                             name="mybox1",
                             matname="aluminum",
                         )
-            
+
         # interfaces will be rendered if interfaces are defined in mini_study
         if self.mini_study.surface_properties:
             self._surface_rendering_for_surface_participation_ratios()
-                
+
         # set fine mesh
         fine_mesh_names = self.get_fine_mesh_names()
         restrict_mesh = (
@@ -328,16 +332,14 @@ class DesignAnalysis:
 
         if restrict_mesh:
             if self.mini_study.surface_properties:
-                log.error(
-                    "Interfaces must be empty when using fine mesh. "
-                )
+                log.error("Interfaces must be empty when using fine mesh. ")
             else:
                 self.renderer.modeler.mesh_length(
                     "fine_mesh",
                     fine_mesh_names,
                     MaxLength=self.mini_study.max_mesh_length_lines_to_ports,
                     RefineInside=True,
-                )        
+                )
 
         # run eigenmode analysis
         self.setup.analyze()
@@ -372,7 +374,7 @@ class DesignAnalysis:
         if junction_found:
             self.eig_solver.setup.junctions = jj_setups_to_include_in_epr
 
-            if not no_junctions:               
+            if not no_junctions:
                 self.eprd = epr.DistributedAnalysis(self.pinfo)
                 self.eig_solver.clear_data()
                 self.eig_solver.get_stored_energy(no_junctions)
@@ -385,9 +387,9 @@ class DesignAnalysis:
                 self.epra.plot_hamiltonian_results()
                 freqs = self.epra.get_frequencies(numeric=True)
                 chis = self.epra.get_chis(numeric=True)
-                self._update_optimized_params_epr(freqs, chis) 
+                self._update_optimized_params_epr(freqs, chis)
 
-            self.eig_solver.setup.junctions = self.mini_study.jj_setup                       
+            self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
             return chis
         add_msg = ""
@@ -395,7 +397,7 @@ class DesignAnalysis:
             add_msg = " However, a linear element was found."
         log.warning("No junctions found, skipping EPR analysis.%s", add_msg)
         return None
-    
+
     def _surface_rendering_for_surface_participation_ratios(self):
         """Render surfaces for surface participation ratio analysis.
         This function creates groups for different surfaces based on the interfaces defined in the mini_study.
@@ -405,52 +407,70 @@ class DesignAnalysis:
         """
 
         metal = self.hfss.modeler.get_objects_in_group("Perfect E")
-        self.hfss.modeler.ungroup(['substrate_air','metal_substrate','underside_air','metal_air'])
+        self.hfss.modeler.ungroup(
+            ["substrate_air", "metal_substrate", "underside_air", "metal_air"]
+        )
 
         # Filter out JJ_rect_Lj objects once
-        filtered_metal = [obj for obj in metal if not obj.startswith('JJ_rect_Lj')]
+        filtered_metal = [obj for obj in metal if not obj.startswith("JJ_rect_Lj")]
 
         # substrate-air
-        self.hfss.modeler.section('main','XY')
+        self.hfss.modeler.section("main", "XY")
         cloned_polygon_names = []
         for obj in filtered_metal:
             self.hfss.modeler.clone(obj)
-            cloned_polygon_names.append(obj+'1')
-            self.hfss.modeler.subtract('main_Section1',cloned_polygon_names[-1],False)
-        self.hfss.modeler.subtract('main_Section1',filtered_metal,True)
-        self.hfss.modeler.create_group('main_Section1',group_name='substrate_air')
+            cloned_polygon_names.append(obj + "1")
+            self.hfss.modeler.subtract("main_Section1", cloned_polygon_names[-1], False)
+        self.hfss.modeler.subtract("main_Section1", filtered_metal, True)
+        self.hfss.modeler.create_group("main_Section1", group_name="substrate_air")
 
         # metal-substrate
         cloned_polygon_name = []
         for obj in filtered_metal:
             self.hfss.modeler.clone(obj)
-            cloned_polygon_name.append(obj+'2')
-        self.hfss.modeler.unite(cloned_polygon_name,False)
-        self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_substrate')
+            cloned_polygon_name.append(obj + "2")
+        self.hfss.modeler.unite(cloned_polygon_name, False)
+        self.hfss.modeler.create_group(
+            cloned_polygon_name, group_name="metal_substrate"
+        )
 
         # metal-air
         cloned_polygon_name = []
         for obj in filtered_metal:
             cloned_polygon_name.append(obj)
-        metal_air = self.hfss.modeler.unite(cloned_polygon_name,False)
-        metal_air = self.hfss.modeler.thicken_sheet(metal_air,self.mini_study.surface_properties.sheet_thickness,bBothSides=True)
-        metal_air = self.hfss.modeler.move(metal_air,[0,0,self.mini_study.surface_properties.sheet_thickness/2])
-        self.hfss.modeler.create_group(cloned_polygon_name,group_name='metal_air')
-        objects = self.hfss.modeler.get_objects_in_group('metal_air')
-        metal_air = self.hfss.assign_material(objects,self.mini_study.surface_properties.sheet_material)
+        metal_air = self.hfss.modeler.unite(cloned_polygon_name, False)
+        metal_air = self.hfss.modeler.thicken_sheet(
+            metal_air,
+            self.mini_study.surface_properties.sheet_thickness,
+            bBothSides=True,
+        )
+        metal_air = self.hfss.modeler.move(
+            metal_air, [0, 0, self.mini_study.surface_properties.sheet_thickness / 2]
+        )
+        self.hfss.modeler.create_group(cloned_polygon_name, group_name="metal_air")
+        objects = self.hfss.modeler.get_objects_in_group("metal_air")
+        metal_air = self.hfss.assign_material(
+            objects, self.mini_study.surface_properties.sheet_material
+        )
 
         # underside surface
-        self.hfss.modeler.section('main','XY')
-        self.hfss.modeler.move('main_Section2',[0,0,self.design._chips['main']['size']['size_z']])
-        self.hfss.modeler.create_group(['main_Section2'], group_name = 'underside_air')
-            
+        self.hfss.modeler.section("main", "XY")
+        self.hfss.modeler.move(
+            "main_Section2", [0, 0, self.design._chips["main"]["size"]["size_z"]]
+        )
+        self.hfss.modeler.create_group(["main_Section2"], group_name="underside_air")
+
         # Assign interface properties using InterfaceProperties dataclass
         if self.mini_study.surface_properties.interfaces:
-            self.pinfo.dissipative['dielectric_surfaces'] = {}
+            self.pinfo.dissipative["dielectric_surfaces"] = {}
             for interface_name in self.mini_study.surface_properties.interfaces.keys():
-                interface_props = getattr(self.mini_study.surface_properties.interfaces, interface_name)
+                interface_props = getattr(
+                    self.mini_study.surface_properties.interfaces, interface_name
+                )
                 for obj_name in self.hfss.modeler.get_objects_in_group(interface_name):
-                    self.pinfo.dissipative['dielectric_surfaces'][obj_name] = asdict(interface_props)
+                    self.pinfo.dissipative["dielectric_surfaces"][obj_name] = asdict(
+                        interface_props
+                    )
 
     def get_simulated_modes_sorted(self):
         """Get simulated modes sorted on value.
@@ -547,237 +567,6 @@ class DesignAnalysis:
                 param_value
             )
 
-    @staticmethod
-    def _apply_adjustment_rate(
-        new_val: float | int, old_val: float | int, rate: float | int
-    ) -> float:
-        """Low pass filter for adjustment rate.
-
-        Args:
-            new_val (float): new value
-            old_val (float): old value
-            rate (float): rate of adjustment
-        """
-        return rate * new_val + (1 - rate) * old_val
-
-    def _constrain_design_value(
-        self,
-        design_value_old: str,
-        design_value_new: str,
-        design_var_constraint: dict[str, str],
-    ) -> str:
-        """Constrain design value.
-
-        Args:
-            design_value (str): design value to be constrained
-            design_var_constraint (dict[str, str]): design variable constraint, example {'min': '10 um', 'max': '100 um'}
-        """
-        d_val_o, d_unit = get_value_and_unit(design_value_old)
-        d_val_n, d_unit = get_value_and_unit(design_value_new)
-        rate = self.mini_study.adjustment_rate
-        d_val = self._apply_adjustment_rate(d_val_n, d_val_o, rate)
-
-        c_val_to_be_smaller_than, c_unit_to_be_smaller_than = get_value_and_unit(
-            design_var_constraint["smaller_than"]
-        )
-        c_val_to_be_larger_than, c_unit_to_be_larger_than = get_value_and_unit(
-            design_var_constraint["larger_than"]
-        )
-        assert (
-            d_unit == c_unit_to_be_smaller_than == c_unit_to_be_larger_than
-        ), f"Units of design_value {design_value_old} and constraint {design_var_constraint} must match"
-        if d_val > c_val_to_be_smaller_than:
-            design_value = c_val_to_be_smaller_than
-        elif d_val < c_val_to_be_larger_than:
-            design_value = c_val_to_be_larger_than
-        else:
-            design_value = d_val
-
-        return f"{design_value} {d_unit}"
-
-    @staticmethod
-    def get_parameter_value(target: OptTarget, system_params: dict) -> float:
-        """Return value of parameter from target specification."""
-        if target.target_param_type == NONLIN:
-            mode1, mode2 = target.involved_modes
-            current_value = system_params[param_nonlin(mode1, mode2)]
-        elif target.target_param_type == CAPACITANCE:
-            capacitance_name_1, capacitance_name_2 = target.involved_modes
-            current_value = system_params[
-                param_capacitance(capacitance_name_1, capacitance_name_2)
-            ]
-        else:
-            mode = target.involved_modes[0]
-            current_value = system_params[param(mode, target.target_param_type)]  # type: ignore
-        return current_value
-
-    def _minimize_for_design_vars(
-        self,
-        targets_to_minimize_for: List[OptTarget],
-        all_design_var_current: dict,
-        all_design_var_updated: dict,
-        all_parameters_current: dict,
-        all_parameters_targets_met: dict,
-    ):
-        """Minimize the cost function to find the optimal design variables to reach the target.
-        The all_design_var_updated variable is automatically updated with the optimal design variables during the minimization.
-        """
-        design_var_names_to_minimize = [
-            target.design_var for target in targets_to_minimize_for
-        ]
-        bounds_for_targets = [
-            (
-                get_value_and_unit(target.design_var_constraint["larger_than"])[0],
-                get_value_and_unit(target.design_var_constraint["smaller_than"])[0],
-            )
-            for target in targets_to_minimize_for
-        ]
-
-        init_design_var = []
-        init_design_var = [
-            all_design_var_current[name] for name in design_var_names_to_minimize
-        ]
-
-        def cost_function(design_var_vals_updated):
-            """Cost function to minimize.
-
-            Args:
-                ordered_design_var_vals_updated (List[float]): list of updated design variable values
-            """
-            for idx, name in enumerate(design_var_names_to_minimize):
-                all_design_var_updated[name] = design_var_vals_updated[idx]
-            cost = 0
-            for target in targets_to_minimize_for:
-                Q_k1_i = (
-                    self.get_parameter_value(target, all_parameters_current)
-                    * target.prop_to(all_parameters_targets_met, all_design_var_updated)
-                    / target.prop_to(all_parameters_current, all_design_var_current)
-                )
-                cost += (
-                    (
-                        Q_k1_i
-                        / self.get_parameter_value(target, all_parameters_targets_met)
-                    )
-                    - 1
-                ) ** 2
-
-            return cost
-
-        min_result = scipy.optimize.minimize(
-            cost_function,
-            init_design_var,
-            tol=self.minimization_tol,
-            bounds=bounds_for_targets,
-        )
-
-        for idx, name in enumerate(design_var_names_to_minimize):
-            if (
-                all_design_var_updated[name] == bounds_for_targets[idx][0]
-                or all_design_var_updated[name] == bounds_for_targets[idx][1]
-            ):
-                log.warning(
-                    f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or making the initial design closer to the optimal one."
-                )
-
-        final_cost = cost_function(
-            [all_design_var_updated[name] for name in design_var_names_to_minimize]
-        )
-        return {
-            "result": min_result,
-            "targets_to_minimize_for": [
-                target.design_var for target in targets_to_minimize_for
-            ],
-            "final_cost": final_cost,
-        }
-
-    def get_system_params_targets_met(self) -> dict[str, float]:
-        """Return organized dictionary of parameters given target specifications and current status."""
-        system_params_targets_met = deepcopy(self.system_optimized_params)
-        for target in self.opt_targets:
-            if target.target_param_type == NONLIN:
-                mode1, mode2 = target.involved_modes
-                system_params_targets_met[param_nonlin(mode1, mode2)] = (
-                    self.get_parameter_value(target, self.system_target_params)
-                )
-            elif target.target_param_type == CAPACITANCE:
-                capacitance_name_1, capacitance_name_2 = target.involved_modes
-                system_params_targets_met[
-                    param_capacitance(capacitance_name_1, capacitance_name_2)
-                ] = self.get_parameter_value(target, self.system_target_params)
-            else:
-                mode_name = target.involved_modes[0]
-                system_params_targets_met[
-                    param(mode_name, target.target_param_type)  # type: ignore
-                ] = self.get_parameter_value(target, self.system_target_params)
-        return system_params_targets_met
-
-    def _calculate_target_design_var(self) -> dict:
-        """Calculate the new design value for the optimization targets."""
-
-        system_params_current = deepcopy(self.system_optimized_params)
-        system_params_targets_met = self.get_system_params_targets_met()
-
-        design_vars_current_str = deepcopy(self.design.variables)
-
-        if not self.is_system_optimized_params_initialized:
-            self.is_system_optimized_params_initialized = True
-            return design_vars_current_str
-
-        # Fetch the numeric values of the design variables
-        design_vars_current = {}
-        design_vars_updated = {}
-        units = {}
-        for design_var, val_unit in design_vars_current_str.items():
-            val, unit = get_value_and_unit(val_unit)
-            design_vars_current[design_var] = val
-            design_vars_updated[design_var] = val
-            units[design_var] = unit
-
-        independent_targets = [
-            target for target in self.opt_targets if target.independent_target
-        ]
-
-        if independent_targets:
-            for independent_target in independent_targets:
-                minimization_result = self._minimize_for_design_vars(
-                    [independent_target],
-                    design_vars_current,
-                    design_vars_updated,
-                    system_params_current,
-                    system_params_targets_met,
-                )
-                self.minimization_results.append(minimization_result)
-
-        dependent_targets = [
-            target for target in self.opt_targets if not target.independent_target
-        ]
-        if dependent_targets:
-            minimization_result = self._minimize_for_design_vars(
-                dependent_targets,
-                design_vars_current,
-                design_vars_updated,
-                system_params_current,
-                system_params_targets_met,
-            )
-            self.minimization_results.append(minimization_result)
-
-        # Stitch back the unit of the design variable values
-        design_vars_updated_constrained_str = {}
-        for target in self.opt_targets:
-            design_var_name = target.design_var
-            design_vars_updated_val_and_unit = (
-                f"{design_vars_updated[design_var_name]} {units[design_var_name]}"
-            )
-            constrained_val_and_unit = self._constrain_design_value(
-                design_vars_current_str[design_var_name],
-                design_vars_updated_val_and_unit,
-                target.design_var_constraint,
-            )
-            design_vars_updated_constrained_str[design_var_name] = (
-                constrained_val_and_unit
-            )
-        return design_vars_updated_constrained_str
-
     def optimize_target(
         self, updated_design_vars_input: dict, system_optimized_params: dict
     ):
@@ -803,7 +592,17 @@ class DesignAnalysis:
             self.is_system_optimized_params_initialized = True
         self.update_var(updated_design_vars_input, system_optimized_params)
 
-        updated_design_vars = self._calculate_target_design_var()
+        if not self.is_system_optimized_params_initialized:
+            # bootstrap with initial design variables if no system_optimized_params exist
+            updated_design_vars = deepcopy(self.design.variables)
+            minimization_results: list[dict] = []
+            self.is_system_optimized_params_initialized = True
+        else:
+            updated_design_vars, minimization_results = (
+                self.anmod_optimizer.calculate_target_design_var(
+                    self.system_optimized_params, self.design.variables
+                )
+            )
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
@@ -849,7 +648,7 @@ class DesignAnalysis:
         iteration_result["system_optimized_params"] = deepcopy(
             self.system_optimized_params
         )
-        iteration_result["minimization_results"] = deepcopy(self.minimization_results)
+        iteration_result["minimization_results"] = minimization_results
 
         self.optimization_results.append(iteration_result)
         simulation = [
@@ -957,33 +756,33 @@ class DesignAnalysis:
         gui.screenshot(name=name, display=False)
 
     def _get_dielectric_p_ratio(self):
-        """Get dielectric participation ratio taking into account the dielectric loss tangent.
-        """
+        """Get dielectric participation ratio taking into account the dielectric loss tangent."""
 
         p_dielectric = {}
         for mode in range(int(self.pinfo.setup.n_modes)):
             self.eprd.set_mode(mode)
             with io.StringIO() as buf, redirect_stdout(buf):
-                q_dielectric = self.eprd.get_Qdielectric(dielectric='main',
-                                        mode=mode,
-                                        variation=None)[0]
-            p_dielectric[mode] = 1/(q_dielectric*config.dissipation.tan_delta_sapp)
-        
+                q_dielectric = self.eprd.get_Qdielectric(
+                    dielectric="main", mode=mode, variation=None
+                )[0]
+            p_dielectric[mode] = 1 / (q_dielectric * config.dissipation.tan_delta_sapp)
+
         return p_dielectric
-    
+
     def _get_surface_p_ratio(self, name, mode, variation=None):
-        """Get surface participation ratio.
-        """
+        """Get surface participation ratio."""
         with io.StringIO() as buf, redirect_stdout(buf):
-            psurf = 1/self.eprd.get_Qsurface(mode=mode,
-                                            variation=variation,
-                                            name=name) # we set tand = 1 in the design file 
-        return psurf.iloc[0]  # Return the second element which is the participation ratio value
+            psurf = 1 / self.eprd.get_Qsurface(
+                mode=mode, variation=variation, name=name
+            )  # we set tand = 1 in the design file
+        return psurf.iloc[
+            0
+        ]  # Return the second element which is the participation ratio value
 
     def get_surface_p_ratio(self):
         """Computes the surfaces participation ratio for all given interfaces. And also for every junction."""
         p_ratio_dict = {}
-        
+
         # Initialize the structure for interfaces
         for interface_name in self.mini_study.surface_properties.interfaces.keys():
             p_ratio_dict[interface_name] = {}
@@ -991,20 +790,20 @@ class DesignAnalysis:
                 self.eprd.set_mode(mode)
                 p_ratio_dict[interface_name][mode] = self._get_surface_p_ratio(
                     name=self.hfss.modeler.get_objects_in_group(interface_name)[0],
-                    mode=mode
+                    mode=mode,
                 )
-        
+
         # Handle junction data
         # can only handle a single junction type for now
-        p_ratio_dict['Junction(inductive energy)'] = {}
+        p_ratio_dict["Junction(inductive energy)"] = {}
         for mode in range(int(self.pinfo.setup.n_modes)):
             self.eprd.set_mode(mode)
             j_ratio = self.eprd.calc_p_junction_single(mode=mode, variation=None)
             for key in j_ratio:
                 p_ratio = j_ratio[key]
-            p_ratio_dict['Junction(inductive energy)'][mode] = p_ratio
-        
+            p_ratio_dict["Junction(inductive energy)"][mode] = p_ratio
+
         # Handle dielectric data
-        p_ratio_dict['dielectric'] = self._get_dielectric_p_ratio()
-        
+        p_ratio_dict["dielectric"] = self._get_dielectric_p_ratio()
+
         return p_ratio_dict
