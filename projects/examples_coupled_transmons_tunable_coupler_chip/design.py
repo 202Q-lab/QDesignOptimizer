@@ -61,7 +61,6 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
                 ],  # 0 => 'west' arm, 90 => 'north' arm, 180 => 'east' arm
             )
         },
-
         gds_cell_name=f"Manhattan_{group}",
         hfss_inductance=n.design_var_lj(qubit),
         hfss_capacitance=n.design_var_cj(qubit),
