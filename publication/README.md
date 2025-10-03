@@ -1,6 +1,7 @@
 # Publication Data and Scripts
 
-This folder in this repository contains the data and scripts used for the associated publication.
+This folder in this repository contains the data and scripts used for the associated publication available from arXiv 
+Eriksson, et al., *Automated, physics-guided, multi-parameter design optimization for superconducting quantum devices*. [arXiv:2508.18027 [quant-ph], 2025](https://arxiv.org/abs/2508.18027).
 All relevant files are organized under the publication/ directory:
 
 publication/
