@@ -11,3 +11,4 @@ Examples
    _projects/examples_coupled_transmon_chip/main_kappa_target_resonator.ipynb
    _projects/examples_coupled_transmon_chip/main_capacitance_target_resonator.ipynb
    _projects/example_clusters_anmod_scaliability/main.py
+   _projects/examples_coupled_transmons_tunable_coupler_chip/main_eigenmode_two_qubit_resonator.ipynb
