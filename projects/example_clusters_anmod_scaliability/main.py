@@ -53,12 +53,28 @@ def aggregate_results(
 
 # ---------------- Example usage ----------------
 if __name__ == "__main__":
+    # looping overseeds = 0-99 gives the following number of convergences within 10 iterations
+    # [2993, 3000, 3000, 2992, 0, 0, 3000, 3000, 3000, 2997, 0, 0, 2997, 3000, 3000, 0, 2878,
+    # 2080, 3000, 2992, 2995, 2998, 0, 3000, 3000, 2965, 3000, 2981, 2996, 2990, 3000, 3000,
+    # 2995, 3000, 2996, 2997, 2996, 2995, 2998, nan, 2991, 2997, 2997, 3000, 2996, nan, 3000,
+    # 2992, 2997, 2997, 3000, 2982, 2997, 2996, 2997, 2996, 2974, 2996, 0, 0, 2996, 2997, 2952,
+    # 2997, 3000, 3000, 2986, 2997, 2997, 2997, 2996, 2997, 2998, 3000, 2997, 2974, 2997, 2989,
+    # 2998, 2995, 2997, nan, 3000, 2991, 2995, 3000, 2997, 2997, 0, 3000, 2995, 0, 2994, 2995,
+    # 3000, 2999, 2998, 0, 3000, 2999]
+    # 0 diverges and nan gets stuck in evaluation
+
+    # all_convergence_status = []
+    # for seed in range(100):
+    #     if seed in [39, 44, 79]:
+    #         continue  # getting stuck i.e. diverging
+
+    seed = 42
     sys = ScaledSystem(
         n_clusters=1000,
         m_per_cluster=3,
         epsilon=0.05,
         exponent_approx_to_1_over=4,
-        seed=42,
+        seed=seed,
         sample_range_alpha_ij_eq_k=[(2.0, 2.5)],
         sample_range_alpha_ij_neq_k=[(-1, -0.1)],
         sample_range_beta=[(-0.5, -0.1), (0.1, 0.5)],
@@ -93,7 +109,9 @@ if __name__ == "__main__":
         sys.set_updated_design_vars(updated_design_vars)
         aggregate_results(optimization_results, sys, minimization_results)
 
-    plot_all_convergence_ratios(optimization_results, system_target_params)
+    plot_all_convergence_ratios(
+        optimization_results, system_target_params, seed=seed, show_plot=False
+    )
 
     convergence_iteration, convergence_status = check_convergence(
         optimization_results, system_target_params, tolerance=0.001
@@ -101,6 +119,8 @@ if __name__ == "__main__":
     print_convergence_summary(
         convergence_iteration, convergence_status, tolerance=0.001
     )
+
+    # all_convergence_status.append(convergence_status)
 
     # plot_settings = get_plot_settings(sys.n_clusters, sys.m_per_cluster)
     # simulation = [
@@ -118,3 +138,5 @@ if __name__ == "__main__":
     #         plot_settings,
     #         block_plots=True
     #     )
+
+    # print("Converge counts ", [c[NBR_ITERATIONS-1]["converged_count"] for c in all_convergence_status])
