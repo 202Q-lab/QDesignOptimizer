@@ -16,6 +16,10 @@ For detailed documentation, visit [https://202Q-lab.github.io/QDesignOptimizer/]
 - Python 3.10
 - Ansys Electronics Desktop 2021 R2
 
+#### For Windows
+- VSCode (recommended)
+- install https://visualstudio.microsoft.com/visual-cpp-build-tools/, make sure to select Build tools with C++
+
 ### Installation with pip
 
 Install the package via pip:

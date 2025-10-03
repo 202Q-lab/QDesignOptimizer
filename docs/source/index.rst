@@ -9,7 +9,7 @@ Reference
 =========
 
 | A technical paper describing the functionality and giving examples is in preparation. 
-| Eriksson, et al., *"Automatic multi-parameter design optimization for superconducting devices"*, in preparation.
+| Eriksson, et al., *"Automated, physics-guided, multi-parameter design optimization for superconducting quantum devices"*, arXiv:2508.18027 [quant-ph], 2025.
 | Please refer to this publication when citing the ``qdesignoptimizer``.
 
 .. toctree::
