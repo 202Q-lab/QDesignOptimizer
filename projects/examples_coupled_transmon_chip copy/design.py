@@ -31,20 +31,6 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     qubit = [n.QUBIT_1, n.QUBIT_2][nbr_idx]
     resonator = [n.RESONATOR_1, n.RESONATOR_2][nbr_idx]
 
-    # default_options = dict(
-
-    #         _default_connection_pads=dict(
-    #             connector_type='0',  # 0 = Claw type, 1 = gap type
-    #             claw_length='30um',
-    #             ground_spacing='5um',
-    #             claw_width='10um',
-    #             claw_gap='6um',
-    #             claw_cpw_length='40um',
-    #             claw_cpw_width='10um',
-    #             connector_location=
-    #             '0'  # 0 => 'west' arm, 90 => 'north' arm, 180 => 'east' arm
-    #         ))
-
     # make transmon
     start_offset = ["-65um", "65um"][nbr_idx]
     coupler_width_offset = ["-250um", "250um"][nbr_idx]
@@ -75,42 +61,7 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
                 ],  # 0 => 'west' arm, 90 => 'north' arm, 180 => 'east' arm
             )
         },
-        # orientation=["180", "0"][nbr_idx],
-        # pad_gap="100um",
-        # inductor_width="30um",
-        # pad_width=n.design_var_width(qubit),
-        # pad_height="120um",
-        # pocket_width="1200um",
-        # pocket_height="1200um",
-        # coupled_pad_width="0um",
-        # coupled_pad_height="0um",
-        # coupled_pad_gap="100um",
-        # connection_pads=dict(
-        #     readout=dict(
-        #         loc_W=0,
-        #         loc_H=+1,
-        #         pad_gap="120um",
-        #         pad_gap_w="0um",
-        #         pad_width=n.design_var_coupl_length(resonator, qubit),
-        #         pad_height="40um",
-        #         cpw_width=RESONATOR_WIDTH,
-        #         cpw_gap=RESONATOR_GAP,
-        #         cpw_extend="300um",
-        #         pocket_extent="5um",
-        #     ),
-        #     coupler=dict(
-        #         loc_W=0,
-        #         loc_H=-1,
-        #         pad_gap="100um",
-        #         pad_gap_w="0um",
-        #         pad_width="40um",
-        #         pad_height="170um",
-        #         cpw_width=RESONATOR_WIDTH,
-        #         cpw_gap=RESONATOR_GAP,
-        #         cpw_extend="0.0um",
-        #         pocket_extent="5um",
-        #     ),
-        # ),
+
         gds_cell_name=f"Manhattan_{group}",
         hfss_inductance=n.design_var_lj(qubit),
         hfss_capacitance=n.design_var_cj(qubit),
@@ -119,21 +70,6 @@ def add_transmon_plus_resonator(design: DesignPlanar, group: int):
     qub = TransmonCross(design, n.name_mode(qubit), options=transmon_options)
 
     # # make open end of resonator
-    # cltee_options = dict(
-    #     pos_x=["-1.5mm", "1.5mm"][nbr_idx],
-    #     pos_y="-1mm",
-    #     orientation=["180", "180"][nbr_idx],
-    #     second_width=RESONATOR_WIDTH,
-    #     second_gap=RESONATOR_GAP,
-    #     prime_width=LINE_50_OHM_WIDTH,
-    #     prime_gap=LINE_50_OHM_GAP,
-    #     coupling_space=n.design_var_length(f"{resonator}_capacitance"),
-    #     fillet=BEND_RADIUS,
-    #     coupling_length=n.design_var_coupl_length(resonator, "tee"),
-    #     mirror=[True, False][nbr_idx],
-    # )
-    # cltee = CoupledLineTee(design, n.name_tee(group), options=cltee_options)
-
     otg_options = dict(
         pos_x=["-2mm", "2mm"][nbr_idx],
         pos_y=y_pos_xmon,
@@ -254,19 +190,6 @@ def add_coupler(design):
         hfss_inductance=n.design_var_lj(n.COUPLER_12),
         hfss_capacitance=n.design_var_cj(n.COUPLER_12),
     )
-    # resonator_options = dict(
-    #     pin_inputs=dict(
-    #         start_pin=dict(component=n.name_mode(n.QUBIT_1), pin="coupler"),
-    #         end_pin=dict(component=n.name_mode(n.QUBIT_2), pin="coupler"),
-    #     ),
-    #     fillet=BEND_RADIUS,
-    #     hfss_wire_bonds=True,
-    #     total_length=n.design_var_length(n.COUPLER_12),
-    #     lead=dict(start_straight="200um", end_straight="200um"),
-    #     trace_width=RESONATOR_WIDTH,
-    #     trace_gap=RESONATOR_GAP,
-    #     meander=dict(spacing="200um"),
-    # )
 
     TunableCoupler01(design, n.name_mode(n.COUPLER_12), options=default_options)
 
@@ -340,10 +263,6 @@ def render_qiskit_metal_design(design, gui, capacitance_or_surface_p_ratio=False
     add_transmon_plus_resonator(design, group=n.NBR_1)
     add_transmon_plus_resonator(design, group=n.NBR_2)
     add_coupler(design)
-    # add_route_interconnects(design)
-    # add_launch_pads(design)
-    # add_chargeline(design, group=n.NBR_1)
-    # add_chargeline(design, group=n.NBR_2)
 
     if capacitance_or_surface_p_ratio == True:
         for component in design.components.values():
