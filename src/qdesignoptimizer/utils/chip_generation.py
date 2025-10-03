@@ -64,6 +64,3 @@ def create_chip_base(
         add_design_variables_to_design(design, initial_design_variables)
 
     return design, gui
-
-design = DesignPlanar()
-gui = MetalGUI(design)
