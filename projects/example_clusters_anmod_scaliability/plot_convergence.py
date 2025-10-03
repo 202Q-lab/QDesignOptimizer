@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import EngFormatter, FuncFormatter, LogFormatter, LogLocator
@@ -5,7 +7,9 @@ from matplotlib.ticker import EngFormatter, FuncFormatter, LogFormatter, LogLoca
 from qdesignoptimizer.sim_plot_progress import plot_progress
 
 
-def plot_all_convergence_ratios(optimization_results, system_target_params):
+def plot_all_convergence_ratios(
+    optimization_results, system_target_params, seed=None, show_plot=True
+):
     """
     Plot convergence analysis.
 
@@ -164,34 +168,39 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
             / optimization_results[-1]["g_ij_factor_at_yk_xk"][param_name]
         )
 
-    ax3.hist(
-        last_g_approx_factors,
-        bins=min(30, len(param_names) // 2),
-        alpha=0.7,
-        edgecolor="black",
-    )
-    ax3.set_xlabel(r"Local $g_{i,j}^{approx, k=10}\ /\ g_{i,j}^{k=10}$")
-    ax3.set_ylabel("Count")
-    ax3.set_yscale("log")
-    ax3.grid(True, alpha=0.3)
-    ax3.set_xticks([0.8, 1.0, 1.2])
+    try:
+        ax3.hist(
+            last_g_approx_factors,
+            bins=min(30, len(param_names) // 2),
+            alpha=0.7,
+            edgecolor="black",
+        )
+        ax3.set_xlabel(r"Local $g_{i,j}^{approx, k=10}\ /\ g_{i,j}^{k=10}$")
+        ax3.set_ylabel("Count")
+        ax3.set_yscale("log")
+        ax3.grid(True, alpha=0.3)
+        ax3.set_xticks([0.8, 1.0, 1.2])
+    except Exception as e:
+        pass
 
     last_h_factors = []
     for param_name in param_names:
         last_h_factors.append(
             optimization_results[-1]["h_ij_factor_at_yk_xk"][param_name]
         )
-
-    ax4.hist(
-        last_h_factors,
-        bins=min(30, len(param_names) // 2),
-        alpha=0.7,
-        edgecolor="black",
-    )
-    ax4.set_xlabel(r"Global $h_{i,j}^{k=10}$")
-    ax4.set_ylabel("Count")
-    ax4.set_yscale("log")
-    ax4.grid(True, alpha=0.3)
+    try:
+        ax4.hist(
+            last_h_factors,
+            bins=min(30, len(param_names) // 2),
+            alpha=0.7,
+            edgecolor="black",
+        )
+        ax4.set_xlabel(r"Global $h_{i,j}^{k=10}$")
+        ax4.set_ylabel("Count")
+        ax4.set_yscale("log")
+        ax4.grid(True, alpha=0.3)
+    except Exception as e:
+        pass
 
     last_conbined_factors = []
     for param_name in param_names:
@@ -225,17 +234,20 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
                 "slope": largest_approximation_slope_for_iteration,
             }
         )
-    ax5.hist(
-        last_conbined_factors,
-        bins=min(30, len(param_names) // 2),
-        alpha=0.7,
-        edgecolor="black",
-    )
-    ax5.set_xlabel(r"Error factor $f_{i,j}^{error, k=10}$")
-    ax5.set_ylabel("Count")
-    ax5.set_yscale("log")
-    ax5.grid(True, alpha=0.3)
-    ax5.set_xticks([1.0, 1.2, 1.4])
+    try:
+        ax5.hist(
+            last_conbined_factors,
+            bins=min(30, len(param_names) // 2),
+            alpha=0.7,
+            edgecolor="black",
+        )
+        ax5.set_xlabel(r"Error factor $f_{i,j}^{error, k=10}$")
+        ax5.set_ylabel("Count")
+        ax5.set_yscale("log")
+        ax5.grid(True, alpha=0.3)
+        ax5.set_xticks([1.0, 1.2, 1.4])
+    except Exception as e:
+        pass
 
     max_start = 0
     # Compare the error made by the model given by
@@ -292,12 +304,27 @@ def plot_all_convergence_ratios(optimization_results, system_target_params):
         ax.yaxis.set_minor_formatter(FuncFormatter(lambda *_: ""))
 
     print(largest_approximation_slope_for_iteration_all)
+
+    output_dir = "out"
+    # Resolve to full path (relative to the script’s location)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    full_output_dir = os.path.join(script_dir, output_dir)
+
+    # Create the output directory if it doesn't exist
+    os.makedirs(full_output_dir, exist_ok=True)
+
+    plt.savefig(
+        os.path.join(full_output_dir, f"convergence_analysis_{seed}.png"), dpi=300
+    )
+
     plt.tight_layout()
-    plt.show(block=True)
+    if show_plot:
+        plt.show(block=True)
 
     plt.plot(
         iterations,
         [item["slope"] for item in largest_approximation_slope_for_iteration_all],
         "o-",
     )
-    plt.show(block=True)
+    if show_plot:
+        plt.show(block=True)
