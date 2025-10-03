@@ -71,6 +71,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="main_kappa_target_resonator.html">Resonator Kappa through capacitance matrix simulation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Optimization of readout resonator coupling with capacitance target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmons_tunable_coupler_chip/main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
 </ul>
 </li>
 </ul>
@@ -154,7 +155,7 @@
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
 <span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_qb_charge_line</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
 <span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span>
-    <span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="n">capacitance_or_surface_p_ratio</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
 
 <span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_targets_qb_charge_line</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
@@ -168,14 +169,11 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">parameter_targets</span> <span class="k">as</span> <span class="nn">pt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">parameter_targets</span> <span class="k">as</span> <span class="nn">pt</span>
 <span class="kn">import</span> <span class="nn">plot_settings</span> <span class="k">as</span> <span class="nn">ps</span>
 
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis</span> <span class="kn">import</span> <span class="n">DesignAnalysis</span><span class="p">,</span> <span class="n">DesignAnalysisState</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_save_path</span>
-
-<span class="c1"># Closing Ansys hfss</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
 
 <span class="n">close_ansys</span><span class="p">()</span>
@@ -244,7 +242,7 @@
 </section>
 <section id="Example-result">
 <h2>Example result<a class="headerlink" href="#Example-result" title="Link to this heading"></a></h2>
-<p><img alt="image info" src="../../_images/charge_line_decay.png" /></p>
+<p><img alt="image info" src="_projects/examples_coupled_transmon_chip/plots/charge_line_decay.png" /></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>

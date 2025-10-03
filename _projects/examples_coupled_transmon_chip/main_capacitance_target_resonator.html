@@ -27,7 +27,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Development" href="../../development.html" />
+    <link rel="next" title="Eigenmode simulation of coupled qubits" href="../examples_coupled_transmons_tunable_coupler_chip/main_eigenmode_two_qubit_resonator.html" />
     <link rel="prev" title="Resonator Kappa through capacitance matrix simulation" href="main_kappa_target_resonator.html" /> 
 </head>
 
@@ -72,6 +72,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#Example-result">Example result</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmons_tunable_coupler_chip/main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
 </ul>
 </li>
 </ul>
@@ -111,7 +112,7 @@
   <section id="Optimization-of-readout-resonator-coupling-with-capacitance-target">
 <h1>Optimization of readout resonator coupling with capacitance target<a class="headerlink" href="#Optimization-of-readout-resonator-coupling-with-capacitance-target" title="Link to this heading"></a></h1>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
@@ -138,7 +139,7 @@
 <section id="Creating-the-study-and-optimization-targets">
 <h2>Creating the study and optimization targets<a class="headerlink" href="#Creating-the-study-and-optimization-targets" title="Link to this heading"></a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
@@ -153,9 +154,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
 <span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_resonator_capacitance</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
-<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span>
-    <span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="n">capacitance_or_surface_p_ratio</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_target_capacitance</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
 </pre></div>
@@ -209,8 +208,8 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
-<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">15</span>
-<span class="n">group_passes_cap</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">group_passes_cap</span> <span class="o">=</span> <span class="mi">10</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
     <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes_capacitance_ministudies</span><span class="p">(</span><span class="n">group_passes_cap</span><span class="p">)</span>
@@ -258,7 +257,7 @@
 </section>
 <section id="Example-result">
 <h2>Example result<a class="headerlink" href="#Example-result" title="Link to this heading"></a></h2>
-<p><img alt="image info" src="../../_images/capacitance_target_resonator.png" /></p>
+<p><img alt="image info" src="_projects/examples_coupled_transmon_chip/plots/capacitance_target_resonator.png" /></p>
 </section>
 </section>
 
@@ -267,7 +266,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="main_kappa_target_resonator.html" class="btn btn-neutral float-left" title="Resonator Kappa through capacitance matrix simulation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../../development.html" class="btn btn-neutral float-right" title="Development" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../examples_coupled_transmons_tunable_coupler_chip/main_eigenmode_two_qubit_resonator.html" class="btn btn-neutral float-right" title="Eigenmode simulation of coupled qubits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

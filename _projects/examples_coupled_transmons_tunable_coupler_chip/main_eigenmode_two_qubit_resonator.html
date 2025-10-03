@@ -1,0 +1,3523 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eigenmode simulation of coupled qubits &mdash; qdesignoptimizer · 0.0.2</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/my_theme.css?v=eea1f72d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Development" href="../../development.html" />
+    <link rel="prev" title="Optimization of readout resonator coupling with capacitance target" href="../examples_coupled_transmon_chip/main_capacitance_target_resonator.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../userguide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">QDO QuickStart</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../examples.html">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmon_chip/main_eigenmode_single_qubit_resonator.html">Eigenmode simulation of single qubit with readout resonator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmon_chip/main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmon_chip/main_charge_line_decay_single_qubit.html">Capacitive simulation of qubit decay in charge line</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmon_chip/main_kappa_target_resonator.html">Resonator Kappa through capacitance matrix simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmon_chip/main_capacitance_target_resonator.html">Optimization of readout resonator coupling with capacitance target</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Eigenmode simulation of coupled qubits</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Rendering-the-design">Rendering the design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Creating-the-study-and-optimization-targets">Creating the study and optimization targets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Creating-design-analysis-objects">Creating design analysis objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Optimization-step">Optimization step</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Results">Results</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Update-parameters">Update parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Close">Close</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../userguide.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="../../examples.html">Examples</a></li>
+      <li class="breadcrumb-item active">Eigenmode simulation of coupled qubits</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Eigenmode-simulation-of-coupled-qubits">
+<h1>Eigenmode simulation of coupled qubits<a class="headerlink" href="#Eigenmode-simulation-of-coupled-qubits" title="Link to this heading"></a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+</pre></div>
+</div>
+</div>
+<section id="Rendering-the-design">
+<h2>Rendering the design<a class="headerlink" href="#Rendering-the-design" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
+<span class="kn">import</span> <span class="nn">design</span> <span class="k">as</span> <span class="nn">d</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.chip_generation</span> <span class="kn">import</span> <span class="n">create_chip_base</span>
+
+<span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_base</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">CHIP_NAME</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">chip_type</span><span class="p">,</span> <span class="n">open_gui</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-the-study-and-optimization-targets">
+<h2>Creating the study and optimization targets<a class="headerlink" href="#Creating-the-study-and-optimization-targets" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
+<span class="kn">import</span> <span class="nn">optimization_targets</span> <span class="k">as</span> <span class="nn">ot</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_2</span><span class="p">]</span>
+<span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_2qb_resonator_coupler</span><span class="p">()</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+
+<span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_targets_2qubits_resonator_coupler</span><span class="p">(</span>
+    <span class="n">groups</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">,</span>
+    <span class="n">opt_target_qubit_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_qubit_anharm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_kappa</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_qubit_chi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_coupler_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_coupler_anharm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_coupler_qubit_chi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_simple_resonator_qubit_chi_relation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># attributes = [</span>
+<span class="c1">#     &quot;qiskit_component_names&quot;,</span>
+<span class="c1">#     &quot;port_list&quot;,</span>
+<span class="c1">#     &quot;open_pins&quot;,</span>
+<span class="c1">#     &quot;modes&quot;,</span>
+<span class="c1">#     &quot;jj_setup&quot;,</span>
+<span class="c1">#     &quot;design_name&quot;,</span>
+<span class="c1">#     &quot;adjustment_rate&quot;,</span>
+<span class="c1">#     &quot;cos_trunc&quot;,</span>
+<span class="c1">#     &quot;fock_trunc&quot;,</span>
+<span class="c1">#     &quot;build_fine_mesh&quot;,</span>
+<span class="c1">#     &quot;nbr_passes&quot;,</span>
+<span class="c1">#     &quot;delta_f&quot;</span>
+<span class="c1"># ]</span>
+
+<span class="c1"># for attr in attributes:</span>
+<span class="c1">#     print(f&quot;{attr}: {getattr(MINI_STUDY, attr)}&quot;)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-design-analysis-objects">
+<h2>Creating design analysis objects<a class="headerlink" href="#Creating-design-analysis-objects" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">parameter_targets</span> <span class="k">as</span> <span class="nn">pt</span>
+<span class="kn">import</span> <span class="nn">plot_settings</span> <span class="k">as</span> <span class="nn">ps</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis</span> <span class="kn">import</span> <span class="n">DesignAnalysis</span><span class="p">,</span> <span class="n">DesignAnalysisState</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_save_path</span>
+
+<span class="c1"># Closing Ansys hfss</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
+
+<span class="n">close_ansys</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
+    <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
+<span class="p">)</span>
+
+<span class="n">design_analysis</span> <span class="o">=</span> <span class="n">DesignAnalysis</span><span class="p">(</span>
+    <span class="n">design_analysis_state</span><span class="p">,</span>
+    <span class="n">mini_study</span><span class="o">=</span><span class="n">MINI_STUDY</span><span class="p">,</span>
+    <span class="n">opt_targets</span><span class="o">=</span><span class="n">opt_targets</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="n">get_save_path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">CHIP_NAME</span><span class="p">),</span>
+    <span class="n">update_design_variables</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_settings</span><span class="o">=</span><span class="n">ps</span><span class="o">.</span><span class="n">PLOT_SETTINGS_TWO_QB</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 15:39:05]: self.eig_solver.sim.setup
+{
+    &#34;name&#34;: &#34;Resonator_setup&#34;,
+    &#34;reuse_selected_design&#34;: true,
+    &#34;reuse_setup&#34;: true,
+    &#34;min_freq_ghz&#34;: 1,
+    &#34;n_modes&#34;: 1,
+    &#34;max_delta_f&#34;: 0.5,
+    &#34;max_passes&#34;: 10,
+    &#34;min_passes&#34;: 1,
+    &#34;min_converged&#34;: 1,
+    &#34;pct_refinement&#34;: 30,
+    &#34;basis_order&#34;: 1,
+    &#34;vars&#34;: {
+        &#34;Lj&#34;: &#34;10 nH&#34;,
+        &#34;Cj&#34;: &#34;0 fF&#34;
+    }
+}
+INFO 03:39PM [connect_project]: Connecting to Ansys Desktop API...
+INFO 03:39PM [load_ansys_project]:      Opened Ansys App
+INFO 03:39PM [load_ansys_project]:      Opened Ansys Desktop v2021.1.0
+INFO 03:39PM [load_ansys_project]:      Opened Ansys Project
+        Folder:    D:/Ansys/Ansoft/
+        Project:   Project466
+INFO 03:39PM [connect_design]: No active design found (or error getting active design).
+INFO 03:39PM [connect]:          Connected to project &#34;Project466&#34;. No design detected
+03:39PM 15s WARNING [activate_ansys_design]: The design_name=get_mini_study_2qb_resonator_coupler was not in active project.  Designs in active project are:
+[].  A new design will be added to the project.
+INFO 03:39PM [connect_design]:  Opened active design
+        Design:    get_mini_study_2qb_resonator_coupler [Solution type: Eigenmode]
+WARNING 03:39PM [connect_setup]:        No design setup detected.
+WARNING 03:39PM [connect_setup]:        Creating eigenmode default setup.
+INFO 03:39PM [get_setup]:       Opened setup `Setup`  (&lt;class &#39;pyEPR.ansys.HfssEMSetup&#39;&gt;)
+</pre></div></div>
+</div>
+</section>
+<section id="Optimization-step">
+<h2>Optimization step<a class="headerlink" href="#Optimization-step" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
+<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">group_passes_start</span> <span class="o">=</span> <span class="mi">17</span>
+<span class="n">group_passes_stop</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span>
+        <span class="n">group_passes_start</span>  <span class="c1"># min(group_passes_start + i, group_passes_stop)</span>
+    <span class="p">)</span>  <span class="c1"># successive increase of number of passes for faster convergence [8, 9, 10, 11, 12, 13, 14, 15, 15, 15]</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_delta_f</span><span class="p">(</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 15:39:18]: Updated_design_vars
+{
+    &#34;cpw_width&#34;: &#34;10 um&#34;,
+    &#34;cpw_gap&#34;: &#34;6 um&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;180um&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;180um&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;250um&#34;,
+    &#34;design_var_length_resonator_1_capacitance&#34;: &#34;15um&#34;,
+    &#34;design_var_length_resonator_2_capacitance&#34;: &#34;15um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;10nH&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;12nH&#34;,
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;2.0nH&#34;,
+    &#34;design_var_cj_qubit_1&#34;: &#34;0fF&#34;,
+    &#34;design_var_cj_qubit_2&#34;: &#34;0fF&#34;,
+    &#34;design_var_cj_coupler_1to2&#34;: &#34;0fF&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;4200um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;4200um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;50um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;50um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;13um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;15um&#34;,
+    &#34;design_var_coupl_length_resonator_1_tee&#34;: &#34;400um&#34;,
+    &#34;design_var_coupl_length_resonator_2_tee&#34;: &#34;160um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Initializing new desktop!
+PyAEDT INFO: StdOut is enabled
+PyAEDT INFO: Log on file is enabled
+PyAEDT INFO: Log on Desktop Message Manager is enabled
+PyAEDT INFO: Debug logger is disabled. PyAEDT methods will not be logged.
+PyAEDT INFO: Launching PyAEDT outside AEDT with CPython and PythonNET.
+PyAEDT INFO: AEDT installation Path C:\Program Files\AnsysEM\AnsysEM21.1\Win64.
+PyAEDT INFO: Launching AEDT with COM plugin using PythonNET.
+PyAEDT WARNING: PyAEDT is not supported in AEDT versions earlier than 2021 R2. Trying to launch PyAEDT with PyWin32.
+PyAEDT INFO: pyaedt v0.6.94
+PyAEDT INFO: Python version 3.10.16 | packaged by conda-forge | (main, Dec  5 2024, 14:07:43) [MSC v.1942 64 bit (AMD64)]
+PyAEDT INFO: AEDT 2021.1.0 Build Date 2020-11-16 21:49:12
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 03:39PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 3.1989909779825e-25
+        energy_elec_substrate = 2.94088118456034e-25
+        EPR of substrate = 91.9%
+
+        energy_mag    = 2.8229525690229e-27
+        energy_mag % of energy_elec_all  = 0.9%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.57 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.1%  1.599e-25 1.411e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 98.38%
+        jj_name_qubit_1_ 2.45434e-07  (+)        4.0477e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.06%
+        jj_name_qubit_2_ 0.987912  (+)        0.0195512
+                Energy fraction (Lj over Lj&amp;Cj)= 99.67%
+        jj_name_coupler_1to2_ 0.0019112  (+)        6.30389e-06
+                (U_tot_cap-U_tot_ind)/mean=1.04%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9193152480895894
+
+  <span class="ansi-bold">Mode 1 at 5.00 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               98.9%  8.715e-26 9.393e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 98.06%
+        jj_name_qubit_1_ 0.984366  (+)        0.0194335
+                Energy fraction (Lj over Lj&amp;Cj)= 97.69%
+        jj_name_qubit_2_ 7.91576e-06  (+)        1.87529e-07
+                Energy fraction (Lj over Lj&amp;Cj)= 99.61%
+        jj_name_coupler_1to2_ 0.00407813  (+)        1.61022e-05
+                (U_tot_cap-U_tot_ind)/mean=1.00%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9187008379771757
+
+  <span class="ansi-bold">Mode 2 at 6.44 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               91.5%  2.219e-25 1.886e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 96.83%
+        jj_name_qubit_1_ 0.00450702  (+)        0.000147701
+                Energy fraction (Lj over Lj&amp;Cj)= 96.22%
+        jj_name_qubit_2_ 0.00209631  (+)        8.24391e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.35%
+        jj_name_coupler_1to2_ 0.906399  (+)        0.0059408
+                (U_tot_cap-U_tot_ind)/mean=0.41%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9196002024814404
+
+  <span class="ansi-bold">Mode 3 at 6.65 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  2.136e-25 2.135e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 96.62%
+        jj_name_qubit_1_ 0.00015728  (+)        5.49916e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 95.97%
+        jj_name_qubit_2_ 0.000120201  (+)        5.04327e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 99.31%
+        jj_name_coupler_1to2_ 1.19245e-06  (+)        8.33856e-09
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9207369931130494
+
+  <span class="ansi-bold">Mode 4 at 6.65 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.1%  2.809e-25 2.805e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 96.62%
+        jj_name_qubit_1_ 0.000283103  (+)        9.89918e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 95.97%
+        jj_name_qubit_2_ 0.000125033  (+)        5.24639e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 99.31%
+        jj_name_coupler_1to2_ 0.00101502  (+)        7.09839e-06
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9207299442687606
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 04:06PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 16-04-54.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[2.40726093e-07 9.89340885e-01 1.87453520e-03]
+ [9.85232047e-01 7.76474078e-06 4.00032807e-03]
+ [4.47937367e-03 2.08345510e-03 9.08557757e-01]
+ [1.57278622e-04 1.20199852e-04 1.19243401e-06]
+ [2.83096733e-04 1.25030153e-04 1.01499780e-03]]
+SJ [[ 1 -1 -1]
+ [-1  1 -1]
+ [ 1  1 -1]
+ [-1  1 -1]
+ [ 1  1 -1]]
+Om [[4.57027088 0.         0.         0.         0.        ]
+ [0.         5.00037431 0.         0.         0.        ]
+ [0.         0.         6.44247951 0.         0.        ]
+ [0.         0.         0.         6.65451362 0.        ]
+ [0.         0.         0.         0.         6.65476227]]
+EJ [[16.34615128  0.          0.        ]
+ [ 0.         13.62179273  0.        ]
+ [ 0.          0.         81.7307564 ]]
+PJ_cap [[3.97005738e-09 1.91761456e-02 6.18297103e-06]
+ [1.90627509e-02 1.83951346e-07 1.57950269e-05]
+ [1.46795627e-04 8.19334451e-05 5.90436724e-03]
+ [5.49910566e-06 5.04321575e-06 8.33847664e-09]
+ [9.89896255e-06 5.24627233e-06 7.09822758e-06]]
+freqs_hfss [4.57027088 5.00037431 6.44247951 6.65451362 6.65476227]
+Ljs [1.0e-08 1.2e-08 2.0e-09]
+PHI_zpf [[ 1.83446656e-04 -4.07391363e-01 -7.23952403e-03]
+ [-3.88193061e-01  1.19380284e-03 -1.10621949e-02]
+ [ 2.97106679e-02  2.21966004e-02 -1.89232199e-01]
+ [-5.65809523e-03  5.41848648e-03 -2.20326928e-04]
+ [ 7.59120897e-03  5.52638989e-03 -6.42822495e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.021032
+1    1.020347
+2    1.008568
+3    1.018969
+4    1.008804
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      2.407261e-07          0.968961               0.001875
+1      9.655857e-01          0.000008               0.004000
+2      4.479374e-03          0.002083               0.900840
+3      1.572786e-04          0.000120               0.000001
+4      2.830967e-04          0.000125               0.001015
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                   1                  -1                       -1
+1                  -1                   1                       -1
+2                   1                   1                       -1
+3                  -1                   1                       -1
+4                   1                   1                       -1
+*** P (participation matrix, normalized.)
+   2.4e-07     0.99   0.0019
+      0.99  7.8e-06    0.004
+    0.0045   0.0021     0.91
+   0.00016  0.00012  1.2e-06
+   0.00028  0.00013    0.001
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       188  0.00383     1.27   0.0664   0.0692
+   0.00383      186     2.53   0.0789    0.142
+      1.27     2.53     52.4 0.000801    0.122
+    0.0664   0.0789 0.000801 1.42e-05 4.25e-05
+    0.0692    0.142    0.122 4.25e-05 0.000103
+
+*** Chi matrix ND (MHz)
+       170  0.00181     1.07    0.063   0.0471
+   0.00181      170     2.02    0.111    0.056
+      1.07     2.02     51.6 0.000673   0.0603
+     0.063    0.111 0.000673 1.13e-05 2.82e-05
+    0.0471    0.056   0.0603 2.82e-05 3.92e-05
+
+*** Frequencies O1 PT (MHz)
+0    4381.959349
+1    4813.395494
+2    6388.109679
+3    6654.440561
+4    6654.595364
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    4376.066337
+1    4807.989710
+2    6387.844262
+3    6654.443620
+4    6654.620422
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 16:07:36]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 4376.066337291257,
+        &#34;1&#34;: 4807.989709674118,
+        &#34;2&#34;: 6387.844261814678,
+        &#34;3&#34;: 6654.443619917438,
+        &#34;4&#34;: 6654.620422234528
+    }
+}
+04:07PM 36s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+<span class="ansi-yellow-fg">[WARNING|2025-08-23 16:07:39]: The optimized value for the design variable design_var_coupl_length_qubit_1_resonator_1: 80.0 is at the bounds. Consider changing the bounds or making the initial design closer to the optimal one.</span>
+[INFO|2025-08-23 16:07:39]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.7934619260629265 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;143.29675429223053 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.24653724367522 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;139.4154792983929 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3925.478340308799 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;80.0 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;9.60577259902125 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.73709330289673 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;145.7535388700229 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3953.1348239860363 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;72.95155632945006 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;8.859855702577867 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 04:07PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 2.39345767569371e-25
+        energy_elec_substrate = 2.20408280788606e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 2.39251953274313e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.20 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.178e-25 6.182e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.65%
+        jj_name_qubit_1_ 0.000267693  (+)        6.42963e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.59%
+        jj_name_qubit_2_ 0.986883  (+)        0.0243779
+                Energy fraction (Lj over Lj&amp;Cj)= 99.34%
+        jj_name_coupler_1to2_ 0.00685974  (+)        4.57936e-05
+                (U_tot_cap-U_tot_ind)/mean=1.24%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9191590514730172
+
+  <span class="ansi-bold">Mode 1 at 4.37 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.4%  9.268e-26 5.147e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.47%
+        jj_name_qubit_1_ 0.984002  (+)        0.0255484
+                Energy fraction (Lj over Lj&amp;Cj)= 97.40%
+        jj_name_qubit_2_ 0.000595161  (+)        1.58922e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.28%
+        jj_name_coupler_1to2_ 0.00851841  (+)        6.14716e-05
+                (U_tot_cap-U_tot_ind)/mean=1.33%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9192687342250798
+
+  <span class="ansi-bold">Mode 2 at 5.22 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.4%  1.772e-25 4.543e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 96.43%
+        jj_name_qubit_1_ 0.00911939  (+)        0.0003379
+                Energy fraction (Lj over Lj&amp;Cj)= 96.33%
+        jj_name_qubit_2_ 0.00675879  (+)        0.000257556
+                Energy fraction (Lj over Lj&amp;Cj)= 98.98%
+        jj_name_coupler_1to2_ 0.957041  (+)        0.00985599
+                (U_tot_cap-U_tot_ind)/mean=0.59%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9187406996298115
+
+  <span class="ansi-bold">Mode 3 at 6.98 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  8.852e-26 8.849e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.78%
+        jj_name_qubit_1_ 5.59765e-08  (+)        3.71336e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.61%
+        jj_name_qubit_2_ 0.000261164  (+)        1.78178e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.19%
+        jj_name_coupler_1to2_ 1.06062e-05  (+)        1.95555e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9209241123473698
+
+  <span class="ansi-bold">Mode 4 at 7.00 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.197e-25 1.196e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.74%
+        jj_name_qubit_1_ 0.000383352  (+)        2.56004e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.57%
+        jj_name_qubit_2_ 1.00923e-07  (+)        6.93138e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.18%
+        jj_name_coupler_1to2_ 1.17532e-05  (+)        2.18148e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9208781213343317
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 04:33PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 16-31-09.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[2.61308736e-04 9.87681799e-01 6.69614958e-03]
+ [9.85387337e-01 5.80290684e-04 8.30557658e-03]
+ [9.02506561e-03 6.68887781e-03 9.58566873e-01]
+ [5.59754918e-08 2.61159224e-04 1.06060330e-05]
+ [3.83341722e-04 1.00920226e-07 1.17528634e-05]]
+SJ [[-1 -1 -1]
+ [ 1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]]
+Om [[4.19980454 0.         0.         0.         0.        ]
+ [0.         4.36654813 0.         0.         0.        ]
+ [0.         0.         5.21633557 0.         0.        ]
+ [0.         0.         0.         6.9796688  0.        ]
+ [0.         0.         0.         0.         7.00291884]]
+EJ [[ 9.47793232  0.          0.        ]
+ [ 0.          9.21580047  0.        ]
+ [ 0.          0.         34.10093067]]
+PJ_cap [[6.27630052e-06 2.37965276e-02 4.47015229e-05]
+ [2.49100835e-02 1.54950965e-05 5.99356617e-05]
+ [3.34405225e-04 2.54892167e-04 9.75404920e-03]
+ [3.71329277e-09 1.78175170e-05 1.95551711e-07]
+ [2.55997614e-05 6.93120246e-09 2.18142803e-07]]
+freqs_hfss [4.19980454 4.36654813 5.21633557 6.9796688  7.00291884]
+Ljs [1.72465372e-08 1.77370933e-08 4.79346193e-09]
+PHI_zpf [[-7.60886195e-03 -4.74396564e-01 -2.03062159e-02]
+ [ 4.76431881e-01 -1.17249337e-02  2.30598196e-02]
+ [-4.98351931e-02 -4.35088759e-02  2.70767076e-01]
+ [-1.43563675e-04 -9.94462847e-03  1.04182742e-03]
+ [-1.19003790e-02 -1.95815527e-04  1.09853343e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.025260
+1    1.027070
+2    1.012063
+3    1.033909
+4    1.028580
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      2.613087e-04      9.633481e-01               0.006696
+1      9.594162e-01      5.802907e-04               0.008306
+2      9.025066e-03      6.688878e-03               0.947142
+3      5.597549e-08      2.611592e-04               0.000011
+4      3.833417e-04      1.009202e-07               0.000012
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                   1                  -1                        1
+2                  -1                  -1                        1
+3                  -1                  -1                        1
+4                  -1                  -1                        1
+*** P (participation matrix, normalized.)
+   0.00026     0.99   0.0067
+      0.99  0.00058   0.0083
+     0.009   0.0067     0.96
+   5.6e-08  0.00026  1.1e-05
+   0.00038    1e-07  1.2e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       233    0.417     4.96    0.205 0.000174
+     0.417      244     6.67 0.000189    0.305
+      4.96     6.67     91.7  0.00444  0.00635
+     0.205 0.000189  0.00444 4.51e-05 1.07e-07
+  0.000174    0.305  0.00635 1.07e-07 9.51e-05
+
+*** Chi matrix ND (MHz)
+       204   -0.179     3.47    0.179 9.83e-05
+    -0.179      214     4.24 9.11e-05     0.26
+      3.47     4.24     88.6  0.00343  0.00451
+     0.179 9.11e-05  0.00343 3.46e-05 7.48e-08
+  9.83e-05     0.26  0.00451 7.48e-08 7.03e-05
+
+*** Frequencies O1 PT (MHz)
+0    3963.628175
+1    4118.677823
+2    5118.820473
+3    6979.563878
+4    7002.763129
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    3953.417004
+1    4107.730590
+2    5117.828643
+3    6979.566539
+4    7002.768438
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 16:34:01]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 3953.417004328567,
+        &#34;1&#34;: 4107.730589566549,
+        &#34;2&#34;: 5117.82864315638,
+        &#34;3&#34;: 6979.566539021756,
+        &#34;4&#34;: 7002.768438203897
+    }
+}
+04:34PM 02s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 16:34:04]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.291773760474574 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;141.13258215454542 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.248863010459637 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;135.91571698647144 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3860.8449193852452 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;63.65823036842411 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;6.087035943602029 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.80871103683254 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;141.80591630504924 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3902.569666444614 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;62.84416460688194 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;5.6594609350555825 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 04:34PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 1.79823823292509e-25
+        energy_elec_substrate = 1.65618285275389e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 1.7977296186115e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.26 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.447e-25 7.419e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.59%
+        jj_name_qubit_1_ 0.000245665  (+)        6.06056e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.52%
+        jj_name_qubit_2_ 0.987704  (+)        0.0251576
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.00560414  (+)        3.43998e-05
+                (U_tot_cap-U_tot_ind)/mean=1.31%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9189710355866696
+
+  <span class="ansi-bold">Mode 1 at 4.42 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.283e-25  6.77e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.41%
+        jj_name_qubit_1_ 0.987058  (+)        0.0262818
+                Energy fraction (Lj over Lj&amp;Cj)= 97.32%
+        jj_name_qubit_2_ 0.000487026  (+)        1.33887e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.34%
+        jj_name_coupler_1to2_ 0.00649921  (+)        4.30576e-05
+                (U_tot_cap-U_tot_ind)/mean=1.33%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9194299010082531
+
+  <span class="ansi-bold">Mode 2 at 5.55 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.1%  2.501e-25 7.217e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 95.98%
+        jj_name_qubit_1_ 0.00699574  (+)        0.000293113
+                Energy fraction (Lj over Lj&amp;Cj)= 95.85%
+        jj_name_qubit_2_ 0.00557882  (+)        0.000241332
+                Energy fraction (Lj over Lj&amp;Cj)= 98.97%
+        jj_name_coupler_1to2_ 0.957491  (+)        0.00998187
+                (U_tot_cap-U_tot_ind)/mean=0.58%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9191389218838494
+
+  <span class="ansi-bold">Mode 3 at 7.10 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.271e-25 1.271e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.58%
+        jj_name_qubit_1_ 9.66797e-08  (+)        6.63055e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.39%
+        jj_name_qubit_2_ 0.000219834  (+)        1.55662e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.32%
+        jj_name_coupler_1to2_ 1.5464e-05  (+)        2.63884e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9209610593946734
+
+  <span class="ansi-bold">Mode 4 at 7.16 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  8.991e-26 8.989e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.47%
+        jj_name_qubit_1_ 0.000268595  (+)        1.87781e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.27%
+        jj_name_qubit_2_ 9.62468e-08  (+)        6.94726e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.29%
+        jj_name_coupler_1to2_ 1.41362e-05  (+)        2.45902e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9210030253109863
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 05:02PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 16-59-47.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[2.39626881e-04 9.89075596e-01 5.46640230e-03]
+ [9.87798455e-01 4.74528159e-04 6.33242886e-03]
+ [6.92293861e-03 5.52075785e-03 9.58687572e-01]
+ [9.66782107e-08 2.19830771e-04 1.54637985e-05]
+ [2.68589597e-04 9.62449656e-08 1.41358863e-05]]
+SJ [[-1 -1 -1]
+ [ 1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]]
+Om [[4.25607966 0.         0.         0.         0.        ]
+ [0.         4.42161706 0.         0.         0.        ]
+ [0.         0.         5.54657972 0.         0.        ]
+ [0.         0.         0.         7.09630185 0.        ]
+ [0.         0.         0.         0.         7.16477458]]
+EJ [[ 9.47665436  0.          0.        ]
+ [ 0.          9.17873913  0.        ]
+ [ 0.          0.         38.08716907]]
+PJ_cap [[5.91160265e-06 2.45392161e-02 3.35542579e-05]
+ [2.56073500e-02 1.30450715e-05 4.19526236e-05]
+ [2.90062246e-04 2.38820409e-04 9.87798904e-03]
+ [6.63044949e-09 1.55659225e-05 2.63880255e-07]
+ [1.87777890e-05 6.94712805e-09 2.45897808e-07]]
+freqs_hfss [4.25607966 4.42161706 5.54657972 7.09630185 7.16477458]
+Ljs [1.72488630e-08 1.78087110e-08 4.29177376e-09]
+PHI_zpf [[-7.33550678e-03 -4.78865011e-01 -1.74763738e-02]
+ [ 4.80045294e-01 -1.06909192e-02  1.91721747e-02]
+ [-4.50106570e-02 -4.08418558e-02  2.64208529e-01]
+ [-1.90255764e-04 -9.21836225e-03  1.20024467e-03]
+ [-1.00763523e-02 -1.93813384e-04  1.15307735e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.026622
+1    1.027108
+2    1.011779
+3    1.034828
+4    1.033677
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      2.396269e-04      9.634273e-01               0.005466
+1      9.617278e-01      4.745282e-04               0.006332
+2      6.922939e-03      5.520758e-03               0.947527
+3      9.667821e-08      2.198308e-04               0.000015
+4      2.685896e-04      9.624497e-08               0.000014
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                   1                  -1                        1
+2                  -1                  -1                        1
+3                  -1                  -1                        1
+4                  -1                  -1                        1
+*** P (participation matrix, normalized.)
+   0.00024     0.99   0.0055
+      0.99  0.00047   0.0063
+    0.0069   0.0055     0.96
+   9.7e-08  0.00022  1.5e-05
+   0.00027  9.6e-08  1.4e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       241    0.362     4.32    0.179 0.000146
+     0.362      252      5.4 0.000188    0.222
+      4.32      5.4     92.8  0.00513  0.00548
+     0.179 0.000188  0.00513 3.32e-05 1.37e-07
+  0.000146    0.222  0.00548 1.37e-07 4.89e-05
+
+*** Chi matrix ND (MHz)
+       210   -0.161     3.22    0.156 8.79e-05
+    -0.161      220     3.77 0.000104     0.19
+      3.22     3.77     89.7  0.00404  0.00416
+     0.156 0.000104  0.00404 2.54e-05 9.36e-08
+  8.79e-05     0.19  0.00416 9.36e-08 3.63e-05
+
+*** Frequencies O1 PT (MHz)
+0    4012.318442
+1    4166.995516
+2    5448.881067
+3    7096.209720
+4    7164.660844
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    4001.683241
+1    4155.758269
+2    5447.841233
+3    7096.212101
+4    7164.664538
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 17:02:48]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 4001.683240927202,
+        &#34;1&#34;: 4155.7582688541015,
+        &#34;2&#34;: 5447.841232639277,
+        &#34;3&#34;: 7096.21210108272,
+        &#34;4&#34;: 7164.664537535423
+    }
+}
+05:02PM 48s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 17:02:51]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.301602913321889 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;140.69856594994295 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.25218251448815 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;135.61258835783227 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3885.0644189034347 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;59.10858753730678 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;5.622295579928196 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.815040487594835 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;141.87486379259545 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3917.038485475176 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;59.173679856414765 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;5.181808728324467 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 05:03PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 1.65397089249087e-25
+        energy_elec_substrate = 1.52340158870422e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 1.6535455342265e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.26 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.274e-25 6.531e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.59%
+        jj_name_qubit_1_ 0.000313757  (+)        7.73947e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.52%
+        jj_name_qubit_2_ 0.988241  (+)        0.0251723
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.00600165  (+)        3.69126e-05
+                (U_tot_cap-U_tot_ind)/mean=1.26%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9193038941741754
+
+  <span class="ansi-bold">Mode 1 at 4.41 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.313e-25 6.749e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.42%
+        jj_name_qubit_1_ 0.986708  (+)        0.026166
+                Energy fraction (Lj over Lj&amp;Cj)= 97.33%
+        jj_name_qubit_2_ 0.000598257  (+)        1.63825e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.34%
+        jj_name_coupler_1to2_ 0.00675522  (+)        4.46658e-05
+                (U_tot_cap-U_tot_ind)/mean=1.33%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9189888242706289
+
+  <span class="ansi-bold">Mode 2 at 5.52 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.2%  3.978e-25 1.121e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 96.02%
+        jj_name_qubit_1_ 0.00729369  (+)        0.000302676
+                Energy fraction (Lj over Lj&amp;Cj)= 95.89%
+        jj_name_qubit_2_ 0.00594642  (+)        0.000254818
+                Energy fraction (Lj over Lj&amp;Cj)= 98.98%
+        jj_name_coupler_1to2_  0.95802  (+)        0.00991269
+                (U_tot_cap-U_tot_ind)/mean=0.55%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9184395613779114
+
+  <span class="ansi-bold">Mode 3 at 7.08 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  3.514e-26 3.514e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.60%
+        jj_name_qubit_1_ 9.15069e-08  (+)        6.25295e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.41%
+        jj_name_qubit_2_ 0.000202386  (+)        1.42808e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.32%
+        jj_name_coupler_1to2_ 1.4202e-05  (+)        2.41972e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9211203224216408
+
+  <span class="ansi-bold">Mode 4 at 7.14 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%   8.27e-26 8.268e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.51%
+        jj_name_qubit_1_ 0.000244304  (+)        1.69472e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.32%
+        jj_name_qubit_2_ 9.64214e-08  (+)        6.90692e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.30%
+        jj_name_coupler_1to2_ 1.30604e-05  (+)        2.25898e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9210570727819681
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 05:32PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 17-30-37.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[3.06039685e-04 9.88616736e-01 5.85403281e-03]
+ [9.87563875e-01 5.82967791e-04 6.58258118e-03]
+ [7.21811796e-03 5.88480736e-03 9.58699838e-01]
+ [9.15056095e-08 2.02382826e-04 1.42017447e-05]
+ [2.44299607e-04 9.64197134e-08 1.30601990e-05]]
+SJ [[-1 -1 -1]
+ [-1  1 -1]
+ [ 1  1 -1]
+ [-1 -1  1]
+ [-1 -1  1]]
+Om [[4.2554152  0.         0.         0.         0.        ]
+ [0.         4.4122254  0.         0.         0.        ]
+ [0.         0.         5.51948592 0.         0.        ]
+ [0.         0.         0.         7.08269712 0.        ]
+ [0.         0.         0.         0.         7.13620237]]
+EJ [[ 9.47483095  0.          0.        ]
+ [ 0.          9.17547804  0.        ]
+ [ 0.          0.         38.00013997]]
+PJ_cap [[7.54910391e-06 2.45531638e-02 3.60046906e-05]
+ [2.54973046e-02 1.59638077e-05 4.35242858e-05]
+ [2.99540128e-04 2.52177338e-04 9.80998121e-03]
+ [6.25286187e-09 1.42806358e-05 2.41968645e-07]
+ [1.69469231e-05 6.90679708e-09 2.25893720e-07]]
+freqs_hfss [4.2554152  4.4122254  5.51948592 7.08269712 7.13620237]
+Ljs [1.72521825e-08 1.78150405e-08 4.30160291e-09]
+PHI_zpf [[-8.29008742e-03 -4.78801609e-01 -1.81046841e-02]
+ [-4.79524399e-01  1.18391842e-02 -1.95487666e-02]
+ [ 4.58522413e-02  4.20713155e-02 -2.63865764e-01]
+ [-1.84936426e-04 -8.83805736e-03  1.15043634e-03]
+ [-9.59167003e-03 -1.93636466e-04  1.10739072e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.025607
+1    1.027117
+2    1.011188
+3    1.033959
+4    1.032816
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      3.060397e-04      9.639334e-01               0.005854
+1      9.614908e-01      5.829678e-04               0.006583
+2      7.218118e-03      5.884807e-03               0.948093
+3      9.150561e-08      2.023828e-04               0.000014
+4      2.442996e-04      9.641971e-08               0.000013
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                  -1                   1                       -1
+2                   1                   1                       -1
+3                  -1                  -1                        1
+4                  -1                  -1                        1
+*** P (participation matrix, normalized.)
+   0.00031     0.99   0.0059
+      0.99  0.00058   0.0066
+    0.0072   0.0059     0.96
+   9.2e-08   0.0002  1.4e-05
+   0.00024  9.6e-08  1.3e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       241    0.449     4.59    0.164 0.000154
+     0.449      250     5.59 0.000194      0.2
+      4.59     5.59     92.1  0.00477  0.00508
+     0.164 0.000194  0.00477  2.8e-05 1.18e-07
+  0.000154      0.2  0.00508 1.18e-07 4.01e-05
+
+*** Chi matrix ND (MHz)
+       210   -0.177      3.4    0.143 9.09e-05
+    -0.177      219     3.89 0.000105    0.171
+       3.4     3.89     89.1  0.00375  0.00384
+     0.143 0.000105  0.00375 2.14e-05 8.11e-08
+  9.09e-05    0.171  0.00384 8.11e-08 2.98e-05
+
+*** Frequencies O1 PT (MHz)
+0    4011.697084
+1    4158.614109
+2    5422.246974
+3    7082.612448
+4    7136.099485
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    4001.039456
+1    4147.423178
+2    5421.229152
+3    7082.614671
+4    7136.102872
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 17:33:34]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 4001.039455987764,
+        &#34;1&#34;: 4147.423177614547,
+        &#34;2&#34;: 5421.229151557948,
+        &#34;3&#34;: 7082.614671166352,
+        &#34;4&#34;: 7136.102872000065
+    }
+}
+05:33PM 34s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 17:33:38]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.299692251163778 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;139.2787943607556 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.246779510191658 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;134.83614391520845 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3893.851030204758 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;57.828737504637665 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;5.203093814402229 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.81756363063134 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;141.92843066944087 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3917.0384863978347 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;58.38677900799574 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;4.8245539013086995 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 05:33PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 1.92716882117556e-25
+        energy_elec_substrate = 1.77501178547908e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 1.92670073376875e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.26 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  6.294e-26 3.203e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.59%
+        jj_name_qubit_1_ 0.000250127  (+)        6.17159e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.51%
+        jj_name_qubit_2_ 0.987469  (+)        0.025171
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.0058455  (+)        3.59573e-05
+                (U_tot_cap-U_tot_ind)/mean=1.31%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9190776405972639
+
+  <span class="ansi-bold">Mode 1 at 4.44 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.312e-25 6.759e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.39%
+        jj_name_qubit_1_ 0.986672  (+)        0.0264308
+                Energy fraction (Lj over Lj&amp;Cj)= 97.31%
+        jj_name_qubit_2_ 0.000508476  (+)        1.40718e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.34%
+        jj_name_coupler_1to2_ 0.00691172  (+)        4.61586e-05
+                (U_tot_cap-U_tot_ind)/mean=1.35%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9186388868932975
+
+  <span class="ansi-bold">Mode 2 at 5.57 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.2%  1.737e-25 4.948e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 95.94%
+        jj_name_qubit_1_ 0.00744169  (+)        0.000314738
+                Energy fraction (Lj over Lj&amp;Cj)= 95.81%
+        jj_name_qubit_2_ 0.00581477  (+)        0.000254068
+                Energy fraction (Lj over Lj&amp;Cj)= 98.96%
+        jj_name_coupler_1to2_ 0.956771  (+)        0.0100882
+                (U_tot_cap-U_tot_ind)/mean=0.60%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9184575970175984
+
+  <span class="ansi-bold">Mode 3 at 7.08 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.026e-25 1.025e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.60%
+        jj_name_qubit_1_ 1.06676e-07  (+)        7.29106e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.40%
+        jj_name_qubit_2_ 0.000198375  (+)        1.40072e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.32%
+        jj_name_coupler_1to2_ 1.53405e-05  (+)        2.61391e-07
+                (U_tot_cap-U_tot_ind)/mean=-0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9209851978202848
+
+  <span class="ansi-bold">Mode 4 at 7.13 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  9.636e-26 9.634e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.53%
+        jj_name_qubit_1_ 0.000246346  (+)        1.70408e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.33%
+        jj_name_qubit_2_ 1.19486e-07  (+)        8.53892e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.30%
+        jj_name_coupler_1to2_ 1.55029e-05  (+)        2.67354e-07
+                (U_tot_cap-U_tot_ind)/mean=-0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9210463380142975
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 06:02PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 18-00-06.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[2.43975587e-04 9.88866661e-01 5.70173738e-03]
+ [9.87487536e-01 4.95353833e-04 6.73334482e-03]
+ [7.36321585e-03 5.75345483e-03 9.58370360e-01]
+ [1.06674807e-07 1.98372445e-04 1.53402426e-05]
+ [2.46342182e-04 1.19484100e-07 1.55025984e-05]]
+SJ [[-1 -1 -1]
+ [ 1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]]
+Om [[4.25666271 0.         0.         0.         0.        ]
+ [0.         4.43526915 0.         0.         0.        ]
+ [0.         0.         5.57301391 0.         0.        ]
+ [0.         0.         0.         7.08455112 0.        ]
+ [0.         0.         0.         0.         7.12727636]]
+EJ [[ 9.47779919  0.          0.        ]
+ [ 0.          9.1741787   0.        ]
+ [ 0.          0.         38.01702616]]
+PJ_cap [[6.01980736e-06 2.45519348e-02 3.50729901e-05]
+ [2.57486944e-02 1.37086137e-05 4.49674148e-05]
+ [3.11419303e-04 2.51389429e-04 9.98185854e-03]
+ [7.29095282e-09 1.40069660e-05 2.61387015e-07]
+ [1.70405546e-05 8.53877099e-09 2.67349145e-07]]
+freqs_hfss [4.25666271 4.43526915 5.57301391 7.08455112 7.12727636]
+Ljs [1.72467795e-08 1.78175636e-08 4.29969225e-09]
+PHI_zpf [[-7.40182915e-03 -4.78966227e-01 -1.78662808e-02]
+ [ 4.80681106e-01 -1.09425656e-02  1.98185259e-02]
+ [-4.65275388e-02 -4.18033245e-02  2.65037717e-01]
+ [-1.99672545e-04 -8.75181738e-03  1.19555129e-03]
+ [-9.62415130e-03 -2.15435993e-04  1.20547992e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.026664
+1    1.027340
+2    1.012347
+3    0.966631
+4    0.996633
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      2.439756e-04      9.631839e-01               0.005702
+1      9.612083e-01      4.953538e-04               0.006733
+2      7.363216e-03      5.753455e-03               0.946682
+3      1.066748e-07      1.983724e-04               0.000015
+4      2.463422e-04      1.194841e-07               0.000016
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                   1                  -1                        1
+2                  -1                  -1                        1
+3                  -1                  -1                        1
+4                  -1                  -1                        1
+*** P (participation matrix, normalized.)
+   0.00024     0.99   0.0057
+      0.99   0.0005   0.0067
+    0.0074   0.0058     0.96
+   1.1e-07   0.0002  1.5e-05
+   0.00025  1.2e-07  1.6e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       241    0.377     4.53    0.161 0.000163
+     0.377      253     5.79 0.000193    0.203
+      4.53     5.79     93.8  0.00505  0.00578
+     0.161 0.000193  0.00505 2.69e-05 1.47e-07
+  0.000163    0.203  0.00578 1.47e-07 4.07e-05
+
+*** Chi matrix ND (MHz)
+       210   -0.219      3.4     0.14 0.000101
+    -0.219      221     4.06  0.00011    0.173
+       3.4     4.06     90.7  0.00396  0.00437
+      0.14  0.00011  0.00396 2.06e-05 9.92e-08
+  0.000101    0.173  0.00437 9.92e-08 2.99e-05
+
+*** Frequencies O1 PT (MHz)
+0    4012.715128
+1    4179.089119
+2    5474.015970
+3    7084.467863
+4    7127.171917
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    4002.056972
+1    4167.727999
+2    5472.957084
+3    7084.470075
+4    7127.175576
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 18:03:02]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 4002.056971826659,
+        &#34;1&#34;: 4167.727999191657,
+        &#34;2&#34;: 5472.957083931523,
+        &#34;3&#34;: 7084.470075077948,
+        &#34;4&#34;: 7127.175576394418
+    }
+}
+06:03PM 02s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 18:03:05]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.303369535021262 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;140.33461601559955 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.250118494018707 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;135.31138200894992 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3893.8510307328984 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;57.70684577362798 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;5.271258061396997 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.818894258659597 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;142.06382779273636 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3925.055437053024 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;58.21136549951313 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;4.824462685491691 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 06:03PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 2.19791137483417e-25
+        energy_elec_substrate = 2.02394923821716e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 2.19735677983521e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.25 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.126e-25 5.712e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.60%
+        jj_name_qubit_1_ 0.000255616  (+)        6.29168e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.52%
+        jj_name_qubit_2_ 0.988433  (+)        0.0251313
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.00591766  (+)        3.63367e-05
+                (U_tot_cap-U_tot_ind)/mean=1.26%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.919241350829593
+
+  <span class="ansi-bold">Mode 1 at 4.43 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%   1.23e-25 6.325e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.40%
+        jj_name_qubit_1_ 0.987114  (+)        0.0263591
+                Energy fraction (Lj over Lj&amp;Cj)= 97.32%
+        jj_name_qubit_2_ 0.000517339  (+)        1.42701e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.34%
+        jj_name_coupler_1to2_ 0.00687484  (+)        4.57976e-05
+                (U_tot_cap-U_tot_ind)/mean=1.32%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9188840153769398
+
+  <span class="ansi-bold">Mode 2 at 5.55 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.2%  1.514e-25 4.313e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 95.97%
+        jj_name_qubit_1_ 0.00740156  (+)        0.00031096
+                Energy fraction (Lj over Lj&amp;Cj)= 95.84%
+        jj_name_qubit_2_ 0.0058867  (+)        0.000255471
+                Energy fraction (Lj over Lj&amp;Cj)= 98.96%
+        jj_name_coupler_1to2_ 0.957622  (+)        0.0100367
+                (U_tot_cap-U_tot_ind)/mean=0.56%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.919348536679661
+
+  <span class="ansi-bold">Mode 3 at 7.07 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.088e-25 1.087e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.62%
+        jj_name_qubit_1_ 1.00255e-07  (+)        6.82894e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.43%
+        jj_name_qubit_2_ 0.00019753  (+)        1.38986e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.33%
+        jj_name_coupler_1to2_ 1.52956e-05  (+)        2.59916e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9210065650235182
+
+  <span class="ansi-bold">Mode 4 at 7.13 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.099e-25 1.099e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.53%
+        jj_name_qubit_1_ 0.00023962  (+)        1.65835e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.33%
+        jj_name_qubit_2_ 9.96019e-08  (+)        7.12047e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.30%
+        jj_name_coupler_1to2_ 1.37646e-05  (+)        2.37647e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9208511596014034
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 06:29PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 18-27-25.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[2.49338949e-04 9.88815685e-01 5.77234368e-03]
+ [9.87528667e-01 5.04023514e-04 6.69788429e-03]
+ [7.32390554e-03 5.82493298e-03 9.58360831e-01]
+ [1.00253213e-07 1.97526732e-04 1.52954043e-05]
+ [2.39616411e-04 9.96002000e-08 1.37643506e-05]]
+SJ [[-1 -1 -1]
+ [ 1 -1  1]
+ [ 1  1 -1]
+ [-1 -1  1]
+ [ 1  1 -1]]
+Om [[4.25107329 0.         0.         0.         0.        ]
+ [0.         4.42783076 0.         0.         0.        ]
+ [0.         0.         5.55391951 0.         0.        ]
+ [0.         0.         0.         7.07185807 0.        ]
+ [0.         0.         0.         0.         7.12829081]]
+EJ [[ 9.47596464  0.          0.        ]
+ [ 0.          9.17349362  0.        ]
+ [ 0.          0.         37.98454013]]
+PJ_cap [[6.13718372e-06 2.45141888e-02 3.54444090e-05]
+ [2.56806763e-02 1.39028330e-05 4.46188158e-05]
+ [3.07697319e-04 2.52790401e-04 9.93141303e-03]
+ [6.82884397e-09 1.38983561e-05 2.59912045e-07]
+ [1.65832326e-05 7.12035279e-09 2.37642941e-07]]
+freqs_hfss [4.25107329 4.42783076 5.55391951 7.07185807 7.12829081]
+Ljs [1.72501185e-08 1.78188943e-08 4.30336954e-09]
+PHI_zpf [[-7.47855419e-03 -4.78657193e-01 -1.79724363e-02]
+ [ 4.80334354e-01 -1.10290607e-02  1.97581325e-02]
+ [ 4.63280952e-02  4.19916440e-02 -2.64695089e-01]
+ [-1.93414579e-04 -8.72564074e-03  1.19324278e-03]
+ [ 9.49345445e-03  1.96716338e-04 -1.13645471e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.025570
+1    1.026850
+2    1.011383
+3    1.034042
+4    1.030921
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      2.493389e-04      9.641617e-01               0.005772
+1      9.617066e-01      5.040235e-04               0.006698
+2      7.323906e-03      5.824933e-03               0.947575
+3      1.002532e-07      1.975267e-04               0.000015
+4      2.396164e-04      9.960020e-08               0.000014
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                   1                  -1                        1
+2                   1                   1                       -1
+3                  -1                  -1                        1
+4                   1                   1                       -1
+*** P (participation matrix, normalized.)
+   0.00025     0.99   0.0058
+      0.99   0.0005   0.0067
+    0.0073   0.0058     0.96
+     1e-07   0.0002  1.5e-05
+   0.00024    1e-07  1.4e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       241    0.383     4.57     0.16 0.000145
+     0.383      252     5.73 0.000188    0.197
+      4.57     5.73     93.3  0.00502  0.00527
+      0.16 0.000188  0.00502 2.66e-05 1.29e-07
+  0.000145    0.197  0.00527 1.29e-07 3.85e-05
+
+*** Chi matrix ND (MHz)
+       210   -0.217     3.42    0.139 8.83e-05
+    -0.217      220     4.01 0.000106    0.168
+      3.42     4.01     90.2  0.00395  0.00398
+     0.139 0.000106  0.00395 2.03e-05 8.73e-08
+  8.83e-05    0.168  0.00398 8.73e-08 2.84e-05
+
+*** Frequencies O1 PT (MHz)
+0    4007.746016
+1    4172.457804
+2    5455.497179
+3    7071.775423
+4    7128.189535
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    3997.121468
+1    4161.149301
+2    5454.451415
+3    7071.777624
+4    7128.193016
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 18:30:21]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 3997.1214678636297,
+        &#34;1&#34;: 4161.1493005286975,
+        &#34;2&#34;: 5454.451415378001,
+        &#34;3&#34;: 7071.777624174873,
+        &#34;4&#34;: 7128.193016171803
+    }
+}
+06:30PM 21s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 18:30:24]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.303196167010912 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;140.56961605420017 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.2480822145958 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;135.40213699087047 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3893.8510313346605 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;57.99287675315918 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;5.17554065135772 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.817388272626243 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;141.87142833939993 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3925.0554371911644 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;58.19633897164181 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;4.759427817899384 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 06:30PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 1.99400747547473e-25
+        energy_elec_substrate = 1.83628593569372e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 1.99350848176417e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.25 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.423e-25 7.181e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.60%
+        jj_name_qubit_1_ 0.000331158  (+)        8.14269e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.52%
+        jj_name_qubit_2_ 0.987845  (+)        0.0250914
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.00610471  (+)        3.74497e-05
+                (U_tot_cap-U_tot_ind)/mean=1.27%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9186669293586617
+
+  <span class="ansi-bold">Mode 1 at 4.41 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.624e-25 8.254e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.42%
+        jj_name_qubit_1_ 0.986248  (+)        0.0261045
+                Energy fraction (Lj over Lj&amp;Cj)= 97.34%
+        jj_name_qubit_2_ 0.000628314  (+)        1.71794e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.34%
+        jj_name_coupler_1to2_ 0.00688142  (+)        4.5442e-05
+                (U_tot_cap-U_tot_ind)/mean=1.35%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9179089480004622
+
+  <span class="ansi-bold">Mode 2 at 5.52 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.2%  2.191e-25 6.125e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 96.02%
+        jj_name_qubit_1_ 0.00743976  (+)        0.000308771
+                Energy fraction (Lj over Lj&amp;Cj)= 95.89%
+        jj_name_qubit_2_ 0.00604335  (+)        0.000259095
+                Energy fraction (Lj over Lj&amp;Cj)= 98.98%
+        jj_name_coupler_1to2_ 0.957054  (+)        0.0099098
+                (U_tot_cap-U_tot_ind)/mean=0.60%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9177159491237548
+
+  <span class="ansi-bold">Mode 3 at 7.07 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.461e-25  1.46e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.62%
+        jj_name_qubit_1_ 9.3942e-08  (+)        6.39794e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.43%
+        jj_name_qubit_2_ 0.000198419  (+)        1.39594e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.33%
+        jj_name_coupler_1to2_ 1.44585e-05  (+)        2.45671e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9210926801858204
+
+  <span class="ansi-bold">Mode 4 at 7.13 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%   9.97e-26 9.968e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.53%
+        jj_name_qubit_1_ 0.000236447  (+)        1.63571e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.33%
+        jj_name_qubit_2_ 9.85191e-08  (+)        7.04039e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.30%
+        jj_name_coupler_1to2_ 1.33905e-05  (+)        2.31111e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9209022324535369
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 06:59PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 18-57-05.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[3.23037761e-04 9.88572388e-01 5.95502116e-03]
+ [9.87462383e-01 6.12291948e-04 6.70594805e-03]
+ [7.36261499e-03 5.98068524e-03 9.58661969e-01]
+ [9.39407072e-08 1.98415782e-04 1.44583088e-05]
+ [2.36442767e-04 9.85174447e-08 1.33902738e-05]]
+SJ [[-1 -1 -1]
+ [ 1 -1  1]
+ [ 1  1 -1]
+ [ 1  1 -1]
+ [ 1  1 -1]]
+Om [[4.24914092 0.         0.         0.         0.        ]
+ [0.         4.40858354 0.         0.         0.        ]
+ [0.         0.         5.52043948 0.         0.        ]
+ [0.         0.         0.         7.07171737 0.        ]
+ [0.         0.         0.         0.         7.12723668]]
+EJ [[ 9.47708335  0.          0.        ]
+ [ 0.          9.174269    0.        ]
+ [ 0.          0.         37.98607046]]
+PJ_cap [[7.94302824e-06 2.44761395e-02 3.65314116e-05]
+ [2.54388131e-02 1.67413499e-05 4.42832219e-05]
+ [3.05569457e-04 2.56408270e-04 9.80704022e-03]
+ [6.39785159e-09 1.39591759e-05 2.45667759e-07]
+ [1.63568225e-05 7.04026939e-09 2.31106786e-07]]
+freqs_hfss [4.24914092 4.40858354 5.52043948 7.07171737 7.12723668]
+Ljs [1.72480822e-08 1.78173883e-08 4.30319617e-09]
+PHI_zpf [[-8.50990800e-03 -4.78469295e-01 -1.82500912e-02]
+ [ 4.79244867e-01 -1.21290861e-02  1.97266095e-02]
+ [ 4.63074135e-02  4.24191114e-02 -2.63932209e-01]
+ [ 1.87213435e-04  8.74479879e-03 -1.16009622e-03]
+ [ 9.42912209e-03  1.95621429e-04 -1.12080004e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.025892
+1    1.027430
+2    1.012175
+3    1.034446
+4    1.033830
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      3.230378e-04      9.636224e-01               0.005955
+1      9.610991e-01      6.122919e-04               0.006706
+2      7.362615e-03      5.980685e-03               0.947130
+3      9.394071e-08      1.984158e-04               0.000014
+4      2.364428e-04      9.851744e-08               0.000013
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                   1                  -1                        1
+2                   1                   1                       -1
+3                   1                   1                       -1
+4                   1                   1                       -1
+*** P (participation matrix, normalized.)
+   0.00032     0.99    0.006
+      0.99  0.00061   0.0067
+    0.0074    0.006     0.96
+   9.4e-08   0.0002  1.4e-05
+   0.00024  9.9e-08  1.3e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       240    0.472     4.66    0.161 0.000157
+     0.472      250      5.7 0.000199    0.194
+      4.66      5.7     92.2  0.00482  0.00513
+     0.161 0.000199  0.00482 2.69e-05 1.21e-07
+  0.000157    0.194  0.00513 1.21e-07 3.75e-05
+
+*** Chi matrix ND (MHz)
+       210   -0.201     3.46     0.14 9.34e-05
+    -0.201      218     3.98 0.000109    0.165
+      3.46     3.98     89.2  0.00379  0.00389
+      0.14 0.000109  0.00379 2.05e-05 8.27e-08
+  9.34e-05    0.165  0.00389 8.27e-08 2.78e-05
+
+*** Frequencies O1 PT (MHz)
+0    4006.078712
+1    4155.435731
+2    5423.052432
+3    7071.634516
+4    7127.137229
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    3995.456055
+1    4144.268442
+2    5422.032079
+3    7071.636699
+4    7127.140520
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 19:00:12]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 3995.456054977734,
+        &#34;1&#34;: 4144.268442298513,
+        &#34;2&#34;: 5422.032079496912,
+        &#34;3&#34;: 7071.636698626394,
+        &#34;4&#34;: 7127.1405199696255
+    }
+}
+07:00PM 12s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 19:00:15]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.299680150589685 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;139.24450403964912 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.243768586382977 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;134.413704171554 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3893.85103186027 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;57.722555988722995 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;4.923259217611342 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.815645539741315 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;141.56323736775423 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3925.055437319146 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;57.959014551468535 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;4.553791700508351 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 07:00PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 2.15352673375183e-25
+        energy_elec_substrate = 1.98296797884294e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 2.15295843472131e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.26 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  9.147e-26 4.633e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.59%
+        jj_name_qubit_1_ 0.000220768  (+)        5.44292e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.52%
+        jj_name_qubit_2_ 0.987424  (+)        0.0251518
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.00594066  (+)        3.65202e-05
+                (U_tot_cap-U_tot_ind)/mean=1.31%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9191969118117399
+
+  <span class="ansi-bold">Mode 1 at 4.45 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  4.904e-26  2.56e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.37%
+        jj_name_qubit_1_ 0.985682  (+)        0.0266057
+                Energy fraction (Lj over Lj&amp;Cj)= 97.29%
+        jj_name_qubit_2_ 0.000476151  (+)        1.32786e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.33%
+        jj_name_coupler_1to2_ 0.00727397  (+)        4.89568e-05
+                (U_tot_cap-U_tot_ind)/mean=1.38%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9195906648467486
+
+  <span class="ansi-bold">Mode 2 at 5.57 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.2%  1.407e-25 4.002e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 95.95%
+        jj_name_qubit_1_ 0.00780676  (+)        0.00032951
+                Energy fraction (Lj over Lj&amp;Cj)= 95.82%
+        jj_name_qubit_2_ 0.00591626  (+)        0.000257997
+                Energy fraction (Lj over Lj&amp;Cj)= 98.96%
+        jj_name_coupler_1to2_ 0.956335  (+)        0.010065
+                (U_tot_cap-U_tot_ind)/mean=0.61%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9194911678917972
+
+  <span class="ansi-bold">Mode 3 at 7.07 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.344e-25 1.344e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.62%
+        jj_name_qubit_1_ 1.05393e-07  (+)        7.1782e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.43%
+        jj_name_qubit_2_ 0.000198025  (+)        1.39346e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.33%
+        jj_name_coupler_1to2_ 1.5814e-05  (+)        2.68564e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9210309086747983
+
+  <span class="ansi-bold">Mode 4 at 7.13 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.077e-25 1.076e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.53%
+        jj_name_qubit_1_ 0.000248884  (+)        1.72255e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.33%
+        jj_name_qubit_2_ 1.06339e-07  (+)        7.60388e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.30%
+        jj_name_coupler_1to2_ 1.46456e-05  (+)        2.52746e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9208002611549911
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 07:26PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 19-24-13.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[2.15343134e-04 9.88824294e-01 5.79466604e-03]
+ [9.87084490e-01 4.63782410e-04 7.08502914e-03]
+ [7.72447165e-03 5.85390642e-03 9.57946075e-01]
+ [1.05391410e-07 1.98022272e-04 1.58137315e-05]
+ [2.48879991e-04 1.06337200e-07 1.46453203e-05]]
+SJ [[-1 -1 -1]
+ [ 1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]
+ [-1 -1  1]]
+Om [[4.25536391 0.         0.         0.         0.        ]
+ [0.         4.45253867 0.         0.         0.        ]
+ [0.         0.         5.56785571 0.         0.        ]
+ [0.         0.         0.         7.07279468 0.        ]
+ [0.         0.         0.         0.         7.12977208]]
+EJ [[ 9.4794541   0.          0.        ]
+ [ 0.          9.17516643  0.        ]
+ [ 0.          0.         38.01713315]]
+PJ_cap [[5.30916667e-06 2.45336722e-02 3.56227715e-05]
+ [2.59145837e-02 1.29336459e-05 4.76851246e-05]
+ [3.26036818e-04 2.55277781e-04 9.95887230e-03]
+ [7.17809551e-09 1.39343731e-05 2.68560628e-07]
+ [1.72251573e-05 7.60374966e-09 2.52741204e-07]]
+freqs_hfss [4.25536391 4.45253867 5.56785571 7.07279468 7.12977208]
+Ljs [1.72437686e-08 1.78156455e-08 4.29968015e-09]
+PHI_zpf [[-6.95227921e-03 -4.78857114e-01 -1.80085140e-02]
+ [ 4.81475676e-01 -1.06081344e-02  2.03690132e-02]
+ [-4.76290277e-02 -4.21448877e-02  2.64856013e-01]
+ [-1.98285734e-04 -8.73636100e-03  1.21285261e-03]
+ [-9.67444708e-03 -2.03263061e-04  1.17187848e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.026647
+1    1.028129
+2    1.012355
+3    1.034078
+4    1.033657
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      2.153431e-04      9.631587e-01               0.005795
+1      9.600789e-01      4.637824e-04               0.007085
+2      7.724472e-03      5.853906e-03               0.946255
+3      1.053914e-07      1.980223e-04               0.000016
+4      2.488800e-04      1.063372e-07               0.000015
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                   1                  -1                        1
+2                  -1                  -1                        1
+3                  -1                  -1                        1
+4                  -1                  -1                        1
+*** P (participation matrix, normalized.)
+   0.00022     0.99   0.0058
+      0.99  0.00046   0.0071
+    0.0077   0.0059     0.96
+   1.1e-07   0.0002  1.6e-05
+   0.00025  1.1e-07  1.5e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       241    0.348      4.6    0.161 0.000147
+     0.348      255     6.09 0.000188    0.206
+       4.6     6.09     93.6  0.00517  0.00568
+     0.161 0.000188  0.00517 2.68e-05 1.41e-07
+  0.000147    0.206  0.00568 1.41e-07 4.16e-05
+
+*** Chi matrix ND (MHz)
+       210   -0.306     3.45    0.139 9.11e-05
+    -0.306      222     4.22 0.000107    0.174
+      3.45     4.22     90.5  0.00406  0.00425
+     0.139 0.000107  0.00406 2.04e-05 9.46e-08
+  9.11e-05    0.174  0.00425 9.46e-08 3.04e-05
+
+*** Frequencies O1 PT (MHz)
+0    4011.589158
+1    4194.498855
+2    5468.925149
+3    7072.711673
+4    7129.666282
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    4000.937625
+1    4182.994245
+2    5467.884379
+3    7072.713909
+4    7129.670091
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 19:27:46]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 4000.9376245766102,
+        &#34;1&#34;: 4182.994245012571,
+        &#34;2&#34;: 5467.884378645874,
+        &#34;3&#34;: 7072.7139094882905,
+        &#34;4&#34;: 7129.670090526287
+    }
+}
+07:27PM 47s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 19:27:51]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.305734898475523 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;139.9627223279253 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.250013985804806 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;135.85456717968577 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3893.851032568838 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;58.125101216464714 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;5.029844365608756 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.819465322855176 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;141.599164818543 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3925.05543752483 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;58.05445216416375 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;4.598298128605321 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 07:28PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 1.83116628029563e-25
+        energy_elec_substrate = 1.68635655728659e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 1.83074597245578e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.26 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.158e-25 5.918e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.59%
+        jj_name_qubit_1_ 0.00040892  (+)        1.01137e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 97.51%
+        jj_name_qubit_2_ 0.987029  (+)        0.0252177
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.00611899  (+)        3.77753e-05
+                (U_tot_cap-U_tot_ind)/mean=1.31%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9189372943128131
+
+  <span class="ansi-bold">Mode 1 at 4.41 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  1.381e-25 7.024e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.42%
+        jj_name_qubit_1_ 0.986093  (+)        0.0261149
+                Energy fraction (Lj over Lj&amp;Cj)= 97.34%
+        jj_name_qubit_2_ 0.000729904  (+)        1.99683e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.34%
+        jj_name_coupler_1to2_ 0.00670382  (+)        4.43151e-05
+                (U_tot_cap-U_tot_ind)/mean=1.36%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9185902251840173
+
+  <span class="ansi-bold">Mode 2 at 5.56 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.1%  1.534e-25  4.41e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 95.95%
+        jj_name_qubit_1_ 0.00728687  (+)        0.000307219
+                Energy fraction (Lj over Lj&amp;Cj)= 95.83%
+        jj_name_qubit_2_ 0.00603797  (+)        0.000262968
+                Energy fraction (Lj over Lj&amp;Cj)= 98.96%
+        jj_name_coupler_1to2_ 0.956414  (+)        0.0100649
+                (U_tot_cap-U_tot_ind)/mean=0.61%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9191510655654614
+
+  <span class="ansi-bold">Mode 3 at 7.07 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  9.985e-26 9.983e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.63%
+        jj_name_qubit_1_ 1.03771e-07  (+)        7.06501e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.43%
+        jj_name_qubit_2_ 0.000201284  (+)        1.41563e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.33%
+        jj_name_coupler_1to2_ 1.55236e-05  (+)        2.63806e-07
+                (U_tot_cap-U_tot_ind)/mean=-0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9211482096150087
+
+  <span class="ansi-bold">Mode 4 at 7.13 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  9.156e-26 9.154e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.53%
+        jj_name_qubit_1_ 0.000237804  (+)        1.64565e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.33%
+        jj_name_qubit_2_ 1.09442e-07  (+)        7.82362e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.30%
+        jj_name_coupler_1to2_ 1.49938e-05  (+)        2.58991e-07
+                (U_tot_cap-U_tot_ind)/mean=-0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9209194028050466
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 07:58PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 19-56-05.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[3.98843210e-04 9.88415174e-01 5.96820200e-03]
+ [9.87530970e-01 7.11283205e-04 6.53280122e-03]
+ [7.21018677e-03 5.97443342e-03 9.58042504e-01]
+ [1.03769975e-07 2.01280769e-04 1.55233823e-05]
+ [2.37800421e-04 1.09440654e-07 1.49935066e-05]]
+SJ [[-1 -1 -1]
+ [-1  1 -1]
+ [ 1  1 -1]
+ [-1 -1  1]
+ [ 1  1 -1]]
+Om [[4.26133472 0.         0.         0.         0.        ]
+ [0.         4.40956547 0.         0.         0.        ]
+ [0.         0.         5.56370511 0.         0.        ]
+ [0.         0.         0.         7.07013771 0.        ]
+ [0.         0.         0.         0.         7.1280153 ]]
+EJ [[ 9.47602205  0.          0.        ]
+ [ 0.          9.17319964  0.        ]
+ [ 0.          0.         37.96367325]]
+PJ_cap [[9.86444562e-06 2.45962629e-02 3.68444289e-05]
+ [2.54486795e-02 1.94589117e-05 4.31845157e-05]
+ [3.03986226e-04 2.60201223e-04 9.95902196e-03]
+ [7.06491009e-09 1.41560611e-05 2.63802627e-07]
+ [1.64561808e-05 7.82348631e-09 2.58986711e-07]]
+freqs_hfss [4.26133472 4.40956547 5.56370511 7.07013771 7.1280153 ]
+Ljs [1.72500140e-08 1.78194653e-08 4.30573490e-09]
+PHI_zpf [[-9.46991098e-03 -4.79145160e-01 -1.83018701e-02]
+ [-4.79341721e-01  1.30750619e-02 -1.94781860e-02]
+ [ 4.60073565e-02  4.25652309e-02 -2.64956958e-01]
+ [-1.96753181e-04 -8.80723647e-03  1.20228658e-03]
+ [ 9.45720040e-03  2.06204544e-04 -1.18641549e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.026706
+1    1.027676
+2    1.012356
+3    0.944129
+4    0.986841
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      3.988432e-04      9.627054e-01               0.005968
+1      9.609360e-01      7.112832e-04               0.006533
+2      7.210187e-03      5.974433e-03               0.946349
+3      1.037700e-07      2.012808e-04               0.000016
+4      2.378004e-04      1.094407e-07               0.000015
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                  -1                  -1                       -1
+1                  -1                   1                       -1
+2                   1                   1                       -1
+3                  -1                  -1                        1
+4                   1                   1                       -1
+*** P (participation matrix, normalized.)
+    0.0004     0.99    0.006
+      0.99  0.00071   0.0065
+    0.0072    0.006     0.96
+     1e-07   0.0002  1.6e-05
+   0.00024  1.1e-07  1.5e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       242     0.56     4.71    0.163 0.000183
+      0.56      250     5.62 0.000227    0.195
+      4.71     5.62     93.6  0.00514  0.00555
+     0.163 0.000227  0.00514 2.76e-05  1.4e-07
+  0.000183    0.195  0.00555  1.4e-07 3.79e-05
+
+*** Chi matrix ND (MHz)
+       211   -0.207     3.52    0.142 0.000107
+    -0.207      218     3.98 0.000122    0.166
+      3.52     3.98     90.4  0.00402  0.00422
+     0.142 0.000122  0.00402  2.1e-05 9.49e-08
+  0.000107    0.166  0.00422 9.49e-08 2.81e-05
+
+*** Frequencies O1 PT (MHz)
+0    4016.869661
+1    4156.237298
+2    5464.948025
+3    7070.053306
+4    7127.915019
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    4006.158454
+1    4145.073218
+2    5463.888797
+3    7070.055615
+4    7127.918364
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 19:59:17]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 4006.158453832982,
+        &#34;1&#34;: 4145.073217665554,
+        &#34;2&#34;: 5463.888797261481,
+        &#34;3&#34;: 7070.0556146522185,
+        &#34;4&#34;: 7127.918364331706
+    }
+}
+07:59PM 18s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+[INFO|2025-08-23 19:59:21]: Updated_design_vars
+{
+    &#34;design_var_lj_coupler_1to2&#34;: &#34;4.306452719169251 nH&#34;,
+    &#34;design_var_length_coupler_1to2&#34;: &#34;140.6535474237085 um&#34;,
+    &#34;design_var_lj_qubit_1&#34;: &#34;17.244084870795604 nH&#34;,
+    &#34;design_var_width_qubit_1&#34;: &#34;134.92774798925703 um&#34;,
+    &#34;design_var_length_resonator_1&#34;: &#34;3893.851033150664 um&#34;,
+    &#34;design_var_coupl_length_qubit_1_resonator_1&#34;: &#34;57.72836578382665 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_1&#34;: &#34;5.1045783667666695 um&#34;,
+    &#34;design_var_lj_qubit_2&#34;: &#34;17.820085772161928 nH&#34;,
+    &#34;design_var_width_qubit_2&#34;: &#34;142.03056066007983 um&#34;,
+    &#34;design_var_length_resonator_2&#34;: &#34;3925.055437538838 um&#34;,
+    &#34;design_var_coupl_length_qubit_2_resonator_2&#34;: &#34;58.06434755072823 um&#34;,
+    &#34;design_var_coupl_length_coupler_1to2_qubit_2&#34;: &#34;4.672135335182567 um&#34;
+}
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Returning found desktop with PID 31628!
+PyAEDT INFO: No project is defined. Project Project466 exists and has been read.
+PyAEDT INFO: Active Design set to get_mini_study_2qb_resonator_coupler
+PyAEDT INFO: Aedt Objects correctly read
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO 07:59PM [analyze]: Analyzing setup Setup
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+Design &#34;get_mini_study_2qb_resonator_coupler&#34; info:
+        # eigenmodes    5
+        # variations    1
+
+        energy_elec_all       = 2.20631285479638e-25
+        energy_elec_substrate = 2.03180264713447e-25
+        EPR of substrate = 92.1%
+
+        energy_mag    = 2.20574273773867e-25
+        energy_mag % of energy_elec_all  = 100.0%
+
+
+Variation 0  [1/1]
+
+  <span class="ansi-bold">Mode 0 at 4.25 GHz   [1/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  7.996e-26 4.057e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_0j   sign s_0j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.60%
+        jj_name_qubit_1_ 0.000235361  (+)        5.7841e-06
+                Energy fraction (Lj over Lj&amp;Cj)= 97.52%
+        jj_name_qubit_2_ 0.987393  (+)        0.0250762
+                Energy fraction (Lj over Lj&amp;Cj)= 99.39%
+        jj_name_coupler_1to2_ 0.00595371  (+)        3.654e-05
+                (U_tot_cap-U_tot_ind)/mean=1.31%
+Calculating Qdielectric_main for mode 0 (0/4)
+p_dielectric_main_0 = 0.9194545975382536
+
+  <span class="ansi-bold">Mode 1 at 4.44 GHz   [2/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               99.5%  8.839e-26 4.572e-28
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_1j   sign s_1j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 97.39%
+        jj_name_qubit_1_ 0.986294  (+)        0.0264665
+                Energy fraction (Lj over Lj&amp;Cj)= 97.30%
+        jj_name_qubit_2_ 0.000495878  (+)        1.3751e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 99.33%
+        jj_name_coupler_1to2_ 0.00718408  (+)        4.81438e-05
+                (U_tot_cap-U_tot_ind)/mean=1.35%
+Calculating Qdielectric_main for mode 1 (1/4)
+p_dielectric_main_1 = 0.9186233517827934
+
+  <span class="ansi-bold">Mode 2 at 5.56 GHz   [3/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+               97.1%  1.721e-25 4.947e-27
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_2j   sign s_2j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 95.97%
+        jj_name_qubit_1_ 0.00772591  (+)        0.000324679
+                Energy fraction (Lj over Lj&amp;Cj)= 95.84%
+        jj_name_qubit_2_ 0.00592626  (+)        0.000257368
+                Energy fraction (Lj over Lj&amp;Cj)= 98.96%
+        jj_name_coupler_1to2_ 0.956094  (+)        0.0100342
+                (U_tot_cap-U_tot_ind)/mean=0.60%
+Calculating Qdielectric_main for mode 2 (2/4)
+p_dielectric_main_2 = 0.9194560542748224
+
+  <span class="ansi-bold">Mode 3 at 7.07 GHz   [4/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  8.781e-26 8.779e-26
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_3j   sign s_3j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.62%
+        jj_name_qubit_1_ 1.02679e-07  (+)        6.99176e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 93.43%
+        jj_name_qubit_2_ 0.000196526  (+)        1.38292e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 98.33%
+        jj_name_coupler_1to2_ 1.54807e-05  (+)        2.63255e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 3 (3/4)
+p_dielectric_main_3 = 0.9210877393220142
+
+  <span class="ansi-bold">Mode 4 at 7.13 GHz   [5/5]</span>
+    Calculating ℰ_magnetic,ℰ_electric
+       (ℰ_E-ℰ_H)/ℰ_E       ℰ_E       ℰ_H
+                0.0%  1.103e-25 1.103e-25
+
+    Calculating junction energy participation ration (EPR)
+        method=`line_voltage`. First estimates:
+        junction        EPR p_4j   sign s_4j    (p_capacitive)
+                Energy fraction (Lj over Lj&amp;Cj)= 93.53%
+        jj_name_qubit_1_ 0.000246024  (+)        1.70149e-05
+                Energy fraction (Lj over Lj&amp;Cj)= 93.33%
+        jj_name_qubit_2_ 1.03798e-07  (+)        7.4184e-09
+                Energy fraction (Lj over Lj&amp;Cj)= 98.30%
+        jj_name_coupler_1to2_ 1.4389e-05  (+)        2.48521e-07
+                (U_tot_cap-U_tot_ind)/mean=0.00%
+Calculating Qdielectric_main for mode 4 (4/4)
+p_dielectric_main_4 = 0.9209041422740496
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING 08:29PM [__init__]: &lt;p&gt;Error: &lt;class &#39;IndexError&#39;&gt;&lt;/p&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ANALYSIS DONE. Data saved to:
+
+C:\data-pyEPR\Project466\get_mini_study_2qb_resonator_coupler\2025-08-23 20-27-28.npz
+
+
+         Differences in variations:
+
+
+
+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Variation 0
+
+C:\Users\marer\Anaconda3\envs\qdesignenv\Lib\site-packages\pyEPR\core_quantum_analysis.py
+PJ (5, 3) SJ (5, 3) EJ (3, 3) PHI_zpf (5, 3) PJ_cap (5, 3)
+PJ [[2.29593739e-04 9.88788810e-01 5.80782318e-03]
+ [9.87206060e-01 4.83063078e-04 6.99842254e-03]
+ [7.64475274e-03 5.86400951e-03 9.57708526e-01]
+ [1.02677131e-07 1.96523640e-04 1.54804735e-05]
+ [2.46019407e-04 1.03796137e-07 1.43887724e-05]]
+SJ [[ 1  1  1]
+ [-1  1 -1]
+ [ 1  1 -1]
+ [-1 -1  1]
+ [-1 -1  1]]
+Om [[4.2485009  0.         0.         0.         0.        ]
+ [0.         4.43945639 0.         0.         0.        ]
+ [0.         0.         5.55568028 0.         0.        ]
+ [0.         0.         0.         7.07193548 0.        ]
+ [0.         0.         0.         0.         7.12707205]]
+EJ [[ 9.47928023  0.          0.        ]
+ [ 0.          9.17288025  0.        ]
+ [ 0.          0.         37.95734528]]
+PJ_cap [[5.64236732e-06 2.44617213e-02 3.56446399e-05]
+ [2.57824950e-02 1.33956242e-05 4.68996027e-05]
+ [3.21268257e-04 2.54664658e-04 9.92882916e-03]
+ [6.99165819e-09 1.38290040e-05 2.63251126e-07]
+ [1.70145924e-05 7.41827644e-09 2.48516631e-07]]
+freqs_hfss [4.2485009  4.43945639 5.55568028 7.07193548 7.12707205]
+Ljs [1.72440849e-08 1.78200858e-08 4.30645272e-09]
+PHI_zpf [[ 7.17290699e-03  4.78521846e-01  1.80285848e-02]
+ [-4.80801844e-01  1.08118238e-02 -2.02302879e-02]
+ [ 4.73312163e-02  4.21403459e-02 -2.64741720e-01]
+ [-1.95705634e-04 -8.70379563e-03  1.20087652e-03]
+ [-9.61695490e-03 -2.00806752e-04  1.16226332e-03]]
+6
+5
+Starting the diagonalization
+Finished the diagonalization
+Pm_norm=
+modes
+0    1.026567
+1    1.027478
+2    1.012323
+3    1.034543
+4    1.029098
+dtype: float64
+
+Pm_norm idx =
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0             False              True                  False
+1              True             False                  False
+2             False             False                   True
+3             False             False                  False
+4             False             False                  False
+*** P (participation matrix, not normlz.)
+   jj_name_qubit_1_  jj_name_qubit_2_  jj_name_coupler_1to2_
+0      2.295937e-04      9.631991e-01               0.005808
+1      9.608055e-01      4.830631e-04               0.006998
+2      7.644753e-03      5.864010e-03               0.946050
+3      1.026771e-07      1.965236e-04               0.000015
+4      2.460194e-04      1.037961e-07               0.000014
+
+*** S (sign-bit matrix)
+   s_jj_name_qubit_1_  s_jj_name_qubit_2_  s_jj_name_coupler_1to2_
+0                   1                   1                        1
+1                  -1                   1                       -1
+2                   1                   1                       -1
+3                  -1                  -1                        1
+4                  -1                  -1                        1
+*** P (participation matrix, normalized.)
+   0.00023     0.99   0.0058
+      0.99  0.00048    0.007
+    0.0076   0.0059     0.96
+     1e-07   0.0002  1.5e-05
+   0.00025    1e-07  1.4e-05
+
+*** Chi matrix O1 PT (MHz)
+    Diag is anharmonicity, off diag is full cross-Kerr.
+       240    0.363      4.6    0.159 0.000146
+     0.363      253        6 0.000188    0.203
+       4.6        6     93.3  0.00507  0.00556
+     0.159 0.000188  0.00507 2.64e-05 1.36e-07
+  0.000146    0.203  0.00556 1.36e-07 4.06e-05
+
+*** Chi matrix ND (MHz)
+       209   -0.283     3.45    0.138 9.05e-05
+    -0.283      221     4.17 0.000107    0.172
+      3.45     4.17     90.2  0.00399  0.00418
+     0.138 0.000107  0.00399 2.01e-05 9.16e-08
+  9.05e-05    0.172  0.00418 9.16e-08 2.98e-05
+
+*** Frequencies O1 PT (MHz)
+0    4005.457573
+1    4182.884911
+2    5457.109001
+3    7071.853257
+4    7126.967813
+dtype: float64
+
+*** Frequencies ND (MHz)
+0    3994.850515
+1    4171.480160
+2    5456.071160
+3    7071.855438
+4    7126.971484
+dtype: float64
+
+*** Q_coupling
+Empty DataFrame
+Columns: []
+Index: [0, 1, 2, 3, 4]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+[INFO|2025-08-23 20:30:40]: freq_ND_results
+{
+    &#34;0&#34;: {
+        &#34;0&#34;: 3994.850515038946,
+        &#34;1&#34;: 4171.480159866422,
+        &#34;2&#34;: 5456.071159634316,
+        &#34;3&#34;: 7071.8554380076675,
+        &#34;4&#34;: 7126.971483607424
+    }
+}
+08:30PM 41s CRITICAL [_qt_message_handler]: line: 0, func: None(), file: None  CRITICAL: QEventDispatcherWin32::wakeUp: Failed to post a message (Not enough quota is available to process this command.)
+
+</pre></div></div>
+</div>
+</section>
+<section id="Results">
+<h2>Results<a class="headerlink" href="#Results" title="Link to this heading"></a></h2>
+<section id="Eigenmodes">
+<h3>Eigenmodes<a class="headerlink" href="#Eigenmodes" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">get_eigenmode_results</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Cross-Kerr">
+<h3>Cross Kerr<a class="headerlink" href="#Cross-Kerr" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">get_cross_kerr_matrix</span><span class="p">(</span><span class="n">iteration</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Update-parameters">
+<h2>Update parameters<a class="headerlink" href="#Update-parameters" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">overwrite_parameters</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Close">
+<h2>Close<a class="headerlink" href="#Close" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">close_ansys</span>
+
+<span class="n">close_ansys</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../examples_coupled_transmon_chip/main_capacitance_target_resonator.html" class="btn btn-neutral float-left" title="Optimization of readout resonator coupling with capacitance target" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../development.html" class="btn btn-neutral float-right" title="Development" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
