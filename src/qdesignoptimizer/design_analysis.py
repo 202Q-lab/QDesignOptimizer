@@ -38,6 +38,7 @@ from qdesignoptimizer.utils.names_parameters import (
     param,
     param_capacitance,
     param_nonlin,
+    param_pratio,
 )
 
 
@@ -387,11 +388,13 @@ class DesignAnalysis:
                 self.epra.plot_hamiltonian_results()
                 freqs = self.epra.get_frequencies(numeric=True)
                 chis = self.epra.get_chis(numeric=True)
-                self._update_optimized_params_epr(freqs, chis)
+                pratio = self.epra.get_participations()
+
+                self._update_optimized_params_epr(freqs, chis, pratio)
 
             self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
-            return chis
+            return chis, pratio
         add_msg = ""
         if linear_element_found:
             add_msg = " However, a linear element was found."
@@ -511,7 +514,7 @@ class DesignAnalysis:
         return mode_idx
 
     def _update_optimized_params_epr(
-        self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame
+        self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame, pratio: pd.DataFrame
     ):
 
         MHz = 1e6
@@ -528,6 +531,12 @@ class DesignAnalysis:
             for mode_j in self.mini_study.modes:
                 self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
                     epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
+                )
+
+        for mode in self.mini_study.modes:
+            for jj_idx, junction in enumerate(self.mini_study.jj_setup):
+                self.system_optimized_params[param_pratio(mode, junction)] = (
+                    pratio.iloc[(mode_idx[mode], jj_idx)]
                 )
 
     def _update_optimized_params_capacitance_simulation(
