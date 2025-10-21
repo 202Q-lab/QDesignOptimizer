@@ -532,7 +532,7 @@ class DesignAnalysis:
                 )
 
         for mode in self.mini_study.modes:
-            for jj_idx, junction in enumerate(self.mini_study.jj_setup):
+            for jj_idx, junction in enumerate(self.jj_setups_to_include_in_epr):
                 self.system_optimized_params[param_participation_ratio(mode, junction)] = (
                     participation_ratio.iloc[(mode_idx[mode], jj_idx)]
                 )
