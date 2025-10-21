@@ -38,7 +38,7 @@ from qdesignoptimizer.utils.names_parameters import (
     param,
     param_capacitance,
     param_nonlin,
-    param_pratio,
+    param_participation_ratio,
 )
 
 
@@ -365,7 +365,7 @@ class DesignAnalysis:
         junction_found = False
         linear_element_found = False
         for key, val in self.mini_study.jj_setup.items():
-            # experimental implementation. to be generatized in the future to arbitrary junction potentials
+            # experimental implementation. to be generalized in the future to arbitrary junction potentials
             # this is a simple way to implement a linear potential only
             if "type" in val and val["type"] == "linear":
                 linear_element_found = True
@@ -388,13 +388,13 @@ class DesignAnalysis:
                 self.epra.plot_hamiltonian_results()
                 freqs = self.epra.get_frequencies(numeric=True)
                 chis = self.epra.get_chis(numeric=True)
-                pratio = self.epra.get_participations()
+                participation_ratio = self.epra.get_participations() # normalized by default
 
-                self._update_optimized_params_epr(freqs, chis, pratio)
+                self._update_optimized_params_epr(freqs, chis, participation_ratio)
 
             self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
-            return chis, pratio
+            return chis, participation_ratio
         add_msg = ""
         if linear_element_found:
             add_msg = " However, a linear element was found."
@@ -514,7 +514,7 @@ class DesignAnalysis:
         return mode_idx
 
     def _update_optimized_params_epr(
-        self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame, pratio: pd.DataFrame
+        self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame, participation_ratio: pd.DataFrame
     ):
 
         MHz = 1e6
@@ -535,8 +535,8 @@ class DesignAnalysis:
 
         for mode in self.mini_study.modes:
             for jj_idx, junction in enumerate(self.mini_study.jj_setup):
-                self.system_optimized_params[param_pratio(mode, junction)] = (
-                    pratio.iloc[(mode_idx[mode], jj_idx)]
+                self.system_optimized_params[param_participation_ratio(mode, junction)] = (
+                    participation_ratio.iloc[(mode_idx[mode], jj_idx)]
                 )
 
     def _update_optimized_params_capacitance_simulation(
