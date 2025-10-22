@@ -181,7 +181,7 @@ def plot_all_convergence_ratios(
         ax3.grid(True, alpha=0.3)
         ax3.set_xticks([0.8, 1.0, 1.2])
     except Exception as e:
-        pass
+        print(e)
 
     last_h_factors = []
     for param_name in param_names:
@@ -200,7 +200,7 @@ def plot_all_convergence_ratios(
         ax4.set_yscale("log")
         ax4.grid(True, alpha=0.3)
     except Exception as e:
-        pass
+        print(e)
 
     last_conbined_factors = []
     for param_name in param_names:
@@ -247,7 +247,7 @@ def plot_all_convergence_ratios(
         ax5.grid(True, alpha=0.3)
         ax5.set_xticks([1.0, 1.2, 1.4])
     except Exception as e:
-        pass
+        print(e)
 
     max_start = 0
     # Compare the error made by the model given by
