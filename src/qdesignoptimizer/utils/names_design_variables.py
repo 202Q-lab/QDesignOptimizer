@@ -22,6 +22,10 @@ def add_design_variables_to_design(
 
 
 # Design variables
+def design_var_(identifier: str) -> DesignVariable:
+    """Create standardized variable name for component with identifier."""
+    return f"design_var_{identifier}"
+
 def design_var_length(identifier: str) -> DesignVariable:
     """Create standardized variable name for component length."""
     return f"design_var_length_{identifier}"

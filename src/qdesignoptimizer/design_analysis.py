@@ -99,7 +99,6 @@ class DesignAnalysis:
             sys_opt_param = state.system_optimized_params
             self.is_system_optimized_params_initialized = True
         else:
-
             def fill_leaves_with_none(nested_dict):
                 for key, value in nested_dict.items():
                     if isinstance(value, dict):
@@ -577,7 +576,7 @@ class DesignAnalysis:
             )
 
     def optimize_target(
-        self, updated_design_vars_input: dict, system_optimized_params: dict
+        self, updated_design_vars_input: dict, system_optimized_params: dict, save_figures: bool = False
     ):
         """Run full optimization iteration to adjust design variables toward target parameters.
 
@@ -669,6 +668,8 @@ class DesignAnalysis:
             }
         ]
         if self.save_path is not None:
+            import os
+            os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
             np.save(self.save_path, np.array(simulation), allow_pickle=True)
 
             with open(self.save_path + "_design_variables.json", "w") as outfile:
@@ -682,6 +683,8 @@ class DesignAnalysis:
                 [self.optimization_results],
                 self.system_target_params,
                 self.plot_settings,
+                save_figures=save_figures,
+                save_path=self.save_path,
             )
 
     def overwrite_parameters(self):

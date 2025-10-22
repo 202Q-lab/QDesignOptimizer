@@ -326,6 +326,7 @@ class OptimizationPlotter:
         data_extractor: DataExtractor,
         plot_variance: bool = False,
         save_figures: bool = False,
+        save_path: Optional[str] = None
     ):
         """Initialize the plotter.
 
@@ -338,6 +339,8 @@ class OptimizationPlotter:
         self.plot_variance = plot_variance
         self.save_figures = save_figures
         self.num_runs = len(data_extractor.opt_results)
+        self.save_path = save_path
+        
 
     def _setup_ax(
         self,
@@ -441,9 +444,13 @@ class OptimizationPlotter:
         fig.subplots_adjust(hspace=0.5)
 
         if self.save_figures:
-            fig.savefig(
-                f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png"
-            )
+            if self.save_path is None:
+                fig.savefig(f"{self.save_path}_optimization_plot_{plot_name}.png")
+            else:
+                fig.savefig(
+                    f"optimization_plot_{time.strftime('%Y%m%d-%H%M%S')}_{plot_name}.png"
+                )
+
 
     def _plot_single_param(
         self, ax: Axes, config: OptPltSet, y_param: str, color: str, **kwargs: Any
@@ -724,6 +731,7 @@ def plot_progress(
     plot_variance: bool = False,
     plot_design_variables: Optional[Literal["chronological", "sorted"]] = None,
     opt_target_list: Optional[List[OptTarget]] = None,
+    save_path: Optional[str] = None
 ) -> None:
     """Plot the progress of optimization iterations.
 
@@ -752,6 +760,7 @@ def plot_progress(
     # Create data extractor and plotter
     data_extractor = DataExtractor(opt_results, system_target_params, opt_target_list)
     plotter = OptimizationPlotter(data_extractor, plot_variance, save_figures)
+    plotter.save_path = save_path
 
     # Create standard parameter plots
     for plot_name, plot_setting in plot_settings.items():
