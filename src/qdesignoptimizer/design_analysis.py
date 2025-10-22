@@ -38,7 +38,7 @@ from qdesignoptimizer.utils.names_parameters import (
     param,
     param_capacitance,
     param_nonlin,
-    param_pratio,
+    param_participation_ratio,
 )
 
 
@@ -139,6 +139,7 @@ class DesignAnalysis:
             self.mini_study.max_mesh_length_port
         )
         self._validate_opt_targets()
+        self.extracted_junctions_for_epr()
 
         assert (
             not self.system_target_params is self.system_optimized_params
@@ -159,6 +160,21 @@ class DesignAnalysis:
         """Update eigenmode convergence tolerance."""
         self.mini_study.delta_f = delta_f
         self.setup.delta_f = delta_f
+
+    def extracted_junctions_for_epr(self):
+        """Extract junctions for EPR analysis."""
+        self.no_junctions = (
+            self.mini_study.jj_setup is None or len(self.mini_study.jj_setup) == 0
+        )
+
+        self.jj_setups_to_include_in_epr = {}
+        for key, val in self.mini_study.jj_setup.items():
+            # experimental implementation. to be generalized in the future to arbitrary junction potentials
+            # this is a simple way to implement a linear potential only
+            if "junction_type" in val and val["junction_type"] == "linear":
+                continue
+            self.jj_setups_to_include_in_epr[key] = val
+
 
     def _validate_opt_targets(self):
         """Validate opt_targets."""
@@ -356,28 +372,14 @@ class DesignAnalysis:
 
     def run_epr(self):
         """Run EPR, requires design with junctions."""
-        no_junctions = (
-            self.mini_study.jj_setup is None or len(self.mini_study.jj_setup) == 0
-        )
+        
+        if self.jj_setups_to_include_in_epr:
+            self.eig_solver.setup.junctions = self.jj_setups_to_include_in_epr
 
-        jj_setups_to_include_in_epr = {}
-        junction_found = False
-        linear_element_found = False
-        for key, val in self.mini_study.jj_setup.items():
-            # experimental implementation. to be generatized in the future to arbitrary junction potentials
-            # this is a simple way to implement a linear potential only
-            if "type" in val and val["type"] == "linear":
-                linear_element_found = True
-                continue
-            jj_setups_to_include_in_epr[key] = val
-            junction_found = True
-        if junction_found:
-            self.eig_solver.setup.junctions = jj_setups_to_include_in_epr
-
-            if not no_junctions:
+            if not self.no_junctions:
                 self.eprd = epr.DistributedAnalysis(self.pinfo)
                 self.eig_solver.clear_data()
-                self.eig_solver.get_stored_energy(no_junctions)
+                self.eig_solver.get_stored_energy(self.no_junctions)
                 self.eprd.do_EPR_analysis()
                 self.epra = epr.QuantumAnalysis(self.eprd.data_filename)
                 self.epra.analyze_all_variations(
@@ -387,18 +389,14 @@ class DesignAnalysis:
                 self.epra.plot_hamiltonian_results()
                 freqs = self.epra.get_frequencies(numeric=True)
                 chis = self.epra.get_chis(numeric=True)
-                pratio = self.epra.get_participations()
+                participation_ratio = self.epra.get_participations() # normalized by default
 
-                self._update_optimized_params_epr(freqs, chis, pratio)
+                self._update_optimized_params_epr(freqs, chis, participation_ratio)
 
             self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
-            return chis, pratio
-        add_msg = ""
-        if linear_element_found:
-            add_msg = " However, a linear element was found."
-        log.warning("No junctions found, skipping EPR analysis.%s", add_msg)
-        return None
+            return chis, participation_ratio
+        
 
     def _surface_rendering_for_surface_participation_ratios(self):
         """Render surfaces for surface participation ratio analysis.
@@ -513,7 +511,7 @@ class DesignAnalysis:
         return mode_idx
 
     def _update_optimized_params_epr(
-        self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame, pratio: pd.DataFrame
+        self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame, participation_ratio: pd.DataFrame
     ):
 
         MHz = 1e6
@@ -533,9 +531,9 @@ class DesignAnalysis:
                 )
 
         for mode in self.mini_study.modes:
-            for jj_idx, junction in enumerate(self.mini_study.jj_setup):
-                self.system_optimized_params[param_pratio(mode, junction)] = (
-                    pratio.iloc[(mode_idx[mode], jj_idx)]
+            for jj_idx, junction in enumerate(self.jj_setups_to_include_in_epr):
+                self.system_optimized_params[param_participation_ratio(mode, junction)] = (
+                    participation_ratio.iloc[(mode_idx[mode], jj_idx)]
                 )
 
     def _update_optimized_params_capacitance_simulation(
