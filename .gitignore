@@ -11,6 +11,11 @@ __pycache__/
 projects/**/out/
 projects/*/*.png
 
+# publication folder (make exceptions for data and figures)
+!publication/data/simulations_single_qubit/*.npy
+!publication/data/simulations_two_qubit/*.npy
+!publication/data/figures/*.png
+
 # Distribution / packaging
 .Python
 build/

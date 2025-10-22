@@ -98,10 +98,10 @@ def get_mini_study_qb_charge_line(group: int):
         mode=qubit,
         mode_freq_GHz=pt.PARAM_TARGETS[param(qubit, FREQ)] / 1e9,
         mode_capacitance_name=[
-            "pad_bot_name_qubit_1",
-            "pad_top_name_qubit_1",
+            "pad_bot_" + n.name_mode(qubit),
+            "pad_top_" + n.name_mode(qubit),
         ],  # These names must be found from the model list in Ansys
-        charge_line_capacitance_name="trace_name_charge_line1",
+        charge_line_capacitance_name="trace_" + n.name_charge_line(group),
         charge_line_impedance_Ohm=50,
         qiskit_component_names=qiskit_component_names,
         open_pins=[
