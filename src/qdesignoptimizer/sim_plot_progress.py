@@ -444,7 +444,7 @@ class OptimizationPlotter:
         fig.subplots_adjust(hspace=0.5)
 
         if self.save_figures:
-            if self.save_path is None:
+            if self.save_path is not None:
                 fig.savefig(f"{self.save_path}_optimization_plot_{plot_name}.png")
             else:
                 fig.savefig(
