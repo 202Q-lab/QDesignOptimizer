@@ -192,6 +192,24 @@ def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:
     modes.sort()
     return f"{modes[0]}_to_{modes[1]}_{'nonlin'}"
 
+def param_participation_ratio(mode: Mode, junction: str) -> Parameter:
+    """
+    Creates a parameter name for the participation ratio of one junction in one mode 
+
+    Args:
+        mode (Mode): Mode name.
+        junction (str): Junction name.
+
+    Returns:
+        Parameter: A participation ratio parameter name in the format 'mode_in_junction_participation_ratio'.
+
+    Examples:
+        >>> param_participation_ratio("qubit_1", "jj_qubit_1")
+        'qubit_1_to_qubit_2_nonlin'
+    """
+
+    return f"{mode}_in_{junction}_{'participation_ratio'}"
+
 
 def param_capacitance(capacitance_name_1: str, capacitance_name_2: str) -> Parameter:
     """
@@ -267,3 +285,28 @@ def get_modes_from_param_nonlin(parameter: Parameter) -> Tuple[Mode, ...]:
     """
     assert parameter.endswith("_nonlin"), "parameter must end with '_nonlin'"
     return tuple(parameter.split("_nonlin")[0].split("_to_")[:2])
+
+def get_modes_from_param_participation_ratio(parameter: Parameter) -> Tuple[Mode, str]:
+    """
+    Extract mode identifiers from a participation_ratio parameter name.
+
+    Parses a participation_ratio parameter name to retrieve the original mode names
+    that are involved in the interaction.
+
+    Args:
+        parameter (Parameter): The participation_ratio parameter name to parse.
+            Must end with "_participation_ratio".
+
+    Returns:
+        Tuple[Mode, str]: A tuple containing the extracted mode name and junction name.
+
+    Raises:
+        AssertionError: If parameter does not end with "_participation_ratio".
+
+    Examples:
+        >>> get_modes_from_param_participation_ratio("qubit_1_in_jj_qubit_1_participation_ratio")
+        ('qubit_1', 'jj_qubit_1')
+    """
+    assert parameter.endswith("_participation_ratio"), "parameter must end with '_participation_ratio'"
+    parts = parameter.split("_participation_ratio")[0].split("_in_")[:2]
+    return (parts[0], parts[1])
