@@ -119,6 +119,7 @@ class DesignAnalysis:
         self.anmod_optimizer = ANModOptimizer(
             opt_targets=self.opt_targets,
             system_target_params=self.system_target_params,
+            adjustment_rate=self.mini_study.adjustment_rate,
             minimization_tol=self.minimization_tol,
         )
 
