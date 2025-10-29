@@ -22,6 +22,10 @@ def add_design_variables_to_design(
 
 
 # Design variables
+def design_var_(identifier: str) -> DesignVariable:
+    """Create standardized variable name for component with identifier."""
+    return f"design_var_{identifier}"
+
 def design_var_length(identifier: str) -> DesignVariable:
     """Create standardized variable name for component length."""
     return f"design_var_length_{identifier}"
@@ -63,12 +67,12 @@ def design_var_cl_pos_y(identifier: Union[str, int]) -> DesignVariable:
     return f"design_var_cl_pos_y_{identifier}"
 
 
-def junction_setup(mode: Mode, mode_type: Literal[None, "linear"] = None):
+def junction_setup(mode: Mode, junction_type: Literal[None, "linear"] = None):
     """Generate jj setup for
 
     Args:
         component_name (str): component name
-        mode_type (str): mode_type of JJ, e.g. 'linear' for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.
+        junction_type (str): junction_type of JJ, e.g. 'linear' for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.
 
     Returns:
         Dict: jj setup
@@ -82,6 +86,6 @@ def junction_setup(mode: Mode, mode_type: Literal[None, "linear"] = None):
             "Cj_variable": design_var_cj(mode),
         }
     }
-    if mode_type is not None:
-        setup[jj_name]["mode_type"] = mode_type
+    if junction_type is not None:
+        setup[jj_name]["junction_type"] = junction_type
     return setup
