@@ -31,21 +31,21 @@ def name_mode_to_mode(identifier_1: Mode, identifier_2: Mode) -> QiskitComponent
 
 def name_tee(identifier: Union[str, int]) -> QiskitComponentName:
     """Create a component name for a tee junction."""
-    return f"name_tee{identifier}_"
+    return f"name_tee_{identifier}_"
 
 def name_short(identifier: Union[str, int]) -> QiskitComponentName:
     """Create a component name for a shorted termination."""
-    return f"name_short{identifier}_"
+    return f"name_short_{identifier}_"
 
 
 def name_lp(identifier: Union[str, int]) -> QiskitComponentName:
     """Create a component name for a launch pad."""
-    return f"name_lp{identifier}_"
+    return f"name_lp_{identifier}_"
 
 
 def name_charge_line(identifier: Union[str, int]) -> QiskitComponentName:
     """Create a component name for a charge line."""
-    return f"name_charge_line{identifier}_"
+    return f"name_charge_line_{identifier}_"
 
 
 def name_flux_line(identifier: Union[str, int]) -> QiskitComponentName:
