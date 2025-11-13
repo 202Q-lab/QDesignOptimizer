@@ -1,6 +1,7 @@
 """Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations."""
 
 import io
+import os
 import json
 from contextlib import redirect_stdout
 from copy import deepcopy
@@ -667,7 +668,6 @@ class DesignAnalysis:
             }
         ]
         if self.save_path is not None:
-            import os
             os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
             np.save(self.save_path, np.array(simulation), allow_pickle=True)
 

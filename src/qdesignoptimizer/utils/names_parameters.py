@@ -205,10 +205,12 @@ def param_participation_ratio(mode: Mode, junction: str) -> Parameter:
 
     Examples:
         >>> param_participation_ratio("qubit_1", "jj_qubit_1")
-        'qubit_1_to_qubit_2_nonlin'
+        'qubit_1_in_jj_qubit_1_participation_ratio'
     """
+    assert "in" not in mode.lower(), f"Mode name '{mode}' must not contain 'in'."
+    assert "in" not in junction.lower(), f"Junction name '{junction}' must not contain 'in'."
 
-    return f"{mode}_in_{junction}_{'participation_ratio'}"
+    return f"{mode}_in_{junction}_participation_ratio"
 
 
 def param_capacitance(capacitance_name_1: str, capacitance_name_2: str) -> Parameter:
@@ -288,9 +290,9 @@ def get_modes_from_param_nonlin(parameter: Parameter) -> Tuple[Mode, ...]:
 
 def get_modes_from_param_participation_ratio(parameter: Parameter) -> Tuple[Mode, str]:
     """
-    Extract mode identifiers from a participation_ratio parameter name.
+    Extract mode and junction identifiers from a participation_ratio parameter name.
 
-    Parses a participation_ratio parameter name to retrieve the original mode names
+    Parses a participation_ratio parameter name to retrieve the original mode and junction names
     that are involved in the interaction.
 
     Args:
