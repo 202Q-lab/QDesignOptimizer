@@ -195,21 +195,17 @@ def param_nonlin(mode_1: Mode, mode_2: Mode) -> Parameter:
 def param_participation_ratio(mode: Mode, junction: str) -> Parameter:
     """
     Creates a parameter name for the participation ratio of one junction in one mode 
-
     Args:
         mode (Mode): Mode name.
         junction (str): Junction name.
-
     Returns:
         Parameter: A participation ratio parameter name in the format 'mode_in_junction_participation_ratio'.
-
     Examples:
         >>> param_participation_ratio("qubit_1", "jj_qubit_1")
         'qubit_1_in_jj_qubit_1_participation_ratio'
     """
-    assert "in" not in mode.lower(), f"Mode name '{mode}' must not contain 'in'."
-    assert "in" not in junction.lower(), f"Junction name '{junction}' must not contain 'in'."
-
+    assert "_in_" not in mode.lower(), f"Mode name '{mode}' must not contain '_in_'."
+    assert "_in_" not in junction.lower(), f"Junction name '{junction}' must not contain '_in_'."
     return f"{mode}_in_{junction}_participation_ratio"
 
 
