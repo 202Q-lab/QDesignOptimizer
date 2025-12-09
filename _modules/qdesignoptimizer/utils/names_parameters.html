@@ -284,6 +284,25 @@
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_to_</span><span class="si">{</span><span class="n">modes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="s1">&#39;nonlin&#39;</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
 
+<div class="viewcode-block" id="param_participation_ratio">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param_participation_ratio">[docs]</a>
+<span class="k">def</span> <span class="nf">param_participation_ratio</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span> <span class="n">junction</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a parameter name for the participation ratio of one junction in one mode </span>
+<span class="sd">    Args:</span>
+<span class="sd">        mode (Mode): Mode name.</span>
+<span class="sd">        junction (str): Junction name.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Parameter: A participation ratio parameter name in the format &#39;mode_in_junction_participation_ratio&#39;.</span>
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; param_participation_ratio(&quot;qubit_1&quot;, &quot;jj_qubit_1&quot;)</span>
+<span class="sd">        &#39;qubit_1_in_jj_qubit_1_participation_ratio&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="s2">&quot;_in_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">&quot;Mode name &#39;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">&#39; must not contain &#39;_in_&#39;.&quot;</span>
+    <span class="k">assert</span> <span class="s2">&quot;_in_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">junction</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">&quot;Junction name &#39;</span><span class="si">{</span><span class="n">junction</span><span class="si">}</span><span class="s2">&#39; must not contain &#39;_in_&#39;.&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">_in_</span><span class="si">{</span><span class="n">junction</span><span class="si">}</span><span class="s2">_participation_ratio&quot;</span></div>
+
+
 
 <div class="viewcode-block" id="param_capacitance">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.param_capacitance">[docs]</a>
@@ -367,6 +386,34 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">parameter</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_nonlin&quot;</span><span class="p">),</span> <span class="s2">&quot;parameter must end with &#39;_nonlin&#39;&quot;</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">parameter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_nonlin&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_to_&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="get_modes_from_param_participation_ratio">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.get_modes_from_param_participation_ratio">[docs]</a>
+<span class="k">def</span> <span class="nf">get_modes_from_param_participation_ratio</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract mode and junction identifiers from a participation_ratio parameter name.</span>
+
+<span class="sd">    Parses a participation_ratio parameter name to retrieve the original mode and junction names</span>
+<span class="sd">    that are involved in the interaction.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parameter (Parameter): The participation_ratio parameter name to parse.</span>
+<span class="sd">            Must end with &quot;_participation_ratio&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[Mode, str]: A tuple containing the extracted mode name and junction name.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If parameter does not end with &quot;_participation_ratio&quot;.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; get_modes_from_param_participation_ratio(&quot;qubit_1_in_jj_qubit_1_participation_ratio&quot;)</span>
+<span class="sd">        (&#39;qubit_1&#39;, &#39;jj_qubit_1&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">parameter</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_participation_ratio&quot;</span><span class="p">),</span> <span class="s2">&quot;parameter must end with &#39;_participation_ratio&#39;&quot;</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_participation_ratio&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_in_&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
 
 </pre></div>
 

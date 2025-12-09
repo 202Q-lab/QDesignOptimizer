@@ -275,6 +275,29 @@ sorted alphabetically to ensure consistency regardless of argument order.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.param_participation_ratio">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">param_participation_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">junction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#param_participation_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.param_participation_ratio" title="Link to this definition"></a></dt>
+<dd><p>Creates a parameter name for the participation ratio of one junction in one mode
+:param mode: Mode name.
+:type mode: Mode
+:param junction: Junction name.
+:type junction: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A participation ratio parameter name in the format ‘mode_in_junction_participation_ratio’.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parameter</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">param_participation_ratio</span><span class="p">(</span><span class="s2">&quot;qubit_1&quot;</span><span class="p">,</span> <span class="s2">&quot;jj_qubit_1&quot;</span><span class="p">)</span>
+<span class="go">&#39;qubit_1_in_jj_qubit_1_participation_ratio&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.param_capacitance">
 <span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">param_capacitance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">capacitance_name_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">capacitance_name_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#param_capacitance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.param_capacitance" title="Link to this definition"></a></dt>
 <dd><p>Construct a parameter name for capacitance matrix elements.</p>
@@ -360,6 +383,34 @@ Must end with “_nonlin”.</p>
 <span class="go">(&#39;qubit_1&#39;, &#39;qubit_2&#39;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">get_modes_from_param_nonlin</span><span class="p">(</span><span class="s2">&quot;qubit_1_to_qubit_1_nonlin&quot;</span><span class="p">)</span>
 <span class="go">(&#39;qubit_1&#39;, &#39;qubit_1&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qdesignoptimizer.utils.names_parameters.get_modes_from_param_participation_ratio">
+<span class="sig-prename descclassname"><span class="pre">qdesignoptimizer.utils.names_parameters.</span></span><span class="sig-name descname"><span class="pre">get_modes_from_param_participation_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qdesignoptimizer/utils/names_parameters.html#get_modes_from_param_participation_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qdesignoptimizer.utils.names_parameters.get_modes_from_param_participation_ratio" title="Link to this definition"></a></dt>
+<dd><p>Extract mode and junction identifiers from a participation_ratio parameter name.</p>
+<p>Parses a participation_ratio parameter name to retrieve the original mode and junction names
+that are involved in the interaction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parameter</strong> (<em>Parameter</em>) – The participation_ratio parameter name to parse.
+Must end with “_participation_ratio”.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the extracted mode name and junction name.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[Mode, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#AssertionError" title="(in Python v3.14)"><strong>AssertionError</strong></a> – If parameter does not end with “_participation_ratio”.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_modes_from_param_participation_ratio</span><span class="p">(</span><span class="s2">&quot;qubit_1_in_jj_qubit_1_participation_ratio&quot;</span><span class="p">)</span>
+<span class="go">(&#39;qubit_1&#39;, &#39;jj_qubit_1&#39;)</span>
 </pre></div>
 </div>
 </dd></dl>

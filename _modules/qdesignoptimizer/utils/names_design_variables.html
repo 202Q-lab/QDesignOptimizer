@@ -108,6 +108,13 @@
 
 
 <span class="c1"># Design variables</span>
+<div class="viewcode-block" id="design_var_">
+<a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_">[docs]</a>
+<span class="k">def</span> <span class="nf">design_var_</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DesignVariable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create standardized variable name for component with identifier.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;design_var_</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
 <div class="viewcode-block" id="design_var_length">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_length">[docs]</a>
 <span class="k">def</span> <span class="nf">design_var_length</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DesignVariable</span><span class="p">:</span>
@@ -175,12 +182,12 @@
 
 <div class="viewcode-block" id="junction_setup">
 <a class="viewcode-back" href="../../../api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.junction_setup">[docs]</a>
-<span class="k">def</span> <span class="nf">junction_setup</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span> <span class="n">mode_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">junction_setup</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span> <span class="n">junction_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate jj setup for</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        component_name (str): component name</span>
-<span class="sd">        mode_type (str): mode_type of JJ, e.g. &#39;linear&#39; for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.</span>
+<span class="sd">        junction_type (str): junction_type of JJ, e.g. &#39;linear&#39; for a SNAIL/ATS tuned to the Kerr-free point. Default is None = ordinary jj.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict: jj setup</span>
@@ -194,8 +201,8 @@
             <span class="s2">&quot;Cj_variable&quot;</span><span class="p">:</span> <span class="n">design_var_cj</span><span class="p">(</span><span class="n">mode</span><span class="p">),</span>
         <span class="p">}</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="n">mode_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">setup</span><span class="p">[</span><span class="n">jj_name</span><span class="p">][</span><span class="s2">&quot;mode_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mode_type</span>
+    <span class="k">if</span> <span class="n">junction_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">setup</span><span class="p">[</span><span class="n">jj_name</span><span class="p">][</span><span class="s2">&quot;junction_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">junction_type</span>
     <span class="k">return</span> <span class="n">setup</span></div>
 
 </pre></div>

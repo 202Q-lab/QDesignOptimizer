@@ -84,6 +84,7 @@
 <span></span><span class="sd">&quot;&quot;&quot;Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">redirect_stdout</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
@@ -121,6 +122,7 @@
     <span class="n">param</span><span class="p">,</span>
     <span class="n">param_capacitance</span><span class="p">,</span>
     <span class="n">param_nonlin</span><span class="p">,</span>
+    <span class="n">param_participation_ratio</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -183,7 +185,6 @@
             <span class="n">sys_opt_param</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">system_optimized_params</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_system_optimized_params_initialized</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-
             <span class="k">def</span> <span class="nf">fill_leaves_with_none</span><span class="p">(</span><span class="n">nested_dict</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">nested_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -204,6 +205,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">anmod_optimizer</span> <span class="o">=</span> <span class="n">ANModOptimizer</span><span class="p">(</span>
             <span class="n">opt_targets</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opt_targets</span><span class="p">,</span>
             <span class="n">system_target_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">,</span>
+            <span class="n">adjustment_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">adjustment_rate</span><span class="p">,</span>
             <span class="n">minimization_tol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">minimization_tol</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -224,6 +226,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">max_mesh_length_port</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_validate_opt_targets</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extracted_junctions_for_epr</span><span class="p">()</span>
 
         <span class="k">assert</span> <span class="p">(</span>
             <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span>
@@ -252,6 +255,24 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update eigenmode convergence tolerance.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">=</span> <span class="n">delta_f</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">=</span> <span class="n">delta_f</span></div>
+
+
+<div class="viewcode-block" id="DesignAnalysis.extracted_junctions_for_epr">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.extracted_junctions_for_epr">[docs]</a>
+    <span class="k">def</span> <span class="nf">extracted_junctions_for_epr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract junctions for EPR analysis.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">no_junctions</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">jj_setups_to_include_in_epr</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># experimental implementation. to be generalized in the future to arbitrary junction potentials</span>
+            <span class="c1"># this is a simple way to implement a linear potential only</span>
+            <span class="k">if</span> <span class="s2">&quot;junction_type&quot;</span> <span class="ow">in</span> <span class="n">val</span> <span class="ow">and</span> <span class="n">val</span><span class="p">[</span><span class="s2">&quot;junction_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jj_setups_to_include_in_epr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span></div>
+
 
 
     <span class="k">def</span> <span class="nf">_validate_opt_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -464,28 +485,14 @@
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.run_epr">[docs]</a>
     <span class="k">def</span> <span class="nf">run_epr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run EPR, requires design with junctions.&quot;&quot;&quot;</span>
-        <span class="n">no_junctions</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
-        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">jj_setups_to_include_in_epr</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jj_setups_to_include_in_epr</span>
 
-        <span class="n">jj_setups_to_include_in_epr</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">junction_found</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">linear_element_found</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># experimental implementation. to be generatized in the future to arbitrary junction potentials</span>
-            <span class="c1"># this is a simple way to implement a linear potential only</span>
-            <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">in</span> <span class="n">val</span> <span class="ow">and</span> <span class="n">val</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
-                <span class="n">linear_element_found</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="k">continue</span>
-            <span class="n">jj_setups_to_include_in_epr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
-            <span class="n">junction_found</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">junction_found</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="n">jj_setups_to_include_in_epr</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">no_junctions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_junctions</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">DistributedAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinfo</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">get_stored_energy</span><span class="p">(</span><span class="n">no_junctions</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">get_stored_energy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">no_junctions</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">do_EPR_analysis</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">epra</span> <span class="o">=</span> <span class="n">epr</span><span class="o">.</span><span class="n">QuantumAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eprd</span><span class="o">.</span><span class="n">data_filename</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">analyze_all_variations</span><span class="p">(</span>
@@ -495,17 +502,15 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">plot_hamiltonian_results</span><span class="p">()</span>
                 <span class="n">freqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_frequencies</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">chis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_chis</span><span class="p">(</span><span class="n">numeric</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_update_optimized_params_epr</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">chis</span><span class="p">)</span>
+                <span class="n">participation_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epra</span><span class="o">.</span><span class="n">get_participations</span><span class="p">()</span> <span class="c1"># normalized by default</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_update_optimized_params_epr</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">chis</span><span class="p">,</span> <span class="n">participation_ratio</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">eig_solver</span><span class="o">.</span><span class="n">setup</span><span class="o">.</span><span class="n">junctions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">jj_setup</span>
 
-            <span class="k">return</span> <span class="n">chis</span>
-        <span class="n">add_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">linear_element_found</span><span class="p">:</span>
-            <span class="n">add_msg</span> <span class="o">=</span> <span class="s2">&quot; However, a linear element was found.&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No junctions found, skipping EPR analysis.</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">add_msg</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+            <span class="k">return</span> <span class="n">chis</span><span class="p">,</span> <span class="n">participation_ratio</span></div>
 
+        
 
     <span class="k">def</span> <span class="nf">_surface_rendering_for_surface_participation_ratios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Render surfaces for surface participation ratio analysis.</span>
@@ -623,7 +628,7 @@
         <span class="k">return</span> <span class="n">mode_idx</span>
 
     <span class="k">def</span> <span class="nf">_update_optimized_params_epr</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">freq_ND_results</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">epr_result</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">freq_ND_results</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">epr_result</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">participation_ratio</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
     <span class="p">):</span>
 
         <span class="n">MHz</span> <span class="o">=</span> <span class="mf">1e6</span>
@@ -640,6 +645,12 @@
             <span class="k">for</span> <span class="n">mode_j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">mode_i</span><span class="p">,</span> <span class="n">mode_j</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="n">epr_result</span><span class="p">[</span><span class="n">mode_idx</span><span class="p">[</span><span class="n">mode_i</span><span class="p">]]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">mode_idx</span><span class="p">[</span><span class="n">mode_j</span><span class="p">]]</span> <span class="o">*</span> <span class="n">MHz</span>
+                <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mini_study</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">jj_idx</span><span class="p">,</span> <span class="n">junction</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jj_setups_to_include_in_epr</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span><span class="p">[</span><span class="n">param_participation_ratio</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">junction</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">participation_ratio</span><span class="o">.</span><span class="n">iloc</span><span class="p">[(</span><span class="n">mode_idx</span><span class="p">[</span><span class="n">mode</span><span class="p">],</span> <span class="n">jj_idx</span><span class="p">)]</span>
                 <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_update_optimized_params_capacitance_simulation</span><span class="p">(</span>
@@ -682,7 +693,7 @@
 <div class="viewcode-block" id="DesignAnalysis.optimize_target">
 <a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target">[docs]</a>
     <span class="k">def</span> <span class="nf">optimize_target</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">updated_design_vars_input</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">system_optimized_params</span><span class="p">:</span> <span class="nb">dict</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">updated_design_vars_input</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">system_optimized_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">save_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run full optimization iteration to adjust design variables toward target parameters.</span>
 
@@ -774,6 +785,7 @@
             <span class="p">}</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">simulation</span><span class="p">),</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">+</span> <span class="s2">&quot;_design_variables.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
@@ -787,6 +799,8 @@
                 <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">],</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">plot_settings</span><span class="p">,</span>
+                <span class="n">save_figures</span><span class="o">=</span><span class="n">save_figures</span><span class="p">,</span>
+                <span class="n">save_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span>
             <span class="p">)</span></div>
 
 
