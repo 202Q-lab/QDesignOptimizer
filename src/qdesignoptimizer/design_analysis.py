@@ -172,6 +172,8 @@ class DesignAnalysis:
                         len(self.mini_study.capacitance_matrix_studies) != 0
                     ), "capacitance_matrix_studies in ministudy must be populated for Charge line T1 decay study."
                 elif target.target_param_type == KAPPA:
+                    # Check if there is a ResonatorDecayIntoWaveguideStudy in capacitance_matrix_studies
+                    # if not, ensure enough modes are simulated
                     if not any(
                         isinstance(study, ResonatorDecayIntoWaveguideStudy)
                         for study in self.mini_study.capacitance_matrix_studies
@@ -181,6 +183,7 @@ class DesignAnalysis:
                         ), f"Target for {target.target_param_type} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
                 elif target.target_param_type == CAPACITANCE:
+                    # Note: involved_modes here are capacitor element names, not modes
                     capacitance_1 = target.involved_modes[0]
                     capacitance_2 = target.involved_modes[1]
                     assert (
@@ -201,15 +204,18 @@ class DesignAnalysis:
                     assert (
                         len(target.involved_modes) == 2
                     ), f"Target for {target.target_param_type} expects 2 modes."
-                    assert len(self.mini_study.modes) >= len(
-                        target.involved_modes
-                    ), f"Target for {target.target_param_type} expects \
-                        {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
-                    for mode in target.involved_modes:
-                        assert (
-                            mode in self.mini_study.modes
-                        ), f"Target mode {mode} \
-                            not found in modes which will be simulated."
+                    
+                    # Check unique modes needed for simulation
+                    # e.g. the computation of the anharmonicity only requires one mode in the mini_study setup but two modes are specified in the target. 
+                    # in contrast, the computation of cross-Kerr requires two different modes to be simulated.
+                    unique_modes = set(target.involved_modes)
+                    assert len(self.mini_study.modes) >= len(unique_modes), \
+                        f"Target for {target.target_param_type} requires {len(unique_modes)} unique mode(s) \
+                        but only {len(self.mini_study.modes)} mode(s) will be simulated."
+                    
+                    for mode in unique_modes:
+                        assert mode in self.mini_study.modes, \
+                            f"Target mode {mode} not found in modes which will be simulated."
                 else:
                     assert len(self.mini_study.modes) >= len(
                         target.involved_modes
