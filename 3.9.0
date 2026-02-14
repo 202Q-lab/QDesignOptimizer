@@ -1,0 +1,14 @@
+Collecting matplotlib
+  Using cached matplotlib-3.10.8-cp310-cp310-win_amd64.whl.metadata (52 kB)
+Requirement already satisfied: contourpy>=1.0.1 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (1.3.0)
+Requirement already satisfied: cycler>=0.10 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (4.56.0)
+Requirement already satisfied: kiwisolver>=1.3.1 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (1.4.7)
+Requirement already satisfied: numpy>=1.23 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (1.26.4)
+Requirement already satisfied: packaging>=20.0 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (24.2)
+Requirement already satisfied: pillow>=8 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (11.1.0)
+Requirement already satisfied: pyparsing>=3 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (3.2.1)
+Requirement already satisfied: python-dateutil>=2.7 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from matplotlib) (2.9.0.post0)
+Requirement already satisfied: six>=1.5 in c:\users\lukassp\appdata\local\anaconda3\envs\qdesignenv\lib\site-packages (from python-dateutil>=2.7->matplotlib) (1.17.0)
+Using cached matplotlib-3.10.8-cp310-cp310-win_amd64.whl (8.1 MB)
+Installing collected packages: matplotlib
