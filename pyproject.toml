@@ -11,27 +11,26 @@ license = "Apache License 2.0"
 readme = "README.md"
 keywords = ["Quantum"]
 classifiers = ["Programming Language :: Python :: 3"]
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.10,<3.12"
 dependencies = [
   "addict==2.4.0",
   "descartes==1.1.0",
-  "gdspy==1.6.12",
-  "geopandas==0.12.2",
+  "geopandas>=1.0",
   "ipython==8.10.0",
   "matplotlib==3.7.0",
   "numpy==1.24.1",
-  "pandas==1.5.3",
+  "pandas>=2.1.1",
   "pint==0.20.1",
   "pyEPR-quantum==0.9.*",
   "pygments==2.14.0",
-  "pyside2==5.15.2.1",
+  "pyside6>=6.8",
   "qdarkstyle==3.1",
-  "qutip==4.7.1",
+  "qutip>=5.0.0",
   "scipy==1.10.0",
   "shapely==2.0.1",
-  "scqubits==3.1.0",
+  "scqubits>=4.1.0",
   "gmsh==4.11.1",
-  "pyaedt==0.6.94",
+  "pyaedt>=0.21,<0.24",
   "pyyaml==6.0",
   "cython<3.0.0",
   "ipykernel",
