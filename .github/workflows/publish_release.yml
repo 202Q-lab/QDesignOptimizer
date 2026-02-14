@@ -17,6 +17,7 @@ jobs:
         with:
             miniforge-version: latest
             activate-environment: qdesignenv
+            conda-remove-defaults: false
       - uses: actions/cache@v3
         with:
           path: ${{ env.CONDA }}/envs

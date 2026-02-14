@@ -16,7 +16,14 @@ All notable changes to this project will be documented in this file.
   - `DataExtractor.get_design_var_for_param()` → `DataExtractor.get_control_var_for_param()`
   - `Plotter.plot_design_vars_vs_iteration()` → `Plotter.plot_control_vars_vs_iteration()`
   - `plot_progress()` parameter: `plot_design_variables` → `plot_control_variables`
-  - **Migration Guide**: Update all `OptTarget` instantiations to use `control_var` and `control_var_constraint` instead of `design_var` and `design_var_constraint`
+  - **Helper function parameters** (in `utils/optimization_targets.py`):
+    - All `design_var_constraint` parameters → `control_var_constraint`
+    - `get_opt_targets_qb_res_transmission()`: `design_var_constraint_qubit_lj` → `control_var_constraint_qubit_lj`
+    - `get_opt_targets_qb_res_transmission()`: `design_var_constraint_qubit_width` → `control_var_constraint_qubit_width`
+    - `get_opt_targets_qb_res_transmission()`: `design_var_constraint_res_length` → `control_var_constraint_res_length`
+    - `get_opt_targets_qb_res_transmission()`: `design_var_constraint_res_coupl_length` → `control_var_constraint_res_coupl_length`
+    - `get_opt_targets_qb_res_transmission()`: `design_var_constraint_res_qb_coupl_length` → `control_var_constraint_res_qb_coupl_length`
+  - **Migration Guide**: Update all `OptTarget` instantiations to use `control_var` and `control_var_constraint` instead of `design_var` and `design_var_constraint`. Update any calls to helper functions to use `control_var_constraint_*` parameters instead of `design_var_constraint_*`.
   - **Rationale**: Make terminology domain-agnostic for use beyond circuit design applications
 
 ### Changed
