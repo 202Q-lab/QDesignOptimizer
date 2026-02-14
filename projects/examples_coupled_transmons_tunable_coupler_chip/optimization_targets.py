@@ -25,8 +25,8 @@ def get_opt_target_coupler_qubit_chi(qubit):
     return OptTarget(
         target_param_type=NONLIN,
         involved_modes=[n.COUPLER_12, qubit],
-        design_var=n.design_var_coupl_length(n.COUPLER_12, qubit),
-        design_var_constraint={"larger_than": "1um", "smaller_than": "80um"},
+        control_var=n.design_var_coupl_length(n.COUPLER_12, qubit),
+        control_var_constraint={"larger_than": "1um", "smaller_than": "80um"},
         prop_to=lambda p, v, qubit=qubit: 1
         / v[n.design_var_coupl_length(n.COUPLER_12, qubit)]
         / (p[param(n.COUPLER_12, FREQ)] - p[param(qubit, FREQ)]),
@@ -60,7 +60,7 @@ def get_opt_targets_2qubits_resonator_coupler(
     opt_targets = []
 
     # Example of how to add an optimization target.
-    # IMPORTANT: the design variable name used MUST be specified in the design_variables.json and
+    # IMPORTANT: the control variable name used MUST be specified in the design_variables.json and
     # should be used in the design.py to adjust a component's geometry.
     if opt_target_coupler_freq:
         opt_target_coupler = get_opt_target_qubit_freq_via_lj(
@@ -93,15 +93,15 @@ def get_opt_targets_2qubits_resonator_coupler(
                 opt_target_resonator_kappa=opt_target_resonator_kappa,
                 opt_target_resonator_qubit_chi=opt_target_resonator_qubit_chi,
                 use_simple_resonator_qubit_chi_relation=use_simple_resonator_qubit_chi_relation,
-                design_var_constraint_qubit_width={
+                control_var_constraint_qubit_width={
                     "larger_than": "1um",
                     "smaller_than": "900um",
                 },
-                design_var_constraint_res_coupl_length={
+                control_var_constraint_res_coupl_length={
                     "larger_than": "1um",
                     "smaller_than": "1500um",
                 },
-                design_var_constraint_res_qb_coupl_length={
+                control_var_constraint_res_qb_coupl_length={
                     "larger_than": "1um",
                     "smaller_than": "80um",
                 },
@@ -122,8 +122,8 @@ def get_opt_target_qubit_T1_limit_via_charge_posx(
     return OptTarget(
         target_param_type=n.CHARGE_LINE_LIMITED_T1,
         involved_modes=[qubit],
-        design_var=n.design_var_cl_pos_x(qubit),
-        design_var_constraint={"larger_than": "-1000um", "smaller_than": "-5um"},
+        control_var=n.design_var_cl_pos_x(qubit),
+        control_var_constraint={"larger_than": "-1000um", "smaller_than": "-5um"},
         prop_to=lambda p, v: -v[n.design_var_cl_pos_x(qubit)] ** 3,
         independent_target=True,
     )
@@ -149,8 +149,8 @@ def get_opt_target_capacitance(
                 f"prime_cpw_name_tee{group}_",
                 f"second_cpw_name_tee{group}_",
             ],
-            design_var=n.design_var_length(f"{resonator}_capacitance"),
-            design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
+            control_var=n.design_var_length(f"{resonator}_capacitance"),
+            control_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
             prop_to=lambda p, v: 1
             / np.sqrt(v[n.design_var_length(f"{resonator}_capacitance")]),
             independent_target=True,

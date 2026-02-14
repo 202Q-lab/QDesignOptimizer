@@ -195,22 +195,22 @@ class ScaledSystem:
     def get_flattened_g_ij_factor_at_yk_xk(self) -> np.ndarray:
         return self.flatten(self._g_ij_factor_at_yk_xk, "", "_")
 
-    def set_updated_design_vars(self, updated_design_vars: Dict[str, float]):
+    def set_updated_control_vars(self, updated_control_vars: Dict[str, float]):
         """
         Update self._x from a flattened dictionary with keys f"dv_{i},{j}".
 
         Parameters
         ----------
-        updated_design_vars : Dict[str, float]
+        updated_control_vars : Dict[str, float]
             Dictionary with keys like "dv_0_0", "dv_0_1", etc. and float values
         """
         for i in range(self.n_clusters):
             for j in range(self.m_per_cluster):
                 key = f"dv_{i},{j}"
-                if key in updated_design_vars:
-                    self._x[i, j] = updated_design_vars[key]
+                if key in updated_control_vars:
+                    self._x[i, j] = updated_control_vars[key]
                 else:
-                    print(f"Warning: Key {key} not found in updated_design_vars")
+                    print(f"Warning: Key {key} not found in updated_control_vars")
 
     def _g_ij(self, i, j, y_values=None) -> float:
         """Calculate g(i,j) = ∏_k x_{i,k}^{alpha_{i,j,k}} * ∏_k y_{i,k}^{beta_{i,j,k}}"""

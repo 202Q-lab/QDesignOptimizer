@@ -16,8 +16,8 @@ def get_opt_target(i, j, sys: ScaledSystem) -> OptTarget:
     return OptTarget(
         target_param_type=UNITLESS,
         involved_modes=[mode_name],
-        design_var=f"dv_{i},{j}",
-        design_var_constraint={"larger_than": 1e-8, "smaller_than": 100},
+        control_var=f"dv_{i},{j}",
+        control_var_constraint={"larger_than": 1e-8, "smaller_than": 100},
         prop_to=get_prop_to(i, j, sys),
         independent_target=f"{i}",
     )
@@ -26,7 +26,7 @@ def get_opt_target(i, j, sys: ScaledSystem) -> OptTarget:
 def aggregate_results(
     optimization_results: list, sys: ScaledSystem, minimization_results: any
 ):
-    design_variables = deepcopy(sys.get_flattened_x())
+    control_variables = deepcopy(sys.get_flattened_x())
     system_optimized_params = deepcopy(sys.get_flattened_yk())
     h_ij_factor_at_yk_xk = deepcopy(sys.get_flattened_h_ij_factor_at_yk_xk())
     g_ij_approx_factor_at_yk_xk = deepcopy(
@@ -38,7 +38,7 @@ def aggregate_results(
     g_ij_factor_at_yk_xk = deepcopy(sys.get_flattened_g_ij_factor_at_yk_xk())
 
     iteration_result = {}
-    iteration_result["design_variables"] = design_variables
+    iteration_result["control_variables"] = control_variables
     iteration_result["system_optimized_params"] = system_optimized_params
     iteration_result["minimization_results"] = minimization_results
     iteration_result["h_ij_factor_at_yk_xk"] = h_ij_factor_at_yk_xk
@@ -104,14 +104,14 @@ if __name__ == "__main__":
         for it in range(NBR_ITERATIONS):
             sys.gather_info_for_y_given_x()
             system_optimized_params = sys.get_flattened_yk()
-            updated_design_vars, minimization_results = (
-                anmod.calculate_target_design_var(
+            updated_control_vars, minimization_results = (
+                anmod.calculate_target_control_vars(
                     system_optimized_params=system_optimized_params,
                     variables_with_units=sys.get_flattened_x(),
                 )
             )
             print(f"--- Iteration {it+1}/{NBR_ITERATIONS} ---")
-            sys.set_updated_design_vars(updated_design_vars)
+            sys.set_updated_control_vars(updated_control_vars)
             aggregate_results(optimization_results, sys, minimization_results)
 
         plot_all_convergence_ratios(

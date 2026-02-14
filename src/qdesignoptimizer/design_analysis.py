@@ -250,10 +250,10 @@ class DesignAnalysis:
                 set(control_variables)
             ), "Control variables must be unique."
 
-    def update_var(self, updated_design_vars: dict, system_optimized_params: dict):
-        """Update junction and design variables in mini_study, design, pinfo and."""
+    def update_var(self, updated_control_vars: dict, system_optimized_params: dict):
+        """Update junction and control variables in mini_study, design, pinfo and."""
 
-        for key, val in {**self.design.variables, **updated_design_vars}.items():
+        for key, val in {**self.design.variables, **updated_control_vars}.items():
             self.pinfo.design.set_variable(key, val)
             self.design.variables[key] = val
 
@@ -658,7 +658,7 @@ class DesignAnalysis:
                     deepcopy(capacitance_matrix)
                 )
 
-        iteration_result["design_variables"] = dict(deepcopy(self.design.variables))
+        iteration_result["control_variables"] = dict(deepcopy(self.design.variables))
         iteration_result["system_optimized_params"] = deepcopy(
             self.system_optimized_params
         )
@@ -677,8 +677,8 @@ class DesignAnalysis:
             os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
             np.save(self.save_path, np.array(simulation), allow_pickle=True)
 
-            with open(self.save_path + "_design_variables.json", "w") as outfile:
-                json.dump(updated_design_vars, outfile, indent=4)
+            with open(self.save_path + "_control_variables.json", "w") as outfile:
+                json.dump(updated_control_vars, outfile, indent=4)
 
         if self.update_design_variables is True:
             self.overwrite_parameters()
@@ -693,24 +693,24 @@ class DesignAnalysis:
             )
 
     def overwrite_parameters(self):
-        """Overwirte the original design_variables.json file with new values."""
+        """Overwirte the original control_variables.json file with new values."""
         if self.save_path is None:
             raise ValueError("A path must be specified to fetch results.")
 
-        with open(self.save_path + "_design_variables.json") as in_file:
-            updated_design_vars = json.load(in_file)
+        with open(self.save_path + "_control_variables.json") as in_file:
+            updated_control_vars = json.load(in_file)
 
         with open("design_variables.json") as in_file:
             rewrite_parameters = json.load(in_file)
 
-        for key, item in updated_design_vars.items():
+        for key, item in updated_control_vars.items():
             if key in rewrite_parameters:
                 rewrite_parameters[key] = item
 
         with open("design_variables.json", "w") as outfile:
             json.dump(rewrite_parameters, outfile, indent=4)
 
-        log.info("Overwritten parameters%s", dict_log_format(updated_design_vars))
+        log.info("Overwritten parameters%s", dict_log_format(updated_control_vars))
 
     def get_cross_kerr_matrix(self, iteration: int = -1) -> Optional[pd.DataFrame]:
         """Get cross kerr matrix from EPR analysis.

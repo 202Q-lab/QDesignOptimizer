@@ -22,7 +22,7 @@ def plot_all_convergence_ratios(
     """
     # Get all parameter names from the first iteration
     param_names = list(optimization_results[0]["system_optimized_params"].keys())
-    dv_names = list(optimization_results[0]["design_variables"].keys())
+    dv_names = list(optimization_results[0]["control_variables"].keys())
     n_iterations = len(optimization_results)
     iterations = np.array(range(n_iterations)) + 1
     plt.rcParams["axes.formatter.useoffset"] = False
@@ -91,7 +91,7 @@ def plot_all_convergence_ratios(
         ratios = []
 
         for iter_result in optimization_results:
-            optimized_val = iter_result["design_variables"][dv_name]
+            optimized_val = iter_result["control_variables"][dv_name]
             ratio = optimized_val
             ratios.append(ratio)
 
@@ -106,7 +106,7 @@ def plot_all_convergence_ratios(
         )
 
     ax8.set_xlabel("Iteration $k$")
-    ax8.set_ylabel("Design variables $x_{i,j}$")
+    ax8.set_ylabel("Control variables $x_{i,j}$")
     ax8.set_yscale("log")
     ax8.set_yticks([0.5, 1.0])
 
@@ -138,10 +138,10 @@ def plot_all_convergence_ratios(
 
     for dv_name in dv_names:
         ratios = []
-        final_val = optimization_results[-1]["design_variables"][dv_name]
+        final_val = optimization_results[-1]["control_variables"][dv_name]
 
         for iter_result in optimization_results:
-            optimized_val = iter_result["design_variables"][dv_name]
+            optimized_val = iter_result["control_variables"][dv_name]
             ratio = optimized_val / final_val
             ratios.append(ratio)
 

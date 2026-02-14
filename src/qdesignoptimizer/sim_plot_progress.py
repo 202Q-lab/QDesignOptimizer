@@ -147,8 +147,8 @@ class DataExtractor:
             return iteration + 1
         elif param_name in result["system_optimized_params"]:
             return result["system_optimized_params"][param_name]
-        elif param_name in result["design_variables"]:
-            value, _ = get_value_and_unit(result["design_variables"][param_name])
+        elif param_name in result["control_variables"]:
+            value, _ = get_value_and_unit(result["control_variables"][param_name])
             return value
         return None
 
@@ -199,7 +199,7 @@ class DataExtractor:
             Tuple of (value, unit)
         """
         control_variable = self.get_control_var_name_for_param(target_parameter)
-        control_var_value = result["design_variables"][control_variable]
+        control_var_value = result["control_variables"][control_variable]
         assert (
             control_var_value is not None
         ), f"Control variable {control_variable} not found in results"

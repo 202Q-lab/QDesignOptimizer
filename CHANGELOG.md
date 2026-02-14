@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
   - `ANModOptimizer.calculate_target_design_var()` → `ANModOptimizer.calculate_target_control_vars()`
   - `ANModOptimizer._constrain_design_value()` → `ANModOptimizer._constrain_control_value()`
   - `DesignAnalysis.optimize_target()` parameter: `updated_design_vars_input` → `updated_control_vars_input`
+  - `DesignAnalysis.update_var()` parameter: `updated_design_vars` → `updated_control_vars`
+  - `DesignAnalysis.overwrite_parameters()`: Updated to use `_control_variables.json` filename
+  - Optimization result dictionary key: `"design_variables"` → `"control_variables"`
+  - Saved JSON filename: `_design_variables.json` → `_control_variables.json`
   - `DataExtractor.get_design_var_name_for_param()` → `DataExtractor.get_control_var_name_for_param()`
   - `DataExtractor.get_design_var_for_param()` → `DataExtractor.get_control_var_for_param()`
   - `Plotter.plot_design_vars_vs_iteration()` → `Plotter.plot_control_vars_vs_iteration()`

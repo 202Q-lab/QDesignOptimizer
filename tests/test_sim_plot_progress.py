@@ -94,7 +94,7 @@ def mock_optimization_results():
                 resonator_freq: 7.0e9,
                 cross_kerr: 1.0e6,
             },
-            "design_variables": {
+            "control_variables": {
                 "design_var_lj_qubit_1": "10.0nH",
                 "design_var_width_qubit_1": "20.0um",
                 "design_var_length_resonator_1": "5000.0um",
@@ -106,7 +106,7 @@ def mock_optimization_results():
                 resonator_freq: 6.9e9,
                 cross_kerr: 1.1e6,
             },
-            "design_variables": {
+            "control_variables": {
                 "design_var_lj_qubit_1": "9.8nH",
                 "design_var_width_qubit_1": "20.5um",
                 "design_var_length_resonator_1": "5100.0um",
@@ -118,7 +118,7 @@ def mock_optimization_results():
                 resonator_freq: 6.8e9,
                 cross_kerr: 1.2e6,
             },
-            "design_variables": {
+            "control_variables": {
                 "design_var_lj_qubit_1": "9.5nH",
                 "design_var_width_qubit_1": "21.0um",
                 "design_var_length_resonator_1": "5200.0um",
@@ -289,19 +289,19 @@ class TestDataExtractor:
                 "system_optimized_params": {
                     qubit_freq: 5.1e9,
                 },
-                "design_variables": {},
+                "control_variables": {},
             },
             {
                 "system_optimized_params": {
                     qubit_freq: 5.2e9,
                 },
-                "design_variables": {},
+                "control_variables": {},
             },
             {
                 "system_optimized_params": {
                     qubit_freq: 5.3e9,
                 },
-                "design_variables": {},
+                "control_variables": {},
             },
         ]
 
@@ -464,7 +464,7 @@ class TestPlotProgress:
     @patch("matplotlib.pyplot.subplots")
     @patch("matplotlib.pyplot.show")
     @patch("matplotlib.pyplot.close")
-    def test_plot_progress_with_design_variables(
+    def test_plot_progress_with_control_variables(
         self,
         mock_close,
         mock_show,
@@ -531,7 +531,7 @@ class TestPlotProgress:
 
     def test_plot_progress_invalid_args(self):
         """Test that invalid arguments raise appropriate errors."""
-        # Test invalid plot_design_variables value
+        # Test invalid plot_control_variables value
         with pytest.raises(ValueError):
             plot_progress(
                 [[]],  # Empty list of optimization results
@@ -540,7 +540,7 @@ class TestPlotProgress:
                 plot_control_variables="invalid",
             )
 
-        # Test missing opt_target_list when plot_design_variables is set
+        # Test missing opt_target_list when plot_control_variables is set
         with pytest.raises(ValueError):
             plot_progress(
                 [[]],  # Empty list of optimization results
