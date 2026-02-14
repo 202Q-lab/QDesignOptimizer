@@ -39,47 +39,47 @@ class ANModOptimizer:
         self.minimization_tol = minimization_tol
         self.anmod_version = qdesignoptimizer.__version__
 
-    def _minimize_for_design_vars(
+    def _minimize_for_control_vars(
         self,
         targets_to_minimize_for: List[OptTarget],
-        all_design_var_current: dict,
-        all_design_var_updated: dict,
+        all_control_vars_current: dict,
+        all_control_vars_updated: dict,
         all_parameters_current: dict,
         all_parameters_targets_met: dict,
     ):
-        """Minimize the cost function to find the optimal design variables to reach the target.
-        The all_design_var_updated variable is automatically updated with the optimal design variables during the minimization.
+        """Minimize the cost function to find the optimal control variables to reach the target.
+        The all_control_vars_updated variable is automatically updated with the optimal control variables during the minimization.
         """
-        design_var_names_to_minimize = [
-            target.design_var for target in targets_to_minimize_for
+        control_var_names_to_minimize = [
+            target.control_var for target in targets_to_minimize_for
         ]
         bounds_for_targets = [
             (
-                get_value_and_unit(target.design_var_constraint["larger_than"])[0],
-                get_value_and_unit(target.design_var_constraint["smaller_than"])[0],
+                get_value_and_unit(target.control_var_constraint["larger_than"])[0],
+                get_value_and_unit(target.control_var_constraint["smaller_than"])[0],
             )
             for target in targets_to_minimize_for
         ]
 
-        init_design_var = []
-        init_design_var = [
-            all_design_var_current[name] for name in design_var_names_to_minimize
+        init_control_vars = []
+        init_control_vars = [
+            all_control_vars_current[name] for name in control_var_names_to_minimize
         ]
 
-        def cost_function(design_var_vals_updated):
+        def cost_function(control_var_vals_updated):
             """Cost function to minimize.
 
             Args:
-                ordered_design_var_vals_updated (List[float]): list of updated design variable values
+                control_var_vals_updated (List[float]): list of updated control variable values
             """
-            for idx, name in enumerate(design_var_names_to_minimize):
-                all_design_var_updated[name] = design_var_vals_updated[idx]
+            for idx, name in enumerate(control_var_names_to_minimize):
+                all_control_vars_updated[name] = control_var_vals_updated[idx]
             cost = 0
             for target in targets_to_minimize_for:
                 Q_k1_i = (
                     self._get_parameter_value(target, all_parameters_current)
-                    * target.prop_to(all_parameters_targets_met, all_design_var_updated)
-                    / target.prop_to(all_parameters_current, all_design_var_current)
+                    * target.prop_to(all_parameters_targets_met, all_control_vars_updated)
+                    / target.prop_to(all_parameters_current, all_control_vars_current)
                 )
                 cost += (
                     (
@@ -93,37 +93,37 @@ class ANModOptimizer:
 
         min_result = scipy.optimize.minimize(
             cost_function,
-            init_design_var,
+            init_control_vars,
             tol=self.minimization_tol,
             bounds=bounds_for_targets,
         )
 
-        for idx, name in enumerate(design_var_names_to_minimize):
+        for idx, name in enumerate(control_var_names_to_minimize):
             if (
-                all_design_var_updated[name] == bounds_for_targets[idx][0]
-                or all_design_var_updated[name] == bounds_for_targets[idx][1]
+                all_control_vars_updated[name] == bounds_for_targets[idx][0]
+                or all_control_vars_updated[name] == bounds_for_targets[idx][1]
             ):
                 log.warning(
-                    f"The optimized value for the design variable {name}: {all_design_var_updated[name]} is at the bounds. Consider changing the bounds or making the initial design closer to the optimal one."
+                    f"The optimized value for the control variable {name}: {all_control_vars_updated[name]} is at the bounds. Consider changing the bounds or making the initial values closer to the optimal ones."
                 )
 
         final_cost = cost_function(
-            [all_design_var_updated[name] for name in design_var_names_to_minimize]
+            [all_control_vars_updated[name] for name in control_var_names_to_minimize]
         )
         return {
             "result": min_result,
             "targets_to_minimize_for": [
-                target.design_var for target in targets_to_minimize_for
+                target.control_var for target in targets_to_minimize_for
             ],
             "final_cost": final_cost,
         }
 
-    def calculate_target_design_var(
+    def calculate_target_control_vars(
         self,
         system_optimized_params: dict[Parameter, float | int],
         variables_with_units: dict[DesignVariable, str],
     ) -> tuple[dict, list[dict]]:
-        """Calculate the new design value for the optimization targets."""
+        """Calculate the new control variable values for the optimization targets."""
         minimization_results: list[dict] = []
 
         # TODO: Refactor to avoid deepcopies
@@ -133,46 +133,46 @@ class ANModOptimizer:
         )
 
         # TODO: Refactor to avoid deepcopies
-        design_vars_current_str = deepcopy(variables_with_units)
+        control_vars_current_str = deepcopy(variables_with_units)
 
-        # Fetch the numeric values of the design variables
-        design_vars_current = {}
-        design_vars_updated = {}
+        # Fetch the numeric values of the control variables
+        control_vars_current = {}
+        control_vars_updated = {}
         units = {}
-        for design_var, val_unit in design_vars_current_str.items():
+        for control_var, val_unit in control_vars_current_str.items():
             val, unit = get_value_and_unit(val_unit)
-            design_vars_current[design_var] = val
-            design_vars_updated[design_var] = val
-            units[design_var] = unit
+            control_vars_current[control_var] = val
+            control_vars_updated[control_var] = val
+            units[control_var] = unit
 
         minimization_target_groups = self.group_targets(self.opt_targets)
 
         for targets in minimization_target_groups:
-            minimization_result = self._minimize_for_design_vars(
+            minimization_result = self._minimize_for_control_vars(
                 targets,
-                design_vars_current,
-                design_vars_updated,
+                control_vars_current,
+                control_vars_updated,
                 system_params_current,
                 system_params_targets_met,
             )
             minimization_results.append(minimization_result)
 
-        # Stitch back the unit of the design variable values
-        design_vars_updated_constrained_str = {}
+        # Stitch back the unit of the control variable values
+        control_vars_updated_constrained_str = {}
         for target in self.opt_targets:
-            design_var_name = target.design_var
-            design_vars_updated_val_and_unit = (
-                f"{design_vars_updated[design_var_name]} {units[design_var_name]}"
+            control_var_name = target.control_var
+            control_vars_updated_val_and_unit = (
+                f"{control_vars_updated[control_var_name]} {units[control_var_name]}"
             )
-            constrained_val_and_unit = self._constrain_design_value(
-                design_vars_current_str[design_var_name],
-                design_vars_updated_val_and_unit,
-                target.design_var_constraint,
+            constrained_val_and_unit = self._constrain_control_value(
+                control_vars_current_str[control_var_name],
+                control_vars_updated_val_and_unit,
+                target.control_var_constraint,
             )
-            design_vars_updated_constrained_str[design_var_name] = (
+            control_vars_updated_constrained_str[control_var_name] = (
                 constrained_val_and_unit
             )
-        return design_vars_updated_constrained_str, minimization_results
+        return control_vars_updated_constrained_str, minimization_results
 
     @staticmethod
     def group_targets(optimization_targets: List[OptTarget]) -> List[List[OptTarget]]:
@@ -201,40 +201,41 @@ class ANModOptimizer:
 
         return minimization_targets
 
-    def _constrain_design_value(
+    def _constrain_control_value(
         self,
-        design_value_old: str,
-        design_value_new: str,
-        design_var_constraint: dict[str, str],
+        value_old: str,
+        value_new: str,
+        control_var_constraint: dict[str, str],
     ) -> str:
-        """Constrain design value.
+        """Constrain control variable value.
 
         Args:
-            design_value (str): design value to be constrained
-            design_var_constraint (dict[str, str]): design variable constraint, example {'min': '10 um', 'max': '100 um'}
+            value_old (str): old control variable value to be constrained
+            value_new (str): new control variable value to be constrained
+            control_var_constraint (dict[str, str]): control variable constraint, example {'larger_than': '10 um', 'smaller_than': '100 um'}
         """
-        d_val_o, d_unit = get_value_and_unit(design_value_old)
-        d_val_n, d_unit = get_value_and_unit(design_value_new)
+        val_o, unit = get_value_and_unit(value_old)
+        val_n, unit = get_value_and_unit(value_new)
 
-        d_val = self._apply_adjustment_rate(d_val_n, d_val_o, self.adjustment_rate)
+        val = self._apply_adjustment_rate(val_n, val_o, self.adjustment_rate)
 
         c_val_to_be_smaller_than, c_unit_to_be_smaller_than = get_value_and_unit(
-            design_var_constraint["smaller_than"]
+            control_var_constraint["smaller_than"]
         )
         c_val_to_be_larger_than, c_unit_to_be_larger_than = get_value_and_unit(
-            design_var_constraint["larger_than"]
+            control_var_constraint["larger_than"]
         )
         assert (
-            d_unit == c_unit_to_be_smaller_than == c_unit_to_be_larger_than
-        ), f"Units of design_value {design_value_old} and constraint {design_var_constraint} must match"
-        if d_val > c_val_to_be_smaller_than:
-            design_value = c_val_to_be_smaller_than
-        elif d_val < c_val_to_be_larger_than:
-            design_value = c_val_to_be_larger_than
+            unit == c_unit_to_be_smaller_than == c_unit_to_be_larger_than
+        ), f"Units of control value {value_old} and constraint {control_var_constraint} must match"
+        if val > c_val_to_be_smaller_than:
+            constrained_value = c_val_to_be_smaller_than
+        elif val < c_val_to_be_larger_than:
+            constrained_value = c_val_to_be_larger_than
         else:
-            design_value = d_val
+            constrained_value = val
 
-        return f"{design_value} {d_unit}"
+        return f"{constrained_value} {unit}"
 
     @staticmethod
     def _apply_adjustment_rate(

@@ -107,12 +107,12 @@ class MeshingMap:
 
 class OptTarget:
     """
-    Defines an optimization target relating a quantum parameter to a design variable.
+    Defines an optimization target relating a quantum parameter to a control variable.
 
     An OptTarget establishes the relationship between a physical parameter of interest
-    (like frequency, coupling strength, or decay rate) and a design variable that can be
+    (like frequency, coupling strength, or decay rate) and a control variable that can be
     adjusted to achieve the target value. It specifies the functional dependency and
-    constraints on the design variable.
+    constraints on the control variable.
 
     Args:
         target_param_type (Literal): The type of system parameter to optimize.
@@ -125,25 +125,25 @@ class OptTarget:
             - For capacitance: [island1_name, island2_name] (capacitive island names). Note that the
               capacitances can correspond to two islands on a split transmon, a charge line etc.
 
-        design_var (str): The design variable name that will be adjusted to achieve the target.
-        design_var_constraint (dict[str, str]): Constraints on the design variable, with keys:
+        control_var (str): The control variable name that will be adjusted to achieve the target.
+        control_var_constraint (dict[str, str]): Constraints on the control variable, with keys:
 
             - "larger_than": Minimum allowed value with unit (e.g., "10um")
-            - "smaller_than": Maximum allowed value with unit (e.g., "100um"). The constraints are checked and enforced in each iteration of the optimization after all design variables have been updated by the algorithm.
+            - "smaller_than": Maximum allowed value with unit (e.g., "100um"). The constraints are checked and enforced in each iteration of the optimization after all control variables have been updated by the algorithm.
 
         prop_to (Callable): Function defining how the parameter depends on system parameters
-            and design variables. Must accept (system_params, design_vars) and return a value.
+            and control variables. Must accept (system_params, control_vars) and return a value.
             IMPORTANT: If the expression can't be factorized as a chain of functions depending
-            on a single variable each, all design variables must have consistent units. For example,
+            on a single variable each, all control variables must have consistent units. For example,
             ``func1(v[PARAM_X])*func2(PARAM_Y)`` can accept parameters with different units, while ``(v[PARAM_X] - v[PARAM_Y])`` requires
             ``PARAM_X`` and ``PARAM_Y`` to have the same units.
-        independent_target (bool | str): If True, this target only depends on a single design variable
+        independent_target (bool | str): If True, this target only depends on a single control variable
             and not on any system parameter. This allows the optimizer to solve this OptTarget
             independently, making it faster and more robust. If a str is provided, all targets with the same str will be solved as an isolated system.
 
     Note:
         The `prop_to` function is crucial as it defines the physical relationship between
-        the design variable and the target parameter. For example, for a resonator frequency:
+        the control variable and the target parameter. For example, for a resonator frequency:
         lambda p, v: 1/v["resonator_length"] encodes the inverse relationship between
         resonator length and frequency.
 
@@ -154,8 +154,8 @@ class OptTarget:
             qubit_freq_target = OptTarget(
                 target_param_type="freq",
                 involved_modes=["qubit_1"],
-                design_var="inductance_Lj",
-                design_var_constraint={"larger_than": "0.1nH", "smaller_than": "10nH"},
+                control_var="inductance_Lj",
+                control_var_constraint={"larger_than": "0.1nH", "smaller_than": "10nH"},
                 prop_to=lambda p, v: 1/np.sqrt(v["inductance_Lj"]),
                 independent_target=True
             )
@@ -172,8 +172,8 @@ class OptTarget:
             "capacitance",
         ],
         involved_modes: List[Mode] | List[str],
-        design_var: str,
-        design_var_constraint: dict[str, str],
+        control_var: str,
+        control_var_constraint: dict[str, str],
         prop_to: Optional[
             Callable[
                 [Dict[str, Union[float, int]], Dict[str, Union[float, int]]],
@@ -185,8 +185,8 @@ class OptTarget:
         """Initialize an optimization target."""
         self.target_param_type = target_param_type
         self.involved_modes = involved_modes
-        self.design_var = design_var
-        self.design_var_constraint = design_var_constraint
+        self.control_var = control_var
+        self.control_var_constraint = control_var_constraint
         self.prop_to = prop_to
         self.independent_target = independent_target
 

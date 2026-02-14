@@ -152,14 +152,14 @@ class DataExtractor:
             return value
         return None
 
-    def get_design_var_name_for_param(self, target_parameter: str) -> str:
-        """Find the design variable name associated with a target parameter.
+    def get_control_var_name_for_param(self, target_parameter: str) -> str:
+        """Find the control variable name associated with a target parameter.
 
         Args:
             target_parameter: Target parameter name
 
         Returns:
-            Name of the associated design variable
+            Name of the associated control variable
 
         Raises:
             AssertionError: If the parameter is not found in optimization targets
@@ -180,16 +180,16 @@ class DataExtractor:
                 )
 
             if target_parameter == opt_target_variable:
-                return opt_target.design_var
+                return opt_target.control_var
 
         raise AssertionError(
             f"Target parameter {target_parameter} not found in optimization targets"
         )
 
-    def get_design_var_for_param(
+    def get_control_var_for_param(
         self, target_parameter: str, result: OptimizationResult
     ) -> Tuple[float, str]:
-        """Get design variable value and unit for a target parameter.
+        """Get control variable value and unit for a target parameter.
 
         Args:
             target_parameter: Target parameter name
@@ -198,13 +198,13 @@ class DataExtractor:
         Returns:
             Tuple of (value, unit)
         """
-        design_variable = self.get_design_var_name_for_param(target_parameter)
-        design_var_value = result["design_variables"][design_variable]
+        control_variable = self.get_control_var_name_for_param(target_parameter)
+        control_var_value = result["design_variables"][control_variable]
         assert (
-            design_var_value is not None
-        ), f"Design variable {design_variable} not found in results"
+            control_var_value is not None
+        ), f"Control variable {control_variable} not found in results"
 
-        value, unit = get_value_and_unit(design_var_value)
+        value, unit = get_value_and_unit(control_var_value)
         return value, unit
 
     def extract_xy_data(
@@ -212,7 +212,7 @@ class DataExtractor:
         x_param: str,
         y_param: str,
         run_index: int,
-        use_design_var_as_x: bool = False,
+        use_control_var_as_x: bool = False,
         sort_by_x: bool = False,
     ) -> Tuple[List[float], List[float]]:
         """Extract x and y data series for plotting.
@@ -221,7 +221,7 @@ class DataExtractor:
             x_param: X-axis parameter name
             y_param: Y-axis parameter name
             run_index: Index of the optimization run to use
-            use_design_var_as_x: If True, use design variable for x instead of parameter
+            use_control_var_as_x: If True, use control variable for x instead of parameter
             sort_by_x: If True, sort the data by x values
 
         Returns:
@@ -229,10 +229,10 @@ class DataExtractor:
         """
         opt_result = self.opt_results[run_index]
 
-        if use_design_var_as_x:
+        if use_control_var_as_x:
             # Use design variable associated with y_param as x
             x_values = [
-                self.get_design_var_for_param(y_param, result)[0]
+                self.get_control_var_for_param(y_param, result)[0]
                 for _, result in enumerate(opt_result)
             ]
         else:
@@ -270,7 +270,7 @@ class DataExtractor:
         self,
         x_param: str,
         y_param: str,
-        use_design_var_as_x: bool = False,
+        use_control_var_as_x: bool = False,
         sort_by_x: bool = False,
     ) -> Tuple[List[float], np.ndarray, np.ndarray]:
         """Extract y data with mean and standard deviation across runs.
@@ -278,7 +278,7 @@ class DataExtractor:
         Args:
             x_param: X-axis parameter name
             y_param: Y-axis parameter name
-            use_design_var_as_x: If True, use design variable for x instead of parameter
+            use_control_var_as_x: If True, use control variable for x instead of parameter
             sort_by_x: If True, sort the data by x values
 
         Returns:
@@ -289,7 +289,7 @@ class DataExtractor:
 
         for run_index in range(len(self.opt_results)):
             x_values, y_values = self.extract_xy_data(
-                x_param, y_param, run_index, use_design_var_as_x, sort_by_x
+                x_param, y_param, run_index, use_control_var_as_x, sort_by_x
             )
 
             if not x_values or not y_values:
@@ -587,17 +587,17 @@ class OptimizationPlotter:
         """
         # Get design variable information for labeling
         first_result = self.extractor.opt_results[0][0]
-        design_var_name = self.extractor.get_design_var_name_for_param(y_param)
-        _, design_var_unit = self.extractor.get_design_var_for_param(
+        control_var_name = self.extractor.get_control_var_name_for_param(y_param)
+        _, control_var_unit = self.extractor.get_control_var_for_param(
             y_param, first_result
         )
 
         # Set up the axis with proper labels
-        self._setup_ax(ax, config, x_label=f"{design_var_name} ({design_var_unit})")
+        self._setup_ax(ax, config, x_label=f"{control_var_name} ({control_var_unit})")
 
         for run_idx in range(self.num_runs):
             x_values, y_values = self.extractor.extract_xy_data(
-                "", y_param, run_idx, use_design_var_as_x=True, sort_by_x=sort_by_x
+                "", y_param, run_idx, use_control_var_as_x=True, sort_by_x=sort_by_x
             )
 
             if not x_values or not y_values:
@@ -621,7 +621,7 @@ class OptimizationPlotter:
                     config.normalization,
                 )
 
-    def plot_design_vars_vs_iteration(
+    def plot_control_vars_vs_iteration(
         self,
         fig: Figure,
         axes: Union[Axes, List[Axes]],
@@ -681,13 +681,13 @@ class OptimizationPlotter:
         """
         # Get design variable information for labeling
         first_result = self.extractor.opt_results[0][0]
-        design_var_name = self.extractor.get_design_var_name_for_param(y_param)
-        _, design_var_unit = self.extractor.get_design_var_for_param(
+        control_var_name = self.extractor.get_control_var_name_for_param(y_param)
+        _, control_var_unit = self.extractor.get_control_var_for_param(
             y_param, first_result
         )
 
         # Set up the axis with proper labels
-        self._setup_ax(ax, config, y_label=f"{design_var_name} ({design_var_unit})")
+        self._setup_ax(ax, config, y_label=f"{control_var_name} ({control_var_unit})")
 
         for run_idx in range(self.num_runs):
             opt_result = self.extractor.opt_results[run_idx]
@@ -699,7 +699,7 @@ class OptimizationPlotter:
 
             # Get design variable values associated with the target parameter
             y_values = [
-                self.extractor.get_design_var_for_param(y_param, result)[0]
+                self.extractor.get_control_var_for_param(y_param, result)[0]
                 for result in opt_result
             ]
 
@@ -715,7 +715,7 @@ class OptimizationPlotter:
 
             x_filtered, y_filtered = zip(*valid_pairs)
 
-            run_label = f"{design_var_name} for {y_param}"
+            run_label = f"{control_var_name} for {y_param}"
             if self.num_runs > 1:
                 run_label += f" (run {run_idx+1})"
 
@@ -729,7 +729,7 @@ def plot_progress(
     block_plots: bool = False,
     save_figures: bool = False,
     plot_variance: bool = False,
-    plot_design_variables: Optional[Literal["chronological", "sorted"]] = None,
+    plot_control_variables: Optional[Literal["chronological", "sorted"]] = None,
     opt_target_list: Optional[List[OptTarget]] = None,
     save_path: Optional[str] = None
 ) -> None:
@@ -742,16 +742,16 @@ def plot_progress(
         block_plots: If True, block execution until plots are closed
         save_figures: If True, save figures to disk
         plot_variance: If True, plot mean and variance across runs
-        plot_design_variables: How to plot design variables ("chronological", "sorted", or None to disable)
+        plot_control_variables: How to plot design variables ("chronological", "sorted", or None to disable)
         opt_target_list: Optional list of optimization targets
     """
     # Validate input arguments
-    if plot_design_variables is not None and plot_design_variables not in [
+    if plot_control_variables is not None and plot_control_variables not in [
         "chronological",
         "sorted",
     ]:
         raise ValueError(
-            "plot_design_variables must be None, 'chronological', or 'sorted'"
+            "plot_control_variables must be None, 'chronological', or 'sorted'"
         )
 
     # Close existing figures
@@ -770,10 +770,10 @@ def plot_progress(
         plotter.plot_standard(fig, axs, plot_setting, plot_name)
 
         # Create additional plot types if requested
-        if plot_design_variables is not None:
+        if plot_control_variables is not None:
             if opt_target_list is None:
                 raise ValueError(
-                    "opt_target_list is required when plot_design_variables is set"
+                    "opt_target_list is required when plot_control_variables is set"
                 )
 
             # Plot parameters vs design variables
@@ -783,12 +783,12 @@ def plot_progress(
                 axs,
                 plot_setting,
                 plot_name,
-                sort_by_x=(plot_design_variables == "sorted"),
+                sort_by_x=(plot_control_variables == "sorted"),
             )
 
-            # Plot design variables vs iteration
+            # Plot control variables vs iteration
             fig, axs = plt.subplots(len(plot_setting))
-            plotter.plot_design_vars_vs_iteration(fig, axs, plot_setting, plot_name)
+            plotter.plot_control_vars_vs_iteration(fig, axs, plot_setting, plot_name)
 
     # Show plots
     plt.show(block=block_plots)

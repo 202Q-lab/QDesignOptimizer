@@ -153,24 +153,24 @@ def mock_opt_target_list():
         OptTarget(
             target_param_type=FREQ,
             involved_modes=[qubit],
-            design_var="design_var_lj_qubit_1",
-            design_var_constraint={"larger_than": "5nH", "smaller_than": "20nH"},
+            control_var="design_var_lj_qubit_1",
+            control_var_constraint={"larger_than": "5nH", "smaller_than": "20nH"},
             prop_to=lambda p, v: 1.0,
             independent_target=True,
         ),
         OptTarget(
             target_param_type=FREQ,
             involved_modes=[resonator],
-            design_var="design_var_length_resonator_1",
-            design_var_constraint={"larger_than": "4000um", "smaller_than": "6000um"},
+            control_var="design_var_length_resonator_1",
+            control_var_constraint={"larger_than": "4000um", "smaller_than": "6000um"},
             prop_to=lambda p, v: 1.0,
             independent_target=True,
         ),
         OptTarget(
             target_param_type=NONLIN,
             involved_modes=[qubit, resonator],
-            design_var="design_var_width_qubit_1",
-            design_var_constraint={"larger_than": "10um", "smaller_than": "30um"},
+            control_var="design_var_width_qubit_1",
+            control_var_constraint={"larger_than": "10um", "smaller_than": "30um"},
             prop_to=lambda p, v: 1.0,
             independent_target=False,
         ),
@@ -212,34 +212,34 @@ class TestDataExtractor:
         qubit_freq = param("qubit_1", "freq")
         assert extractor.get_parameter_value(qubit_freq, result, 0) == 5.0e9
 
-        # Test design variable
-        design_var = "design_var_lj_qubit_1"
-        assert extractor.get_parameter_value(design_var, result, 0) == 10.0
+        # Test control variable
+        control_var = "design_var_lj_qubit_1"
+        assert extractor.get_parameter_value(control_var, result, 0) == 10.0
 
         # Test parameter not found
         assert extractor.get_parameter_value("nonexistent", result, 0) is None
 
-    def test_get_design_var_name_for_param(self, mock_opt_target_list):
+    def test_get_control_var_name_for_param(self, mock_opt_target_list):
         """Test finding design variable name associated with a parameter."""
         extractor = DataExtractor([], {}, mock_opt_target_list)
 
         # Test frequency parameter
         freq_param = param("qubit_1", "freq")
         assert (
-            extractor.get_design_var_name_for_param(freq_param)
+            extractor.get_control_var_name_for_param(freq_param)
             == "design_var_lj_qubit_1"
         )
 
         # Test nonlinearity parameter
         nonlin_param = param_nonlin("qubit_1", "resonator_1")
         assert (
-            extractor.get_design_var_name_for_param(nonlin_param)
+            extractor.get_control_var_name_for_param(nonlin_param)
             == "design_var_width_qubit_1"
         )
 
         # Test parameter not found
         with pytest.raises(AssertionError):
-            extractor.get_design_var_name_for_param("nonexistent_param")
+            extractor.get_control_var_name_for_param("nonexistent_param")
 
     def test_extract_xy_data(
         self, mock_optimization_results, mock_system_target_params
@@ -256,9 +256,9 @@ class TestDataExtractor:
         assert x_values == [1, 2, 3]
         assert y_values == [5.0e9, 5.1e9, 5.2e9]
 
-        # Test extracting design variable vs frequency
-        design_var = "design_var_lj_qubit_1"
-        x_values, y_values = extractor.extract_xy_data(design_var, qubit_freq, 0)
+        # Test extracting control variable vs frequency
+        control_var = "design_var_lj_qubit_1"
+        x_values, y_values = extractor.extract_xy_data(control_var, qubit_freq, 0)
 
         assert x_values == [10.0, 9.8, 9.5]
         assert y_values == [5.0e9, 5.1e9, 5.2e9]
@@ -390,7 +390,7 @@ class TestOptimizationPlotter:
     @patch("matplotlib.pyplot.figure")
     @patch("matplotlib.pyplot.subplots")
     @patch("matplotlib.pyplot.show")
-    def test_plot_design_vars_vs_iteration(
+    def test_plot_control_vars_vs_iteration(
         self,
         mock_show,
         mock_subplots,
@@ -414,7 +414,7 @@ class TestOptimizationPlotter:
         qubit_freq = param("qubit_1", "freq")
         config = OptPltSet(ITERATION, qubit_freq, "Iteration", "Frequency")
 
-        plotter.plot_design_vars_vs_iteration(
+        plotter.plot_control_vars_vs_iteration(
             mock_fig, mock_axes, [config], "Test Plot"
         )
 
@@ -487,7 +487,7 @@ class TestPlotProgress:
             mock_system_target_params,
             mock_plot_settings,
             block_plots=False,
-            plot_design_variables="sorted",
+            plot_control_variables="sorted",
             opt_target_list=mock_opt_target_list,
         )
 
@@ -537,7 +537,7 @@ class TestPlotProgress:
                 [[]],  # Empty list of optimization results
                 {},  # Empty system target params
                 {},  # Empty plot settings
-                plot_design_variables="invalid",
+                plot_control_variables="invalid",
             )
 
         # Test missing opt_target_list when plot_design_variables is set
@@ -546,6 +546,6 @@ class TestPlotProgress:
                 [[]],  # Empty list of optimization results
                 {},  # Empty system target params
                 {"Test": [OptPltSet("x", "y")]},  # Non-empty plot settings
-                plot_design_variables="sorted",
+                plot_control_variables="sorted",
                 opt_target_list=None,
             )

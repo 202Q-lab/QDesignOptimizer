@@ -59,7 +59,7 @@ class DesignAnalysis:
     Args:
         state (DesignAnalysisState): State object containing design, render function, and target parameters.
         mini_study (MiniStudy): Simulation parameters including component names, modes, and passes.
-        opt_targets (List[OptTarget]): List of target physical parameters to optimize and their design variable relationships.
+        opt_targets (List[OptTarget]): List of target physical parameters to optimize and their control variable relationships.
         save_path (str): Location to save optimization results.
         update_design_variables (bool): Whether to automatically update design files with optimized values.
         plot_settings (dict): Configuration for progress visualization plots.
@@ -91,7 +91,7 @@ class DesignAnalysis:
 
         self.mini_study = mini_study
         self.opt_targets: List[OptTarget] = opt_targets or []
-        self.all_design_vars = [target.design_var for target in self.opt_targets]
+        self.all_control_vars = [target.control_var for target in self.opt_targets]
         self.render_qiskit_metal = state.render_qiskit_metal
         self.system_target_params = state.system_target_params
 
@@ -183,8 +183,8 @@ class DesignAnalysis:
         if self.opt_targets:
             for target in self.opt_targets:
                 assert (
-                    target.design_var in self.design.variables
-                ), f"Design variable {target.design_var} not found in design variables."
+                    target.control_var in self.design.variables
+                ), f"Control variable {target.control_var} not found in design variables."
                 if target.target_param_type == CHARGE_LINE_LIMITED_T1:
                     assert (
                         len(self.mini_study.capacitance_matrix_studies) != 0
@@ -245,10 +245,10 @@ class DesignAnalysis:
                         ), f"Target mode {mode} \
                             not found in modes which will be simulated."
 
-            design_variables = [target.design_var for target in self.opt_targets]
-            assert len(design_variables) == len(
-                set(design_variables)
-            ), "Design variables must be unique."
+            control_variables = [target.control_var for target in self.opt_targets]
+            assert len(control_variables) == len(
+                set(control_variables)
+            ), "Control variables must be unique."
 
     def update_var(self, updated_design_vars: dict, system_optimized_params: dict):
         """Update junction and design variables in mini_study, design, pinfo and."""
@@ -582,20 +582,20 @@ class DesignAnalysis:
             )
 
     def optimize_target(
-        self, updated_design_vars_input: dict, system_optimized_params: dict, save_figures: bool = False
+        self, updated_control_vars_input: dict, system_optimized_params: dict, save_figures: bool = False
     ):
-        """Run full optimization iteration to adjust design variables toward target parameters.
+        """Run full optimization iteration to adjust control variables toward target parameters.
 
         Performs these steps in sequence:
 
-        1. Updates design variables and system parameters
+        1. Updates control variables and system parameters
         2. Runs eigenmode simulation to extract frequencies and decay rates
         3. Performs energy participation ratio (EPR) analysis for nonlinearities
         4. Executes capacitance matrix studies if configured
         5. Saves results and generates visualization plots
 
         Args:
-            updated_design_vars_input (dict): Manual design variable overrides
+            updated_control_vars_input (dict): Manual control variable overrides
             system_optimized_params (dict): Manual system parameter overrides
 
         Note:
@@ -604,21 +604,21 @@ class DesignAnalysis:
         """
         if not system_optimized_params == {}:
             self.is_system_optimized_params_initialized = True
-        self.update_var(updated_design_vars_input, system_optimized_params)
+        self.update_var(updated_control_vars_input, system_optimized_params)
 
         if not self.is_system_optimized_params_initialized:
-            # bootstrap with initial design variables if no system_optimized_params exist
-            updated_design_vars = deepcopy(self.design.variables)
+            # bootstrap with initial control variables if no system_optimized_params exist
+            updated_control_vars = deepcopy(self.design.variables)
             minimization_results: list[dict] = []
             self.is_system_optimized_params_initialized = True
         else:
-            updated_design_vars, minimization_results = (
-                self.anmod_optimizer.calculate_target_design_var(
+            updated_control_vars, minimization_results = (
+                self.anmod_optimizer.calculate_target_control_vars(
                     self.system_optimized_params, self.design.variables
                 )
             )
-        log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
-        self.update_var(updated_design_vars, {})
+        log.info("Updated_control_vars%s", dict_log_format(updated_control_vars))
+        self.update_var(updated_control_vars, {})
 
         iteration_result = {}
         if (
