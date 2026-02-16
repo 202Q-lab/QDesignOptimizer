@@ -136,25 +136,20 @@ Migration from qiskit-metal to quantum-metal
 
 If you have an existing QDesignOptimizer installation with qiskit-metal, follow these steps to migrate:
 
-1. **Uninstall old packages:**
+**Delete your existing environment and recreate it** to ensure all dependencies are correctly installed:
 
 .. code-block:: bash
 
-    pip uninstall -y qiskit-metal pyside2
+    # Deactivate and remove the old environment
+    # If using conda:
+    conda deactivate
+    conda env remove -n qdesignenv
 
-2. **Update your environment:**
+    # If using venv:
+    deactivate
+    rm -rf qdesignenv  # On Windows: rmdir /s qdesignenv
 
-.. code-block:: bash
-
-    poetry install --with docs,analysis
-    pip install --no-deps quantum-metal
-
-3. **Verify the installation:**
-
-.. code-block:: python
-
-    from qiskit_metal import designs, MetalGUI
-    from qdesignoptimizer import DesignAnalysis
+Then follow the installation instructions above to create a fresh environment.
 
 **Note:** quantum-metal v0.5+ uses PySide6 instead of PySide2. The import paths remain ``qiskit_metal`` for backward compatibility.
 
