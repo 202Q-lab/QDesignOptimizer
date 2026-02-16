@@ -399,6 +399,10 @@ class DesignAnalysis:
                 chis = self.epra.get_chis(numeric=True)
                 participation_ratio = self.epra.get_participations() # normalized by default
 
+                # Strip tiny imaginary parts from numerical diagonalization (should be real for Hermitian H)
+                freqs = freqs.apply(lambda x: x.apply(lambda y: y.real if isinstance(y, complex) else y))
+                chis = chis.apply(lambda x: x.apply(lambda y: y.real if isinstance(y, complex) else y))
+
                 self._update_optimized_params_epr(freqs, chis, participation_ratio)
 
             self.eig_solver.setup.junctions = self.mini_study.jj_setup
