@@ -18,7 +18,7 @@ pip install qdesignoptimizer
 pip install --no-deps quantum-metal
 ```
 
-**Requirements:** Python 3.10 or 3.11, Ansys Electronics Desktop 2021 R2
+**Requirements:** Python 3.10 or 3.11, Ansys Electronics Desktop 2021 R2 or 2022 R2. 
 
 For detailed installation instructions including virtual environment setup, developer installation, troubleshooting, and migration from qiskit-metal, see the [full installation guide](https://202Q-lab.github.io/QDesignOptimizer/installation.html).
 

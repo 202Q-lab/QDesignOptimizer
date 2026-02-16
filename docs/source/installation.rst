@@ -9,10 +9,10 @@ This guide will help you install the ``qdesignoptimizer`` package and its depend
 Prerequisites
 =============
 
-- Python 3.10 or 3.11 (required)
+- Python 3.10 or 3.11 or 3.12 (required)
 - pip or poetry package manager. We recommend creating a virtual environment by following the steps below.
 - Git (for installation from repository)
-- Ansys HFSS. ``qdesignoptimizer`` has been tested with Ansys Electronics Desktop 2021 R2.
+- Ansys HFSS. ``qdesignoptimizer`` has been tested with Ansys Electronics Desktop 2021 R2 and 2022 R2.
 
 Installation with pip
 =====================
@@ -44,7 +44,7 @@ First, clone the repository and navigate to its directory:
 Creating a Virtual Environment
 ------------------------------
 
-It is strongly recommended to install the project in a separate virtual environment using Python 3.10 or 3.11. You have several options:
+It is strongly recommended to install the project in a separate virtual environment using our installation guide. You have several options:
 
 **Option 1: Using Poetry (Recommended)**
 
@@ -127,7 +127,7 @@ Troubleshooting
 
 **Common Issues:**
 
-- **Python Version Mismatch**: Ensure you're using Python 3.10 or 3.11
+- **Python Version Mismatch**: Ensure you're using Python 3.10 or 3.11 or 3.12
 - **Dependency Conflicts**: If you encounter dependency conflicts, try installing in a fresh virtual environment
 - **Ansys Connection Issues**: Make sure Ansys HFSS is correctly installed and licensed
 
