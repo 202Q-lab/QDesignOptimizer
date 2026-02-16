@@ -13,31 +13,24 @@ keywords = ["Quantum"]
 classifiers = ["Programming Language :: Python :: 3"]
 requires-python = ">=3.10,<3.13"
 dependencies = [
-  # Core scientific computing (directly used by QDO)
-  "numpy>=1.24.2,<2",              # Used by QDO, matches quantum-metal >=1.24.2,<2
-  "scipy>=1.10.0",                 # Used by QDO, matches quantum-metal >=1.10.0
-  "pandas>=2.1.1",                 # Used by QDO, matches quantum-metal >=2.1.1
-  "matplotlib>=3.9.0",             # Used by QDO, matches quantum-metal >=3.7.0
-
-  # Quantum/HFSS tools (directly used by QDO)
+ 
+  "gdstk>=0.9",
+  "geopandas>=1.0",
+  "matplotlib>=3.7.0",
+  "numpy>=1.26.4,<2",
+  "pandas>=2.1.1",
+  "pint>=0.21.0",
   "pyEPR-quantum @ git+https://github.com/zlatko-minev/pyEPR.git@master",  # Using master branch with numpy 1.26 compatibility fix
-  "pyaedt>=0.21,<0.24",            # Used by QDO, matches quantum-metal >=0.21,<0.24
-
-  # quantum-metal dependencies (needed because we install with --no-deps)
-  "addict>=2.4.0",                 # quantum-metal requirement
-  "gdstk>=0.9",                    # quantum-metal uses gdstk (not gdspy)
-  "geopandas>=1.0",                # quantum-metal requirement
-  "pint>=0.21.0",                  # quantum-metal requirement (note: 0.21, not 0.20)
-  "pygments>=2.14.0",              # quantum-metal requirement
-  "pyside6==6.8",                  # quantum-metal GUI requirement
-  "qdarkstyle>=3.1",               # quantum-metal GUI theming
-  "qutip>=5.0.0",                  # quantum-metal quantum simulation
-  "shapely>=2.0.1",                # quantum-metal geometry
-  "scqubits>=4.1.0",               # quantum-metal superconducting qubits
-  "gmsh>=4.11.1",                  # quantum-metal meshing
-  "pyyaml>=6.0",                   # quantum-metal configuration
-
-  # Jupyter support
+  "pygments>=2.14.0", 
+  "pyside6>=6.8",
+  "qdarkstyle>=3.1",
+  "qutip>=5.0.0",
+  "scipy>=1.10.0",
+  "shapely>=2.0.1",
+  "scqubits>=4.1.0",
+  "gmsh>=4.11.1",
+  "pyaedt>=0.21,<0.24", # pyaedt 0.24 has some bugs (Jan 23, 2026)
+  "pyyaml>=6.0", # Used for the Elmer runner. 
   "ipython>=8.10.0",
   "ipykernel",
 ]
