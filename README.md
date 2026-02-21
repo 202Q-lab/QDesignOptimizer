@@ -15,7 +15,7 @@ For detailed documentation, visit [https://202Q-lab.github.io/QDesignOptimizer/]
 
 ```bash
 pip install qdesignoptimizer
-pip install --no-deps quantum-metal
+pip install --no-deps quantum-metal==0.5.3.post1
 ```
 
 **Requirements:** Python 3.10 or 3.11, Ansys Electronics Desktop 2021 R2 or 2022 R2. 
