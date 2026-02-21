@@ -9,7 +9,7 @@ This guide will help you install the ``qdesignoptimizer`` package and its depend
 Prerequisites
 =============
 
-- Python 3.10 or 3.11 or 3.12 (required)
+- Python 3.11 or 3.12 (required)
 - pip or poetry package manager. We recommend creating a virtual environment by following the steps below.
 - Git (for installation from repository)
 - Ansys HFSS. ``qdesignoptimizer`` has been tested with Ansys Electronics Desktop 2021 R2 and 2022 R2.
@@ -68,7 +68,7 @@ Create and activate a virtual environment using Python's built-in venv module:
 .. code-block:: bash
 
     # Create new virtual environment
-    python3.10 -m venv qdesignenv
+    python3.12 -m venv qdesignenv
 
     # Activate the environment
     # On Linux/MacOS:
