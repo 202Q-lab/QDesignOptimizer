@@ -11,27 +11,27 @@ license = "Apache License 2.0"
 readme = "README.md"
 keywords = ["Quantum"]
 classifiers = ["Programming Language :: Python :: 3"]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 dependencies = [
  
   "gdstk>=0.9",
   "geopandas>=1.0",
-  "matplotlib>=3.7.0",
+  "matplotlib>=3.10.8",
   "numpy>=1.26.4,<2",
-  "pandas>=2.1.1",
+  "pandas>=2.3.3",
   "pint>=0.21.0",
-  "pyEPR-quantum @ git+https://github.com/zlatko-minev/pyEPR.git@master",  # Using master branch with numpy 1.26 compatibility fix
+  "pyEPR-quantum @ git+https://github.com/zlatko-minev/pyEPR.git@master",
   "pygments>=2.14.0", 
-  "pyside6>=6.8",
+  "pyside6>=6.10.2",
   "qdarkstyle>=3.1",
   "qutip>=5.0.0",
   "scipy>=1.10.0",
-  "shapely>=2.0.1",
+  "shapely>=2.0.6, <2.1",
   "scqubits>=4.1.0",
   "gmsh>=4.11.1",
-  "pyaedt>=0.21,<0.24", # pyaedt 0.24 has some bugs (Jan 23, 2026)
-  "pyyaml>=6.0", # Used for the Elmer runner. 
-  "ipython>=8.10.0",
+  "pyaedt>=0.21,<0.24", 
+  "pyyaml>=6.0.3",
+  "ipython>=9.10.0", 
   "ipykernel",
 ]
 
