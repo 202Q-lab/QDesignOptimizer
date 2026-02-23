@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0] - 2026-02-21
+
+### Breaking Changes
+- **Migrated from `qiskit-metal` to `quantum-metal`**
+  - Users must recreate their virtual environment (not just update)
+  - See migration guide in installation documentation
+- **Updated GUI framework from PySide2 to PySide6 (6.10+)**
+  - Import paths remain `qiskit_metal` for backward compatibility
+
+### Changed
+- Updated numpy compatibility for pyEPR
+- Updated matplotlib, shapely, ipython, pandas, pyaedt and pyEPR dependencies
+- Improved installation documentation
+
+### Fixed
+- Fixed pyEPR numpy compatibility issues 
+
 ## [0.0.2]
 
 ### Added

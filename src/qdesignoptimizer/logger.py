@@ -2,6 +2,7 @@
 
 import json
 import logging
+import numpy as np
 
 LOG_LEVEL = logging.INFO
 
@@ -54,6 +55,24 @@ if handler_console is not None:
     log.addHandler(CustomHandler())
 
 
+class NumpyComplexEncoder(json.JSONEncoder):
+    """Custom JSON encoder for numpy and complex types."""
+
+    def default(self, obj):
+        """Convert non-serializable types to serializable formats."""
+        if isinstance(obj, complex):
+            return {"real": obj.real, "imag": obj.imag}
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, np.complexfloating):
+            return {"real": obj.real, "imag": obj.imag}
+        return super().default(obj)
+
+
 def dict_log_format(data: dict) -> str:
     """Return formatted dictionary for pretty printing inside log messages."""
-    return "\n" + json.dumps(data, indent=4)
+    return "\n" + json.dumps(data, indent=4, cls=NumpyComplexEncoder)

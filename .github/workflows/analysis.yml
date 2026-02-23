@@ -37,7 +37,7 @@ jobs:
       - name: Install project and dependencies
         run: |
           poetry install --with analysis
-          pip install --no-deps qiskit-metal==0.1.5
+          pip install --no-deps quantum-metal
 
       - name: Analyze the code with pylint
         run: |
