@@ -29,7 +29,7 @@ jobs:
         shell: pwsh
         run: |
           poetry install --with docs,analysis
-          pip install --no-deps quantum-metal==0.5.3.post1
+          pip install --no-deps quantum-metal
       - name: Add credentials
         run: |
           poetry config repositories.test-pypi https://test.pypi.org/legacy/

@@ -22,9 +22,9 @@ The simplest way to install ``qdesignoptimizer`` is via the Python package manag
 .. code-block:: bash
 
     pip install qdesignoptimizer
-    pip install --no-deps quantum-metal==0.5.3.post1
+    pip install --no-deps quantum-metal
 
-Note that Quantum Metal (formerly Qiskit Metal) must be installed separately and without dependencies to make it work properly. The package uses PySide6 (version 6.8+) for the GUI interface.
+Note that Quantum Metal (formerly Qiskit Metal) must be installed separately and without dependencies to make it work properly. The package uses PySide6 (version 6.8+) for the GUI interface. Note that the full installation has been tested with the version quantum-metal==0.5.3.post1. 
 
 Installation from GitHub Repository
 ===================================
@@ -90,7 +90,7 @@ For regular users, install the project with its dependencies and Quantum Metal:
 .. code-block:: bash
 
     poetry install
-    pip install --no-deps quantum-metal==0.5.3.post1
+    pip install --no-deps quantum-metal
 
 Developer Installation
 ----------------------
@@ -100,7 +100,7 @@ For developers who want to contribute to the project, install with additional de
 .. code-block:: bash
 
     poetry install --with docs,analysis
-    pip install --no-deps quantum-metal==0.5.3.post1
+    pip install --no-deps quantum-metal
     pre-commit install
 
 This will install:
