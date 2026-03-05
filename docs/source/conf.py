@@ -73,7 +73,7 @@ github_doc_root = "https://github.com/rtfd/recommonmark/tree/master/doc/"
 
 
 def setup(app):
-    print("Copying example notebooks into docs/source/_projects")
+    print("Copying example notebooks into docs/source/_tutorials")
     run_apidoc(None)
     source = Path(__file__).parent
     project_root = source.parents[1]
@@ -88,18 +88,18 @@ def setup(app):
         return result
 
     shutil.rmtree(
-        os.path.join(project_root, "docs/source/_projects"), ignore_errors=True
+        os.path.join(project_root, "docs/source/_tutorials"), ignore_errors=True
     )
     shutil.copytree(
-        os.path.join(project_root, "projects"),
-        os.path.join(project_root, "docs/source/_projects"),
+        os.path.join(project_root, "tutorials"),
+        os.path.join(project_root, "docs/source/_tutorials"),
         ignore=all_but_ipynb,
     )
     app.add_css_file("my_theme.css")
 
     def clean_examples_dir(_app, _exception):
         shutil.rmtree(
-            os.path.join(project_root, "docs/source/_projects"), ignore_errors=True
+            os.path.join(project_root, "docs/source/_tutorials"), ignore_errors=True
         )
 
     app.connect("build-finished", clean_examples_dir)
