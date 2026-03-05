@@ -2,6 +2,18 @@
 
 Three tutorial examples are provided, ranging from a single-qubit chip to a scalability benchmark with thousands of parameters.
 
+## Where to start
+
+**New to QDO?** Start with `examples_coupled_transmon_chip/` and open `main_eigenmode_single_qubit_resonator.ipynb`. It covers a single transmon qubit with a readout resonator — the simplest complete workflow from chip layout to optimized device parameters. Once familiar with the basics, continue in the same folder:
+
+- Move to `main_eigenmode_two_qubit_resonator.ipynb` to add a second qubit and a coupler.
+- Use `main_capacitance_target_resonator.ipynb` or `main_kappa_target_resonator.ipynb` if you need faster simulations for specific targets.
+- Use `main_charge_line_decay_single_qubit.ipynb` if T1 limits from control lines are relevant to your design.
+
+**Working with a tunable coupler?** Go directly to `examples_coupled_transmons_tunable_coupler_chip/` after completing the single-qubit notebook.
+
+**Interested in large-scale optimization or the ANMod algorithm?** See `example_clusters_anmod_scaliability/` — this is an advanced standalone example, not tied to a physical chip design.
+
 ---
 
 ## 1. `examples_coupled_transmon_chip/`
