@@ -26,6 +26,9 @@ def purcell_t1_transmon_resonator(chi, kappa, alpha, f_q, f_r):
 
     All input frequencies must be in consistent units (Hz, i.e. cycles/s, not rad/s).
 
+    chi and alpha are taken as absolute values. This is consistent with pyEPR, which
+    only returns absolute values for chi and anharmonicity.
+
     Args:
         chi (float): Absolute dispersive shift in the bosonic convention (Hz).
         kappa (float): Resonator linewidth (Hz).
