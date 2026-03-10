@@ -7,4 +7,5 @@ User Guide
    :maxdepth: 3
 
    quickstart
-   examples
+   tutorials
+   videos
