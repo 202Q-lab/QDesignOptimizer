@@ -1,6 +1,6 @@
 # Tutorials
 
-Three tutorial examples are provided, ranging from a single-qubit chip to a scalability benchmark with thousands of parameters.
+Three tutorial examples are provided, ranging from a single-qubit chip to a general, not directly quantum circuit related scalability benchmark with thousands of parameters.
 
 ## Where to start
 
@@ -25,7 +25,7 @@ A superconducting chip with one or two transmon qubits, coplanar waveguide reado
 - How to set optimization targets (frequency, anharmonicity, kappa, chi, T1, capacitance)
 - The difference between eigenmode and capacitance-matrix simulations and when to use each
 - How to include surface material properties and compute participation ratios (p-ratio)
-- How to model qubit decoherence from a nearby charge line
+- How to model qubit relaxation to a nearby charge line
 - How to scale up from one qubit to two qubits with a coupler
 
 **Notebooks:**
@@ -76,7 +76,6 @@ A scalability benchmark for the ANMod optimizer showcasing an abstract mathemati
 
 **You will learn:**
 - How the ANMod optimizer scales to thousands of parameters
-- How to define a large parametric system using alpha/beta/gamma coupling matrices
 - How to apply perturbative corrections for weak inter-cluster coupling
 - How to track and report convergence across many parameters (relative error per parameter)
 - How to visualize optimization convergence at scale (parameter evolution, design variable evolution, approximation accuracy)
