@@ -344,6 +344,10 @@ class DesignAnalysisState:
         system_optimized_params (Optional[dict]): Dictionary of current optimized values
             for system parameters. Initially can be None and will be populated during
             optimization. Should follow the same structure as system_target_params.
+        exclude_param_from_update (List[str]): List of parameter names to exclude from being updated,
+            useful when partitioning circuits and a perifial mode is included to obtain a more accurate result for
+            a non-perifial mode but the e.g. frequency and nonlinearity of the perifial mode needs other perifial modes
+            to be included for accurate results.
 
     Note:
         The system_target_params and system_optimized_params dictionaries should use
@@ -382,9 +386,11 @@ class DesignAnalysisState:
         render_qiskit_metal: Callable,
         system_target_params: dict,
         system_optimized_params: Optional[dict] = None,
+        exclude_param_from_update: Optional[List[str]] = None,
     ):
         """Initialize a design analysis state."""
         self.design = design
         self.render_qiskit_metal = render_qiskit_metal
         self.system_target_params = system_target_params
         self.system_optimized_params = system_optimized_params
+        self.exclude_param_from_update = exclude_param_from_update or []

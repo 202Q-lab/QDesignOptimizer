@@ -1,8 +1,8 @@
 """Core class for managing, optimizing and analyzing quantum circuit designs using electromagnetic simulations."""
 
 import io
-import os
 import json
+import os
 from contextlib import redirect_stdout
 from copy import deepcopy
 from dataclasses import asdict
@@ -80,6 +80,7 @@ class DesignAnalysis:
         minimization_tol=1e-12,
     ):
         self.design_analysis_version = qdesignoptimizer.__version__
+        self.state = state
         self.design = state.design
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
@@ -100,6 +101,7 @@ class DesignAnalysis:
             sys_opt_param = state.system_optimized_params
             self.is_system_optimized_params_initialized = True
         else:
+
             def fill_leaves_with_none(nested_dict):
                 for key, value in nested_dict.items():
                     if isinstance(value, dict):
@@ -177,7 +179,6 @@ class DesignAnalysis:
                 continue
             self.jj_setups_to_include_in_epr[key] = val
 
-
     def _validate_opt_targets(self):
         """Validate opt_targets."""
         if self.opt_targets:
@@ -222,18 +223,20 @@ class DesignAnalysis:
                     assert (
                         len(target.involved_modes) == 2
                     ), f"Target for {target.target_param_type} expects 2 modes."
-                    
+
                     # Check unique modes needed for simulation
-                    # e.g. the computation of the anharmonicity only requires one mode in the mini_study setup but two modes are specified in the target. 
+                    # e.g. the computation of the anharmonicity only requires one mode in the mini_study setup but two modes are specified in the target.
                     # in contrast, the computation of cross-Kerr requires two different modes to be simulated.
                     unique_modes = set(target.involved_modes)
-                    assert len(self.mini_study.modes) >= len(unique_modes), \
-                        f"Target for {target.target_param_type} requires {len(unique_modes)} unique mode(s) \
+                    assert len(self.mini_study.modes) >= len(
+                        unique_modes
+                    ), f"Target for {target.target_param_type} requires {len(unique_modes)} unique mode(s) \
                         but only {len(self.mini_study.modes)} mode(s) will be simulated."
-                    
+
                     for mode in unique_modes:
-                        assert mode in self.mini_study.modes, \
-                            f"Target mode {mode} not found in modes which will be simulated."
+                        assert (
+                            mode in self.mini_study.modes
+                        ), f"Target mode {mode} not found in modes which will be simulated."
                 else:
                     assert len(self.mini_study.modes) >= len(
                         target.involved_modes
@@ -264,6 +267,8 @@ class DesignAnalysis:
             **self.system_optimized_params,
             **system_optimized_params,
         }
+        if self.is_system_optimized_params_initialized:
+            self.state.system_optimized_params = self.system_optimized_params
 
     def get_fine_mesh_names(self):
         """The fine mesh for the eigenmode study of HFSS can be set in two different ways. First, via an attribute in the component class with function name "get_meshing_names".
@@ -380,7 +385,7 @@ class DesignAnalysis:
 
     def run_epr(self):
         """Run EPR, requires design with junctions."""
-        
+
         if self.jj_setups_to_include_in_epr:
             self.eig_solver.setup.junctions = self.jj_setups_to_include_in_epr
 
@@ -397,18 +402,23 @@ class DesignAnalysis:
                 self.epra.plot_hamiltonian_results()
                 freqs = self.epra.get_frequencies(numeric=True)
                 chis = self.epra.get_chis(numeric=True)
-                participation_ratio = self.epra.get_participations() # normalized by default
+                participation_ratio = (
+                    self.epra.get_participations()
+                )  # normalized by default
 
                 # Strip tiny imaginary parts from numerical diagonalization (should be real for Hermitian H)
-                freqs = freqs.apply(lambda x: x.apply(lambda y: y.real if isinstance(y, complex) else y))
-                chis = chis.apply(lambda x: x.apply(lambda y: y.real if isinstance(y, complex) else y))
+                freqs = freqs.apply(
+                    lambda x: x.apply(lambda y: y.real if isinstance(y, complex) else y)
+                )
+                chis = chis.apply(
+                    lambda x: x.apply(lambda y: y.real if isinstance(y, complex) else y)
+                )
 
                 self._update_optimized_params_epr(freqs, chis, participation_ratio)
 
             self.eig_solver.setup.junctions = self.mini_study.jj_setup
 
             return chis, participation_ratio
-        
 
     def _surface_rendering_for_surface_participation_ratios(self):
         """Render surfaces for surface participation ratio analysis.
@@ -505,9 +515,12 @@ class DesignAnalysis:
         for idx, (mode, freq) in enumerate(self.get_simulated_modes_sorted()):
             freq = eig_result["Freq. (Hz)"][idx]
             decay = eig_result["Kappas (Hz)"][idx]
-
-            self.system_optimized_params[param(mode, FREQ)] = freq
-            if param(mode, KAPPA) in self.system_target_params:
+            if param(mode, FREQ) not in self.state.exclude_param_from_update:
+                self.system_optimized_params[param(mode, FREQ)] = freq
+            if (
+                param(mode, KAPPA) in self.system_target_params
+                and param(mode, KAPPA) not in self.state.exclude_param_from_update
+            ):
                 self.system_optimized_params[param(mode, KAPPA)] = decay
 
     def _get_mode_idx_map(self):
@@ -523,7 +536,10 @@ class DesignAnalysis:
         return mode_idx
 
     def _update_optimized_params_epr(
-        self, freq_ND_results: pd.DataFrame, epr_result: pd.DataFrame, participation_ratio: pd.DataFrame
+        self,
+        freq_ND_results: pd.DataFrame,
+        epr_result: pd.DataFrame,
+        participation_ratio: pd.DataFrame,
     ):
 
         MHz = 1e6
@@ -532,21 +548,30 @@ class DesignAnalysis:
         freq_column = 0
 
         for mode, _ in mode_idx.items():
-            self.system_optimized_params[param(mode, FREQ)] = (
-                freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
-            )
+            if param(mode, FREQ) not in self.state.exclude_param_from_update:
+                self.system_optimized_params[param(mode, FREQ)] = (
+                    freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
+                )
 
         for mode_i in self.mini_study.modes:
             for mode_j in self.mini_study.modes:
-                self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
-                    epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
-                )
+                if (
+                    param_nonlin(mode_i, mode_j)
+                    not in self.state.exclude_param_from_update
+                ):
+                    self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
+                        epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
+                    )
 
         for mode in self.mini_study.modes:
             for jj_idx, junction in enumerate(self.jj_setups_to_include_in_epr):
-                self.system_optimized_params[param_participation_ratio(mode, junction)] = (
-                    participation_ratio.iloc[(mode_idx[mode], jj_idx)]
-                )
+                if (
+                    param_participation_ratio(mode, junction)
+                    not in self.state.exclude_param_from_update
+                ):
+                    self.system_optimized_params[
+                        param_participation_ratio(mode, junction)
+                    ] = participation_ratio.iloc[(mode_idx[mode], jj_idx)]
 
     def _update_optimized_params_capacitance_simulation(
         self,
@@ -561,9 +586,15 @@ class DesignAnalysis:
 
         for capacitance_names in capacitance_names_all_targets:
             try:
-                self.system_optimized_params[param_capacitance(*capacitance_names)] = (
-                    capacitance_matrix.loc[capacitance_names[0], capacitance_names[1]]
-                )
+                if (
+                    param_capacitance(*capacitance_names)
+                    not in self.state.exclude_param_from_update
+                ):
+                    self.system_optimized_params[
+                        param_capacitance(*capacitance_names)
+                    ] = capacitance_matrix.loc[
+                        capacitance_names[0], capacitance_names[1]
+                    ]
             except KeyError:
                 log.warning(
                     "Warning: capacitance %s not found in capacitance matrix with names %s",
@@ -581,12 +612,19 @@ class DesignAnalysis:
                 )
             param_value = capacitance_study.get_decay_parameter_value()
             log.info(f"Computed {param_type} value: {param_value}")
-            self.system_optimized_params[param(capacitance_study.mode, param_type)] = (
-                param_value
-            )
+            if (
+                param(capacitance_study.mode, param_type)
+                not in self.state.exclude_param_from_update
+            ):
+                self.system_optimized_params[
+                    param(capacitance_study.mode, param_type)
+                ] = param_value
 
     def optimize_target(
-        self, updated_design_vars_input: dict, system_optimized_params: dict, save_figures: bool = False
+        self,
+        updated_design_vars_input: dict,
+        system_optimized_params: dict,
+        save_figures: bool = False,
     ):
         """Run full optimization iteration to adjust design variables toward target parameters.
 
@@ -616,11 +654,18 @@ class DesignAnalysis:
             minimization_results: list[dict] = []
             self.is_system_optimized_params_initialized = True
         else:
-            updated_design_vars, minimization_results = (
-                self.anmod_optimizer.calculate_target_design_var(
-                    self.system_optimized_params, self.design.variables
+            try:
+                updated_design_vars, minimization_results = (
+                    self.anmod_optimizer.calculate_target_design_var(
+                        self.system_optimized_params, self.design.variables
+                    )
                 )
-            )
+            except Exception:
+                print(
+                    "Design variable update failed, but is expected for a partitioned optimization until all parameters have been simulated."
+                )
+                updated_design_vars = deepcopy(self.design.variables)
+                minimization_results: list[dict] = []
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
