@@ -8,8 +8,8 @@ __pycache__/
 
 # Optimization info
 *.npy
-projects/**/out/
-projects/*/*.png
+tutorials/**/out/
+tutorials/*/*.png
 
 # publication folder (make exceptions for data and figures)
 !publication/data/simulations_single_qubit/*.npy

@@ -1,0 +1,42 @@
+# author: Lukas Splitthoff
+# date: Mar 28, 2026
+# Description: Lukas executed the simulation tutorials\examples_coupled_transmon_chip\main_eigenmode_single_qubit_resonator.ipynb (1 iteration == no optimization, just simulation) including fine mesh for several mesh refinement passes and several executions of the same simulations trying to better understand the estimation of kappa using eigenmode simulations. The simulations have been executed using Ansys Electronics Desktop 2022 R2.3 on a Windows 11 Education 25H2 (64bit) with a Intel(R) Core(TM) i7-14700 (2.10 GHz) and 63.7 GB usable RAM 
+
+# Frequency (GHz) vs nbr of passes [passes, 5x executions]
+3, 6.883191, 6.869308, 6.90689, 6.847065, 6.832122
+4, 6.963785, 6.96014, 6.961672, 6.965317, 6.962471
+5, 6.99612, 6.994328, 6.998681, 7.00649, 6.9928
+6, 7.011766, 7.018387, 7.009205, 7.012297, 7.011766
+7, 7.025962, 7.020773, 7.031443, 7.025432, 7.025432
+8, 7.029626, 7.028231, 7.027542, 7.030699, 7.028446
+9, 7.032291, 7.033418, 7.030972, 7.032291, 7.032567
+10, 7.034127, 7.034986, 7.03366, 7.03366, 7.033034
+
+# Kappa (Hz) vs nbr of passes [passes, 5x executions]
+3, 173861, 97000, 173218, 103208, 165653
+4, 181736, 129296, 176459, 157957, 162385
+5, 192524, 201594, 195316, 154918, 193907
+6, 155965, 199893, 201319, 201213, 155965
+7, 209134, 198991, 204771, 199532, 199532
+8, 267937, 208347, 251344, 207607, 276965
+9, 203937, 263274, 244498, 203937, 269376
+10, 205308, 250608, 231055, 231055, 205194
+
+# Simulation time (s) vs nbr of passes [passes, 5x executions]
+3, 139, 183, 153, 179, 201
+4, 205, 208, 224, 241, 200
+5, 483, 319, 199, 268, 336
+6, 508, 517, 478, 480, 513
+7, 1106, 784, 888, 437, 425
+8, 905, 1278, 1025, 973, 1059
+9, 1656, 1707, 1734, 989, 1256
+10, 3265, 1693, 1585, 1583, 1824
+
+
+
+
+
+
+
+
+
