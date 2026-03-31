@@ -150,8 +150,8 @@ def make_publication_plot(values, save_dir=None, show_plot=True):
     stats = _classify_runs(values)
     seed_idx = np.arange(len(values))
 
-    fig, ax = plt.subplots(1, 1, figsize=(3.5 * 6.7, 3.5 * 3.35))
-    fig.subplots_adjust(left=0.10, right=0.99, bottom=0.14, top=0.97)
+    fig, ax = plt.subplots(1, 1, figsize=(3.5 * 3.35, 3.5 * 3.35))
+    fig.subplots_adjust(left=0.18, right=0.98, bottom=0.15, top=0.97)
 
     # Seed-wise performance map
     ax.scatter(
@@ -192,7 +192,7 @@ def make_publication_plot(values, save_dir=None, show_plot=True):
     ax.set_ylabel("Converged parameters")
     ax.set_ylim(2000, 3010)
     ax.grid(True, alpha=0.3)
-    ax.legend(loc="lower left", fontsize=24, frameon=False)
+    ax.legend(loc="center left", fontsize=20, frameon=False)
 
     if save_dir is None:
         save_dir = Path(__file__).resolve().parent / "out"
@@ -200,7 +200,7 @@ def make_publication_plot(values, save_dir=None, show_plot=True):
         save_dir = Path(save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    png_path = save_dir / "convergence_100_seeds_publication.png"
+    png_path = save_dir / "FigS7_convergence_100_seeds.png"
     fig.savefig(png_path, dpi=600)
 
     print(f"Saved: {png_path}")

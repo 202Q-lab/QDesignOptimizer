@@ -80,7 +80,9 @@ class DesignAnalysis:
         minimization_tol=1e-12,
     ):
         self.design_analysis_version = qdesignoptimizer.__version__
-        self.state = state
+        self.state = (
+            state  # the system_optimized_params will be synced with the injected state
+        )
         self.design = state.design
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
