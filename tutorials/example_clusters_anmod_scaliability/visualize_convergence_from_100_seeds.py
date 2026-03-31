@@ -112,16 +112,23 @@ convergence = [
 N_PARAMS = 3000
 GOOD_CONVERGENCE_THRESHOLD = 2990
 
+COLORS = {
+    "good": "#009639",
+    "partial": "#F58220",
+    "diverged": "#E30613",
+    "stuck": "#93328E",
+    "line_thr": "#8C8C8C",
+}
+
 
 def _set_publication_style():
-    """Mirror typography and plotting style used in plot_convergence.py."""
-    plt.rcParams["axes.formatter.useoffset"] = False
     plt.rcParams.update(
         {
             "font.family": "serif",
             "font.serif": ["Times New Roman"],
-            "font.size": 35,
+            "font.size": 10,
             "mathtext.fontset": "stix",
+            "axes.formatter.useoffset": False,
         }
     )
 
@@ -150,49 +157,81 @@ def make_publication_plot(values, save_dir=None, show_plot=True):
     stats = _classify_runs(values)
     seed_idx = np.arange(len(values))
 
-    fig, ax = plt.subplots(1, 1, figsize=(3.5 * 3.35, 3.5 * 3.35))
-    fig.subplots_adjust(left=0.18, right=0.98, bottom=0.15, top=0.97)
+    fig, (ax_top, ax_bot) = plt.subplots(
+        2,
+        1,
+        figsize=(3.35, 1.9),
+        gridspec_kw={"height_ratios": [6, 1], "hspace": 0},
+    )
+    fig.subplots_adjust(left=0.17, right=0.97, bottom=0.20, top=0.97)
 
-    # Seed-wise performance map
-    ax.scatter(
+    # --- Top panel: converged seeds ---
+    sc_good = ax_top.scatter(
         seed_idx[stats["is_good"]],
         stats["values"][stats["is_good"]],
-        s=80,
+        s=12,
         marker="o",
+        color=COLORS["good"],
         alpha=0.85,
-        label=f"Good ($\\geq${GOOD_CONVERGENCE_THRESHOLD})",
+        label=f"Good ($N_p \\geq {GOOD_CONVERGENCE_THRESHOLD}$)",
+        zorder=3,
     )
-    ax.scatter(
+    sc_partial = ax_top.scatter(
         seed_idx[stats["is_partial"]],
         stats["values"][stats["is_partial"]],
-        s=95,
+        s=14,
         marker="^",
+        color=COLORS["partial"],
         alpha=0.90,
-        label="Partial",
+        label=f"Partial ($0 < N_p < {GOOD_CONVERGENCE_THRESHOLD}$)",
+        zorder=3,
     )
-    ax.scatter(
+    ax_top.set_ylabel("Converged parameters")
+    ax_top.set_ylim(1975, 3050)
+    ax_top.set_xlim(-1, len(values))
+    ax_top.tick_params(bottom=False, labelbottom=False)
+
+    # --- Bottom panel: diverged and stuck ---
+    sc_div = ax_bot.scatter(
         seed_idx[stats["is_diverged"]],
-        np.full(np.sum(stats["is_diverged"]), 2000),
-        s=95,
+        np.full(np.sum(stats["is_diverged"]), 0.5),
+        s=14,
         marker="x",
+        color=COLORS["diverged"],
         alpha=0.90,
         label="Diverged",
+        zorder=3,
+        linewidths=1.0,
     )
-    ax.scatter(
+    sc_stuck = ax_bot.scatter(
         seed_idx[stats["is_stuck"]],
-        np.full(np.sum(stats["is_stuck"]), 2000),
-        s=95,
+        np.full(np.sum(stats["is_stuck"]), 0.5),
+        s=14,
         marker="s",
+        color=COLORS["stuck"],
         alpha=0.90,
         label="Stuck",
+        zorder=3,
     )
-    ax.axhline(N_PARAMS, linestyle="--", linewidth=2.5, alpha=0.7)
-    ax.axhline(GOOD_CONVERGENCE_THRESHOLD, linestyle=":", linewidth=2.5, alpha=0.7)
-    ax.set_xlabel("Seed")
-    ax.set_ylabel("Converged parameters")
-    ax.set_ylim(2000, 3010)
-    ax.grid(True, alpha=0.3)
-    ax.legend(loc="center left", fontsize=20, frameon=False)
+    ax_bot.set_ylim(0, 1)
+    ax_bot.set_xlim(-1, len(values))
+    ax_bot.set_yticks([0.5])
+    ax_bot.set_yticklabels(["Div./\nStuck"], fontsize=6.5)
+    ax_bot.tick_params(axis="y", length=0)
+    ax_bot.set_xlabel("Seed")
+
+    # --- Legend (top panel, all handles) ---
+    handles = [sc_good, sc_partial, sc_div, sc_stuck]
+    ax_top.legend(
+        handles=handles,
+        loc="lower right",
+        fontsize=7,
+        frameon=False,
+        handlelength=1.8,
+        handletextpad=0.4,
+        labelspacing=0.3,
+    )
+    # fig.tight_layout()
 
     if save_dir is None:
         save_dir = Path(__file__).resolve().parent / "out"
@@ -212,4 +251,4 @@ def make_publication_plot(values, save_dir=None, show_plot=True):
 
 
 if __name__ == "__main__":
-    make_publication_plot(convergence, show_plot=True)
+    make_publication_plot(convergence, show_plot=False)
