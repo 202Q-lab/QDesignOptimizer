@@ -89,8 +89,8 @@ PLOT_SETTINGS_TWO_QB = {
         OptPltSet(
             n.ITERATION,
             [
-                param_nonlin(n.COUPLER_12, n.QUBIT_2),
                 param_nonlin(n.COUPLER_12, n.QUBIT_1),
+                param_nonlin(n.COUPLER_12, n.QUBIT_2),
             ],
             y_label="QB-COUPLER Chi",
         ),
