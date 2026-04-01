@@ -1,7 +1,7 @@
 """Data structures for organizing quantum circuit design optimization workflows."""
 
 from dataclasses import dataclass, field, fields
-from typing import Callable, Dict, Iterator, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -344,10 +344,6 @@ class DesignAnalysisState:
         system_optimized_params (Optional[dict]): Dictionary of current optimized values
             for system parameters. Initially can be None and will be populated during
             optimization. Should follow the same structure as system_target_params.
-        exclude_param_from_update (List[str]): List of parameter names to exclude from being updated,
-            useful when partitioning circuits and a perifial mode is included to obtain a more accurate result for
-            a non-perifial mode but the e.g. frequency and nonlinearity of the perifial mode needs other perifial modes
-            to be included for accurate results.
 
     Note:
         The system_target_params and system_optimized_params dictionaries should use
@@ -386,11 +382,45 @@ class DesignAnalysisState:
         render_qiskit_metal: Callable,
         system_target_params: dict,
         system_optimized_params: Optional[dict] = None,
-        exclude_param_from_update: Optional[List[str]] = None,
     ):
         """Initialize a design analysis state."""
         self.design = design
         self.render_qiskit_metal = render_qiskit_metal
         self.system_target_params = system_target_params
         self.system_optimized_params = system_optimized_params
-        self.exclude_param_from_update = exclude_param_from_update or []
+
+
+@dataclass
+class SimulationResults:
+    """Container for saved simulation data with dictionary-like access."""
+
+    optimization_results: List[Dict[str, Any]]
+    system_target_params: Dict[str, Any]
+    plot_settings: Optional[Dict[str, Any]]
+    design_analysis_version: str
+
+    def __getitem__(self, key: str) -> Any:
+        # Enables dictionary-style read access, e.g. result["system_target_params"].
+        return getattr(self, key)
+
+    def keys(self) -> Iterator[str]:
+        for field_info in fields(self):
+            yield field_info.name
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "optimization_results": self.optimization_results,
+            "system_target_params": self.system_target_params,
+            "plot_settings": self.plot_settings,
+            "design_analysis_version": self.design_analysis_version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SimulationResults":
+        """Build SimulationResults from a plain dictionary payload."""
+        return cls(
+            optimization_results=data["optimization_results"],
+            system_target_params=data["system_target_params"],
+            plot_settings=data.get("plot_settings"),
+            design_analysis_version=data["design_analysis_version"],
+        )

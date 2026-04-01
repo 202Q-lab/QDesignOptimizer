@@ -22,6 +22,7 @@ from qdesignoptimizer.design_analysis_types import (
     MeshingMap,
     MiniStudy,
     OptTarget,
+    SimulationResults,
 )
 from qdesignoptimizer.logger import dict_log_format, log
 from qdesignoptimizer.sim_capacitance_matrix import (
@@ -65,7 +66,7 @@ class DesignAnalysis:
         plot_settings (dict): Configuration for progress visualization plots.
         meshing_map (List[MeshingMap]): Custom mesh refinement configurations for specific components.
         minimization_tol (float): tolerance used to terminate the solution of an optimization step.
-        partitioned_optimization (bool): Whether the optimization is a partition of part of
+        is_part_of_partitioned_optimization (bool): Whether the optimization is a partition of part of
         a larger system. True: will disable automatic checks for which modes are required.
 
     """
@@ -80,7 +81,7 @@ class DesignAnalysis:
         plot_settings: Optional[dict] = None,
         meshing_map: Optional[List[MeshingMap]] = None,
         minimization_tol: float = 1e-12,
-        partitioned_optimization: bool = False,
+        is_part_of_partitioned_optimization: bool = False,
     ):
         self.design_analysis_version = qdesignoptimizer.__version__
         self.state = (
@@ -123,7 +124,7 @@ class DesignAnalysis:
         self.plot_settings = plot_settings
         self.meshing_map: List[MeshingMap] = meshing_map or []
         self.minimization_tol = minimization_tol
-        self.partitioned_optimization = partitioned_optimization
+        self.is_part_of_partitioned_optimization = is_part_of_partitioned_optimization
 
         self.anmod_optimizer = ANModOptimizer(
             opt_targets=self.opt_targets,
@@ -238,7 +239,7 @@ class DesignAnalysis:
                         unique_modes
                     ), f"Target for {target.target_param_type} requires {len(unique_modes)} unique mode(s) \
                         but only {len(self.mini_study.modes)} mode(s) will be simulated."
-                    if not self.partitioned_optimization:
+                    if not self.is_part_of_partitioned_optimization:
                         for mode in unique_modes:
                             assert (
                                 mode in self.mini_study.modes
@@ -248,7 +249,7 @@ class DesignAnalysis:
                         target.involved_modes
                     ), f"Target for {target.target_param_type} expects \
                         {len(target.involved_modes)} modes but only {self.setup.n_modes} modes will be simulated."
-                    if not self.partitioned_optimization:
+                    if not self.is_part_of_partitioned_optimization:
                         for mode in target.involved_modes:
                             assert (
                                 mode in self.mini_study.modes
@@ -523,12 +524,8 @@ class DesignAnalysis:
         for idx, (mode, freq) in enumerate(self.get_simulated_modes_sorted()):
             freq = eig_result["Freq. (Hz)"][idx]
             decay = eig_result["Kappas (Hz)"][idx]
-            if param(mode, FREQ) not in self.state.exclude_param_from_update:
-                self.system_optimized_params[param(mode, FREQ)] = freq
-            if (
-                param(mode, KAPPA) in self.system_target_params
-                and param(mode, KAPPA) not in self.state.exclude_param_from_update
-            ):
+            self.system_optimized_params[param(mode, FREQ)] = freq
+            if param(mode, KAPPA) in self.system_target_params:
                 self.system_optimized_params[param(mode, KAPPA)] = decay
 
     def _get_mode_idx_map(self):
@@ -556,30 +553,21 @@ class DesignAnalysis:
         freq_column = 0
 
         for mode, _ in mode_idx.items():
-            if param(mode, FREQ) not in self.state.exclude_param_from_update:
-                self.system_optimized_params[param(mode, FREQ)] = (
-                    freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
-                )
+            self.system_optimized_params[param(mode, FREQ)] = (
+                freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
+            )
 
         for mode_i in self.mini_study.modes:
             for mode_j in self.mini_study.modes:
-                if (
-                    param_nonlin(mode_i, mode_j)
-                    not in self.state.exclude_param_from_update
-                ):
-                    self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
-                        epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
-                    )
+                self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
+                    epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
+                )
 
         for mode in self.mini_study.modes:
             for jj_idx, junction in enumerate(self.jj_setups_to_include_in_epr):
-                if (
+                self.system_optimized_params[
                     param_participation_ratio(mode, junction)
-                    not in self.state.exclude_param_from_update
-                ):
-                    self.system_optimized_params[
-                        param_participation_ratio(mode, junction)
-                    ] = participation_ratio.iloc[(mode_idx[mode], jj_idx)]
+                ] = participation_ratio.iloc[(mode_idx[mode], jj_idx)]
 
     def _update_optimized_params_capacitance_simulation(
         self,
@@ -594,15 +582,9 @@ class DesignAnalysis:
 
         for capacitance_names in capacitance_names_all_targets:
             try:
-                if (
-                    param_capacitance(*capacitance_names)
-                    not in self.state.exclude_param_from_update
-                ):
-                    self.system_optimized_params[
-                        param_capacitance(*capacitance_names)
-                    ] = capacitance_matrix.loc[
-                        capacitance_names[0], capacitance_names[1]
-                    ]
+                self.system_optimized_params[param_capacitance(*capacitance_names)] = (
+                    capacitance_matrix.loc[capacitance_names[0], capacitance_names[1]]
+                )
             except KeyError:
                 log.warning(
                     "Warning: capacitance %s not found in capacitance matrix with names %s",
@@ -620,13 +602,9 @@ class DesignAnalysis:
                 )
             param_value = capacitance_study.get_decay_parameter_value()
             log.info(f"Computed {param_type} value: {param_value}")
-            if (
-                param(capacitance_study.mode, param_type)
-                not in self.state.exclude_param_from_update
-            ):
-                self.system_optimized_params[
-                    param(capacitance_study.mode, param_type)
-                ] = param_value
+            self.system_optimized_params[param(capacitance_study.mode, param_type)] = (
+                param_value
+            )
 
     def optimize_target(
         self,
@@ -722,20 +700,15 @@ class DesignAnalysis:
         iteration_result["minimization_results"] = minimization_results
 
         self.optimization_results.append(iteration_result)
-        simulation = [
-            {
-                "optimization_results": self.optimization_results,
-                "system_target_params": self.system_target_params,
-                "plot_settings": self.plot_settings,
-                "design_analysis_version": self.design_analysis_version,
-            }
-        ]
-        if self.save_path is not None:
-            os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
-            np.save(self.save_path, np.array(simulation), allow_pickle=True)
-
-            with open(self.save_path + "_design_variables.json", "w") as outfile:
-                json.dump(updated_design_vars, outfile, indent=4)
+        simulation_result = SimulationResults(
+            optimization_results=self.optimization_results,
+            system_target_params=self.system_target_params,
+            plot_settings=self.plot_settings,
+            design_analysis_version=self.design_analysis_version,
+        )
+        save_optimization_results(
+            simulation_result, updated_design_vars, self.save_path
+        )
 
         if self.update_design_variables is True:
             self.overwrite_parameters()
@@ -883,23 +856,40 @@ class DesignAnalysis:
         return p_ratio_dict
 
 
-def fetch_params_and_design_variables(
-    state_to_update: DesignAnalysisState,
+def save_optimization_results(
+    simulation_result: SimulationResults,
+    updated_design_vars: dict,
+    save_path: str | None,
+):
+    """Persist simulation payload and the latest design variable values."""
+    if save_path is None:
+        return
+
+    save_dir = os.path.dirname(save_path)
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+
+    simulation = [simulation_result.to_dict()]
+    np.save(save_path, np.array(simulation), allow_pickle=True)
+
+    with open(save_path + "_design_variables.json", "w") as outfile:
+        json.dump(updated_design_vars, outfile, indent=4)
+
+
+def merge_partitioned_simulation(
+    optimization_results_to_update: List[Dict],
     state_to_fetch_from: DesignAnalysisState,
+    optimization_results_to_fetch_from: List[Dict],
     opt_targets: List[OptTarget],
     include_param_in_update: List[str],
-    optimization_results: List[Dict],
-    new_iteration: bool,
+    start_new_result_entry: bool,
 ):
-    """Loop over targets to lift over parameters and design variables.
-    If new_iteration is True, optimization_results is left untouched.
-    If new_iteration is False, optimization_results last element is removed after
-    moving include_param_in_update and design_varialbes to the previous result element
-    """
+    """Loop over targets to lift over parameters and design variables to optimization_results_to_update."""
 
     all_params_to_update = {}
     all_design_vars_to_update = {}
 
+    #  1 prepare design_variables and system_optimized_params to update
     for target in opt_targets:
         if target.target_param_type == "nonlinearity":
             param_to_update = param_nonlin(*target.involved_modes)
@@ -909,8 +899,6 @@ def fetch_params_and_design_variables(
             param_to_update = param(target.involved_modes[0], target.target_param_type)
 
         if param_to_update in include_param_in_update:
-            if state_to_update.system_optimized_params is None:
-                state_to_update.system_optimized_params = {}
             all_params_to_update[param_to_update] = (
                 state_to_fetch_from.system_optimized_params[param_to_update]
             )
@@ -918,14 +906,25 @@ def fetch_params_and_design_variables(
                 state_to_fetch_from.design.variables[target.design_var]
             )
 
-    if not new_iteration:
-        del optimization_results[-1]
+    #  2 repeat previous design_variables and system_optimized_params
+    if start_new_result_entry:
+        optimization_results_to_update.append(
+            deepcopy(optimization_results_to_fetch_from[-1])
+        )
 
+        if len(optimization_results_to_update) == 1:
+            optimization_results_to_update[-1]["design_variables"] = {}
+            optimization_results_to_update[-1]["system_optimized_params"] = {}
+        else:
+            optimization_results_to_update[-1]["design_variables"] = deepcopy(
+                optimization_results_to_update[-2]["design_variables"]
+            )
+            optimization_results_to_update[-1]["system_optimized_params"] = deepcopy(
+                optimization_results_to_update[-2]["system_optimized_params"]
+            )
+
+    #  3 update the design_variables and system_optimized_params corresponding to include_param_in_update
     for p, value in all_params_to_update.items():
-        state_to_update.system_optimized_params[p] = value
-        if not new_iteration:
-            optimization_results[-1]["system_optimized_params"][p] = value
+        optimization_results_to_update[-1]["system_optimized_params"][p] = value
     for design_var, value in all_design_vars_to_update.items():
-        state_to_update.design.variables[design_var] = value
-        if not new_iteration:
-            optimization_results[-1]["design_variables"][design_var] = value
+        optimization_results_to_update[-1]["design_variables"][design_var] = value
