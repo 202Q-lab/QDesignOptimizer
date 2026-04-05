@@ -254,7 +254,7 @@ class DesignAnalysis:
                             assert (
                                 mode in self.mini_study.modes
                             ), f"Target mode {mode} \
-                                not found in modes which will be simulated."
+                                not found in modes ({self.mini_study.modes}) which will be simulated."
 
             design_variables = [target.design_var for target in self.opt_targets]
             assert len(design_variables) == len(

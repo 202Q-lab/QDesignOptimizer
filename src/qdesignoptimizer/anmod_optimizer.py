@@ -76,18 +76,34 @@ class ANModOptimizer:
                 all_design_var_updated[name] = design_var_vals_updated[idx]
             cost = 0
             for target in targets_to_minimize_for:
-                Q_k1_i = (
-                    self._get_parameter_value(target, all_parameters_current)
-                    * target.prop_to(all_parameters_targets_met, all_design_var_updated)
-                    / target.prop_to(all_parameters_current, all_design_var_current)
+                param_current = self._get_parameter_value(
+                    target, all_parameters_current
                 )
-                cost += (
-                    (
-                        Q_k1_i
-                        / self._get_parameter_value(target, all_parameters_targets_met)
+                prop_target_met = target.evaluate_prop_to(
+                    all_parameters_targets_met,
+                    all_design_var_updated,
+                )
+                prop_current = target.evaluate_prop_to(
+                    all_parameters_current,
+                    all_design_var_current,
+                )
+                if prop_current == 0:
+                    raise ValueError(
+                        "prop_to(all_parameters_current, all_design_var_current) returned 0, "
+                        f"causing division by zero. Target={target.target_param_type} ({target.involved_modes})."
                     )
-                    - 1
-                ) ** 2
+
+                Q_k1_i = param_current * prop_target_met / prop_current
+
+                target_param = self._get_parameter_value(
+                    target, all_parameters_targets_met
+                )
+                if target_param == 0:
+                    raise ValueError(
+                        "Target parameter value is 0, causing division by zero in cost. "
+                        f"Target={target.target_param_type} ({target.involved_modes})."
+                    )
+                cost += ((Q_k1_i / target_param) - 1) ** 2
 
             return cost
 
@@ -252,17 +268,31 @@ class ANModOptimizer:
     @staticmethod
     def _get_parameter_value(target: OptTarget, system_params: dict) -> float:
         """Return value of parameter from target specification."""
-        if target.target_param_type == NONLIN:
-            mode1, mode2 = target.involved_modes
-            current_value = system_params[param_nonlin(mode1, mode2)]
-        elif target.target_param_type == CAPACITANCE:
-            capacitance_name_1, capacitance_name_2 = target.involved_modes
-            current_value = system_params[
-                param_capacitance(capacitance_name_1, capacitance_name_2)
-            ]
-        else:
-            mode = target.involved_modes[0]
-            current_value = system_params[param(mode, target.target_param_type)]  # type: ignore
+        try:
+            if target.target_param_type == NONLIN:
+                mode1, mode2 = target.involved_modes
+                parameter_key = param_nonlin(mode1, mode2)
+                current_value = system_params[parameter_key]
+            elif target.target_param_type == CAPACITANCE:
+                capacitance_name_1, capacitance_name_2 = target.involved_modes
+                parameter_key = param_capacitance(
+                    capacitance_name_1, capacitance_name_2
+                )
+                current_value = system_params[parameter_key]
+            else:
+                mode = target.involved_modes[0]
+                parameter_key = param(mode, target.target_param_type)  # type: ignore
+                current_value = system_params[parameter_key]
+        except KeyError as exc:
+            raise KeyError(
+                "Missing required system parameter for target "
+                f"{target.target_param_type} ({target.involved_modes})."
+            ) from exc
+        if current_value is None:
+            raise ValueError(
+                "Required system parameter is None: "
+                f"{parameter_key}. Target={target.target_param_type} ({target.involved_modes})."
+            )
         return current_value
 
     def _get_system_params_targets_met(
