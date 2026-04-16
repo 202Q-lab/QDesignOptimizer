@@ -216,3 +216,47 @@ def get_mini_study_2qb_resonator_coupler_partitioned(
         build_fine_mesh=False,
         **CONVERGENCE,
     )
+
+
+def get_mini_study_qb_res():
+    all_comps = []
+    all_ports = []
+    all_modes = []
+    all_jjs = {}
+
+    qubit = n.QUBIT_1
+    all_comps.extend([n.name_mode(qubit)])
+    resonator = n.RESONATOR_1
+    all_comps.extend(
+        [
+            n.name_mode(resonator),
+            n.name_tee(1),
+        ]
+    )
+    all_ports.extend(
+        [
+            # (n.name_tee(group), "prime_end", 50),
+            # (n.name_tee(group), "prime_start", 50),
+        ]
+    )
+    all_modes.extend([qubit, resonator])
+    all_jjs.update(junction_setup(qubit))
+
+    all_mode_freq = []
+    for i in range(len(all_modes)):
+        all_mode_freq.append(pt.PARAM_TARGETS[param(all_modes[i], FREQ)])
+    all_modes_sorted = [all_modes[i] for i in np.argsort(all_mode_freq)]
+
+    return MiniStudy(
+        qiskit_component_names=all_comps,
+        port_list=all_ports,
+        open_pins=[],
+        modes=all_modes_sorted,
+        jj_setup=all_jjs,
+        design_name="get_mini_study_qb_res",
+        adjustment_rate=1,
+        cos_trunc=6,
+        fock_trunc=5,
+        build_fine_mesh=False,
+        **CONVERGENCE,
+    )
