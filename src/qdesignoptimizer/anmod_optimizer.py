@@ -263,6 +263,13 @@ class ANModOptimizer:
         else:
             mode = target.involved_modes[0]
             current_value = system_params[param(mode, target.target_param_type)]  # type: ignore
+        if current_value is None:
+            raise ValueError(
+                f"Parameter value for target '{target.target_param_type}' "
+                f"(involved_modes={target.involved_modes}) is None. "
+                "Check that all simulation results were stored and that "
+                "capacitance matrix column names match the optimizer targets."
+            )
         return current_value
 
     def _get_system_params_targets_met(

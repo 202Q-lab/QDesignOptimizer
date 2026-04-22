@@ -248,13 +248,14 @@ class DataExtractor:
         ]
 
         # Filter out None values
-        x_values_filtered, y_values_filtered = zip(
-            *[
-                (x, y)
-                for x, y in zip(x_values, y_values)
-                if x is not None and y is not None
-            ]
-        )
+        filtered = [
+            (x, y)
+            for x, y in zip(x_values, y_values)
+            if x is not None and y is not None
+        ]
+        if not filtered:
+            return [], []
+        x_values_filtered, y_values_filtered = zip(*filtered)
 
         x_values_filtered = list(x_values_filtered)
         y_values_filtered = list(y_values_filtered)
