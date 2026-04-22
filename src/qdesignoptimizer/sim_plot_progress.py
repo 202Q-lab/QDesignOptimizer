@@ -227,17 +227,55 @@ class DataExtractor:
         Returns:
             Tuple of (x_values, y_values)
         """
+        # --- validation: print descriptive messages for missing data, but continue anyway for convenience when reusing PLOT_SETTINGS ---
+        if run_index >= len(self.opt_results):
+            print(
+                f"Run index {run_index} is out of range. Only {len(self.opt_results)} run(s) available."
+            )
+        elif not self.opt_results[run_index]:
+            print(f"Optimization results for run index {run_index} are empty.")
+        else:
+            opt_result = self.opt_results[run_index]
+            if use_design_var_as_x:
+                x_sample = (
+                    self.get_design_var_for_param(y_param, opt_result[0])[0]
+                    if opt_result
+                    else None
+                )
+                if x_sample is None:
+                    print(
+                        f"No design variable found for parameter '{y_param}' in run {run_index}. "
+                        "Cannot use it as x-axis."
+                    )
+            else:
+                x_sample = (
+                    self.get_parameter_value(x_param, opt_result[0], 0)
+                    if opt_result
+                    else None
+                )
+                if x_sample is None:
+                    print(
+                        f"Parameter '{x_param}' not found in optimization results of run {run_index}."
+                    )
+            y_sample = (
+                self.get_parameter_value(y_param, opt_result[0], 0)
+                if opt_result
+                else None
+            )
+            if y_sample is None:
+                print(
+                    f"Parameter '{y_param}' not found in optimization results of run {run_index}."
+                )
+
         try:
             opt_result = self.opt_results[run_index]
 
             if use_design_var_as_x:
-                # Use design variable associated with y_param as x
                 x_values = [
                     self.get_design_var_for_param(y_param, result)[0]
                     for _, result in enumerate(opt_result)
                 ]
             else:
-                # Use parameter directly
                 x_values = [
                     self.get_parameter_value(x_param, result, i)  # type: ignore
                     for i, result in enumerate(opt_result)
@@ -261,7 +299,6 @@ class DataExtractor:
             y_values_filtered = list(y_values_filtered)
 
             if sort_by_x and x_values_filtered:
-                # Sort by x values if requested
                 sorted_pairs = sorted(zip(x_values_filtered, y_values_filtered))
                 x_values_filtered, y_values_filtered = zip(*sorted_pairs)  # type: ignore
 

@@ -646,7 +646,9 @@ class DesignAnalysis:
                         self.system_optimized_params, self.design.variables
                     )
                 )
-            except Exception:
+            except Exception as e:
+                if not self.is_part_of_partitioned_optimization:
+                    raise e
                 print(
                     "Design variable update failed, but is expected for a partitioned optimization until all parameters have been simulated."
                 )
@@ -888,15 +890,18 @@ def merge_partitioned_simulation(
 
     all_params_to_update = {}
     all_design_vars_to_update = {}
+    all_target_params = set()
 
     #  1 prepare design_variables and system_optimized_params to update
     for target in opt_targets:
-        if target.target_param_type == "nonlinearity":
+        if target.target_param_type == NONLIN:
             param_to_update = param_nonlin(*target.involved_modes)
-        elif target.target_param_type == "capacitance":
+        elif target.target_param_type == CAPACITANCE:
             param_to_update = param_capacitance(*target.involved_modes)
         else:
             param_to_update = param(target.involved_modes[0], target.target_param_type)
+
+        all_target_params.add(param_to_update)
 
         if param_to_update in include_param_in_update:
             all_params_to_update[param_to_update] = (
@@ -905,6 +910,13 @@ def merge_partitioned_simulation(
             all_design_vars_to_update[target.design_var] = (
                 state_to_fetch_from.design.variables[target.design_var]
             )
+
+    missing_params = sorted(set(include_param_in_update) - all_target_params)
+    if missing_params:
+        log.warning(
+            "include_param_in_update contains parameter(s) not present in opt_targets, the following are missing: %s",
+            missing_params,
+        )
 
     #  2 repeat previous design_variables and system_optimized_params
     if start_new_result_entry:

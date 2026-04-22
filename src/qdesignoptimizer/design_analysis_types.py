@@ -191,7 +191,7 @@ class OptTarget:
         self.independent_target = independent_target
 
     class _TrackedMapping(dict):
-        """Dict wrapper ¨to diagnose missing information."""
+        """Dict wrapper to diagnose missing information."""
 
         def __init__(self, data: Dict[str, Union[float, int]], label: str):
             super().__init__(data)
