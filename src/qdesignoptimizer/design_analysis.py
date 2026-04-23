@@ -465,9 +465,10 @@ class DesignAnalysis:
         )
         self.hfss.modeler.create_group(cloned_polygon_name, group_name="metal_air")
         objects = self.hfss.modeler.get_objects_in_group("metal_air") or []
-        metal_air = self.hfss.assign_material(
-            objects, self.mini_study.surface_properties.sheet_material
-        )
+        if objects:
+            metal_air = self.hfss.assign_material(
+                objects, self.mini_study.surface_properties.sheet_material
+            )
 
         # underside surface
         self.hfss.modeler.section("main", "XY")
@@ -537,19 +538,19 @@ class DesignAnalysis:
 
         for mode, _ in mode_idx.items():
             self.system_optimized_params[param(mode, FREQ)] = (
-                freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
+                freq_ND_results.iloc[mode_idx[mode]].iloc[freq_column] * MHz
             )
 
         for mode_i in self.mini_study.modes:
             for mode_j in self.mini_study.modes:
                 self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
-                    epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
+                    epr_result.iloc[:, mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
                 )
 
         for mode in self.mini_study.modes:
             for jj_idx, junction in enumerate(self.jj_setups_to_include_in_epr):
                 self.system_optimized_params[param_participation_ratio(mode, junction)] = (
-                    participation_ratio.iloc[(mode_idx[mode], jj_idx)]
+                    participation_ratio.iloc[mode_idx[mode], jj_idx]
                 )
 
     def _update_optimized_params_capacitance_simulation(
