@@ -119,10 +119,12 @@ def get_mini_study_2qb_resonator_coupler_partitioned(
     all_jjs = {}
     if section == "res_qb_cplr":
         groups = [n.NBR_1]
-    if section == "qb_cplr_qb":
+    elif section == "qb_cplr_qb":
         groups = [n.NBR_1, n.NBR_2]
-    if section == "cplr_qb_res":
+    elif section == "cplr_qb_res":
         groups = [n.NBR_2]
+    else:
+        raise ValueError(f"Invalid section: {section}")
 
     for group in groups:
         qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
@@ -161,7 +163,7 @@ def get_mini_study_2qb_resonator_coupler_partitioned(
         open_pins=[],
         modes=all_modes_sorted,
         jj_setup=all_jjs,
-        design_name="get_mini_study_2qb_resonator_coupler_left",
+        design_name="get_mini_study_2qb_resonator_coupler",
         adjustment_rate=1,
         cos_trunc=6,
         fock_trunc=5,
