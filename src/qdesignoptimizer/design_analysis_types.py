@@ -1,7 +1,7 @@
 """Data structures for organizing quantum circuit design optimization workflows."""
 
 from dataclasses import dataclass, field, fields
-from typing import Callable, Dict, Iterator, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 
 from qiskit_metal.designs.design_base import QDesign
 
@@ -189,6 +189,106 @@ class OptTarget:
         self.design_var_constraint = design_var_constraint
         self.prop_to = prop_to
         self.independent_target = independent_target
+
+    class _TrackedMapping(dict):
+        """Dict wrapper to diagnose missing information."""
+
+        def __init__(self, data: Dict[str, Union[float, int]], label: str):
+            super().__init__(data)
+            self.label = label
+            self.accessed_keys: List[str] = []
+            self.none_accesses: List[str] = []
+            self.missing_accesses: List[str] = []
+
+        def _record(self, key: Any, value: Any):
+            self.accessed_keys.append(f"{self.label}[{key!r}]")
+            if value is None:
+                self.none_accesses.append(f"{self.label}[{key!r}]")
+            return value
+
+        def __getitem__(self, key):
+            if key not in self:
+                self.missing_accesses.append(f"{self.label}[{key!r}]")
+            value = super().__getitem__(key)
+            return self._record(key, value)
+
+        def get(self, key, default=None):
+            self.accessed_keys.append(f"{self.label}.get({key!r})")
+            key_present = key in self
+            value = super().get(key, default)
+            if not key_present:
+                self.missing_accesses.append(f"{self.label}[{key!r}]")
+            if key_present and value is None:
+                self.none_accesses.append(f"{self.label}[{key!r}]")
+            return value
+
+    def evaluate_prop_to(
+        self,
+        system_params: Dict[str, Union[float, int]],
+        design_vars: Dict[str, Union[float, int]],
+    ) -> float | int:
+        """Evaluate ``prop_to`` and report exactly which accessed keys are None."""
+        if self.prop_to is None:
+            raise ValueError(
+                "prop_to is None for target "
+                f"{self.target_param_type} ({self.involved_modes}) / design_var={self.design_var}."
+            )
+
+        tracked_p = OptTarget._TrackedMapping(system_params, "p")
+        tracked_v = OptTarget._TrackedMapping(design_vars, "v")
+        try:
+            result = self.prop_to(tracked_p, tracked_v)
+        except Exception as exc:
+            none_accesses = tracked_p.none_accesses + tracked_v.none_accesses
+            missing_accesses = tracked_p.missing_accesses + tracked_v.missing_accesses
+            if none_accesses or missing_accesses:
+                diagnostics = []
+                if none_accesses:
+                    diagnostics.append(
+                        "None values at " + ", ".join(sorted(set(none_accesses)))
+                    )
+                if missing_accesses:
+                    diagnostics.append(
+                        "Missing keys " + ", ".join(sorted(set(missing_accesses)))
+                    )
+                diagnostics.append(
+                    "Accessed keys "
+                    + ", ".join(
+                        sorted(set(tracked_p.accessed_keys + tracked_v.accessed_keys))
+                    )
+                )
+                raise ValueError(
+                    "prop_to evaluation failed. "
+                    + "; ".join(diagnostics)
+                    + f". Target={self.target_param_type} ({self.involved_modes}), design_var={self.design_var}."
+                ) from exc
+            raise
+
+        none_accesses = tracked_p.none_accesses + tracked_v.none_accesses
+        missing_accesses = tracked_p.missing_accesses + tracked_v.missing_accesses
+        if none_accesses or missing_accesses:
+            diagnostics = []
+            if none_accesses:
+                diagnostics.append(
+                    "None values at " + ", ".join(sorted(set(none_accesses)))
+                )
+            if missing_accesses:
+                diagnostics.append(
+                    "Missing keys " + ", ".join(sorted(set(missing_accesses)))
+                )
+            diagnostics.append(
+                "Accessed keys "
+                + ", ".join(
+                    sorted(set(tracked_p.accessed_keys + tracked_v.accessed_keys))
+                )
+            )
+            raise ValueError(
+                "prop_to evaluation invalid. "
+                + "; ".join(diagnostics)
+                + f". Target={self.target_param_type} ({self.involved_modes}), design_var={self.design_var}."
+            )
+
+        return result
 
 
 class MiniStudy:
@@ -388,3 +488,39 @@ class DesignAnalysisState:
         self.render_qiskit_metal = render_qiskit_metal
         self.system_target_params = system_target_params
         self.system_optimized_params = system_optimized_params
+
+
+@dataclass
+class SimulationResults:
+    """Container for saved simulation data with dictionary-like access."""
+
+    optimization_results: List[Dict[str, Any]]
+    system_target_params: Dict[str, Any]
+    plot_settings: Optional[Dict[str, Any]]
+    design_analysis_version: str
+
+    def __getitem__(self, key: str) -> Any:
+        # Enables dictionary-style read access, e.g. result["system_target_params"].
+        return getattr(self, key)
+
+    def keys(self) -> Iterator[str]:
+        for field_info in fields(self):
+            yield field_info.name
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "optimization_results": self.optimization_results,
+            "system_target_params": self.system_target_params,
+            "plot_settings": self.plot_settings,
+            "design_analysis_version": self.design_analysis_version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SimulationResults":
+        """Build SimulationResults from a plain dictionary payload."""
+        return cls(
+            optimization_results=data["optimization_results"],
+            system_target_params=data["system_target_params"],
+            plot_settings=data.get("plot_settings"),
+            design_analysis_version=data["design_analysis_version"],
+        )

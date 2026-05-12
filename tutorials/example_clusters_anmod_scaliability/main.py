@@ -1,58 +1,21 @@
-from copy import deepcopy
-
 from check_convergence import check_convergence, print_convergence_summary
 from plot_convergence import plot_all_convergence_ratios
 from plot_settings import get_plot_settings
-from scaled_system_definition import ScaledSystem, get_prop_to
+from scaled_system_definition import ScaledSystem
+from utils import aggregate_results, get_opt_target
 
 from qdesignoptimizer.anmod_optimizer import ANModOptimizer
-from qdesignoptimizer.design_analysis_types import OptTarget
-from qdesignoptimizer.utils.names_parameters import UNITLESS, mode
 
-
-def get_opt_target(i, j, sys: ScaledSystem) -> OptTarget:
-    """Return the optimization target for parameter with composite index a=(i,j)."""
-    mode_name = mode(f"{i},{j}")
-    return OptTarget(
-        target_param_type=UNITLESS,
-        involved_modes=[mode_name],
-        design_var=f"dv_{i},{j}",
-        design_var_constraint={"larger_than": 1e-8, "smaller_than": 100},
-        prop_to=get_prop_to(i, j, sys),
-        independent_target=f"{i}",
-    )
-
-
-def aggregate_results(
-    optimization_results: list, sys: ScaledSystem, minimization_results: any
-):
-    design_variables = deepcopy(sys.get_flattened_x())
-    system_optimized_params = deepcopy(sys.get_flattened_yk())
-    h_ij_factor_at_yk_xk = deepcopy(sys.get_flattened_h_ij_factor_at_yk_xk())
-    g_ij_approx_factor_at_yk_xk = deepcopy(
-        sys.get_flattened_g_ij_approx_factor_at_yk_xk()
-    )
-    g_ij_approx_factor_at_ytarget_xk = deepcopy(
-        sys.get_flattened_g_ij_approx_factor_at_ytarget_xk()
-    )
-    g_ij_factor_at_yk_xk = deepcopy(sys.get_flattened_g_ij_factor_at_yk_xk())
-
-    iteration_result = {}
-    iteration_result["design_variables"] = design_variables
-    iteration_result["system_optimized_params"] = system_optimized_params
-    iteration_result["minimization_results"] = minimization_results
-    iteration_result["h_ij_factor_at_yk_xk"] = h_ij_factor_at_yk_xk
-    iteration_result["g_ij_approx_factor_at_yk_xk"] = g_ij_approx_factor_at_yk_xk
-    iteration_result["g_ij_approx_factor_at_ytarget_xk"] = (
-        g_ij_approx_factor_at_ytarget_xk
-    )
-    iteration_result["g_ij_factor_at_yk_xk"] = g_ij_factor_at_yk_xk
-
-    optimization_results.append(iteration_result)
-
-
-# ---------------- Example usage ----------------
 if __name__ == "__main__":
+    # ---------------- Example usage ----------------
+
+    # This tutorial demonstrates how the ANMod optimization method can scale to
+    # large nonlinear systems. The ScaledSystem acts as a fictive nonlinear
+    # "full" model that is evaluated each iteration, while ANMod computes updates
+    # from an approximate version of that full model.
+    # This mirrors realistic workflows where direct optimization on the full model
+    # alone would be too expensive.
+
     # There are 3000 parameters to optimize in total (1000 clusters with 3 parameters each).
     # looping over seeds = 0-99 gives the following number of convergences within 10 iterations
     # [2993, 3000, 3000, 2992, 0, 0, 3000, 3000, 3000, 2997, 0, 0, 2997, 3000, 3000, 0, 2878,
@@ -64,10 +27,23 @@ if __name__ == "__main__":
     # 3000, 2999, 2998, 0, 3000, 2999]
     # 0 diverges and nan gets stuck in evaluation
 
-    all_seeds = range(100)  # Runs multiple seeds with the results summarized above.
-    all_seeds = [42]  # For quick testing, only run seed 42
+    # -------- User settings --------
+
+    NBR_ITERATIONS = 10
+    SHOW_PLOT = True
+    RUN_MULTIPLE_SEEDS = False  # True: Runs multiple seeds with the results summarized above. False: Run with seed=2 for quick testing.
+
+    # The generated plots will end up in tutorials/example_clusters_anmod_scaliability/out
+
+    # -------- End of user settings --------
 
     all_convergence_status = []
+
+    if RUN_MULTIPLE_SEEDS:
+        all_seeds = range(100)
+    else:
+        all_seeds = [2]
+
     for seed in all_seeds:
         if seed in [39, 44, 79]:
             continue  # getting stuck i.e. diverging
@@ -100,7 +76,6 @@ if __name__ == "__main__":
         optimization_results = []
         system_target_params = sys.get_flattened_y_target()
 
-        NBR_ITERATIONS = 10
         for it in range(NBR_ITERATIONS):
             sys.gather_info_for_y_given_x()
             system_optimized_params = sys.get_flattened_yk()
@@ -115,7 +90,7 @@ if __name__ == "__main__":
             aggregate_results(optimization_results, sys, minimization_results)
 
         plot_all_convergence_ratios(
-            optimization_results, system_target_params, seed=seed, show_plot=False
+            optimization_results, system_target_params, seed=seed, show_plot=SHOW_PLOT
         )
 
         convergence_iteration, convergence_status = check_convergence(
