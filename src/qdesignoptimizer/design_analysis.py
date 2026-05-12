@@ -358,6 +358,10 @@ class DesignAnalysis:
 
         # interfaces will be rendered if interfaces are defined in mini_study
         if self.mini_study.surface_properties:
+            self.hfss = Hfss(
+                project=self.pinfo.project_name,
+                design=self.mini_study.design_name,
+            )
             self._surface_rendering_for_surface_participation_ratios()
 
         # set fine mesh
@@ -437,7 +441,7 @@ class DesignAnalysis:
         It also assigns interface properties using InterfaceProperties dataclass to pinfo for the Qanalysis.
         """
 
-        metal = self.hfss.modeler.get_objects_in_group("Perfect E")
+        metal = self.hfss.modeler.get_objects_in_group("Perfect E") or []
         self.hfss.modeler.ungroup(
             ["substrate_air", "metal_substrate", "underside_air", "metal_air"]
         )
@@ -479,10 +483,11 @@ class DesignAnalysis:
             metal_air, [0, 0, self.mini_study.surface_properties.sheet_thickness / 2]
         )
         self.hfss.modeler.create_group(cloned_polygon_name, group_name="metal_air")
-        objects = self.hfss.modeler.get_objects_in_group("metal_air")
-        metal_air = self.hfss.assign_material(
-            objects, self.mini_study.surface_properties.sheet_material
-        )
+        objects = self.hfss.modeler.get_objects_in_group("metal_air") or []
+        if objects:
+            metal_air = self.hfss.assign_material(
+                objects, self.mini_study.surface_properties.sheet_material
+            )
 
         # underside surface
         self.hfss.modeler.section("main", "XY")
@@ -498,7 +503,7 @@ class DesignAnalysis:
                 interface_props = getattr(
                     self.mini_study.surface_properties.interfaces, interface_name
                 )
-                for obj_name in self.hfss.modeler.get_objects_in_group(interface_name):
+                for obj_name in (self.hfss.modeler.get_objects_in_group(interface_name) or []):
                     self.pinfo.dissipative["dielectric_surfaces"][obj_name] = asdict(
                         interface_props
                     )
@@ -522,8 +527,9 @@ class DesignAnalysis:
     def _update_optimized_params(self, eig_result: pd.DataFrame):
 
         for idx, (mode, freq) in enumerate(self.get_simulated_modes_sorted()):
-            freq = eig_result["Freq. (Hz)"][idx]
-            decay = eig_result["Kappas (Hz)"][idx]
+            freq = eig_result["Freq. (Hz)"].iloc[idx]
+            decay = eig_result["Kappas (Hz)"].iloc[idx]
+
             self.system_optimized_params[param(mode, FREQ)] = freq
             if param(mode, KAPPA) in self.system_target_params:
                 self.system_optimized_params[param(mode, KAPPA)] = decay
@@ -554,20 +560,20 @@ class DesignAnalysis:
 
         for mode, _ in mode_idx.items():
             self.system_optimized_params[param(mode, FREQ)] = (
-                freq_ND_results.iloc[mode_idx[mode]][freq_column] * MHz
+                freq_ND_results.iloc[mode_idx[mode]].iloc[freq_column] * MHz
             )
 
         for mode_i in self.mini_study.modes:
             for mode_j in self.mini_study.modes:
                 self.system_optimized_params[param_nonlin(mode_i, mode_j)] = (
-                    epr_result[mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
+                    epr_result.iloc[:, mode_idx[mode_i]].iloc[mode_idx[mode_j]] * MHz
                 )
 
         for mode in self.mini_study.modes:
             for jj_idx, junction in enumerate(self.jj_setups_to_include_in_epr):
-                self.system_optimized_params[
-                    param_participation_ratio(mode, junction)
-                ] = participation_ratio.iloc[(mode_idx[mode], jj_idx)]
+                self.system_optimized_params[param_participation_ratio(mode, junction)] = (
+                    participation_ratio.iloc[mode_idx[mode], jj_idx]
+                )
 
     def _update_optimized_params_capacitance_simulation(
         self,
@@ -638,7 +644,6 @@ class DesignAnalysis:
             # bootstrap with initial design variables if no system_optimized_params exist
             updated_design_vars = deepcopy(self.design.variables)
             minimization_results: list[dict] = []
-            self.is_system_optimized_params_initialized = True
         else:
             try:
                 updated_design_vars, minimization_results = (
@@ -702,6 +707,7 @@ class DesignAnalysis:
         iteration_result["minimization_results"] = minimization_results
 
         self.optimization_results.append(iteration_result)
+        self.is_system_optimized_params_initialized = True
         simulation_result = SimulationResults(
             optimization_results=self.optimization_results,
             system_target_params=self.system_target_params,
@@ -837,8 +843,14 @@ class DesignAnalysis:
             p_ratio_dict[interface_name] = {}
             for mode in range(int(self.pinfo.setup.n_modes)):
                 self.eprd.set_mode(mode)
+                group_objects = self.hfss.modeler.get_objects_in_group(interface_name) or []
+                if not group_objects:
+                    raise ValueError(
+                        f"get_objects_in_group returned no objects for interface '{interface_name}'. "
+                        "Check that the HFSS group exists and surface rendering completed successfully."
+                    )
                 p_ratio_dict[interface_name][mode] = self._get_surface_p_ratio(
-                    name=self.hfss.modeler.get_objects_in_group(interface_name)[0],
+                    name=group_objects[0],
                     mode=mode,
                 )
 
