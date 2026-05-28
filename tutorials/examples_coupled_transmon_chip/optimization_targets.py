@@ -71,8 +71,14 @@ def get_opt_targets_2qubits_resonator_coupler(
                 opt_target_resonator_kappa=opt_target_resonator_kappa,
                 opt_target_resonator_qubit_chi=opt_target_resonator_qubit_chi,
                 use_simple_resonator_qubit_chi_relation=use_simple_resonator_qubit_chi_relation,
-                design_var_constraint_qubit_width= {"larger_than": "1um", "smaller_than": "900um"},   
-                design_var_constraint_res_coupl_length={"larger_than": "1um", "smaller_than": "1500um"},             
+                design_var_constraint_qubit_width={
+                    "larger_than": "1um",
+                    "smaller_than": "900um",
+                },
+                design_var_constraint_res_coupl_length={
+                    "larger_than": "1um",
+                    "smaller_than": "1500um",
+                },
             )
         )
 
@@ -109,7 +115,10 @@ def get_opt_target_capacitance(
     return [
         OptTarget(
             target_param_type=n.CAPACITANCE,
-            involved_modes=[f"prime_cpw_name_tee{group}_", f"second_cpw_name_tee{group}_"],
+            involved_modes=[
+                f"prime_cpw_name_tee_{group}_",
+                f"second_cpw_name_tee_{group}_",
+            ],
             design_var=n.design_var_length(f"{resonator}_capacitance"),
             design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
             prop_to=lambda p, v: 1
