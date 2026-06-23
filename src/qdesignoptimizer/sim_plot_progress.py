@@ -300,10 +300,10 @@ class DataExtractor:
             ]
             if not filtered:
                 return [], []
-            x_values_filtered, y_values_filtered = zip(*filtered)
+            x_tuple, y_tuple = zip(*filtered)
 
-            x_values_filtered = list(x_values_filtered)
-            y_values_filtered = list(y_values_filtered)
+            x_values_filtered = list(x_tuple)
+            y_values_filtered = list(y_tuple)
 
             if sort_by_x and x_values_filtered:
                 sorted_pairs = sorted(zip(x_values_filtered, y_values_filtered))
@@ -403,8 +403,9 @@ class OptimizationPlotter:
             x_label: Custom x-axis label (overrides config)
             y_label: Custom y-axis label (overrides config)
         """
-        if ax.get_legend() is not None:
-            ax.get_legend().remove()
+        legend = ax.get_legend()
+        if legend is not None:
+            legend.remove()
 
         ax.set_xlabel(x_label if x_label is not None else config.get_x_label())
 
