@@ -48,6 +48,12 @@ class UnitEnum(str, Enum):
     NS = "ns"
     ARB = "arb."
 
+    def __str__(self) -> str:
+        # Return the display string (e.g. "Hz") rather than the member repr.
+        # On Python >=3.11 the str/Enum mixin no longer formats as its value,
+        # so f"{unit}" would otherwise render as "UnitEnum.HZ".
+        return self.value
+
 
 @dataclass
 class OptPltSet:
