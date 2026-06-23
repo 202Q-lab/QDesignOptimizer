@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 from qiskit_metal.designs.design_base import QDesign
 
 from qdesignoptimizer.sim_capacitance_matrix import CapacitanceMatrixStudy
+from qdesignoptimizer.sim_scattering_parameters import ScatteringParametersStudy
 from qdesignoptimizer.utils.names_parameters import Mode
 
 
@@ -340,6 +341,9 @@ class MiniStudy:
             run the capacitance matrix studies.
         capacitance_matrix_studies (List[CapacitanceMatrixStudy]): List of capacitance matrix
             studies to run.
+        scattering_parameters_studies (List[CapacitanceMatrixStudy]): List of scattering parameters
+            studies to run.
+            These studies are run after the eigenmode simulations.
         surface_properties (SurfaceProperties): Surface properties for the design, including
             interfaces, sheet material, and thickness. When specified, the MiniStudy does not allow
             for the definition of a fine mesh or the use of (custom) wire bonds/air bridges.
@@ -384,6 +388,7 @@ class MiniStudy:
         render_qiskit_metal_eigenmode_kw_args: Optional[dict] = None,
         run_capacitance_studies_only: bool = False,
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
+        scattering_parameters_studies: Optional[List[ScatteringParametersStudy]] = None,
         surface_properties: Optional[SurfaceProperties] = None,
     ):
         """Initialize a MiniStudy for electromagnetic simulation configuration."""
@@ -413,6 +418,9 @@ class MiniStudy:
         self.run_capacitance_studies_only = run_capacitance_studies_only
         self.capacitance_matrix_studies: List[CapacitanceMatrixStudy] = (
             capacitance_matrix_studies or []
+        )
+        self.scattering_parameters_studies: List[ScatteringParametersStudy] = (
+            scattering_parameters_studies or []
         )
         self.surface_properties = surface_properties
         self.interfaces = surface_properties.interfaces if surface_properties else None
