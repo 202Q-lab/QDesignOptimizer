@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qdesignoptimizer.sim_plot_progress &mdash; qdesignoptimizer · 0.0.2</title>
+  <title>qdesignoptimizer.sim_plot_progress &mdash; qdesignoptimizer · 0.1.0</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -131,7 +131,13 @@
     <span class="n">MS</span> <span class="o">=</span> <span class="s2">&quot;ms&quot;</span>
     <span class="n">US</span> <span class="o">=</span> <span class="s2">&quot;us&quot;</span>
     <span class="n">NS</span> <span class="o">=</span> <span class="s2">&quot;ns&quot;</span>
-    <span class="n">ARB</span> <span class="o">=</span> <span class="s2">&quot;arb.&quot;</span></div>
+    <span class="n">ARB</span> <span class="o">=</span> <span class="s2">&quot;arb.&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># Return the display string (e.g. &quot;Hz&quot;) rather than the member repr.</span>
+        <span class="c1"># On Python &gt;=3.11 the str/Enum mixin no longer formats as its value,</span>
+        <span class="c1"># so f&quot;{unit}&quot; would otherwise render as &quot;UnitEnum.HZ&quot;.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span></div>
 
 
 
@@ -335,44 +341,85 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Tuple of (x_values, y_values)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">opt_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="n">run_index</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">use_design_var_as_x</span><span class="p">:</span>
-            <span class="c1"># Use design variable associated with y_param as x</span>
-            <span class="n">x_values</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">get_design_var_for_param</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">result</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
-            <span class="p">]</span>
+        <span class="c1"># --- validation: print descriptive messages for missing data, but continue anyway for convenience when reusing PLOT_SETTINGS ---</span>
+        <span class="k">if</span> <span class="n">run_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Run index </span><span class="si">{</span><span class="n">run_index</span><span class="si">}</span><span class="s2"> is out of range. Only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">)</span><span class="si">}</span><span class="s2"> run(s) available.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="n">run_index</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Optimization results for run index </span><span class="si">{</span><span class="n">run_index</span><span class="si">}</span><span class="s2"> are empty.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Use parameter directly</span>
-            <span class="n">x_values</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">x_param</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+            <span class="n">opt_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="n">run_index</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">use_design_var_as_x</span><span class="p">:</span>
+                <span class="n">x_sample</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_design_var_for_param</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">opt_result</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">opt_result</span>
+                    <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">x_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;No design variable found for parameter &#39;</span><span class="si">{</span><span class="n">y_param</span><span class="si">}</span><span class="s2">&#39; in run </span><span class="si">{</span><span class="n">run_index</span><span class="si">}</span><span class="s2">. &quot;</span>
+                        <span class="s2">&quot;Cannot use it as x-axis.&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x_sample</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">x_param</span><span class="p">,</span> <span class="n">opt_result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">opt_result</span>
+                    <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">x_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">x_param</span><span class="si">}</span><span class="s2">&#39; not found in optimization results of run </span><span class="si">{</span><span class="n">run_index</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="p">)</span>
+            <span class="n">y_sample</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">opt_result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">opt_result</span>
+                <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">y_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">y_param</span><span class="si">}</span><span class="s2">&#39; not found in optimization results of run </span><span class="si">{</span><span class="n">run_index</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">opt_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_results</span><span class="p">[</span><span class="n">run_index</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">use_design_var_as_x</span><span class="p">:</span>
+                <span class="n">x_values</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_design_var_for_param</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">result</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x_values</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">x_param</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
+                <span class="p">]</span>
+
+            <span class="n">y_values</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
             <span class="p">]</span>
 
-        <span class="n">y_values</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">get_parameter_value</span><span class="p">(</span><span class="n">y_param</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">opt_result</span><span class="p">)</span>
-        <span class="p">]</span>
-
-        <span class="c1"># Filter out None values</span>
-        <span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="o">*</span><span class="p">[</span>
+            <span class="c1"># Filter out None values</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="p">]</span>
-        <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">filtered</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="n">x_tuple</span><span class="p">,</span> <span class="n">y_tuple</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">filtered</span><span class="p">)</span>
 
-        <span class="n">x_values_filtered</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">)</span>
-        <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">y_values_filtered</span><span class="p">)</span>
+            <span class="n">x_values_filtered</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_tuple</span><span class="p">)</span>
+            <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">y_tuple</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">sort_by_x</span> <span class="ow">and</span> <span class="n">x_values_filtered</span><span class="p">:</span>
-            <span class="c1"># Sort by x values if requested</span>
-            <span class="n">sorted_pairs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span><span class="p">))</span>
-            <span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">sorted_pairs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+            <span class="k">if</span> <span class="n">sort_by_x</span> <span class="ow">and</span> <span class="n">x_values_filtered</span><span class="p">:</span>
+                <span class="n">sorted_pairs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span><span class="p">))</span>
+                <span class="n">x_values_filtered</span><span class="p">,</span> <span class="n">y_values_filtered</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">sorted_pairs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">y_values_filtered</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_values_filtered</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">y_values_filtered</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span></div>
 
 
 <div class="viewcode-block" id="DataExtractor.get_y_data_with_statistics">
@@ -441,7 +488,7 @@
         <span class="n">data_extractor</span><span class="p">:</span> <span class="n">DataExtractor</span><span class="p">,</span>
         <span class="n">plot_variance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">save_figures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the plotter.</span>
 
@@ -455,7 +502,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">save_figures</span> <span class="o">=</span> <span class="n">save_figures</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_extractor</span><span class="o">.</span><span class="n">opt_results</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="o">=</span> <span class="n">save_path</span>
-        
 
     <span class="k">def</span> <span class="nf">_setup_ax</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -472,8 +518,9 @@
 <span class="sd">            x_label: Custom x-axis label (overrides config)</span>
 <span class="sd">            y_label: Custom y-axis label (overrides config)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">get_legend</span><span class="p">()</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="n">legend</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">legend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">legend</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
 
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">x_label</span> <span class="k">if</span> <span class="n">x_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">config</span><span class="o">.</span><span class="n">get_x_label</span><span class="p">())</span>
 
@@ -569,7 +616,6 @@
                 <span class="p">)</span></div>
 
 
-
     <span class="k">def</span> <span class="nf">_plot_single_param</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">OptPltSet</span><span class="p">,</span> <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -594,7 +640,12 @@
                 <span class="n">normalized_std</span> <span class="o">=</span> <span class="n">y_std</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">normalization</span>
 
                 <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-                    <span class="n">x_values</span><span class="p">,</span> <span class="n">normalized_mean</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;optimized mean&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                    <span class="n">x_values</span><span class="p">,</span>
+                    <span class="n">normalized_mean</span><span class="p">,</span>
+                    <span class="s2">&quot;o-&quot;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;optimized mean&quot;</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
                 <span class="p">)</span>
 
                 <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
@@ -628,7 +679,14 @@
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">run_label</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">run_idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
 
-                    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">normalized_y</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">run_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                        <span class="n">x_values</span><span class="p">,</span>
+                        <span class="n">normalized_y</span><span class="p">,</span>
+                        <span class="s2">&quot;o-&quot;</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="n">run_label</span><span class="p">,</span>
+                        <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                    <span class="p">)</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">_plot_target</span><span class="p">(</span>
                         <span class="n">ax</span><span class="p">,</span>
@@ -695,7 +753,13 @@
 
 
     <span class="k">def</span> <span class="nf">_plot_param_vs_design_var</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">OptPltSet</span><span class="p">,</span> <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sort_by_x</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">OptPltSet</span><span class="p">,</span>
+        <span class="n">y_param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">sort_by_x</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot a parameter vs. its associated design variable.</span>
 
@@ -730,7 +794,9 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_runs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">run_label</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">run_idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
 
-            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">normalized_y</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">run_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">x_values</span><span class="p">,</span> <span class="n">normalized_y</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">run_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">x_values</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_plot_target</span><span class="p">(</span>
@@ -858,7 +924,7 @@
     <span class="n">plot_variance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">plot_design_variables</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chronological&quot;</span><span class="p">,</span> <span class="s2">&quot;sorted&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">opt_target_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OptTarget</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the progress of optimization iterations.</span>
 
@@ -929,7 +995,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, 202Q-lab.</p>
+    <p>&#169; Copyright 2026, 202Q-lab.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

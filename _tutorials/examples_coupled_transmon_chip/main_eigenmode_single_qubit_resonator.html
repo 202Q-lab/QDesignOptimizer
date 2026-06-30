@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eigenmode simulation of single qubit with readout resonator &mdash; qdesignoptimizer · 0.1.0</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/my_theme.css?v=eea1f72d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Eigenmode simulation of coupled qubits" href="main_eigenmode_two_qubit_resonator.html" />
+    <link rel="prev" title="Examples" href="../../tutorials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #2980B9" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            qdesignoptimizer
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Content:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../optimizer.html">Optimizer 101</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../userguide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">QDO QuickStart</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorials.html">Examples</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Eigenmode simulation of single qubit with readout resonator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Rendering-the-design">Rendering the design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Creating-the-study-and-optimization-targets">Creating the study and optimization targets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Creating-design-analysis-objects">Creating design analysis objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Optimization-step">Optimization step</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Results">Results</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Update-parameters">Update parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Close">Close</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_charge_line_decay_single_qubit.html">Capacitive simulation of qubit decay in charge line</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_kappa_target_resonator.html">Resonator Kappa through capacitance matrix simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main_capacitance_target_resonator.html">Optimization of readout resonator coupling with capacitance target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../examples_coupled_transmons_tunable_coupler_chip/main_eigenmode_two_qubit_resonator.html">Eigenmode simulation of coupled qubits</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../videos.html">Videos</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api-reference/modules.html">qdesignoptimizer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #2980B9" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">qdesignoptimizer</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../userguide.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="../../tutorials.html">Examples</a></li>
+      <li class="breadcrumb-item active">Eigenmode simulation of single qubit with readout resonator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Eigenmode-simulation-of-single-qubit-with-readout-resonator">
+<h1>Eigenmode simulation of single qubit with readout resonator<a class="headerlink" href="#Eigenmode-simulation-of-single-qubit-with-readout-resonator" title="Link to this heading"></a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+</pre></div>
+</div>
+</div>
+<section id="Rendering-the-design">
+<h2>Rendering the design<a class="headerlink" href="#Rendering-the-design" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
+<span class="kn">import</span> <span class="nn">design</span> <span class="k">as</span> <span class="nn">d</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.chip_generation</span> <span class="kn">import</span> <span class="n">create_chip_base</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check Purcell limit for resonator - qubit system</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.estimation.purcell_limit</span> <span class="kn">import</span> <span class="n">purcell_t1_transmon_resonator</span>
+<span class="kn">from</span> <span class="nn">parameter_targets</span> <span class="kn">import</span> <span class="n">PARAM_TARGETS</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.names_parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">param</span><span class="p">,</span>
+    <span class="n">param_nonlin</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">t1_limit_target</span> <span class="o">=</span> <span class="n">purcell_t1_transmon_resonator</span><span class="p">(</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="n">PARAM_TARGETS</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">QUBIT_1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">RESONATOR_1</span><span class="p">)],</span>
+    <span class="n">kappa</span> <span class="o">=</span> <span class="n">PARAM_TARGETS</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">RESONATOR_1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">KAPPA</span><span class="p">)],</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">PARAM_TARGETS</span><span class="p">[</span><span class="n">param_nonlin</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">QUBIT_1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">QUBIT_1</span><span class="p">)],</span>
+    <span class="n">f_q</span> <span class="o">=</span> <span class="n">PARAM_TARGETS</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">QUBIT_1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">FREQ</span><span class="p">)],</span>
+    <span class="n">f_r</span> <span class="o">=</span> <span class="n">PARAM_TARGETS</span><span class="p">[</span><span class="n">param</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">RESONATOR_1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">FREQ</span><span class="p">)]</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target Purcell T1 Limit: </span><span class="si">{</span><span class="n">t1_limit_target</span><span class="o">/</span><span class="mf">1e-6</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> microseconds&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span> <span class="o">=</span> <span class="n">create_chip_base</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">CHIP_NAME</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">chip_type</span><span class="p">,</span> <span class="n">open_gui</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">design_variables_file</span><span class="o">=</span><span class="s1">&#39;design_variables.json&#39;</span><span class="p">)</span>
+<span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-the-study-and-optimization-targets">
+<h2>Creating the study and optimization targets<a class="headerlink" href="#Creating-the-study-and-optimization-targets" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mini_studies</span> <span class="k">as</span> <span class="nn">ms</span>
+<span class="kn">import</span> <span class="nn">optimization_targets</span> <span class="k">as</span> <span class="nn">ot</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MINI_STUDY_GROUP</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">NBR_1</span>
+<span class="n">MINI_STUDY</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">get_mini_study_qb_res</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">MINI_STUDY_GROUP</span><span class="p">)</span>
+<span class="n">RENDER_QISKIT_METAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">design</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">render_qiskit_metal_design</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">gui</span><span class="p">)</span>
+
+<span class="n">opt_targets</span> <span class="o">=</span> <span class="n">ot</span><span class="o">.</span><span class="n">get_opt_targets_2qubits_resonator_coupler</span><span class="p">(</span>
+    <span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="n">MINI_STUDY_GROUP</span><span class="p">],</span>
+    <span class="n">opt_target_qubit_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_qubit_anharm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_freq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_kappa</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">opt_target_resonator_qubit_chi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_simple_resonator_qubit_chi_relation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-design-analysis-objects">
+<h2>Creating design analysis objects<a class="headerlink" href="#Creating-design-analysis-objects" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">parameter_targets</span> <span class="k">as</span> <span class="nn">pt</span>
+<span class="kn">import</span> <span class="nn">plot_settings</span> <span class="k">as</span> <span class="nn">ps</span>
+<span class="kn">from</span> <span class="nn">design</span> <span class="kn">import</span> <span class="n">CoupledLineTee_mesh_names</span>
+
+<span class="kn">from</span> <span class="nn">qiskit_metal.qlibrary.couplers.coupled_line_tee</span> <span class="kn">import</span> <span class="n">CoupledLineTee</span>
+
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis</span> <span class="kn">import</span> <span class="n">DesignAnalysis</span><span class="p">,</span> <span class="n">DesignAnalysisState</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.design_analysis_types</span> <span class="kn">import</span> <span class="n">MeshingMap</span>
+<span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.utils</span> <span class="kn">import</span> <span class="n">get_save_path</span><span class="p">,</span> <span class="n">close_ansys</span>
+
+<span class="n">close_ansys</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis_state</span> <span class="o">=</span> <span class="n">DesignAnalysisState</span><span class="p">(</span>
+    <span class="n">design</span><span class="p">,</span> <span class="n">RENDER_QISKIT_METAL</span><span class="p">,</span> <span class="n">pt</span><span class="o">.</span><span class="n">PARAM_TARGETS</span>
+<span class="p">)</span>
+
+<span class="c1"># map for finer meshing</span>
+<span class="n">meshing_map</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">MeshingMap</span><span class="p">(</span><span class="n">component_class</span><span class="o">=</span><span class="n">CoupledLineTee</span><span class="p">,</span> <span class="n">mesh_names</span><span class="o">=</span><span class="n">CoupledLineTee_mesh_names</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">design_analysis</span> <span class="o">=</span> <span class="n">DesignAnalysis</span><span class="p">(</span>
+    <span class="n">design_analysis_state</span><span class="p">,</span>
+    <span class="n">mini_study</span><span class="o">=</span><span class="n">MINI_STUDY</span><span class="p">,</span>
+    <span class="n">opt_targets</span><span class="o">=</span><span class="n">opt_targets</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="n">get_save_path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">CHIP_NAME</span><span class="p">),</span>
+    <span class="n">update_design_variables</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_settings</span><span class="o">=</span><span class="n">ps</span><span class="o">.</span><span class="n">PLOT_SETTINGS</span><span class="p">,</span>
+    <span class="n">meshing_map</span><span class="o">=</span><span class="n">meshing_map</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Optimization-step">
+<h2>Optimization step<a class="headerlink" href="#Optimization-step" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
+<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">group_passes</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span><span class="n">group_passes</span><span class="p">)</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_delta_f</span><span class="p">(</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>
+    <span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Results">
+<h2>Results<a class="headerlink" href="#Results" title="Link to this heading"></a></h2>
+<section id="Eigenmodes">
+<h3>Eigenmodes<a class="headerlink" href="#Eigenmodes" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">get_eigenmode_results</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Cross-Kerr">
+<h3>Cross Kerr<a class="headerlink" href="#Cross-Kerr" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">get_cross_kerr_matrix</span><span class="p">(</span><span class="n">iteration</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Update-parameters">
+<h2>Update parameters<a class="headerlink" href="#Update-parameters" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">overwrite_parameters</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Close">
+<h2>Close<a class="headerlink" href="#Close" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># close_ansys()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../tutorials.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="main_eigenmode_two_qubit_resonator.html" class="btn btn-neutral float-right" title="Eigenmode simulation of coupled qubits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, 202Q-lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

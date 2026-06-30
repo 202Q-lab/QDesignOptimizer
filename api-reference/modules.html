@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qdesignoptimizer &mdash; qdesignoptimizer · 0.0.2</title>
+  <title>qdesignoptimizer &mdash; qdesignoptimizer · 0.1.0</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
       <script src="../_static/doctools.js?v=9a2dae69"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -102,12 +102,11 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="qdesignoptimizer.html#submodules">Submodules</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.anmod_optimizer.html">qdesignoptimizer.anmod_optimizer module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.anmod_optimizer.html#qdesignoptimizer.anmod_optimizer.ANModOptimizer"><code class="docutils literal notranslate"><span class="pre">ANModOptimizer</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.anmod_optimizer.html">qdesignoptimizer.anmod_optimizer module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.design_analysis.html">qdesignoptimizer.design_analysis module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis"><code class="docutils literal notranslate"><span class="pre">DesignAnalysis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.save_optimization_results"><code class="docutils literal notranslate"><span class="pre">save_optimization_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.merge_partitioned_simulation"><code class="docutils literal notranslate"><span class="pre">merge_partitioned_simulation()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html">qdesignoptimizer.design_analysis_types module</a><ul>
@@ -119,10 +118,12 @@
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget"><code class="docutils literal notranslate"><span class="pre">OptTarget</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MiniStudy"><code class="docutils literal notranslate"><span class="pre">MiniStudy</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.DesignAnalysisState"><code class="docutils literal notranslate"><span class="pre">DesignAnalysisState</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults"><code class="docutils literal notranslate"><span class="pre">SimulationResults</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="qdesignoptimizer.logger.html">qdesignoptimizer.logger module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.logger.html#qdesignoptimizer.logger.CustomHandler"><code class="docutils literal notranslate"><span class="pre">CustomHandler</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.logger.html#qdesignoptimizer.logger.NumpyComplexEncoder"><code class="docutils literal notranslate"><span class="pre">NumpyComplexEncoder</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="qdesignoptimizer.logger.html#qdesignoptimizer.logger.dict_log_format"><code class="docutils literal notranslate"><span class="pre">dict_log_format()</span></code></a></li>
 </ul>
 </li>
@@ -160,7 +161,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, 202Q-lab.</p>
+    <p>&#169; Copyright 2026, 202Q-lab.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

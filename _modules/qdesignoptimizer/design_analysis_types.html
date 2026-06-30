@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>qdesignoptimizer.design_analysis_types &mdash; qdesignoptimizer · 0.0.2</title>
+  <title>qdesignoptimizer.design_analysis_types &mdash; qdesignoptimizer · 0.1.0</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -84,7 +84,7 @@
 <span></span><span class="sd">&quot;&quot;&quot;Data structures for organizing quantum circuit design optimization workflows.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">fields</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">qiskit_metal.designs.design_base</span> <span class="kn">import</span> <span class="n">QDesign</span>
 
@@ -291,7 +291,110 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">design_var</span> <span class="o">=</span> <span class="n">design_var</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">design_var_constraint</span> <span class="o">=</span> <span class="n">design_var_constraint</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prop_to</span> <span class="o">=</span> <span class="n">prop_to</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">independent_target</span> <span class="o">=</span> <span class="n">independent_target</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">independent_target</span> <span class="o">=</span> <span class="n">independent_target</span>
+
+    <span class="k">class</span> <span class="nc">_TrackedMapping</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dict wrapper to diagnose missing information.&quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accessed_keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">none_accesses</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">missing_accesses</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">def</span> <span class="nf">_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accessed_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">none_accesses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+        <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">missing_accesses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accessed_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">.get(</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="n">key_present</span> <span class="o">=</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">key_present</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">missing_accesses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key_present</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">none_accesses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="OptTarget.evaluate_prop_to">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget.evaluate_prop_to">[docs]</a>
+    <span class="k">def</span> <span class="nf">evaluate_prop_to</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">system_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+        <span class="n">design_vars</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate ``prop_to`` and report exactly which accessed keys are None.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;prop_to is None for target &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">involved_modes</span><span class="si">}</span><span class="s2">) / design_var=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">design_var</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">tracked_p</span> <span class="o">=</span> <span class="n">OptTarget</span><span class="o">.</span><span class="n">_TrackedMapping</span><span class="p">(</span><span class="n">system_params</span><span class="p">,</span> <span class="s2">&quot;p&quot;</span><span class="p">)</span>
+        <span class="n">tracked_v</span> <span class="o">=</span> <span class="n">OptTarget</span><span class="o">.</span><span class="n">_TrackedMapping</span><span class="p">(</span><span class="n">design_vars</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop_to</span><span class="p">(</span><span class="n">tracked_p</span><span class="p">,</span> <span class="n">tracked_v</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">none_accesses</span> <span class="o">=</span> <span class="n">tracked_p</span><span class="o">.</span><span class="n">none_accesses</span> <span class="o">+</span> <span class="n">tracked_v</span><span class="o">.</span><span class="n">none_accesses</span>
+            <span class="n">missing_accesses</span> <span class="o">=</span> <span class="n">tracked_p</span><span class="o">.</span><span class="n">missing_accesses</span> <span class="o">+</span> <span class="n">tracked_v</span><span class="o">.</span><span class="n">missing_accesses</span>
+            <span class="k">if</span> <span class="n">none_accesses</span> <span class="ow">or</span> <span class="n">missing_accesses</span><span class="p">:</span>
+                <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="n">none_accesses</span><span class="p">:</span>
+                    <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="s2">&quot;None values at &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">none_accesses</span><span class="p">)))</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">missing_accesses</span><span class="p">:</span>
+                    <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="s2">&quot;Missing keys &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">missing_accesses</span><span class="p">)))</span>
+                    <span class="p">)</span>
+                <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="s2">&quot;Accessed keys &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                        <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tracked_p</span><span class="o">.</span><span class="n">accessed_keys</span> <span class="o">+</span> <span class="n">tracked_v</span><span class="o">.</span><span class="n">accessed_keys</span><span class="p">))</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;prop_to evaluation failed. &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;. Target=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">involved_modes</span><span class="si">}</span><span class="s2">), design_var=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">design_var</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+            <span class="k">raise</span>
+
+        <span class="n">none_accesses</span> <span class="o">=</span> <span class="n">tracked_p</span><span class="o">.</span><span class="n">none_accesses</span> <span class="o">+</span> <span class="n">tracked_v</span><span class="o">.</span><span class="n">none_accesses</span>
+        <span class="n">missing_accesses</span> <span class="o">=</span> <span class="n">tracked_p</span><span class="o">.</span><span class="n">missing_accesses</span> <span class="o">+</span> <span class="n">tracked_v</span><span class="o">.</span><span class="n">missing_accesses</span>
+        <span class="k">if</span> <span class="n">none_accesses</span> <span class="ow">or</span> <span class="n">missing_accesses</span><span class="p">:</span>
+            <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">none_accesses</span><span class="p">:</span>
+                <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="s2">&quot;None values at &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">none_accesses</span><span class="p">)))</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_accesses</span><span class="p">:</span>
+                <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="s2">&quot;Missing keys &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">missing_accesses</span><span class="p">)))</span>
+                <span class="p">)</span>
+            <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;Accessed keys &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tracked_p</span><span class="o">.</span><span class="n">accessed_keys</span> <span class="o">+</span> <span class="n">tracked_v</span><span class="o">.</span><span class="n">accessed_keys</span><span class="p">))</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;prop_to evaluation invalid. &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">)</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;. Target=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_param_type</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">involved_modes</span><span class="si">}</span><span class="s2">), design_var=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">design_var</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+</div>
 
 
 
@@ -498,6 +601,54 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span> <span class="o">=</span> <span class="n">system_target_params</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">system_optimized_params</span> <span class="o">=</span> <span class="n">system_optimized_params</span></div>
 
+
+
+<div class="viewcode-block" id="SimulationResults">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">SimulationResults</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for saved simulation data with dictionary-like access.&quot;&quot;&quot;</span>
+
+    <span class="n">optimization_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="n">system_target_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">plot_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="n">design_analysis_version</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="c1"># Enables dictionary-style read access, e.g. result[&quot;system_target_params&quot;].</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SimulationResults.keys">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.keys">[docs]</a>
+    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">field_info</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">field_info</span><span class="o">.</span><span class="n">name</span></div>
+
+
+<div class="viewcode-block" id="SimulationResults.to_dict">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;optimization_results&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimization_results</span><span class="p">,</span>
+            <span class="s2">&quot;system_target_params&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_target_params</span><span class="p">,</span>
+            <span class="s2">&quot;plot_settings&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_settings</span><span class="p">,</span>
+            <span class="s2">&quot;design_analysis_version&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_analysis_version</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SimulationResults.from_dict">
+<a class="viewcode-back" href="../../api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;SimulationResults&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build SimulationResults from a plain dictionary payload.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">optimization_results</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;optimization_results&quot;</span><span class="p">],</span>
+            <span class="n">system_target_params</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;system_target_params&quot;</span><span class="p">],</span>
+            <span class="n">plot_settings</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plot_settings&quot;</span><span class="p">),</span>
+            <span class="n">design_analysis_version</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;design_analysis_version&quot;</span><span class="p">],</span>
+        <span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -507,7 +658,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, 202Q-lab.</p>
+    <p>&#169; Copyright 2026, 202Q-lab.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation &mdash; qdesignoptimizer · 0.0.2</title>
+  <title>Installation &mdash; qdesignoptimizer · 0.1.0</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -61,6 +61,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#migration-from-qiskit-metal-to-quantum-metal">Migration from qiskit-metal to quantum-metal</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="optimizer.html">Optimizer 101</a></li>
@@ -101,20 +102,20 @@
 <section id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>Python 3.10 (required)</p></li>
+<li><p>Python 3.11 or 3.12 (required)</p></li>
 <li><p>pip or poetry package manager. We recommend creating a virtual environment by following the steps below.</p></li>
 <li><p>Git (for installation from repository)</p></li>
-<li><p>Ansys HFSS. <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> has been tested with Ansys Electronics Desktop 2021 R2.</p></li>
+<li><p>Ansys HFSS. <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> has been tested with Ansys Electronics Desktop 2021 R2 and 2022 R2.</p></li>
 </ul>
 </section>
 <section id="installation-with-pip">
 <h2>Installation with pip<a class="headerlink" href="#installation-with-pip" title="Link to this heading"></a></h2>
 <p>The simplest way to install <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> is via the Python package manager pip:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>qdesignoptimizer
-pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>quantum-metal
 </pre></div>
 </div>
-<p>Note that at the moment Qiskit Metal must be installed separately and without dependencies to make it work properly.</p>
+<p>Note that Quantum Metal (formerly Qiskit Metal) must be installed separately and without dependencies to make it work properly. The package uses PySide6 (version 6.8+) for the GUI interface. Note that the full installation has been tested with the version quantum-metal==0.5.3.post1.</p>
 </section>
 <section id="installation-from-github-repository">
 <h2>Installation from GitHub Repository<a class="headerlink" href="#installation-from-github-repository" title="Link to this heading"></a></h2>
@@ -129,7 +130,7 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 </section>
 <section id="creating-a-virtual-environment">
 <h3>Creating a Virtual Environment<a class="headerlink" href="#creating-a-virtual-environment" title="Link to this heading"></a></h3>
-<p>It is strongly recommended to install the project in a separate virtual environment using Python 3.10. You have several options:</p>
+<p>It is strongly recommended to install the project in a separate virtual environment using our installation guide. You have several options:</p>
 <p><strong>Option 1: Using Poetry (Recommended)</strong></p>
 <p>This project is packaged with <a class="reference external" href="https://python-poetry.org/">poetry</a>, which handles the environment setup for you.</p>
 <p><strong>Option 2: Using Conda</strong></p>
@@ -138,11 +139,11 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 conda<span class="w"> </span>activate<span class="w"> </span>qdesignenv
 </pre></div>
 </div>
-<p>Note that the C++ developer tools from the latest distribution of Visual Studio Installer are required for the successful installation of pyside2, which is part of the the environment.yml file. You can download the software from <a class="reference external" href="https://visualstudio.microsoft.com/downloads/">microsoft</a>.</p>
+<p>Note that the C++ developer tools from the latest distribution of Visual Studio Installer are required for the successful installation of PySide6, which is part of the the environment.yml file. You can download the software from <a class="reference external" href="https://visualstudio.microsoft.com/downloads/">microsoft</a>.</p>
 <p><strong>Option 3: Using venv</strong></p>
 <p>Create and activate a virtual environment using Python’s built-in venv module:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create new virtual environment</span>
-python3.10<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>qdesignenv
+python3.12<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>qdesignenv
 
 <span class="c1"># Activate the environment</span>
 <span class="c1"># On Linux/MacOS:</span>
@@ -160,9 +161,9 @@ pip<span class="w"> </span>install<span class="w"> </span>poetry
 </section>
 <section id="user-installation">
 <h3>User Installation<a class="headerlink" href="#user-installation" title="Link to this heading"></a></h3>
-<p>For regular users, install the project with its dependencies and Qiskit Metal:</p>
+<p>For regular users, install the project with its dependencies and Quantum Metal:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install
-pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>quantum-metal
 </pre></div>
 </div>
 </section>
@@ -170,7 +171,7 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 <h3>Developer Installation<a class="headerlink" href="#developer-installation" title="Link to this heading"></a></h3>
 <p>For developers who want to contribute to the project, install with additional development dependencies:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>docs,analysis
-pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>qiskit-metal<span class="o">==</span><span class="m">0</span>.1.5
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>quantum-metal
 pre-commit<span class="w"> </span>install
 </pre></div>
 </div>
@@ -198,10 +199,27 @@ pre-commit<span class="w"> </span>install
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
 <p><strong>Common Issues:</strong></p>
 <ul class="simple">
-<li><p><strong>Python Version Mismatch</strong>: Ensure you’re using Python 3.10</p></li>
+<li><p><strong>Python Version Mismatch</strong>: Ensure you’re using Python 3.10 or 3.11 or 3.12</p></li>
 <li><p><strong>Dependency Conflicts</strong>: If you encounter dependency conflicts, try installing in a fresh virtual environment</p></li>
 <li><p><strong>Ansys Connection Issues</strong>: Make sure Ansys HFSS is correctly installed and licensed</p></li>
 </ul>
+</section>
+<section id="migration-from-qiskit-metal-to-quantum-metal">
+<h2>Migration from qiskit-metal to quantum-metal<a class="headerlink" href="#migration-from-qiskit-metal-to-quantum-metal" title="Link to this heading"></a></h2>
+<p>If you have an existing QDesignOptimizer installation with qiskit-metal, follow these steps to migrate:</p>
+<p><strong>Delete your existing environment and recreate it</strong> to ensure all dependencies are correctly installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Deactivate and remove the old environment</span>
+<span class="c1"># If using conda:</span>
+conda<span class="w"> </span>deactivate
+conda<span class="w"> </span>env<span class="w"> </span>remove<span class="w"> </span>-n<span class="w"> </span>qdesignenv
+
+<span class="c1"># If using venv:</span>
+deactivate
+rm<span class="w"> </span>-rf<span class="w"> </span>qdesignenv<span class="w">  </span><span class="c1"># On Windows: rmdir /s qdesignenv</span>
+</pre></div>
+</div>
+<p>Then follow the installation instructions above to create a fresh environment.</p>
+<p><strong>Note:</strong> quantum-metal v0.5+ uses PySide6 instead of PySide2. The import paths remain <code class="docutils literal notranslate"><span class="pre">qiskit_metal</span></code> for backward compatibility.</p>
 <p>For more help, please open an issue on the <a class="reference external" href="https://github.com/202Q-lab/QDesignOptimizer/issues">GitHub repository</a>.</p>
 </section>
 </section>
@@ -217,7 +235,7 @@ pre-commit<span class="w"> </span>install
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, 202Q-lab.</p>
+    <p>&#169; Copyright 2026, 202Q-lab.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

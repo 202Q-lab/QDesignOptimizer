@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; qdesignoptimizer · 0.0.2</title>
+  <title>Index &mdash; qdesignoptimizer · 0.1.0</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -114,8 +114,6 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#qdesignoptimizer.anmod_optimizer.ANModOptimizer">ANModOptimizer (class in qdesignoptimizer.anmod_optimizer)</a>
-</li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum.ARB">ARB (qdesignoptimizer.sim_plot_progress.UnitEnum attribute)</a>
 </li>
   </ul></td>
@@ -127,8 +125,6 @@
       <li><a href="api-reference/qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html#qdesignoptimizer.estimation.classical_model_decay_into_charge_line.calculate_t1_limit_floating_lumped_mode_decay_into_chargeline">calculate_t1_limit_floating_lumped_mode_decay_into_chargeline() (in module qdesignoptimizer.estimation.classical_model_decay_into_charge_line)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html#qdesignoptimizer.estimation.classical_model_decay_into_charge_line.calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline">calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline() (in module qdesignoptimizer.estimation.classical_model_decay_into_charge_line)</a>
-</li>
-      <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#qdesignoptimizer.anmod_optimizer.ANModOptimizer.calculate_target_design_var">calculate_target_design_var() (qdesignoptimizer.anmod_optimizer.ANModOptimizer method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.CAPACITANCE">CAPACITANCE (in module qdesignoptimizer.utils.names_parameters)</a>
 </li>
@@ -154,7 +150,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor">DataExtractor (class in qdesignoptimizer.sim_plot_progress)</a>
 </li>
+      <li><a href="api-reference/qdesignoptimizer.logger.html#qdesignoptimizer.logger.NumpyComplexEncoder.default">default() (qdesignoptimizer.logger.NumpyComplexEncoder method)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.default_interface_properties">default_interface_properties() (in module qdesignoptimizer.design_analysis_types)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.design_analysis_version">design_analysis_version (qdesignoptimizer.design_analysis_types.SimulationResults attribute)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_">design_var_() (in module qdesignoptimizer.utils.names_design_variables)</a>
 </li>
@@ -164,10 +164,10 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_cl_pos_y">design_var_cl_pos_y() (in module qdesignoptimizer.utils.names_design_variables)</a>
 </li>
-      <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_coupl_length">design_var_coupl_length() (in module qdesignoptimizer.utils.names_design_variables)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_coupl_length">design_var_coupl_length() (in module qdesignoptimizer.utils.names_design_variables)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_gap">design_var_gap() (in module qdesignoptimizer.utils.names_design_variables)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_design_variables.html#qdesignoptimizer.utils.names_design_variables.design_var_length">design_var_length() (in module qdesignoptimizer.utils.names_design_variables)</a>
@@ -192,6 +192,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.InterfaceProperties.eps_r">eps_r (qdesignoptimizer.design_analysis_types.InterfaceProperties attribute)</a>
 </li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.OptTarget.evaluate_prop_to">evaluate_prop_to() (qdesignoptimizer.design_analysis_types.OptTarget method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.DataExtractor.extract_xy_data">extract_xy_data() (qdesignoptimizer.sim_plot_progress.DataExtractor method)</a>
@@ -209,6 +211,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.logger.html#qdesignoptimizer.logger.CustomHandler.format">format() (qdesignoptimizer.logger.CustomHandler method)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.from_dict">from_dict() (qdesignoptimizer.design_analysis_types.SimulationResults class method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -252,10 +256,10 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.utils.html#qdesignoptimizer.utils.utils.get_normalized_vector">get_normalized_vector() (in module qdesignoptimizer.utils.utils)</a>
 </li>
-      <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width">get_opt_target_qubit_anharmonicity_via_capacitance_width() (in module qdesignoptimizer.utils.optimization_targets)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_anharmonicity_via_capacitance_width">get_opt_target_qubit_anharmonicity_via_capacitance_width() (in module qdesignoptimizer.utils.optimization_targets)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_qubit_freq_via_lj">get_opt_target_qubit_freq_via_lj() (in module qdesignoptimizer.utils.optimization_targets)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.optimization_targets.html#qdesignoptimizer.utils.optimization_targets.get_opt_target_res_freq_via_length">get_opt_target_res_freq_via_length() (in module qdesignoptimizer.utils.optimization_targets)</a>
@@ -289,8 +293,6 @@
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptPltSet.get_y_label">get_y_label() (qdesignoptimizer.sim_plot_progress.OptPltSet method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum.GHZ">GHZ (qdesignoptimizer.sim_plot_progress.UnitEnum attribute)</a>
-</li>
-      <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#qdesignoptimizer.anmod_optimizer.ANModOptimizer.group_targets">group_targets() (qdesignoptimizer.anmod_optimizer.ANModOptimizer static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -331,7 +333,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.Interfaces.keys">keys() (qdesignoptimizer.design_analysis_types.Interfaces method)</a>
+
+      <ul>
+        <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.keys">(qdesignoptimizer.design_analysis_types.SimulationResults method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum.KHZ">KHZ (qdesignoptimizer.sim_plot_progress.UnitEnum attribute)</a>
@@ -351,6 +357,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType.material">material (qdesignoptimizer.utils.chip_generation.ChipType attribute)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.merge_partitioned_simulation">merge_partitioned_simulation() (in module qdesignoptimizer.design_analysis)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.MeshingMap">MeshingMap (class in qdesignoptimizer.design_analysis_types)</a>
 </li>
@@ -380,8 +388,6 @@
       <ul>
         <li><a href="api-reference/qdesignoptimizer.html#module-qdesignoptimizer">qdesignoptimizer</a>
 </li>
-        <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#module-qdesignoptimizer.anmod_optimizer">qdesignoptimizer.anmod_optimizer</a>
-</li>
         <li><a href="api-reference/qdesignoptimizer.design_analysis.html#module-qdesignoptimizer.design_analysis">qdesignoptimizer.design_analysis</a>
 </li>
         <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#module-qdesignoptimizer.design_analysis_types">qdesignoptimizer.design_analysis_types</a>
@@ -389,6 +395,8 @@
         <li><a href="api-reference/qdesignoptimizer.estimation.html#module-qdesignoptimizer.estimation">qdesignoptimizer.estimation</a>
 </li>
         <li><a href="api-reference/qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html#module-qdesignoptimizer.estimation.classical_model_decay_into_charge_line">qdesignoptimizer.estimation.classical_model_decay_into_charge_line</a>
+</li>
+        <li><a href="api-reference/qdesignoptimizer.estimation.purcell_limit.html#module-qdesignoptimizer.estimation.purcell_limit">qdesignoptimizer.estimation.purcell_limit</a>
 </li>
         <li><a href="api-reference/qdesignoptimizer.logger.html#module-qdesignoptimizer.logger">qdesignoptimizer.logger</a>
 </li>
@@ -435,10 +443,10 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_lp_to_tee">name_lp_to_tee() (in module qdesignoptimizer.utils.names_qiskit_components)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_mode">name_mode() (in module qdesignoptimizer.utils.names_qiskit_components)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_mode_to_mode">name_mode_to_mode() (in module qdesignoptimizer.utils.names_qiskit_components)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_qiskit_components.html#qdesignoptimizer.utils.names_qiskit_components.name_short">name_short() (in module qdesignoptimizer.utils.names_qiskit_components)</a>
@@ -451,12 +459,16 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum.NS">NS (qdesignoptimizer.sim_plot_progress.UnitEnum attribute)</a>
 </li>
+      <li><a href="api-reference/qdesignoptimizer.logger.html#qdesignoptimizer.logger.NumpyComplexEncoder">NumpyComplexEncoder (class in qdesignoptimizer.logger)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.optimization_results">optimization_results (qdesignoptimizer.design_analysis_types.SimulationResults attribute)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter">OptimizationPlotter (class in qdesignoptimizer.sim_plot_progress)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.optimize_target">optimize_target() (qdesignoptimizer.design_analysis.DesignAnalysis method)</a>
@@ -485,17 +497,21 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.names_parameters.html#qdesignoptimizer.utils.names_parameters.Parameter">Parameter (in module qdesignoptimizer.utils.names_parameters)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter.plot_design_vars_vs_iteration">plot_design_vars_vs_iteration() (qdesignoptimizer.sim_plot_progress.OptimizationPlotter method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.utils.plotting.html#qdesignoptimizer.utils.plotting.plot_optimization_results">plot_optimization_results() (in module qdesignoptimizer.utils.plotting)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter.plot_params_vs_design_vars">plot_params_vs_design_vars() (qdesignoptimizer.sim_plot_progress.OptimizationPlotter method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.plot_progress">plot_progress() (in module qdesignoptimizer.sim_plot_progress)</a>
 </li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.plot_settings">plot_settings (qdesignoptimizer.design_analysis_types.SimulationResults attribute)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.OptimizationPlotter.plot_standard">plot_standard() (qdesignoptimizer.sim_plot_progress.OptimizationPlotter method)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.estimation.purcell_limit.html#qdesignoptimizer.estimation.purcell_limit.purcell_t1_transmon_resonator">purcell_t1_transmon_resonator() (in module qdesignoptimizer.estimation.purcell_limit)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -508,13 +524,6 @@
 
       <ul>
         <li><a href="api-reference/qdesignoptimizer.html#module-qdesignoptimizer">module</a>
-</li>
-      </ul></li>
-      <li>
-    qdesignoptimizer.anmod_optimizer
-
-      <ul>
-        <li><a href="api-reference/qdesignoptimizer.anmod_optimizer.html#module-qdesignoptimizer.anmod_optimizer">module</a>
 </li>
       </ul></li>
       <li>
@@ -543,6 +552,13 @@
 
       <ul>
         <li><a href="api-reference/qdesignoptimizer.estimation.classical_model_decay_into_charge_line.html#module-qdesignoptimizer.estimation.classical_model_decay_into_charge_line">module</a>
+</li>
+      </ul></li>
+      <li>
+    qdesignoptimizer.estimation.purcell_limit
+
+      <ul>
+        <li><a href="api-reference/qdesignoptimizer.estimation.purcell_limit.html#module-qdesignoptimizer.estimation.purcell_limit">module</a>
 </li>
       </ul></li>
       <li>
@@ -650,6 +666,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.sim_plot_progress.html#qdesignoptimizer.sim_plot_progress.UnitEnum.S">S (qdesignoptimizer.sim_plot_progress.UnitEnum attribute)</a>
 </li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.save_optimization_results">save_optimization_results() (in module qdesignoptimizer.design_analysis)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis.html#qdesignoptimizer.design_analysis.DesignAnalysis.screenshot">screenshot() (qdesignoptimizer.design_analysis.DesignAnalysis method)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.sim_capacitance_matrix.html#qdesignoptimizer.sim_capacitance_matrix.CapacitanceMatrixStudy.set_render_qiskit_metal">set_render_qiskit_metal() (qdesignoptimizer.sim_capacitance_matrix.CapacitanceMatrixStudy method)</a>
@@ -662,6 +680,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults">SimulationResults (class in qdesignoptimizer.design_analysis_types)</a>
+</li>
       <li><a href="api-reference/qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType.size_x">size_x (qdesignoptimizer.utils.chip_generation.ChipType attribute)</a>
 </li>
       <li><a href="api-reference/qdesignoptimizer.utils.chip_generation.html#qdesignoptimizer.utils.chip_generation.ChipType.size_y">size_y (qdesignoptimizer.utils.chip_generation.ChipType attribute)</a>
@@ -674,6 +694,8 @@
 </li>
       <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SurfaceProperties">SurfaceProperties (class in qdesignoptimizer.design_analysis_types)</a>
 </li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.system_target_params">system_target_params (qdesignoptimizer.design_analysis_types.SimulationResults attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -685,6 +707,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.InterfaceProperties.th">th (qdesignoptimizer.design_analysis_types.InterfaceProperties attribute)</a>
+</li>
+      <li><a href="api-reference/qdesignoptimizer.design_analysis_types.html#qdesignoptimizer.design_analysis_types.SimulationResults.to_dict">to_dict() (qdesignoptimizer.design_analysis_types.SimulationResults method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -750,7 +774,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, 202Q-lab.</p>
+    <p>&#169; Copyright 2026, 202Q-lab.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
