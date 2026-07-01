@@ -8,8 +8,8 @@ Welcome to the qdesignoptimizer's documentation!
 Reference
 =========
 
-| A technical paper describing the functionality and giving examples is in preparation. 
-| Eriksson, et al., *"Automated, physics-guided, multi-parameter design optimization for superconducting quantum devices"*, arXiv:2508.18027 [quant-ph], 2025.
+| A technical paper describing the functionality and giving examples has been published.
+| Eriksson, et al., *"QDesignOptimizer based on ANMod: an automated, physics-guided, multi-parameter design optimizer for superconducting quantum devices"*, `Quantum Science and Technology 11, 035024 (2026) <https://doi.org/10.1088/2058-9565/ae7ab6>`_.
 | Please refer to this publication when citing the ``qdesignoptimizer``.
 
 .. toctree::

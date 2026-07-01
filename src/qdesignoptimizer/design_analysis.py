@@ -658,7 +658,7 @@ class DesignAnalysis:
                     "Design variable update failed, but is expected for a partitioned optimization until all parameters have been simulated."
                 )
                 updated_design_vars = deepcopy(self.design.variables)
-                minimization_results: list[dict] = []
+                minimization_results = []
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
@@ -904,6 +904,11 @@ def merge_partitioned_simulation(
     all_design_vars_to_update = {}
     all_target_params = set()
 
+    system_optimized_params = state_to_fetch_from.system_optimized_params
+    assert (
+        system_optimized_params is not None
+    ), "state_to_fetch_from.system_optimized_params must be initialized before merging."
+
     #  1 prepare design_variables and system_optimized_params to update
     for target in opt_targets:
         if target.target_param_type == NONLIN:
@@ -916,9 +921,9 @@ def merge_partitioned_simulation(
         all_target_params.add(param_to_update)
 
         if param_to_update in include_param_in_update:
-            all_params_to_update[param_to_update] = (
-                state_to_fetch_from.system_optimized_params[param_to_update]
-            )
+            all_params_to_update[param_to_update] = system_optimized_params[
+                param_to_update
+            ]
             all_design_vars_to_update[target.design_var] = (
                 state_to_fetch_from.design.variables[target.design_var]
             )
