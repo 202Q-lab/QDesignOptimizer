@@ -1061,7 +1061,7 @@ class DesignAnalysis:
         ``df.style.format("{:.3e}")``.
         """
         p_ratio_df = pd.DataFrame(self.get_surface_p_ratio()).T
-        p_ratio_df.columns = [f"mode {mode}" for mode in p_ratio_df.columns]
+        p_ratio_df.columns = pd.Index([f"mode {mode}" for mode in p_ratio_df.columns])
         p_ratio_df.index.name = "contribution"
         return p_ratio_df
 
