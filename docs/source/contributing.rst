@@ -9,3 +9,6 @@ release, follow the step-by-step checklist in
 `.github/RELEASING.md <https://github.com/202Q-lab/QDesignOptimizer/blob/main/.github/RELEASING.md>`_.
 It covers merging PRs, bumping the version, running tests, using the TestPyPI
 dry-run workflow, and creating the GitHub Release that triggers the live publish.
+
+The latest stable version is published as a pip-installable release
+(``pip install qdesignoptimizer``); see the :ref:`installation` guide for details.
