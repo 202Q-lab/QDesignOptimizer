@@ -806,9 +806,12 @@ class DesignAnalysis:
         """
         if self.save_path is None:
             raise ValueError("A path must be specified to save screenshot.")
-        gui.autoscale()
         name = self.save_path + f"_{run+1}" if run is not None else self.save_path
-        gui.screenshot(name=name, display=False)
+        try:
+            gui.autoscale()
+            gui.screenshot(name=name, display=False)
+        except Exception as error:  
+            log.warning("Failed to save screenshot to %s: %s", name, error)
 
     def _get_dielectric_p_ratio(self):
         """Get dielectric participation ratio taking into account the dielectric loss tangent."""
