@@ -100,6 +100,14 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">names</span> <span class="k">as</span> <span class="nn">n</span>
 <span class="kn">import</span> <span class="nn">design</span> <span class="k">as</span> <span class="nn">d</span>
 <span class="kn">from</span> <span class="nn">qdesignoptimizer.utils.chip_generation</span> <span class="kn">import</span> <span class="n">create_chip_base</span>
@@ -219,21 +227,15 @@
 </div>
 </div>
 </section>
-<section id="Optimization-step">
-<h2>Optimization step<a class="headerlink" href="#Optimization-step" title="Link to this heading"></a></h2>
+<section id="Simulation-step">
+<h2>Simulation step<a class="headerlink" href="#Simulation-step" title="Link to this heading"></a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># number of runs of optimization and number of passes for simulation at each run</span>
-<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">group_passes</span> <span class="o">=</span> <span class="mi">7</span>
-<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span><span class="n">group_passes</span><span class="p">)</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_delta_f</span><span class="p">(</span><span class="n">delta_f</span><span class="p">)</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">({},</span> <span class="p">{})</span>
+<span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -241,35 +243,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Study the physical relation between coupling width and Kappa</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="n">nbr_iterations</span> <span class="o">=</span> <span class="mi">10</span>
-
-<span class="n">design_analysis</span><span class="o">.</span><span class="n">opt_targets</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
-<span class="n">group_passes_start</span> <span class="o">=</span> <span class="mi">12</span>
-<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">0.001</span>
-<span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">600</span><span class="p">),</span> <span class="n">nbr_iterations</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbr_iterations</span><span class="p">):</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_nbr_passes</span><span class="p">(</span><span class="n">group_passes_start</span><span class="p">)</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">update_delta_f</span><span class="p">(</span><span class="n">delta_f</span><span class="p">)</span>
-    <span class="n">val</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">um&quot;</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">optimize_target</span><span class="p">(</span>
-        <span class="p">{</span><span class="s2">&quot;design_var_coupl_length_qubit_1_resonator_1&quot;</span><span class="p">:</span> <span class="n">val</span><span class="p">},</span> <span class="p">{}</span>
-    <span class="p">)</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-    <span class="n">design_analysis</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">gui</span><span class="o">=</span><span class="n">gui</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p_ratio</span> <span class="o">=</span> <span class="n">design_analysis</span><span class="o">.</span><span class="n">get_surface_p_ratio</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Surface p-ratio: </span><span class="si">{</span><span class="n">p_ratio</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design_analysis</span><span class="o">.</span><span class="n">get_surface_p_ratio_df</span><span class="p">()</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:.3e}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
