@@ -150,7 +150,7 @@ def get_mini_study_res_feedline(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
-        render_qiskit_metal_kwargs={"capacitance": True},
+        render_qiskit_metal_kwargs={"capacitance_or_surface_p_ratio": True},
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,
@@ -180,7 +180,7 @@ def get_mini_study_resonator_capacitance(group: int):
             (n.name_tee(group), "prime_start"),
         ],
         nbr_passes=8,
-        render_qiskit_metal_kwargs={"capacitance": True},
+        render_qiskit_metal_kwargs={"capacitance_or_surface_p_ratio": True},
     )
     return MiniStudy(
         qiskit_component_names=qiskit_component_names,
