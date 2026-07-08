@@ -140,8 +140,8 @@ def get_mini_study_res_feedline(group: int):
     resonator_decay_study = ResonatorDecayIntoWaveguideStudy(
         mode=resonator,
         mode_freq_GHz=pt.PARAM_TARGETS[param(resonator, FREQ)] / 1e9,
-        resonator_name=f"second_cpw_name_tee_{group}",  # These names must be found from the model list in Ansys
-        waveguide_name=f"prime_cpw_name_tee_{group}",
+        resonator_name=f"second_cpw_name_tee_{group}_",  # These names must be found from the model list in Ansys
+        waveguide_name=f"prime_cpw_name_tee_{group}_",
         impedance_ohm=50,
         resonator_type="lambda_4",
         qiskit_component_names=qiskit_component_names,
