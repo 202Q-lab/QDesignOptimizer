@@ -181,7 +181,7 @@ Parameter Targets
         param(n.RESONATOR_1, n.KAPPA): 1e6,
         param_nonlin(n.QUBIT_1, n.QUBIT_1): 200e6,  # Qubit anharmonicity
         param_nonlin(n.QUBIT_1, n.RESONATOR_1): 1e6,  # Qubit resonator chi
-        param_capacitance("prime_cpw_name_tee1", "second_cpw_name_tee1"): -3, # fF
+        param_capacitance("prime_cpw_name_tee_1", "second_cpw_name_tee_1"): -3, # fF
     }
 
 .. caution:: Make sure that all frequencies and rates are defined in units of Hz.
@@ -313,7 +313,7 @@ Surface properties must be defined in the ``MiniStudy`` class using ``SurfacePro
 
     surface_props = SurfaceProperties(
         interfaces=[interface1, interface2, ...],
-        sheet_material="material_name", 
+        sheet_material="material_name",
         sheet_thickness=thickness_value
     )
 
@@ -329,7 +329,7 @@ Each interface requires an ``InterfaceProperties`` object::
 The analysis returns a dictionary containing:
 
 * **Interface contributions**: Participation ratios for each defined surface
-* **Junction contributions**: Inductive energy from Josephson junctions  
+* **Junction contributions**: Inductive energy from Josephson junctions
 * **Dielectric contributions**: Bulk dielectric loss contributions
 
 This enables quantitative assessment of surface loss mechanisms and guides design optimization for improved coherence times.
