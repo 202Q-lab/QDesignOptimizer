@@ -134,7 +134,7 @@ PLOT_SETTINGS_CAPACITANCE = {
     "CAP": [
         OptPltSet(
             n.ITERATION,
-            param_capacitance("prime_cpw_name_tee_1_", "second_cpw_name_tee1_"),
+            param_capacitance("prime_cpw_name_tee_1_", "second_cpw_name_tee_1_"),
             y_label="Capacitance",
             unit="fF",
         )

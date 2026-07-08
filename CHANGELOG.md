@@ -3,15 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.2.0] - 2026-07-28
-
-### Breaking Changes
+## [0.2.0] - 2026-07-08
 
 ### Added
 - Support and example for partitioning the simulations of designs
 
 ### Fixed
 - Two windows opening for EPR analysis
+- missing _ in hardcoded capacitance names in targets
 
 ### Changed
 - Updated and extended examples used in the publication https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6
