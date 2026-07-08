@@ -11,7 +11,6 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 import pyEPR as epr
-from pyaedt import Hfss
 from pyEPR._config_default import config
 from qiskit_metal.analyses.quantization import EPRanalysis
 
@@ -42,6 +41,183 @@ from qdesignoptimizer.utils.names_parameters import (
     param_nonlin,
     param_participation_ratio,
 )
+
+
+class _ComGeometryModeler:
+    """3D-modeler operations issued on the COM Ansys session (single-window path).
+
+    Surface-participation-ratio rendering needs a handful of modeler operations
+    (section, clone, thicken, move, group, material assignment). These used to
+    run through a separate pyaedt ``Hfss()`` object, but under the pyaedt gRPC
+    backend that opens a *second* Ansys session which cannot see the geometry
+    rendered by qiskit-metal's COM renderer -- the chip ``"main"`` object lives
+    in the COM session while the pyaedt modeler points at an empty one, so the
+    surface operations failed with ``part with name "main" is not found`` and a
+    second Ansys window opened.
+
+    This adapter routes every operation through the *same* COM session that
+    renders the design and runs the pyEPR analysis, so there is a single window
+    and the surfaces are created exactly where ``get_Qsurface`` /
+    ``get_Qdielectric`` read them. Boolean ops that have a proven pyEPR wrapper
+    delegate to it; the rest issue raw ``oEditor`` script calls whose argument
+    arrays mirror pyaedt's own modeler.
+
+    It is deliberately a thin seam: an all-gRPC backend can replace this class
+    without touching the surface-rendering logic, once pyEPR's gRPC EPR gains
+    surface/dielectric participation support.
+    """
+
+    def __init__(self, com_modeler):
+        # ``com_modeler`` is the pyEPR ``HfssModeler`` exposed by the qiskit-metal
+        # COM renderer (``renderer.modeler``); ``_modeler`` is the raw oEditor.
+        self._modeler = com_modeler
+        self._oeditor = com_modeler._modeler
+        self._units = self._oeditor.GetModelUnits()
+
+    def _length(self, value):
+        """Format a length for oEditor: pass strings through, append model units to numbers."""
+        return value if isinstance(value, str) else f"{value}{self._units}"
+
+    # --- boolean ops: delegate to the proven pyEPR COM wrappers --------------
+    def get_objects_in_group(self, group):
+        return list(self._modeler.get_objects_in_group(group))
+
+    def unite(self, names, keep_originals=False):
+        names = list(names)
+        self._modeler.unite(names, keep_originals)
+        return names[0]
+
+    def subtract(self, blank_name, tool_names, keep_originals=False):
+        if isinstance(tool_names, str):
+            tool_names = [tool_names]
+        self._modeler.subtract(blank_name, list(tool_names), keep_originals)
+        return blank_name
+
+    def move(self, name, vector):
+        self._modeler.translate(name, [self._length(v) for v in vector])
+        return name
+
+    # --- ops without a pyEPR wrapper: raw oEditor (arrays mirror pyaedt) -----
+    def section(self, name, plane):
+        self._oeditor.Section(
+            ["NAME:Selections", "Selections:=", name, "NewPartsModelFlag:=", "Model"],
+            [
+                "NAME:SectionToParameters",
+                "CreateNewObjects:=",
+                True,
+                "SectionPlane:=",
+                plane,
+                "SectionCrossObject:=",
+                False,
+            ],
+        )
+
+    def clone(self, name):
+        self._oeditor.Copy(["NAME:Selections", "Selections:=", name])
+        return list(self._oeditor.Paste())
+
+    def thicken_sheet(self, name, thickness, both_sides=False):
+        self._oeditor.ThickenSheet(
+            ["NAME:Selections", "Selections:=", name, "NewPartsModelFlag:=", "Model"],
+            [
+                "NAME:SheetThickenParameters",
+                "Thickness:=",
+                self._length(thickness),
+                "BothSides:=",
+                both_sides,
+            ],
+        )
+        return name
+
+    def create_group(self, objects, group_name):
+        parts = ",".join(objects) if isinstance(objects, (list, tuple)) else objects
+        assigned = self._oeditor.CreateGroup(
+            [
+                "NAME:GroupParameter",
+                "ParentGroupID:=",
+                "Model",
+                "Parts:=",
+                parts,
+                "SubmodelInstances:=",
+                "",
+                "Groups:=",
+                "",
+            ]
+        )
+        if group_name and group_name != assigned:
+            self._oeditor.ChangeProperty(
+                [
+                    "NAME:AllTabs",
+                    [
+                        "NAME:Attributes",
+                        ["NAME:PropServers", assigned],
+                        ["NAME:ChangedProps", ["NAME:Name", "Value:=", group_name]],
+                    ],
+                ]
+            )
+            return group_name
+        return assigned
+
+    def ungroup(self, groups):
+        self._oeditor.Ungroup(["Groups:=", list(groups)])
+
+    def assign_material(self, objects, material):
+        servers = list(objects) if isinstance(objects, (list, tuple)) else [objects]
+        # AEDT stores the material name double-quoted (see pyaedt object_3d).
+        self._oeditor.ChangeProperty(
+            [
+                "NAME:AllTabs",
+                [
+                    "NAME:Geometry3DAttributeTab",
+                    ["NAME:PropServers", *servers],
+                    ["NAME:ChangedProps", ["NAME:Material", "Value:=", f'"{material}"']],
+                ],
+            ]
+        )
+        return objects
+
+    def create_bondwire(
+        self,
+        start,
+        end,
+        h1=0.005,
+        h2=0.0,
+        alpha=90,
+        beta=45,
+        diameter=0.005,
+        bond_type=0,
+        name=None,
+        matname=None,
+    ):
+        """Create a bondwire on the COM session (custom air-bridge path).
+
+        The surface-participation-ratio and capacitance flows remove all wire
+        bonds, and no bundled tutorial component exposes
+        ``get_air_bridge_coordinates``, so this path is not exercised by the
+        tutorials. It is ported onto pyEPR's COM ``draw_wirebond`` (centre
+        position + orientation + width); ``h2``/``alpha``/``beta``/``bond_type``
+        have no direct equivalent there. Validate against Ansys before relying
+        on it for a design that uses custom air bridges.
+        """
+        log.warning(
+            "create_bondwire is a COM port mapped onto pyEPR draw_wirebond; "
+            "validate geometry against Ansys before relying on it."
+        )
+        start = np.asarray(start[:2], dtype=float)
+        end = np.asarray(end[:2], dtype=float)
+        span = end - start
+        width = float(np.linalg.norm(span))
+        ori = list(span / width) if width else [1.0, 0.0]
+        centre = list(start + span / 2.0)
+        return self._modeler.draw_wirebond(
+            pos=centre,
+            ori=ori,
+            width=width,
+            height=h1,
+            wire_diameter=diameter,
+            name=name,
+            material=matname,
+        )
 
 
 class DesignAnalysis:
@@ -309,7 +485,13 @@ class DesignAnalysis:
         self.update_var({}, {})
         self.pinfo.validate_junction_info()
 
-        self.hfss = Hfss()
+        # Surface-participation geometry ops run on the renderer's OWN Ansys
+        # session by reusing its oEditor (self.renderer.modeler) -- see
+        # _ComGeometryModeler. This opens no new connection, so there is a single
+        # Ansys window. NB: attaching a *separate* pyaedt Hfss instead -- gRPC or
+        # COM (new_desktop=False) -- was tested and always opens a second Ansys
+        # window that cannot see the rendered geometry, so it is not used.
+        self._geom = _ComGeometryModeler(self.renderer.modeler)
         self.renderer.clean_active_design()
         self.render_qiskit_metal(
             self.design, **self.mini_study.render_qiskit_metal_eigenmode_kw_args
@@ -343,7 +525,7 @@ class DesignAnalysis:
                     for coord in self.design.components[
                         component_name
                     ].get_air_bridge_coordinates():
-                        self.hfss.modeler.create_bondwire(
+                        self._geom.create_bondwire(
                             coord[0],
                             coord[1],
                             h1=0.005,
@@ -358,10 +540,6 @@ class DesignAnalysis:
 
         # interfaces will be rendered if interfaces are defined in mini_study
         if self.mini_study.surface_properties:
-            self.hfss = Hfss(
-                project=self.pinfo.project_name,
-                design=self.mini_study.design_name,
-            )
             self._surface_rendering_for_surface_participation_ratios()
 
         # set fine mesh
@@ -441,8 +619,8 @@ class DesignAnalysis:
         It also assigns interface properties using InterfaceProperties dataclass to pinfo for the Qanalysis.
         """
 
-        metal = self.hfss.modeler.get_objects_in_group("Perfect E") or []
-        self.hfss.modeler.ungroup(
+        metal = self._geom.get_objects_in_group("Perfect E") or []
+        self._geom.ungroup(
             ["substrate_air", "metal_substrate", "underside_air", "metal_air"]
         )
 
@@ -450,22 +628,22 @@ class DesignAnalysis:
         filtered_metal = [obj for obj in metal if not obj.startswith("JJ_rect_Lj")]
 
         # substrate-air
-        self.hfss.modeler.section("main", "XY")
+        self._geom.section("main", "XY")
         cloned_polygon_names = []
         for obj in filtered_metal:
-            self.hfss.modeler.clone(obj)
+            self._geom.clone(obj)
             cloned_polygon_names.append(obj + "1")
-            self.hfss.modeler.subtract("main_Section1", cloned_polygon_names[-1], False)
-        self.hfss.modeler.subtract("main_Section1", filtered_metal, True)
-        self.hfss.modeler.create_group("main_Section1", group_name="substrate_air")
+            self._geom.subtract("main_Section1", cloned_polygon_names[-1], False)
+        self._geom.subtract("main_Section1", filtered_metal, True)
+        self._geom.create_group("main_Section1", group_name="substrate_air")
 
         # metal-substrate
         cloned_polygon_name = []
         for obj in filtered_metal:
-            self.hfss.modeler.clone(obj)
+            self._geom.clone(obj)
             cloned_polygon_name.append(obj + "2")
-        self.hfss.modeler.unite(cloned_polygon_name, False)
-        self.hfss.modeler.create_group(
+        self._geom.unite(cloned_polygon_name, False)
+        self._geom.create_group(
             cloned_polygon_name, group_name="metal_substrate"
         )
 
@@ -473,28 +651,28 @@ class DesignAnalysis:
         cloned_polygon_name = []
         for obj in filtered_metal:
             cloned_polygon_name.append(obj)
-        metal_air = self.hfss.modeler.unite(cloned_polygon_name, False)
-        metal_air = self.hfss.modeler.thicken_sheet(
+        metal_air = self._geom.unite(cloned_polygon_name, False)
+        metal_air = self._geom.thicken_sheet(
             metal_air,
             self.mini_study.surface_properties.sheet_thickness,
-            bBothSides=True,
+            both_sides=True,
         )
-        metal_air = self.hfss.modeler.move(
+        metal_air = self._geom.move(
             metal_air, [0, 0, self.mini_study.surface_properties.sheet_thickness / 2]
         )
-        self.hfss.modeler.create_group(cloned_polygon_name, group_name="metal_air")
-        objects = self.hfss.modeler.get_objects_in_group("metal_air") or []
+        self._geom.create_group(cloned_polygon_name, group_name="metal_air")
+        objects = self._geom.get_objects_in_group("metal_air") or []
         if objects:
-            metal_air = self.hfss.assign_material(
+            metal_air = self._geom.assign_material(
                 objects, self.mini_study.surface_properties.sheet_material
             )
 
         # underside surface
-        self.hfss.modeler.section("main", "XY")
-        self.hfss.modeler.move(
+        self._geom.section("main", "XY")
+        self._geom.move(
             "main_Section2", [0, 0, self.design._chips["main"]["size"]["size_z"]]
         )
-        self.hfss.modeler.create_group(["main_Section2"], group_name="underside_air")
+        self._geom.create_group(["main_Section2"], group_name="underside_air")
 
         # Assign interface properties using InterfaceProperties dataclass
         if self.mini_study.surface_properties.interfaces:
@@ -503,7 +681,7 @@ class DesignAnalysis:
                 interface_props = getattr(
                     self.mini_study.surface_properties.interfaces, interface_name
                 )
-                for obj_name in (self.hfss.modeler.get_objects_in_group(interface_name) or []):
+                for obj_name in (self._geom.get_objects_in_group(interface_name) or []):
                     self.pinfo.dissipative["dielectric_surfaces"][obj_name] = asdict(
                         interface_props
                     )
@@ -658,7 +836,7 @@ class DesignAnalysis:
                     "Design variable update failed, but is expected for a partitioned optimization until all parameters have been simulated."
                 )
                 updated_design_vars = deepcopy(self.design.variables)
-                minimization_results: list[dict] = []
+                minimization_results = []
         log.info("Updated_design_vars%s", dict_log_format(updated_design_vars))
         self.update_var(updated_design_vars, {})
 
@@ -806,9 +984,12 @@ class DesignAnalysis:
         """
         if self.save_path is None:
             raise ValueError("A path must be specified to save screenshot.")
-        gui.autoscale()
         name = self.save_path + f"_{run+1}" if run is not None else self.save_path
-        gui.screenshot(name=name, display=False)
+        try:
+            gui.autoscale()
+            gui.screenshot(name=name, display=False)
+        except Exception as error:  
+            log.warning("Failed to save screenshot to %s: %s", name, error)
 
     def _get_dielectric_p_ratio(self):
         """Get dielectric participation ratio taking into account the dielectric loss tangent."""
@@ -843,7 +1024,7 @@ class DesignAnalysis:
             p_ratio_dict[interface_name] = {}
             for mode in range(int(self.pinfo.setup.n_modes)):
                 self.eprd.set_mode(mode)
-                group_objects = self.hfss.modeler.get_objects_in_group(interface_name) or []
+                group_objects = self._geom.get_objects_in_group(interface_name) or []
                 if not group_objects:
                     raise ValueError(
                         f"get_objects_in_group returned no objects for interface '{interface_name}'. "
@@ -868,6 +1049,21 @@ class DesignAnalysis:
         p_ratio_dict["dielectric"] = self._get_dielectric_p_ratio()
 
         return p_ratio_dict
+
+    def get_surface_p_ratio_df(self) -> pd.DataFrame:
+        """Return the participation ratios as a tidy table.
+
+        Rows are the loss contributions (surface interfaces, ``"dielectric"``
+        and ``"Junction(inductive energy)"``); columns are the eigenmodes. This
+        is a display-friendly view of :meth:`get_surface_p_ratio` (which returns
+        the underlying ``{contribution: {mode: value}}`` dict). For fixed
+        scientific notation in a notebook, use
+        ``df.style.format("{:.3e}")``.
+        """
+        p_ratio_df = pd.DataFrame(self.get_surface_p_ratio()).T
+        p_ratio_df.columns = pd.Index([f"mode {mode}" for mode in p_ratio_df.columns])
+        p_ratio_df.index.name = "contribution"
+        return p_ratio_df
 
 
 def save_optimization_results(
@@ -904,6 +1100,11 @@ def merge_partitioned_simulation(
     all_design_vars_to_update = {}
     all_target_params = set()
 
+    system_optimized_params = state_to_fetch_from.system_optimized_params
+    assert (
+        system_optimized_params is not None
+    ), "state_to_fetch_from.system_optimized_params must be initialized before merging."
+
     #  1 prepare design_variables and system_optimized_params to update
     for target in opt_targets:
         if target.target_param_type == NONLIN:
@@ -916,9 +1117,9 @@ def merge_partitioned_simulation(
         all_target_params.add(param_to_update)
 
         if param_to_update in include_param_in_update:
-            all_params_to_update[param_to_update] = (
-                state_to_fetch_from.system_optimized_params[param_to_update]
-            )
+            all_params_to_update[param_to_update] = system_optimized_params[
+                param_to_update
+            ]
             all_design_vars_to_update[target.design_var] = (
                 state_to_fetch_from.design.variables[target.design_var]
             )

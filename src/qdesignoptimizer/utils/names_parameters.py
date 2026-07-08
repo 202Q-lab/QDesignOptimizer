@@ -14,7 +14,7 @@ FREQ: Literal["freq"] = "freq"
 KAPPA: Literal["kappa"] = "kappa"
 CHARGE_LINE_LIMITED_T1: Literal["charge_line_limited_t1"] = "charge_line_limited_t1"
 NONLIN: Literal["nonlinearity"] = "nonlinearity"
-CAPACITANCE = "capacitance"
+CAPACITANCE: Literal["capacitance"] = "capacitance"
 """ dict: Maps branch to capacitance matrix elements in capacitance matrix simulation.
     Capacitance matrix elements are in femto Farads (fF).
 
