@@ -1,6 +1,6 @@
 [project]
 name = "qdesignoptimizer"
-version = "0.1.0"
+version = "0.2.0"
 description = "Optimizer for superconducting quantum chip designs"
 authors = [
   { name = "202Q-lab" },
@@ -13,7 +13,7 @@ keywords = ["Quantum"]
 classifiers = ["Programming Language :: Python :: 3"]
 requires-python = ">=3.11,<3.13"
 dependencies = [
- 
+
   "gdstk>=0.9",
   "geopandas>=1.0",
   "matplotlib>=3.10.8",
@@ -30,9 +30,9 @@ dependencies = [
   "shapely>=2.0.6, <2.1",
   "scqubits>=4.1.0",
   "gmsh>=4.11.1",
-  "pyaedt>=0.21,<0.24", 
+  "pyaedt>=0.21,<0.24",
   "pyyaml>=6.0.3",
-  "ipython>=9.10.0", 
+  "ipython>=9.10.0",
   "ipykernel",
 ]
 

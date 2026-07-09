@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.2.0] - 2026-07-08
+
+### Added
+- Support and example for partitioning the simulations of designs
+
+### Fixed
+- Two windows opening for EPR analysis
+- missing _ in hardcoded capacitance names in targets
+
+### Changed
+- Updated and extended examples used in the publication https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6
+
+
+
 ## [0.1.0] - 2026-02-21
 
 ### Breaking Changes
@@ -17,23 +32,23 @@ All notable changes to this project will be documented in this file.
 - Improved installation documentation
 
 ### Fixed
-- Fixed pyEPR numpy compatibility issues 
+- Fixed pyEPR numpy compatibility issues
 
 ## [0.0.2]
 
 ### Added
-- Two mode examples: 
-  - Example with a flux-tunable coupler  
-  - General example demonstrating the capabilities of the `anmod` method  
-- Surface participation ratio analysis  
-- Upload of publication data and scripts to the repository  
+- Two mode examples:
+  - Example with a flux-tunable coupler
+  - General example demonstrating the capabilities of the `anmod` method
+- Surface participation ratio analysis
+- Upload of publication data and scripts to the repository
 
 ### Changed
-- Documentation improvements and edits  
-- Refactored `design_analysis` class into `design_analysis` and `anmod_optimizer`  
+- Documentation improvements and edits
+- Refactored `design_analysis` class into `design_analysis` and `anmod_optimizer`
 
 ### Fixed
-- Prefixed Qiskit Metal components with `_` to enable surface participation ratio analysis  
+- Prefixed Qiskit Metal components with `_` to enable surface participation ratio analysis
 
 ## [0.0.1]
 

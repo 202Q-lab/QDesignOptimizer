@@ -1,10 +1,10 @@
-import numpy as np
 from typing import Optional
 
 import names as n
+import numpy as np
 import parameter_targets as pt
 
-from qdesignoptimizer.design_analysis_types import MiniStudy
+from qdesignoptimizer.design_analysis_types import MiniStudy, SurfaceProperties
 from qdesignoptimizer.sim_capacitance_matrix import (
     CapacitanceMatrixStudy,
     ModeDecayIntoChargeLineStudy,
@@ -12,11 +12,13 @@ from qdesignoptimizer.sim_capacitance_matrix import (
 )
 from qdesignoptimizer.utils.names_design_variables import junction_setup
 from qdesignoptimizer.utils.names_parameters import FREQ, param
-from qdesignoptimizer.design_analysis_types import SurfaceProperties
 
 CONVERGENCE = dict(nbr_passes=7, delta_f=0.03)
 
-def get_mini_study_qb_res(group: int, surface_properties:  Optional[SurfaceProperties] = None):
+
+def get_mini_study_qb_res(
+    group: int, surface_properties: Optional[SurfaceProperties] = None
+):
     qubit = [n.QUBIT_1, n.QUBIT_2][group - 1]
     resonator = [n.RESONATOR_1, n.RESONATOR_2][group - 1]
 
@@ -138,8 +140,8 @@ def get_mini_study_res_feedline(group: int):
     resonator_decay_study = ResonatorDecayIntoWaveguideStudy(
         mode=resonator,
         mode_freq_GHz=pt.PARAM_TARGETS[param(resonator, FREQ)] / 1e9,
-        resonator_name=f"second_cpw_name_tee{group}",  # These names must be found from the model list in Ansys
-        waveguide_name=f"prime_cpw_name_tee{group}",
+        resonator_name=f"second_cpw_name_tee_{group}_",  # These names must be found from the model list in Ansys
+        waveguide_name=f"prime_cpw_name_tee_{group}_",
         impedance_ohm=50,
         resonator_type="lambda_4",
         qiskit_component_names=qiskit_component_names,

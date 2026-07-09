@@ -146,8 +146,8 @@ def get_opt_target_capacitance(
         OptTarget(
             target_param_type=n.CAPACITANCE,
             involved_modes=[
-                f"prime_cpw_name_tee{group}_",
-                f"second_cpw_name_tee{group}_",
+                f"prime_cpw_name_tee_{group}_",
+                f"second_cpw_name_tee_{group}_",
             ],
             design_var=n.design_var_length(f"{resonator}_capacitance"),
             design_var_constraint={"larger_than": "1um", "smaller_than": "500um"},
