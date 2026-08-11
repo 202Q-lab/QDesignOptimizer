@@ -485,10 +485,38 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         ), "capacitance_matrix_fF is not set, you need to run .simulate_capacitance_matrix()."
 
         omega = self.mode_freq_GHz * 2 * np.pi
+        df = self.capacitance_matrix_fF
 
-        Ccoupling = np.abs(
-            self.capacitance_matrix_fF.loc[self.resonator_name, self.waveguide_name]
-        )
+        # Find waveguide column
+        wg_col = None
+        for col in df.columns:
+            if col == self.waveguide_name or col.lower() == self.waveguide_name.lower():
+                wg_col = col
+                break
+
+        Ccoupling = 0.0
+        if wg_col is not None:
+            # Try specified resonator_name first
+            if self.resonator_name in df.index:
+                Ccoupling = np.abs(df.loc[self.resonator_name, wg_col])
+
+            # If specified resonator_name yields negligible coupling (< 0.01 fF) or is missing,
+            # dynamically locate the comb/resonator island with strongest coupling to the waveguide line
+            # (ignoring ground planes like 'ground', 'g_wb', 'box')
+            if Ccoupling < 0.01:
+                best_cap = 0.0
+                best_name = self.resonator_name
+                ignore_keywords = ["ground", "g_wb", "box", "substrate", "air", "main"]
+                for idx in df.index:
+                    idx_str = str(idx).lower()
+                    if idx != wg_col and not any(kw in idx_str for kw in ignore_keywords):
+                        val = np.abs(df.loc[idx, wg_col])
+                        if val > best_cap:
+                            best_cap = val
+                            best_name = idx
+                if best_cap > Ccoupling:
+                    Ccoupling = best_cap
+                    self.resonator_name = best_name
 
         Z0 = self.impedance_ohm
         unit_conversion = 1e-3  # GHz^3 * fF^2

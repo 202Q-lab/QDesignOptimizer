@@ -343,6 +343,11 @@ class MiniStudy:
         surface_properties (SurfaceProperties): Surface properties for the design, including
             interfaces, sheet material, and thickness. When specified, the MiniStudy does not allow
             for the definition of a fine mesh or the use of (custom) wire bonds/air bridges.
+        air_bridge_component_names (list): Names of air-bridge components (e.g. AirBridgeBasic
+            instances) belonging to this branch/study that should get a 3D bondwire drawn in
+            HFSS. These components are deliberately excluded from qiskit_component_names (so
+            their flat GDS poly geometry is never rendered), and are looked up here instead so
+            that only the air bridges relevant to this particular study are drawn.
 
     Example:
         .. code-block:: python
@@ -385,9 +390,11 @@ class MiniStudy:
         run_capacitance_studies_only: bool = False,
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
         surface_properties: Optional[SurfaceProperties] = None,
+        air_bridge_component_names: Optional[list] = None,
     ):
         """Initialize a MiniStudy for electromagnetic simulation configuration."""
         self.qiskit_component_names = qiskit_component_names
+        self.air_bridge_component_names = air_bridge_component_names or []
         self.port_list = port_list
         self.open_pins = open_pins
         self.modes = modes

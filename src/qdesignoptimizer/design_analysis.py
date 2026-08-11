@@ -180,11 +180,11 @@ class _ComGeometryModeler:
         self,
         start,
         end,
-        h1=0.005,
+        h1="0.050mm",
         h2=0.0,
         alpha=90,
         beta=45,
-        diameter=0.005,
+        diameter="0.005mm",
         bond_type=0,
         name=None,
         matname=None,
@@ -194,29 +194,51 @@ class _ComGeometryModeler:
         The surface-participation-ratio and capacitance flows remove all wire
         bonds, and no bundled tutorial component exposes
         ``get_air_bridge_coordinates``, so this path is not exercised by the
-        tutorials. It is ported onto pyEPR's COM ``draw_wirebond`` (centre
-        position + orientation + width); ``h2``/``alpha``/``beta``/``bond_type``
-        have no direct equivalent there. Validate against Ansys before relying
-        on it for a design that uses custom air bridges.
+        tutorials. Ported onto raw HFSS ``CreateBondwire`` args (same
+        structure as pyEPR's COM ``draw_wirebond``, see ``pyEPR.ansys.
+        HfssModeler.draw_wirebond``), NOT via ``draw_wirebond`` itself --
+        that helper passes ``XPadPos``/``YPadPos``/``Distance`` as bare
+        floats, which Ansys silently interprets as METERS regardless of the
+        modeler's own active mm units (only its unit-qualified string args,
+        like ``h1``/``wire_diameter``, resolve in mm) -- producing a
+        bondwire ~1000x oversized/mispositioned relative to the qiskit-metal
+        (mm-valued) coordinates passed in. All position/length values below
+        are therefore explicit ``"...mm"`` strings.  ``h2``/``alpha``/
+        ``beta``/``bond_type`` are fixed the same way pyEPR's own
+        draw_wirebond hardcodes them (h2=0mm, alpha=beta=80deg) --
+        Ansys's CreateBondwire doesn't expose a way to vary alpha/beta
+        through this simple 2-point (start/end) interface.
         """
-        log.warning(
-            "create_bondwire is a COM port mapped onto pyEPR draw_wirebond; "
-            "validate geometry against Ansys before relying on it."
-        )
         start = np.asarray(start[:2], dtype=float)
         end = np.asarray(end[:2], dtype=float)
         span = end - start
         width = float(np.linalg.norm(span))
         ori = list(span / width) if width else [1.0, 0.0]
-        centre = list(start + span / 2.0)
-        return self._modeler.draw_wirebond(
-            pos=centre,
-            ori=ori,
-            width=width,
-            height=h1,
-            wire_diameter=diameter,
-            name=name,
-            material=matname,
+        centre = start + span / 2.0
+        pad1 = centre - np.array(ori) * width / 2.0
+
+        oeditor = self._modeler._modeler
+        attrs = self._modeler._attributes_array(name=name, material=matname)
+        return oeditor.CreateBondwire(
+            [
+                "NAME:BondwireParameters",
+                "WireType:=", "Low",
+                "WireDiameter:=", diameter,
+                "NumSides:=", 6,
+                "XPadPos:=", f"{pad1[0]}mm",
+                "YPadPos:=", f"{pad1[1]}mm",
+                "ZPadPos:=", "0mm",
+                "XDir:=", ori[0],
+                "YDir:=", ori[1],
+                "ZDir:=", 0,
+                "Distance:=", f"{width}mm",
+                "h1:=", h1,
+                "h2:=", "0mm",
+                "alpha:=", "80deg",
+                "beta:=", "80deg",
+                "WhichAxis:=", "Z",
+            ],
+            attrs,
         )
 
 
@@ -516,27 +538,42 @@ class DesignAnalysis:
             open_pins=self.mini_study.open_pins,
         )
 
-        # set custom air bridges (only if no interfaces are defined in mini_study)
+        # set custom air bridges (only if no interfaces are defined in mini_study).
+        # Only iterates mini_study.air_bridge_component_names, NOT all
+        # self.design.components -- an air-bridge component belongs to one
+        # particular branch/study and must not have its bondwire drawn when a
+        # different branch is being simulated. It is still deliberately left
+        # out of mini_study.qiskit_component_names (so its own flat poly
+        # geometry never reaches HFSS) while getting its 3D wirebond drawn
+        # here via get_air_bridge_coordinates.
         if not self.mini_study.surface_properties:
-            for component_name in self.mini_study.qiskit_component_names:
-                if hasattr(
-                    self.design.components[component_name], "get_air_bridge_coordinates"
-                ):
-                    for coord in self.design.components[
-                        component_name
-                    ].get_air_bridge_coordinates():
-                        self._geom.create_bondwire(
+            for component_name in self.mini_study.air_bridge_component_names:
+                component = self.design.components[component_name]
+                assert hasattr(component, "get_air_bridge_coordinates"), (
+                    f"{component_name} in mini_study.air_bridge_component_names "
+                    "does not implement get_air_bridge_coordinates."
+                )
+                coords = component.get_air_bridge_coordinates()
+                log.info(
+                    f"[air-bridge] {component_name}: drawing {len(coords)} bondwire(s) at {coords}"
+                )
+                for coord in coords:
+                    try:
+                        bw_name = self._geom.create_bondwire(
                             coord[0],
                             coord[1],
-                            h1=0.005,
+                            h1="0.050mm",
                             h2=0.000,
-                            alpha=90,
-                            beta=45,
-                            diameter=0.005,
+                            alpha=80,
+                            beta=80,
+                            diameter="0.015mm",
                             bond_type=0,
-                            name="mybox1",
+                            name=f"bondwire_{component_name}",
                             matname="aluminum",
                         )
+                        log.info(f"[air-bridge] {component_name}: created {bw_name}")
+                    except Exception as e:
+                        log.error(f"[air-bridge] {component_name}: create_bondwire failed: {e}")
 
         # interfaces will be rendered if interfaces are defined in mini_study
         if self.mini_study.surface_properties:
@@ -1017,6 +1054,9 @@ class DesignAnalysis:
 
     def get_surface_p_ratio(self):
         """Computes the surfaces participation ratio for all given interfaces. And also for every junction."""
+        if not hasattr(self, "eprd") or self.eprd is None:
+            self.eprd = epr.DistributedAnalysis(self.pinfo)
+
         p_ratio_dict = {}
 
         # Initialize the structure for interfaces
@@ -1036,13 +1076,17 @@ class DesignAnalysis:
                 )
 
         # Handle junction data
-        # can only handle a single junction type for now
         p_ratio_dict["Junction(inductive energy)"] = {}
         for mode in range(int(self.pinfo.setup.n_modes)):
             self.eprd.set_mode(mode)
-            j_ratio = self.eprd.calc_p_junction_single(mode=mode, variation=None)
-            for key in j_ratio:
-                p_ratio = j_ratio[key]
+            p_ratio = 0.0
+            if not self.no_junctions and hasattr(self.eprd, "pj") and self.eprd.pj is not None and len(self.eprd.pj) > 0:
+                try:
+                    j_ratio = self.eprd.calc_p_junction_single(mode=mode, variation=None)
+                    for key in j_ratio:
+                        p_ratio = j_ratio[key]
+                except Exception as e:
+                    log.warning("calc_p_junction_single failed: %s", e)
             p_ratio_dict["Junction(inductive energy)"][mode] = p_ratio
 
         # Handle dielectric data
