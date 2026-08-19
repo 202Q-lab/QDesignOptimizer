@@ -135,7 +135,7 @@ This triggers `publish_release.yml` which runs `poetry publish --build` using
 ```bash
 # In a clean environment (e.g. a fresh conda env):
 pip install qdesignoptimizer
-pip install --no-deps quantum-metal   # not on PyPI; must be installed separately
+pip install --no-deps "quantum-metal>=0.8.1,<0.9"   # installed with --no-deps so its resolver cannot disturb the pinned set
 python -c "import qdesignoptimizer; print('OK')"
 ```
 

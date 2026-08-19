@@ -23,7 +23,7 @@ Short presentations and in-depth walkthroughs are available on YouTube:
 
 ```bash
 pip install qdesignoptimizer
-pip install --no-deps quantum-metal
+pip install --no-deps "quantum-metal>=0.8.1,<0.9"
 ```
 
 **Requirements:** Python 3.11 or 3.12, Ansys Electronics Desktop 2021 R2 or 2022 R2. 
