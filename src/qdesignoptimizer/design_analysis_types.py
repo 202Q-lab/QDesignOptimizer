@@ -348,6 +348,12 @@ class MiniStudy:
             HFSS. These components are deliberately excluded from qiskit_component_names (so
             their flat GDS poly geometry is never rendered), and are looked up here instead so
             that only the air bridges relevant to this particular study are drawn.
+        draw_air_bridges_with_surface_properties (bool): By default (False), air bridges in
+            air_bridge_component_names are NOT drawn when surface_properties is set, matching
+            the surface-participation/capacitance flows' usual assumption that wire bonds are
+            omitted. Set True only when an air bridge is load-bearing for the topology being
+            analyzed (e.g. it is the sole ground-return path for a lumped inductor) and omitting
+            it would change the resonant mode being simulated.
 
     Example:
         .. code-block:: python
@@ -391,10 +397,14 @@ class MiniStudy:
         capacitance_matrix_studies: Optional[List[CapacitanceMatrixStudy]] = None,
         surface_properties: Optional[SurfaceProperties] = None,
         air_bridge_component_names: Optional[list] = None,
+        draw_air_bridges_with_surface_properties: bool = False,
     ):
         """Initialize a MiniStudy for electromagnetic simulation configuration."""
         self.qiskit_component_names = qiskit_component_names
         self.air_bridge_component_names = air_bridge_component_names or []
+        self.draw_air_bridges_with_surface_properties = (
+            draw_air_bridges_with_surface_properties
+        )
         self.port_list = port_list
         self.open_pins = open_pins
         self.modes = modes

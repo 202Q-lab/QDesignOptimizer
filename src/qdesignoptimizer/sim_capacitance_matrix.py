@@ -430,7 +430,7 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         waveguide_name: str,
         impedance_ohm: float,
         qiskit_component_names: list,
-        resonator_type: Literal["lambda_4", "lambda_2"],
+        resonator_type: Literal["lambda_4", "lambda_2", "lumped"] = "lambda_4",
         open_pins: Optional[list] = None,
         x_buffer_width_mm: float = 2,
         y_buffer_width_mm: float = 2,
@@ -458,27 +458,23 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
         self.kappa = None
 
     def get_kappa_estimate(self) -> float:
-        """Calculate the resonator decay rate (kappa) into the waveguide.
+        """Calculate the resonator decay rate (kappa) into the waveguide in Hz (linear linewidth).
 
         This method extracts the coupling capacitance between the resonator and waveguide
-        from the simulation results and calculates the decay rate using a simplified model.
-        The calculation assumes the resonator and waveguide have the same impedance.
+        from the simulation results and calculates the decay rate.
 
         Returns:
-            float: The estimated kappa (decay rate) in Hz.
+            float: The estimated kappa (decay rate linewidth) in Hz.
 
         Raises:
             AssertionError: If capacitance_matrix_fF has not been set (run simulate_capacitance_matrix first).
 
         Note:
-            The formula used is: κ = Z₀²·ω³·C²/π/(2π)
-            Where:
-
-            - Z₀ is the impedance (ohms)
-            - ω is the angular frequency (2π·f)
-            - C is the coupling capacitance (fF)
-
-            For quarter-wavelength resonators, the result is doubled.
+            For distributed resonators:
+                lambda_4: κ/(2π) = 2 · Z₀²·ω³·C_c² / (2π²)
+                lambda_2: κ/(2π) = Z₀²·ω³·C_c² / (2π²)
+            For lumped LC resonators:
+                lumped:   κ/(2π) = (Z₀ / (4π C_total)) · ω²·C_c²
         """
         assert (
             self.capacitance_matrix_fF is not None
@@ -519,11 +515,23 @@ class ResonatorDecayIntoWaveguideStudy(ModeDecayStudy):
                     self.resonator_name = best_name
 
         Z0 = self.impedance_ohm
-        unit_conversion = 1e-3  # GHz^3 * fF^2
-        kappa = Z0**2 * omega**3 * Ccoupling**2 / np.pi / (2 * np.pi) * unit_conversion
 
-        if self.resonator_type == "lambda_4":
-            kappa *= 2
+        if self.resonator_type == "lumped":
+            # For lumped resonator: kappa/(2pi) = (Z0 / (4*pi*Ctotal)) * omega^2 * Cc^2
+            # Ctotal and Ccoupling in fF (1e-15 F), omega in Grad/s (1e9 rad/s)
+            # (1e9)^2 * (1e-15)^2 / (1e-15) = 1e3
+            Ctotal = np.abs(df.loc[self.resonator_name, self.resonator_name]) if self.resonator_name in df.index else 100.0
+            if Ctotal < 1.0:
+                Ctotal = 100.0
+            unit_conversion = 1e3  # (GHz)^2 * (fF)^2 / (fF) -> s^-1
+            kappa = (Z0 / (4 * np.pi * Ctotal)) * omega**2 * Ccoupling**2 * unit_conversion
+        else:
+            # Distributed transmission line resonator:
+            # unit_conversion: (GHz)^3 * (fF)^2 -> 1e-3 s^-1
+            unit_conversion = 1e-3
+            kappa = Z0**2 * omega**3 * Ccoupling**2 / np.pi / (2 * np.pi) * unit_conversion
+            if self.resonator_type == "lambda_4":
+                kappa *= 2
 
         self.kappa = kappa
         return kappa
