@@ -49,19 +49,39 @@ class ANModOptimizer:
     ):
         """Minimize the cost function to find the optimal design variables to reach the target.
         The all_design_var_updated variable is automatically updated with the optimal design variables during the minimization.
+
+        Multiple targets may share the same design_var (several DIFFERENT
+        target quantities all using one design var as their leading-order
+        lever) -- the coordinate vector handed to scipy.optimize.minimize is
+        built from the UNIQUE design_var names, not one entry per target, so
+        every target sharing a name still contributes its own cost term
+        against that one shared coordinate (a genuine joint fit) rather than
+        each other's contributions being silently dropped depending on list
+        order.
         """
-        design_var_names_to_minimize = [
-            target.design_var for target in targets_to_minimize_for
-        ]
-        bounds_for_targets = [
-            (
+        design_var_names_to_minimize: List[str] = []
+        bounds_by_name: dict = {}
+        for target in targets_to_minimize_for:
+            name = target.design_var
+            bound = (
                 get_value_and_unit(target.design_var_constraint["larger_than"])[0],
                 get_value_and_unit(target.design_var_constraint["smaller_than"])[0],
             )
-            for target in targets_to_minimize_for
+            if name not in bounds_by_name:
+                design_var_names_to_minimize.append(name)
+                bounds_by_name[name] = bound
+            elif bounds_by_name[name] != bound:
+                raise ValueError(
+                    f"design_var {name!r} is the shared lever of multiple targets in this "
+                    f"independent_target group with DIFFERENT design_var_constraint bounds "
+                    f"({bounds_by_name[name]} vs {bound}) -- since they mechanically collapse "
+                    "to one scipy.optimize.minimize coordinate, give them the same bounds so "
+                    "there's one unambiguous range."
+                )
+        bounds_for_targets = [
+            bounds_by_name[name] for name in design_var_names_to_minimize
         ]
 
-        init_design_var = []
         init_design_var = [
             all_design_var_current[name] for name in design_var_names_to_minimize
         ]
