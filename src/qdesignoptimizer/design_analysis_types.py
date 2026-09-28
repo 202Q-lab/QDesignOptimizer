@@ -323,7 +323,23 @@ class MiniStudy:
         max_mesh_length_port (str): Maximum mesh element size at ports (with unit).
         max_mesh_length_lines_to_ports (str): Maximum mesh size for transmission lines to ports to
         enhance accuracy of decay estimates.
-        hfss_wire_bond_size (int): Size parameter for wire bonds in HFSS.
+        hfss_wire_bond_size (int): Size parameter for wire bonds in HFSS. The bond is
+            drawn across the route's SUBTRACT path, so its span is
+            ``hfss_wire_bond_size * (trace_width + 2 * trace_gap)``, centred on the
+            line and perpendicular to it. Two constraints follow, with
+            ``C = trace_width + 2 * trace_gap`` and ``P`` the centre-to-centre pitch
+            of the nearest parallel route:
+
+            * the feet only reach the ground plane for ``size > 1`` (they land
+              ``(size - 1) * C / 2`` onto it);
+            * they clear the neighbouring route only for ``size < 2 * P / C - 1``,
+              i.e. the layout must satisfy ``P > (size + 1) * C / 2``.
+
+            Defaults to 2: the smallest value that still lands on the ground plane,
+            which needs only ``P > 1.5 * C`` and so survives tight meanders.
+            qiskit_metal's own renderer default is 5 (its docstring saying 3 is
+            stale), needing ``P > 3 * C``; below that the feet land on top of the
+            neighbouring route and Analyze() fails with an opaque com_error.
         hfss_wire_bond_offset (str): Offset parameter for wire bonds in HFSS (with unit).
         hfss_wire_bond_threshold (str): Threshold parameter for wire bonds in HFSS (with unit).
         build_fine_mesh (bool): If True, use default mesh to ports which give unreliable
@@ -378,7 +394,7 @@ class MiniStudy:
         y_buffer_width_mm=0.5,
         max_mesh_length_port="3um",
         max_mesh_length_lines_to_ports="5um",
-        hfss_wire_bond_size=3,
+        hfss_wire_bond_size=2,
         hfss_wire_bond_offset="0um",
         hfss_wire_bond_threshold="300um",
         build_fine_mesh=False,

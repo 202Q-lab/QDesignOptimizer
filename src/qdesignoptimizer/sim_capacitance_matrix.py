@@ -44,6 +44,15 @@ class CapacitanceMatrixStudy:
             Defaults to 0.5%.
         nbr_passes (int, optional): Maximum number of mesh refinement passes to perform.
             Defaults to 10.
+        hfss_wire_bond_size (int, optional): Size parameter for wire bonds. The
+            span is hfss_wire_bond_size * (trace_width + 2 * trace_gap) -- the
+            SUBTRACT path's width, not the metal trace's. Defaults to 2, matching
+            MiniStudy's default; see MiniStudy for the two geometric constraints
+            that fix it.
+        hfss_wire_bond_offset (str, optional): Offset parameter for wire bonds (with unit).
+            Defaults to "0um".
+        hfss_wire_bond_threshold (str, optional): Threshold parameter for wire bonds (with unit).
+            Defaults to "300um".
     """
 
     def __init__(
@@ -56,6 +65,9 @@ class CapacitanceMatrixStudy:
         render_qiskit_metal_kwargs: Optional[dict] = None,
         percent_error: Optional[float] = 0.5,
         nbr_passes: Optional[int] = 10,
+        hfss_wire_bond_size: int = 2,
+        hfss_wire_bond_offset: str = "0um",
+        hfss_wire_bond_threshold: str = "300um",
     ):
         self.qiskit_component_names = qiskit_component_names
         self.open_pins: list = open_pins or []
@@ -67,6 +79,9 @@ class CapacitanceMatrixStudy:
 
         self.percent_error = percent_error
         self.nbr_passes = nbr_passes
+        self.hfss_wire_bond_size = hfss_wire_bond_size
+        self.hfss_wire_bond_offset = hfss_wire_bond_offset
+        self.hfss_wire_bond_threshold = hfss_wire_bond_threshold
 
         self.capacitance_matrix_fF = None
         """pandas.DataFrame: Capacitance matrix results from simulation in femtofarads (fF).
@@ -117,6 +132,12 @@ class CapacitanceMatrixStudy:
         lom_analysis.sim.setup.percent_error = self.percent_error
         lom_analysis.sim.renderer.options["x_buffer_width_mm"] = self.x_buffer_width_mm
         lom_analysis.sim.renderer.options["y_buffer_width_mm"] = self.y_buffer_width_mm
+        # Pass the wire-bond options explicitly. Otherwise the renderer falls
+        # back to qiskit_metal's default (wb_size=5), which draws oversized,
+        # overlapping bonds on tightly spaced meanders.
+        lom_analysis.sim.renderer.options["wb_size"] = self.hfss_wire_bond_size
+        lom_analysis.sim.renderer.options["wb_threshold"] = self.hfss_wire_bond_threshold
+        lom_analysis.sim.renderer.options["wb_offset"] = self.hfss_wire_bond_offset
 
         lom_analysis.sim.run(
             components=self.qiskit_component_names, open_terminations=self.open_pins

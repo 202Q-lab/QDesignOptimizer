@@ -31,7 +31,7 @@ class ANModOptimizer:
         opt_targets: List[OptTarget],
         system_target_params: dict[Parameter, float | int],
         adjustment_rate: float = 1,
-        minimization_tol: float = 1e-12,
+        minimization_tol: float = 1e-17,
     ):
         self.opt_targets = opt_targets
         self.system_target_params = system_target_params

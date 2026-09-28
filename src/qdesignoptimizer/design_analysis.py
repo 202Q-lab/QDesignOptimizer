@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 import pyEPR as epr
+from pyaedt import Hfss
 from pyEPR._config_default import config
 from qiskit_metal.analyses.quantization import EPRanalysis
 
@@ -256,7 +257,7 @@ class DesignAnalysis:
         update_design_variables: bool = True,
         plot_settings: Optional[dict] = None,
         meshing_map: Optional[List[MeshingMap]] = None,
-        minimization_tol: float = 1e-12,
+        minimization_tol: float = 1e-17,
         is_part_of_partitioned_optimization: bool = False,
     ):
         self.design_analysis_version = qdesignoptimizer.__version__
@@ -511,6 +512,11 @@ class DesignAnalysis:
         self.renderer.options["max_mesh_length_port"] = (
             self.mini_study.max_mesh_length_port
         )
+        # Keep a reference on self so this Hfss object is not garbage-collected
+        # when the caller's local `hfss` goes out of scope. pyaedt's
+        # Hfss.__del__ disconnects the Ansys session, which would break any
+        # subsequent scattering_parameters_studies step.
+        self._hfss_eigenmode = hfss
         return hfss
         # self.renderer.options["keep_originals"] = True
 
@@ -1016,14 +1022,22 @@ class DesignAnalysis:
         with open(self.save_path + "_design_variables.json") as in_file:
             updated_design_vars = json.load(in_file)
 
-        with open("design_variables.json") as in_file:
+        # Write back to the file create_chip_base actually loaded (stashed on
+        # the design object) rather than a hardcoded "design_variables.json",
+        # so projects with a differently named variables file (e.g.
+        # design_variables_config1.json) are updated correctly.
+        design_variables_file = getattr(
+            self.design, "_qdo_design_variables_file", "design_variables.json"
+        )
+
+        with open(design_variables_file) as in_file:
             rewrite_parameters = json.load(in_file)
 
         for key, item in updated_design_vars.items():
             if key in rewrite_parameters:
                 rewrite_parameters[key] = item
 
-        with open("design_variables.json", "w") as outfile:
+        with open(design_variables_file, "w") as outfile:
             json.dump(rewrite_parameters, outfile, indent=4)
 
         log.info("Overwritten parameters%s", dict_log_format(updated_design_vars))

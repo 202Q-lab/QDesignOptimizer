@@ -20,8 +20,34 @@ def close_ansys() -> None:
 
     Note:
         This function only works on Windows operating systems.
+
+    TODO:
+        Force-killing ansysedt.exe (rather than a graceful shutdown) leaves behind
+        ``.aedt.auto``/``.aedt.lock`` recovery files in the project folder. On its
+        next launch AEDT blocks on a modal "found a recovery file" dialog per stale
+        project -- invisible to (and unrecoverable by) a headless/automated caller,
+        which surfaces downstream as an opaque COM exception from ``Analyze()``
+        after AEDT has sat blocked for several minutes.
+
+        The block below deletes those stale files after the kill, which is what
+        stops the next launch blocking. ``ansoft_dir`` is hard-coded and
+        everyone's project folder differs (``C:/Ansoft`` is only the default), so
+        **set it to your own** -- and be aware that on a shared machine this
+        deletes recovery files belonging to anyone else using that folder. If you
+        would rather not have it run, comment the block out again; the symptom to
+        watch for is then AEDT sitting at 0% CPU after "AEDT installation Path"
+        with ``.aedt.lock``/``.aedt.auto`` files piling up in the project folder.
     """
     os.system("taskkill /f /im ansysedt.exe")
+    time.sleep(1)
+    ansoft_dir = r"C:\Ansoft"   # <- set this to your own project folder
+    if os.path.isdir(ansoft_dir):
+        for fname in os.listdir(ansoft_dir):
+            if fname.endswith(".aedt.auto") or fname.endswith(".aedt.lock"):
+                try:
+                    os.remove(os.path.join(ansoft_dir, fname))
+                except OSError:
+                    pass
 
 
 def get_junction_position(design, qcomponent) -> Tuple[str, str]:

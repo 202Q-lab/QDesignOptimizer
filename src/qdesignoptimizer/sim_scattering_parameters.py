@@ -3,7 +3,6 @@
 from typing import Callable, List, Optional
 
 import numpy as np
-from pyaedt import Hfss
 from pyEPR.ansys import HfssSetup
 from qiskit_metal.analyses.simulation.scattering_impedance import ScatteringImpedanceSim
 from qiskit_metal.designs.design_base import QDesign
@@ -29,9 +28,21 @@ class ScatteringParametersStudy:
             ``render_qiskit_metal(design, **kwargs)``.
         render_qiskit_metal_kwargs (dict, optional): Keyword arguments for the render_qiskit_metal
             function. Defaults to an empty dict.
-        counts (int, optional): Number of simulation runs to perform. Defaults to 25000.
+        counts (int, optional): Number of frequency points in the sweep. Defaults to 25000.
+            Was previously accepted but ignored (add_sweep hardcoded 25000). Lowering it is
+            the main lever on scratch-disk usage: every adaptive pass stores field solutions
+            for the swept points, and a 20-pass fine-meshed run at 25000 points grew
+            C:\\Temp to 35GB and filled the system disk.
         bandwidth (float, optional): Total bandwidth of the sweep in GHz. Default to 1GHz.
         passes (int, optional): Number of passes for the mesh optimization of the Driven Modal setup. Default to 35.
+        hfss_wire_bond_size (int, optional): Size parameter for wire bonds. The span is
+            hfss_wire_bond_size * (trace_width + 2 * trace_gap) -- the SUBTRACT path's
+            width, not the metal trace's. Defaults to 2, matching MiniStudy; see
+            MiniStudy for the two geometric constraints that fix it.
+        hfss_wire_bond_offset (str, optional): Offset parameter for wire bonds (with unit).
+            Defaults to "0um".
+        hfss_wire_bond_threshold (str, optional): Minimum path-segment length for a wire
+            bond to be placed (with unit). Defaults to "300um".
     """
 
     def __init__(
@@ -47,6 +58,9 @@ class ScatteringParametersStudy:
         component_of_interest: str = None,
         bandwidth: float = 1,
         passes: int = 10,
+        hfss_wire_bond_size: int = 2,
+        hfss_wire_bond_offset: str = "0um",
+        hfss_wire_bond_threshold: str = "300um",
     ):
 
         self.qiskit_component_names = qiskit_component_names
@@ -60,6 +74,17 @@ class ScatteringParametersStudy:
         self.component_of_interest = component_of_interest
         self.bandwidth = bandwidth
         self.passes = passes
+        # Mirrors MiniStudy's wire-bond options. Without these the DrivenModal
+        # render falls through to the qiskit-metal renderer defaults
+        # (wb_size=5, wb_threshold="400um"), which draw bonds spanning
+        # wb_size * cpw_gap_width. On a tightly folded meander that exceeds the
+        # arm-to-arm pitch, the bonds intersect each other and HFSS refuses to
+        # solve ("Parts g_wb_N and g_wb_M intersect" -> com_error from
+        # Analyze()). The eigenmode path already propagates these, see
+        # design_analysis.py's setup_eigenmode.
+        self.hfss_wire_bond_size = hfss_wire_bond_size
+        self.hfss_wire_bond_offset = hfss_wire_bond_offset
+        self.hfss_wire_bond_threshold = hfss_wire_bond_threshold
 
     def set_render_qiskit_metal(self, render_qiskit_metal: Callable) -> None:
         """Set the rendering function to use before capacitance simulation.
@@ -77,6 +102,8 @@ class ScatteringParametersStudy:
         eigenmode_setup: HfssSetup = None,
         hfss_design_name: str = "Scattering_Study",
         center_frequency: float = 5,
+        fine_mesh_names: List[str] = None,
+        max_mesh_length: str = "5um",
     ):
         """
         Simulate scattering parameters using HFSS.
@@ -86,23 +113,31 @@ class ScatteringParametersStudy:
             eigenmode_setup (HfssSetup) : eigenmode solution setup pointer to link mesh to
             hfss_design_name (str): Name of the HFSS design. Defaults to "Scattering_Study". If None, an entirely new mesh is generated
             center_frequency (float): Center frequency for the simulation in GHz. Defaults to 5 GHz.
-
-
+            fine_mesh_names (List[str], optional): Names of rendered geometry objects to apply a
+                manual fine-mesh operation to (e.g. coupling capacitor polys), independent of any
+                eigenmode_setup link. Applied directly to this DrivenModal design after rendering
+                and before the sweep analysis -- unlike DesignAnalysis.run_eigenmodes()'s own
+                MeshingMap refinement (which only ever applies to the eigenmode design), this lets
+                a scattering-only run (no eigenmode step at all) still get fine mesh on named
+                coupling geometry. Defaults to None (no manual mesh operation added here).
+            max_mesh_length (str): Max element size (with unit) for fine_mesh_names, mirrors
+                MiniStudy.max_mesh_length_lines_to_ports's own default. Defaults to "5um".
         """
 
         scatteringanalysis = ScatteringImpedanceSim(design, "hfss")
 
         scattering_analysis_renderer = scatteringanalysis.renderer
 
-        hfss = Hfss(
-            designname=hfss_design_name,
-            solution_type="DrivenModal",
-        )
         scattering_analysis_renderer.activate_ansys_design(
             hfss_design_name, "drivenmodal"
         )
+        # Set design variables through the renderer's existing connection
+        # (pinfo.design, a pyEPR HfssDesign) instead of opening a second pyaedt
+        # Hfss(...) session. The second session can fail with a gRPC "Failed to
+        # connect to Desktop Session" error while the renderer's connection is
+        # open, leaving hfss.variable_manager as None.
         for key, value in design.variables.items():
-            hfss.variable_manager.set_variable(key, value)
+            scattering_analysis_renderer.pinfo.design.set_variable(key, value)
         scattering_analysis_renderer.add_drivenmodal_setup(
             name="Setup_QDO",
             max_delta_s=0.001,
@@ -119,6 +154,11 @@ class ScatteringParametersStudy:
         scattering_analysis_renderer.options["y_buffer_width_mm"] = (
             self.y_buffer_width_mm
         )
+        scattering_analysis_renderer.options["wb_size"] = self.hfss_wire_bond_size
+        scattering_analysis_renderer.options["wb_offset"] = self.hfss_wire_bond_offset
+        scattering_analysis_renderer.options["wb_threshold"] = (
+            self.hfss_wire_bond_threshold
+        )
         # scatteringanalysis.setup_update(max_delta_s = 0.001,
         #                                 freq_ghz=center_frequency,
         #                                 max_passes=20)
@@ -131,6 +171,13 @@ class ScatteringParametersStudy:
             ignored_jjs=[],
             box_plus_buffer=True,
         )
+        if fine_mesh_names:
+            scattering_analysis_renderer.modeler.mesh_length(
+                "fine_mesh",
+                fine_mesh_names,
+                MaxLength=max_mesh_length,
+                RefineInside=True,
+            )
         start_freq = center_frequency - self.bandwidth / 2
         stop_freq = center_frequency + self.bandwidth / 2
         setup = scattering_analysis_renderer.pinfo.get_setup(name="Setup_QDO")
@@ -145,7 +192,7 @@ class ScatteringParametersStudy:
             name="Sweep",
             start_ghz=start_freq,
             stop_ghz=stop_freq,
-            count=25000,
+            count=self.counts,
             type="Fast",
         )
 
