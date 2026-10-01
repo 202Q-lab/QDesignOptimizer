@@ -11,7 +11,6 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 import pyEPR as epr
-from pyaedt import Hfss
 from pyEPR._config_default import config
 from qiskit_metal.analyses.quantization import EPRanalysis
 
@@ -313,20 +312,6 @@ class DesignAnalysis:
         self.optimization_results: list[dict] = []
         self.minimization_results: list[dict] = []
         self.setup_eigenmode()
-
-        # self.renderer.start()
-        # self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
-
-        # self.pinfo = self.renderer.pinfo
-        # self.setup = self.pinfo.setup
-        # self.setup.n_modes = len(self.mini_study.modes)
-        # self.setup.passes = self.mini_study.nbr_passes
-        # self.setup.delta_f = self.mini_study.delta_f
-        # self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
-        # self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
-        # self.renderer.options["max_mesh_length_port"] = (
-        #     self.mini_study.max_mesh_length_port
-        # )
         self._validate_opt_targets()
         self.extracted_junctions_for_epr()
 
@@ -483,11 +468,7 @@ class DesignAnalysis:
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
 
     def setup_eigenmode(self):
-        hfss = Hfss(
-            designname=self.mini_study.design_name,
-            solution_type="Eigenmode",
-            new_desktop_session=True,
-        )
+        """Connect to Ansys and configure the eigenmode setup."""
         log.info("Eigenmode setup")
         self.eig_solver = EPRanalysis(self.design, "hfss")
         self.eig_solver.sim.setup.name = "Resonator_setup"
@@ -512,28 +493,12 @@ class DesignAnalysis:
         self.renderer.options["max_mesh_length_port"] = (
             self.mini_study.max_mesh_length_port
         )
-        # Keep a reference on self so this Hfss object is not garbage-collected
-        # when the caller's local `hfss` goes out of scope. pyaedt's
-        # Hfss.__del__ disconnects the Ansys session, which would break any
-        # subsequent scattering_parameters_studies step.
-        self._hfss_eigenmode = hfss
-        return hfss
-        # self.renderer.options["keep_originals"] = True
 
     def run_eigenmodes(self):
         """Simulate eigenmodes."""
-        hfss = self.setup_eigenmode()
+        self.setup_eigenmode()
         self.update_var({}, {})
         self.pinfo.validate_junction_info()
-
-        self.eig_solver = EPRanalysis(self.design, "hfss")
-        self.eig_solver.sim.setup.name = "Resonator_setup"
-        self.renderer = self.eig_solver.sim.renderer
-        log.info(
-            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
-        )
-        self.eig_solver.setup.sweep_variable = "dummy"
-        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
         # Surface-participation geometry ops run on the renderer's OWN Ansys
         # session by reusing its oEditor (self.renderer.modeler) -- see
         # _ComGeometryModeler. This opens no new connection, so there is a single
@@ -981,7 +946,6 @@ class DesignAnalysis:
                     title=f"Scattering study for {scattering_study.component_of_interest}",
                     Sij=[],
                 )
-            # self.setup_eigenmode()
         #######################  scattering studies
 
         iteration_result["design_variables"] = dict(deepcopy(self.design.variables))

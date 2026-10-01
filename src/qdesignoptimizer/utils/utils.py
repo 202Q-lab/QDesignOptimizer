@@ -7,45 +7,110 @@ midpoints, normalizing vectors, and performing rotations. It also includes utili
 for string parsing of values with units and process management.
 """
 
+import glob
+import io
 import os
+import re
 import time
 from typing import List, Tuple
 
 import numpy as np
 
+from qdesignoptimizer.logger import log
 
-def close_ansys() -> None:
+
+def _aedt_project_directories() -> List[str]:
+    """Folders AEDT writes its projects, and therefore its recovery files, into.
+
+    Read from AEDT's own user configuration rather than hard-coded: every
+    install records
+    ``<VALUE ObjectName="ProjectDirectory" Value="..."/>`` in
+    ``~/Documents/Ansoft/ElectronicsDesktop<version>/config/*_user.XML``.
+
+    Returns:
+        Existing directories, newest config first. Falls back to AEDT's own
+        default ``C:/Ansoft`` when no configuration can be read.
     """
-    Terminate all running Ansys HFSS processes using Windows task management.
+    found: List[str] = []
+    pattern = os.path.join(
+        os.path.expanduser("~"), "Documents", "Ansoft",
+        "ElectronicsDesktop*", "config", "*_user.XML",
+    )
+    for cfg in sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True):
+        try:
+            text = io.open(cfg, encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        for match in re.finditer(
+            r'ObjectName="ProjectDirectory"\s+Value="([^"]+)"', text
+        ):
+            directory = match.group(1)
+            if os.path.isdir(directory) and directory not in found:
+                found.append(directory)
+    if not found and os.path.isdir(r"C:/Ansoft"):
+        found.append(r"C:/Ansoft")
+    return found
+
+
+def _release_pyaedt_desktops() -> int:
+    """Shut down every AEDT session pyaedt opened, gracefully.
+
+    A clean shutdown writes no ``.aedt.auto``/``.aedt.lock`` at all, so this
+    is what keeps the next launch from blocking on a recovery dialog. Sessions
+    pyaedt never owned are not visible here and are left to the taskkill below.
+
+    Returns:
+        Number of sessions released.
+    """
+    try:
+        from ansys.aedt.core.desktop import _desktop_sessions
+    except ImportError:
+        return 0
+    released = 0
+    for session in list(_desktop_sessions.values()):
+        try:
+            session.release_desktop(close_projects=True, close_on_exit=True)
+            released += 1
+        except Exception:  # noqa: BLE001 - a dead session must not stop the rest
+            pass
+    return released
+
+
+def close_ansys(sweep_recovery_files: bool = True) -> None:
+    """Shut down Ansys Electronics Desktop.
+
+    Releases any session pyaedt is holding first, which shuts AEDT down
+    cleanly and leaves no recovery files, then force-kills whatever is still
+    running (a GUI left open by hand, or an orphan from an earlier run).
+    Recovery files from those killed sessions are swept afterwards, because
+    AEDT blocks on a modal "found a recovery file" dialog on its next launch
+    -- invisible to a headless caller, and surfacing minutes later as an
+    opaque COM error from ``Analyze()``.
+
+    Args:
+        sweep_recovery_files: Delete stale ``.aedt.auto``/``.aedt.lock`` from
+            the project folders AEDT itself reports. Set False on a shared
+            machine if another user may have a session open that this process
+            cannot see.
 
     Note:
-        This function only works on Windows operating systems.
-
-    TODO:
-        Force-killing ansysedt.exe (rather than a graceful shutdown) leaves behind
-        ``.aedt.auto``/``.aedt.lock`` recovery files in the project folder. On its
-        next launch AEDT blocks on a modal "found a recovery file" dialog per stale
-        project -- invisible to (and unrecoverable by) a headless/automated caller,
-        which surfaces downstream as an opaque COM exception from ``Analyze()``
-        after AEDT has sat blocked for several minutes.
-
-        The block below deletes those stale files after the kill, which is what
-        stops the next launch blocking. ``ansoft_dir`` is hard-coded and
-        everyone's project folder differs (``C:/Ansoft`` is only the default), so
-        **set it to your own** -- and be aware that on a shared machine this
-        deletes recovery files belonging to anyone else using that folder. If you
-        would rather not have it run, comment the block out again; the symptom to
-        watch for is then AEDT sitting at 0% CPU after "AEDT installation Path"
-        with ``.aedt.lock``/``.aedt.auto`` files piling up in the project folder.
+        The force-kill step is Windows-only.
     """
+    released = _release_pyaedt_desktops()
+    if released:
+        log.info("Released %d pyaedt-owned AEDT session(s) gracefully", released)
+
     os.system("taskkill /f /im ansysedt.exe")
     time.sleep(1)
-    ansoft_dir = r"C:\Ansoft"   # <- set this to your own project folder
-    if os.path.isdir(ansoft_dir):
-        for fname in os.listdir(ansoft_dir):
-            if fname.endswith(".aedt.auto") or fname.endswith(".aedt.lock"):
+
+    if not sweep_recovery_files:
+        return
+    for directory in _aedt_project_directories():
+        for fname in os.listdir(directory):
+            if fname.endswith((".aedt.auto", ".aedt.lock")):
                 try:
-                    os.remove(os.path.join(ansoft_dir, fname))
+                    os.remove(os.path.join(directory, fname))
+                    log.info("Removed stale recovery file %s", fname)
                 except OSError:
                     pass
 
