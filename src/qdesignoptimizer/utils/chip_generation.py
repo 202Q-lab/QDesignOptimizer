@@ -2,12 +2,14 @@
 
 import json
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from qiskit_metal import MetalGUI
 from qiskit_metal.designs.design_planar import DesignPlanar
 
 from qdesignoptimizer.utils.names_design_variables import add_design_variables_to_design
+
+if TYPE_CHECKING:
+    from qiskit_metal import MetalGUI
 
 
 @dataclass
@@ -25,7 +27,7 @@ def create_chip_base(
     chip_type: ChipType,
     open_gui: bool = True,
     design_variables_file: Optional[str] = "design_variables.json",
-) -> tuple[DesignPlanar, MetalGUI]:
+) -> tuple[DesignPlanar, Optional["MetalGUI"]]:
     """
     Create and return a basic Qiskit Metal planar chip design.
 
@@ -55,8 +57,18 @@ def create_chip_base(
 
     gui = None
     if open_gui:
+        # Imported here so that open_gui=False does not require a working Qt stack.
+        # quantum-metal 0.8+ exposes MetalGUI through a module-level __getattr__,
+        # which pylint cannot resolve statically -- hence no-name-in-module.
+        from qiskit_metal import (  # pylint: disable=import-outside-toplevel,no-name-in-module
+            MetalGUI,
+        )
+
         gui = MetalGUI(design)
-        gui.toggle_docks()
+        # Hide explicitly rather than toggling: toggle_docks() without an argument
+        # flips whatever state quantum-metal happens to start in, and that starting
+        # state changed in 0.8.x.
+        gui.toggle_docks(True)
 
     if design_variables_file is not None:
         with open(design_variables_file) as in_file:
