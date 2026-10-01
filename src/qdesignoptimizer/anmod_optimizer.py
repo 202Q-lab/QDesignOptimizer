@@ -33,6 +33,13 @@ class ANModOptimizer:
         adjustment_rate: float = 1,
         minimization_tol: float = 1e-12,
     ):
+        design_vars = [target.design_var for target in opt_targets]
+        duplicates = sorted({dv for dv in design_vars if design_vars.count(dv) > 1})
+        if duplicates:
+            raise ValueError(
+                f"Each OptTarget must have a unique design_var, but {duplicates} "
+                "are used by more than one target."
+            )
         self.opt_targets = opt_targets
         self.system_target_params = system_target_params
         self.adjustment_rate = adjustment_rate
