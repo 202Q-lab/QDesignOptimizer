@@ -264,13 +264,6 @@ class DesignAnalysis:
             state  # the system_optimized_params will be synced with the injected state
         )
         self.design = state.design
-        self.eig_solver = EPRanalysis(self.design, "hfss")
-        self.eig_solver.sim.setup.name = "Resonator_setup"
-        self.renderer = self.eig_solver.sim.renderer
-        log.info(
-            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
-        )
-        self.eig_solver.setup.sweep_variable = "dummy"
 
         self.mini_study = mini_study
         self.opt_targets: List[OptTarget] = opt_targets or []
@@ -477,7 +470,6 @@ class DesignAnalysis:
             "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
         )
         self.eig_solver.setup.sweep_variable = "dummy"
-        self.renderer = self.eig_solver.sim.renderer
         self.renderer.start()
         self.renderer.activate_ansys_design(
             self.mini_study.design_name,
