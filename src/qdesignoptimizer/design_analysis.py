@@ -256,7 +256,7 @@ class DesignAnalysis:
         update_design_variables: bool = True,
         plot_settings: Optional[dict] = None,
         meshing_map: Optional[List[MeshingMap]] = None,
-        minimization_tol: float = 1e-12,
+        minimization_tol: float = 1e-17,
         is_part_of_partitioned_optimization: bool = False,
     ):
         self.design_analysis_version = qdesignoptimizer.__version__
@@ -264,13 +264,6 @@ class DesignAnalysis:
             state  # the system_optimized_params will be synced with the injected state
         )
         self.design = state.design
-        self.eig_solver = EPRanalysis(self.design, "hfss")
-        self.eig_solver.sim.setup.name = "Resonator_setup"
-        self.renderer = self.eig_solver.sim.renderer
-        log.info(
-            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
-        )
-        self.eig_solver.setup.sweep_variable = "dummy"
 
         self.mini_study = mini_study
         self.opt_targets: List[OptTarget] = opt_targets or []
@@ -311,20 +304,7 @@ class DesignAnalysis:
 
         self.optimization_results: list[dict] = []
         self.minimization_results: list[dict] = []
-
-        self.renderer.start()
-        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
-
-        self.pinfo = self.renderer.pinfo
-        self.setup = self.pinfo.setup
-        self.setup.n_modes = len(self.mini_study.modes)
-        self.setup.passes = self.mini_study.nbr_passes
-        self.setup.delta_f = self.mini_study.delta_f
-        self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
-        self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
-        self.renderer.options["max_mesh_length_port"] = (
-            self.mini_study.max_mesh_length_port
-        )
+        self.setup_eigenmode()
         self._validate_opt_targets()
         self.extracted_junctions_for_epr()
 
@@ -480,11 +460,37 @@ class DesignAnalysis:
         """Get names of all endcap ports in the design."""
         return [f"endcap_{comp}_{name}" for comp, name, _ in self.mini_study.port_list]
 
+    def setup_eigenmode(self):
+        """Connect to Ansys and configure the eigenmode setup."""
+        log.info("Eigenmode setup")
+        self.eig_solver = EPRanalysis(self.design, "hfss")
+        self.eig_solver.sim.setup.name = "Resonator_setup"
+        self.renderer = self.eig_solver.sim.renderer
+        log.info(
+            "self.eig_solver.sim.setup %s", dict_log_format(self.eig_solver.sim.setup)
+        )
+        self.eig_solver.setup.sweep_variable = "dummy"
+        self.renderer.start()
+        self.renderer.activate_ansys_design(
+            self.mini_study.design_name,
+            "eigenmode",
+        )
+        self.pinfo = self.renderer.pinfo
+        self.setup = self.pinfo.setup
+        self.setup.n_modes = len(self.mini_study.modes)
+        self.setup.passes = self.mini_study.nbr_passes
+        self.setup.delta_f = self.mini_study.delta_f
+        self.renderer.options["x_buffer_width_mm"] = self.mini_study.x_buffer_width_mm
+        self.renderer.options["y_buffer_width_mm"] = self.mini_study.y_buffer_width_mm
+        self.renderer.options["max_mesh_length_port"] = (
+            self.mini_study.max_mesh_length_port
+        )
+
     def run_eigenmodes(self):
         """Simulate eigenmodes."""
+        self.setup_eigenmode()
         self.update_var({}, {})
         self.pinfo.validate_junction_info()
-
         # Surface-participation geometry ops run on the renderer's OWN Ansys
         # session by reusing its oEditor (self.renderer.modeler) -- see
         # _ComGeometryModeler. This opens no new connection, so there is a single
@@ -849,6 +855,7 @@ class DesignAnalysis:
             # Eigenmode analysis for frequencies
             self.eig_result = self.run_eigenmodes()
             iteration_result["eig_results"] = deepcopy(self.eig_result)
+            print("Eigenmode simulation results : " + str(self.eig_result))
 
             # EPR analysis for nonlinearities
             self.cross_kerrs = self.run_epr()
@@ -860,7 +867,6 @@ class DesignAnalysis:
                 self.surface_p_ratio = self.get_surface_p_ratio()
             else:
                 self.surface_p_ratio = None
-
         if self.mini_study.capacitance_matrix_studies is not None:
             iteration_result["capacitance_matrix"] = []
             for capacitance_study in self.mini_study.capacitance_matrix_studies:
@@ -877,6 +883,62 @@ class DesignAnalysis:
                 iteration_result["capacitance_matrix"].append(
                     deepcopy(capacitance_matrix)
                 )
+
+        ######################  scattering studies
+        if self.mini_study.scattering_parameters_studies is not None:
+            iteration_result["scattering_parameters_kappa"] = []
+            iteration_result["scattering_parameters_Sij"] = []
+            for scattering_study in self.mini_study.scattering_parameters_studies:
+                scattering_study.set_render_qiskit_metal(self.render_qiskit_metal)
+                mode_index = self.mini_study.modes.index(
+                    scattering_study.component_of_interest
+                )
+                Sij = scattering_study.simulate_scattering_parameters(
+                    design=self.design,
+                    eigenmode_setup=self.setup,
+                    hfss_design_name=self.mini_study.design_name + "_scattering",
+                    center_frequency=self.eig_result["Freq. (GHz)"][mode_index],
+                )
+                fit_result = scattering_study.fit_resonator(
+                    scattering_study.port_list,
+                    self.eig_result["Freq. (GHz)"][mode_index],
+                )
+
+                # Failsafe for scattering analysis failcase
+                if fit_result == None:
+                    log.warning(
+                        "Scattering analysis did not find resonant frequency. Kappa optimization will be based on eigenmode simulation this round"
+                    )
+                    kappa = self.eig_result["Kappas (Hz)"][mode_index]
+                    iteration_result["scattering_parameters_kappa"].append(
+                        (param(scattering_study.component_of_interest, KAPPA), kappa)
+                    )
+                    self.system_optimized_params[
+                        param(scattering_study.component_of_interest, KAPPA)
+                    ] = kappa
+                    print(
+                        f"Eigenmode study for {scattering_study.component_of_interest} yields kappa =  {kappa} Hz"
+                    )
+                else:
+                    kappa = fit_result["fr"] * 1e9 / fit_result["Ql"]
+                    iteration_result["scattering_parameters_kappa"].append(
+                        (param(scattering_study.component_of_interest, KAPPA), kappa)
+                    )
+                    self.system_optimized_params[
+                        param(scattering_study.component_of_interest, KAPPA)
+                    ] = kappa
+                    print(
+                        f"Scattering study for {scattering_study.component_of_interest} yields kappa =  {kappa} Hz"
+                    )
+
+                iteration_result["scattering_parameters_Sij"].append(
+                    (scattering_study.component_of_interest, Sij)
+                )
+                scattering_study.plot(
+                    title=f"Scattering study for {scattering_study.component_of_interest}",
+                    Sij=[],
+                )
+        #######################  scattering studies
 
         iteration_result["design_variables"] = dict(deepcopy(self.design.variables))
         iteration_result["system_optimized_params"] = deepcopy(
@@ -916,14 +978,22 @@ class DesignAnalysis:
         with open(self.save_path + "_design_variables.json") as in_file:
             updated_design_vars = json.load(in_file)
 
-        with open("design_variables.json") as in_file:
+        # Write back to the file create_chip_base actually loaded (stashed on
+        # the design object) rather than a hardcoded "design_variables.json",
+        # so projects with a differently named variables file (e.g.
+        # design_variables_config1.json) are updated correctly.
+        design_variables_file = getattr(
+            self.design, "_qdo_design_variables_file", "design_variables.json"
+        )
+
+        with open(design_variables_file) as in_file:
             rewrite_parameters = json.load(in_file)
 
         for key, item in updated_design_vars.items():
             if key in rewrite_parameters:
                 rewrite_parameters[key] = item
 
-        with open("design_variables.json", "w") as outfile:
+        with open(design_variables_file, "w") as outfile:
             json.dump(rewrite_parameters, outfile, indent=4)
 
         log.info("Overwritten parameters%s", dict_log_format(updated_design_vars))

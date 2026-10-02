@@ -62,5 +62,9 @@ def create_chip_base(
         with open(design_variables_file) as in_file:
             initial_design_variables = json.load(in_file)
         add_design_variables_to_design(design, initial_design_variables)
+        # Remember which file the variables came from, so
+        # DesignAnalysis.overwrite_parameters() writes updates back to it
+        # instead of a hardcoded "design_variables.json".
+        design._qdo_design_variables_file = design_variables_file
 
     return design, gui

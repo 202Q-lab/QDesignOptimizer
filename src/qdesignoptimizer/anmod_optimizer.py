@@ -31,7 +31,7 @@ class ANModOptimizer:
         opt_targets: List[OptTarget],
         system_target_params: dict[Parameter, float | int],
         adjustment_rate: float = 1,
-        minimization_tol: float = 1e-12,
+        minimization_tol: float = 1e-17,
     ):
         design_vars = [target.design_var for target in opt_targets]
         duplicates = sorted({dv for dv in design_vars if design_vars.count(dv) > 1})
