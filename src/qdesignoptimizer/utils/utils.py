@@ -76,7 +76,7 @@ def _release_pyaedt_desktops() -> int:
     return released
 
 
-def close_ansys(sweep_recovery_files: bool = True) -> None:
+def close_ansys(sweep_recovery_files: bool = False) -> None:
     """Shut down Ansys Electronics Desktop.
 
     Releases any session pyaedt is holding first, which shuts AEDT down
@@ -89,9 +89,7 @@ def close_ansys(sweep_recovery_files: bool = True) -> None:
 
     Args:
         sweep_recovery_files: Delete stale ``.aedt.auto``/``.aedt.lock`` from
-            the project folders AEDT itself reports. Set False on a shared
-            machine if another user may have a session open that this process
-            cannot see.
+            the project folders AEDT itself reports. Defaults to False
 
     Note:
         The force-kill step is Windows-only.
