@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+
+## [0.2.0] - 2026-10-07
+
+### Added
+- Support and example for partitioning the simulations of designs
+
 ### Fixed
+- Two windows opening for EPR analysis
+- missing _ in hardcoded capacitance names in targets
 - **GUI no longer crashes on startup** (and, in Jupyter, no longer kills the kernel) when
   calling `MetalGUI(design)` / `create_chip_base(open_gui=True)`. The bug was upstream in
   Quantum Metal: persisted Qt window state saved to `HKCU\Software\QiskitMetal\MainWindow`
@@ -15,6 +23,7 @@ All notable changes to this project will be documented in this file.
   cleared once -- see the Troubleshooting section of the installation docs.
 
 ### Changed
+- Updated and extended examples used in the publication https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6
 - `quantum-metal` requirement raised from `>=0.7.4` to `>=0.8.1, <0.9`.
 - `pyside6` capped at `<6.11`. Qt 6.11 is a known suspect for a remaining GUI crash on Windows
   machines with integrated GPUs, and Quantum Metal 0.8.1 is validated against the 6.10 series.
@@ -32,19 +41,6 @@ default) which participates in autoscaling. The `gui.autoscale()` + `gui.screens
 used by `DesignAnalysis.screenshot` was checked on 0.8.1 and still frames to the components,
 so progress screenshots are unchanged. If a future release does reframe them to the whole
 die, `renderer.options.chip_outline = False` restores the component framing.
-
-
-## [0.2.0] - 2026-07-08
-
-### Added
-- Support and example for partitioning the simulations of designs
-
-### Fixed
-- Two windows opening for EPR analysis
-- missing _ in hardcoded capacitance names in targets
-
-### Changed
-- Updated and extended examples used in the publication https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6
 
 
 
