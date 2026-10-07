@@ -22,9 +22,11 @@ The simplest way to install ``qdesignoptimizer`` is via the Python package manag
 .. code-block:: bash
 
     pip install qdesignoptimizer
-    pip install --no-deps quantum-metal
+    pip install --no-deps "quantum-metal>=0.8.1,<0.9"
 
-Note that Quantum Metal (formerly Qiskit Metal) must be installed separately and without dependencies to make it work properly. The package uses PySide6 (version 6.8+) for the GUI interface. Note that the full installation has been tested with the version quantum-metal==0.5.3.post1. 
+Note that Quantum Metal (formerly Qiskit Metal) must be installed separately and without dependencies to make it work properly. The package uses PySide6 (version 6.10.x) for the GUI interface. Note that the full installation has been tested with quantum-metal 0.8.1 and PySide6 6.10.2.
+
+Quantum Metal versions below 0.8.1 are not supported: they contain a Qt bug that crashes the GUI (and, in Jupyter, the whole kernel) on ``MetalGUI(design)``. PySide6 6.11 is excluded for the same reason.
 
 Installation from GitHub Repository
 ===================================
@@ -90,7 +92,7 @@ For regular users, install the project with its dependencies and Quantum Metal:
 .. code-block:: bash
 
     poetry install
-    pip install --no-deps quantum-metal
+    pip install --no-deps "quantum-metal>=0.8.1,<0.9"
 
 Developer Installation
 ----------------------
@@ -100,7 +102,7 @@ For developers who want to contribute to the project, install with additional de
 .. code-block:: bash
 
     poetry install --with docs,analysis
-    pip install --no-deps quantum-metal
+    pip install --no-deps "quantum-metal>=0.8.1,<0.9"
     pre-commit install
 
 This will install:
@@ -127,9 +129,16 @@ Troubleshooting
 
 **Common Issues:**
 
-- **Python Version Mismatch**: Ensure you're using Python 3.10 or 3.11 or 3.12
+- **Python Version Mismatch**: Ensure you're using Python 3.11 or 3.12
 - **Dependency Conflicts**: If you encounter dependency conflicts, try installing in a fresh virtual environment
 - **Ansys Connection Issues**: Make sure Ansys HFSS is correctly installed and licensed
+- **GUI crashes / "the kernel appears to have died" on** ``MetalGUI(design)``: upgrade to
+  ``quantum-metal>=0.8.1``, which contains the upstream fix. If the machine is already in a
+  poisoned state, the persisted Qt window layout has to be cleared once -- either set
+  ``QISKIT_METAL_RESET_UI_SETTINGS=1`` before launching, or delete the registry key
+  ``HKCU\Software\QiskitMetal\MainWindow``. Useful further diagnostics:
+  ``QISKIT_METAL_DEBUG_INIT=1`` traces each GUI init step, and ``QISKIT_METAL_QT_HARDWARE_GL=1``
+  opts out of the software-OpenGL default that Quantum Metal applies on Windows.
 
 Migration from qiskit-metal to quantum-metal
 ==============================================

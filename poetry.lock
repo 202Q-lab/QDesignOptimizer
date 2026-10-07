@@ -3398,14 +3398,14 @@ tests = ["matplotlib (>=3.5.0,<3.11)", "mock (>=5.1.0,<5.3)", "pytest (>=7.4.0,<
 
 [[package]]
 name = "pyepr-quantum"
-version = "1.0.0"
+version = "1.0.1"
 description = "Python Energy-Participation-Ratio (EPR) package for quantum chip design"
 optional = false
 python-versions = "<4,>=3.10"
 groups = ["main"]
 files = [
-    {file = "pyepr_quantum-1.0.0-py3-none-any.whl", hash = "sha256:1de87ac86f0b559287110fdfdccf37434189a63c3e37843e006f39f32a4c3ed3"},
-    {file = "pyepr_quantum-1.0.0.tar.gz", hash = "sha256:63c4b032766db2168a4a300d7e49137c0adb57895784c8132354a0bc0c0bf127"},
+    {file = "pyepr_quantum-1.0.1-py3-none-any.whl", hash = "sha256:548e8db772c9a05dfb5915c2290bb47419711d04551d28020d6764620976e047"},
+    {file = "pyepr_quantum-1.0.1.tar.gz", hash = "sha256:b16cf1dff322369677c961fd8a916b718dc0b7cc97246d0b93e6df279951c846"},
 ]
 
 [package.dependencies]
@@ -4041,14 +4041,14 @@ test = ["pytest (>=6,!=7.0.0,!=7.0.1)", "pytest-cov (>=3.0.0)", "pytest-qt"]
 
 [[package]]
 name = "quantum-metal"
-version = "0.7.4"
+version = "0.8.1"
 description = "Quantum Metal (formerly Qiskit Metal) | for quantum device design & analysis"
 optional = false
 python-versions = "<3.13,>=3.10"
 groups = ["main"]
 files = [
-    {file = "quantum_metal-0.7.4-py3-none-any.whl", hash = "sha256:f668fd1407124cf953beb3386c7c69d8b47aaab002bd502c6b2192d4862f9366"},
-    {file = "quantum_metal-0.7.4.tar.gz", hash = "sha256:ca2ba5118eb4d494a3362c2cdf171ae07b819d16302868decbd71428ebecee1f"},
+    {file = "quantum_metal-0.8.1-py3-none-any.whl", hash = "sha256:9e13ae560891c452bc75e3491ca8be2e67f09aa9b0a293180dbeddd617a3cb75"},
+    {file = "quantum_metal-0.8.1.tar.gz", hash = "sha256:d3582ff3a0d8ffb4635244330ed3042391ecba8f15c29be92eb014e5e70a359e"},
 ]
 
 [package.dependencies]
@@ -4067,9 +4067,9 @@ scqubits = ">=4.1.0"
 shapely = ">=2.0.1"
 
 [package.extras]
-ansys = ["pyaedt (>=0.21,<0.24)", "pyepr-quantum (>=0.9.5)"]
+ansys = ["pyaedt (>=0.21,<0.24)", "pyepr-quantum (>=1.0.1)"]
 fem = ["gmsh (>=4.15.0,<5)"]
-full = ["gmsh (>=4.15.0,<5)", "pyaedt (>=0.21,<0.24)", "pyepr-quantum (>=0.9.5)", "pyside6 (>=6.8)", "qdarkstyle (>=3.1)"]
+full = ["gmsh (>=4.15.0,<5)", "pyaedt (>=0.21,<0.24)", "pyepr-quantum (>=1.0.1)", "pyside6 (>=6.8)", "qdarkstyle (>=3.1)"]
 gui = ["pyside6 (>=6.8)", "qdarkstyle (>=3.1)"]
 mesh = ["gmsh (>=4.15.0,<5)"]
 
@@ -5348,4 +5348,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "80eb74a313af36d5f323725a55129725d26cee48a4c93c8605cf893693fa170c"
+content-hash = "38c27f00abcb910c7777a4030523a65e8b2bb0c5564301ba03aadd776ed9a0bf"
