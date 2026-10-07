@@ -56,32 +56,28 @@
 <li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contributing.html">Contributing</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Changelog</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#unreleased">[Unreleased]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unreleased">[Unreleased]</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">[0.2.0] - 2026-10-07</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#added">Added</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fixed">Fixed</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#changed">Changed</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#note-on-progress-screenshots">Note on progress screenshots</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#id1">[0.2.0] - 2026-07-08</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#added">Added</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id2">Fixed</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id3">Changed</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#id4">[0.1.0] - 2026-02-21</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">[0.1.0] - 2026-02-21</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#breaking-changes">Breaking Changes</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id5">Changed</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id6">Fixed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Changed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Fixed</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#id7">[0.0.2]</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id8">Added</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id9">Changed</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id10">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">[0.0.2]</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id6">Added</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id7">Changed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id8">Fixed</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#id11">[0.0.1]</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id12">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id9">[0.0.1]</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id10">Added</a></li>
 </ul>
 </li>
 </ul>
@@ -123,9 +119,20 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <section id="unreleased">
 <h2>[Unreleased]<a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+</section>
+<section id="id1">
+<h2>[0.2.0] - 2026-10-07<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Support and example for partitioning the simulations of designs</p></li>
+</ul>
+</section>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Two windows opening for EPR analysis</p></li>
+<li><p>missing _ in hardcoded capacitance names in targets</p></li>
 <li><p><strong>GUI no longer crashes on startup</strong> (and, in Jupyter, no longer kills the kernel) when
 calling <code class="docutils literal notranslate"><span class="pre">MetalGUI(design)</span></code> / <code class="docutils literal notranslate"><span class="pre">create_chip_base(open_gui=True)</span></code>. The bug was upstream in
 Quantum Metal: persisted Qt window state saved to <code class="docutils literal notranslate"><span class="pre">HKCU\Software\QiskitMetal\MainWindow</span></code>
@@ -138,6 +145,7 @@ cleared once – see the Troubleshooting section of the installation docs.</p></
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Updated and extended examples used in the publication <a class="reference external" href="https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6">https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6</a></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">quantum-metal</span></code> requirement raised from <code class="docutils literal notranslate"><span class="pre">&gt;=0.7.4</span></code> to <code class="docutils literal notranslate"><span class="pre">&gt;=0.8.1,</span> <span class="pre">&lt;0.9</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">pyside6</span></code> capped at <code class="docutils literal notranslate"><span class="pre">&lt;6.11</span></code>. Qt 6.11 is a known suspect for a remaining GUI crash on Windows
 machines with integrated GPUs, and Quantum Metal 0.8.1 is validated against the 6.10 series.</p></li>
@@ -159,30 +167,8 @@ so progress screenshots are unchanged. If a future release does reframe them to 
 die, <code class="docutils literal notranslate"><span class="pre">renderer.options.chip_outline</span> <span class="pre">=</span> <span class="pre">False</span></code> restores the component framing.</p>
 </section>
 </section>
-<section id="id1">
-<h2>[0.2.0] - 2026-07-08<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
-<section id="added">
-<h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p>Support and example for partitioning the simulations of designs</p></li>
-</ul>
-</section>
 <section id="id2">
-<h3>Fixed<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p>Two windows opening for EPR analysis</p></li>
-<li><p>missing _ in hardcoded capacitance names in targets</p></li>
-</ul>
-</section>
-<section id="id3">
-<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p>Updated and extended examples used in the publication <a class="reference external" href="https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6">https://iopscience.iop.org/article/10.1088/2058-9565/ae7ab6</a></p></li>
-</ul>
-</section>
-</section>
-<section id="id4">
-<h2>[0.1.0] - 2026-02-21<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<h2>[0.1.0] - 2026-02-21<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
 <section id="breaking-changes">
 <h3>Breaking Changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -199,25 +185,25 @@ die, <code class="docutils literal notranslate"><span class="pre">renderer.optio
 </li>
 </ul>
 </section>
-<section id="id5">
-<h3>Changed<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<section id="id3">
+<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Updated numpy compatibility for pyEPR</p></li>
 <li><p>Updated matplotlib, shapely, ipython, pandas, pyaedt and pyEPR dependencies</p></li>
 <li><p>Improved installation documentation</p></li>
 </ul>
 </section>
-<section id="id6">
-<h3>Fixed<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<section id="id4">
+<h3>Fixed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Fixed pyEPR numpy compatibility issues</p></li>
 </ul>
 </section>
 </section>
-<section id="id7">
-<h2>[0.0.2]<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
-<section id="id8">
-<h3>Added<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
+<section id="id5">
+<h2>[0.0.2]<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<section id="id6">
+<h3>Added<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Two mode examples:</p>
 <ul>
@@ -229,24 +215,24 @@ die, <code class="docutils literal notranslate"><span class="pre">renderer.optio
 <li><p>Upload of publication data and scripts to the repository</p></li>
 </ul>
 </section>
-<section id="id9">
-<h3>Changed<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<section id="id7">
+<h3>Changed<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Documentation improvements and edits</p></li>
 <li><p>Refactored <code class="docutils literal notranslate"><span class="pre">design_analysis</span></code> class into <code class="docutils literal notranslate"><span class="pre">design_analysis</span></code> and <code class="docutils literal notranslate"><span class="pre">anmod_optimizer</span></code></p></li>
 </ul>
 </section>
-<section id="id10">
-<h3>Fixed<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<section id="id8">
+<h3>Fixed<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Prefixed Qiskit Metal components with <code class="docutils literal notranslate"><span class="pre">_</span></code> to enable surface participation ratio analysis</p></li>
 </ul>
 </section>
 </section>
-<section id="id11">
-<h2>[0.0.1]<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
-<section id="id12">
-<h3>Added<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
+<section id="id9">
+<h2>[0.0.1]<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<section id="id10">
+<h3>Added<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Initial public version of the <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code></p></li>
 </ul>
