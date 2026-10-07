@@ -112,10 +112,11 @@
 <h2>Installation with pip<a class="headerlink" href="#installation-with-pip" title="Link to this heading"></a></h2>
 <p>The simplest way to install <code class="docutils literal notranslate"><span class="pre">qdesignoptimizer</span></code> is via the Python package manager pip:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>qdesignoptimizer
-pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>quantum-metal
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span><span class="s2">&quot;quantum-metal&gt;=0.8.1,&lt;0.9&quot;</span>
 </pre></div>
 </div>
-<p>Note that Quantum Metal (formerly Qiskit Metal) must be installed separately and without dependencies to make it work properly. The package uses PySide6 (version 6.8+) for the GUI interface. Note that the full installation has been tested with the version quantum-metal==0.5.3.post1.</p>
+<p>Note that Quantum Metal (formerly Qiskit Metal) must be installed separately and without dependencies to make it work properly. The package uses PySide6 (version 6.10.x) for the GUI interface. Note that the full installation has been tested with quantum-metal 0.8.1 and PySide6 6.10.2.</p>
+<p>Quantum Metal versions below 0.8.1 are not supported: they contain a Qt bug that crashes the GUI (and, in Jupyter, the whole kernel) on <code class="docutils literal notranslate"><span class="pre">MetalGUI(design)</span></code>. PySide6 6.11 is excluded for the same reason.</p>
 </section>
 <section id="installation-from-github-repository">
 <h2>Installation from GitHub Repository<a class="headerlink" href="#installation-from-github-repository" title="Link to this heading"></a></h2>
@@ -163,7 +164,7 @@ pip<span class="w"> </span>install<span class="w"> </span>poetry
 <h3>User Installation<a class="headerlink" href="#user-installation" title="Link to this heading"></a></h3>
 <p>For regular users, install the project with its dependencies and Quantum Metal:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install
-pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>quantum-metal
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span><span class="s2">&quot;quantum-metal&gt;=0.8.1,&lt;0.9&quot;</span>
 </pre></div>
 </div>
 </section>
@@ -171,7 +172,7 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 <h3>Developer Installation<a class="headerlink" href="#developer-installation" title="Link to this heading"></a></h3>
 <p>For developers who want to contribute to the project, install with additional development dependencies:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>docs,analysis
-pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>quantum-metal
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span><span class="s2">&quot;quantum-metal&gt;=0.8.1,&lt;0.9&quot;</span>
 pre-commit<span class="w"> </span>install
 </pre></div>
 </div>
@@ -199,9 +200,16 @@ pre-commit<span class="w"> </span>install
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
 <p><strong>Common Issues:</strong></p>
 <ul class="simple">
-<li><p><strong>Python Version Mismatch</strong>: Ensure you’re using Python 3.10 or 3.11 or 3.12</p></li>
+<li><p><strong>Python Version Mismatch</strong>: Ensure you’re using Python 3.11 or 3.12</p></li>
 <li><p><strong>Dependency Conflicts</strong>: If you encounter dependency conflicts, try installing in a fresh virtual environment</p></li>
 <li><p><strong>Ansys Connection Issues</strong>: Make sure Ansys HFSS is correctly installed and licensed</p></li>
+<li><p><strong>GUI crashes / “the kernel appears to have died” on</strong> <code class="docutils literal notranslate"><span class="pre">MetalGUI(design)</span></code>: upgrade to
+<code class="docutils literal notranslate"><span class="pre">quantum-metal&gt;=0.8.1</span></code>, which contains the upstream fix. If the machine is already in a
+poisoned state, the persisted Qt window layout has to be cleared once – either set
+<code class="docutils literal notranslate"><span class="pre">QISKIT_METAL_RESET_UI_SETTINGS=1</span></code> before launching, or delete the registry key
+<code class="docutils literal notranslate"><span class="pre">HKCU\Software\QiskitMetal\MainWindow</span></code>. Useful further diagnostics:
+<code class="docutils literal notranslate"><span class="pre">QISKIT_METAL_DEBUG_INIT=1</span></code> traces each GUI init step, and <code class="docutils literal notranslate"><span class="pre">QISKIT_METAL_QT_HARDWARE_GL=1</span></code>
+opts out of the software-OpenGL default that Quantum Metal applies on Windows.</p></li>
 </ul>
 </section>
 <section id="migration-from-qiskit-metal-to-quantum-metal">
