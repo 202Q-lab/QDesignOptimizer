@@ -1,0 +1,4 @@
+# What running the studies writes: the queue, results and the store.
+out/
+design_variables.json
+*.writes.json

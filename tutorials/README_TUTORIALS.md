@@ -1,6 +1,6 @@
 # Tutorials
 
-Three tutorial examples are provided, ranging from a single-qubit chip to a general, not directly quantum circuit related scalability benchmark with thousands of parameters.
+Four tutorial examples are provided, ranging from a single-qubit chip to a general, not directly quantum circuit related scalability benchmark with thousands of parameters, and a queue that runs many studies unattended.
 
 ## Where to start
 
@@ -11,6 +11,8 @@ Three tutorial examples are provided, ranging from a single-qubit chip to a gene
 - Use `main_charge_line_decay_single_qubit.ipynb` if T1 limits from control lines are relevant to your design.
 
 **Working with a tunable coupler?** Go directly to `examples_coupled_transmons_tunable_coupler_chip/` after completing the single-qubit notebook.
+
+**Running many studies unattended?** See `example_simulation_sequencer/`: a queue of studies made from YAML templates, run one at a time, each writing its tuned design variables back. Its `demo/` runs without Ansys.
 
 **Interested in large-scale optimization or the ANMod algorithm?** See `example_clusters_anmod_scaliability/` — this is an advanced standalone example, not tied to a physical chip design.
 
@@ -57,7 +59,7 @@ A two-qubit chip with an explicit tunable coupler component (`TunableCoupler01`)
 - How to add a tunable coupler to a two-qubit system and include it in the optimization
 - How to set targets for coupler frequency, anharmonicity, and coupler-qubit chi interactions
 - How the optimization targets and parameter values differ for a tunable-coupler architecture (lower chi values, distinct coupler frequency)
-- How to optimize the full two-qubit and coupler design in one optimization routine. 
+- How to optimize the full two-qubit and coupler design in one optimization routine.
 
 **Notebooks:**
 
@@ -90,3 +92,20 @@ A scalability benchmark for the ANMod optimizer showcasing an abstract mathemati
 | `plot_convergence.py` | Generates an 8-panel convergence figure: parameter values, design variables, y/y_target ratios, approximation accuracy histograms, and convergence slope estimate |
 
 **Expected results:** with most random seeds, 2900-3000 of 3000 parameters converge within 10 iterations.
+
+---
+
+## 4. `example_simulation_sequencer/`
+
+The studies of `examples_coupled_transmon_chip/` as a queue, with `qdesignoptimizer.sequencer`. A study is a folder of YAML files made from the project's templates when it is queued; studies run one at a time and a converged one writes its tuned design variables back for the next. See its `README.md`.
+
+**You will learn:**
+- How to plug a QDO design into the sequencer with one adapter (`simulations/sequencer.py`)
+- How to write MiniStudies and OptTargets as YAML templates, one study per qubit-resonator group
+- How a study picks its opt targets, and which it switches on (eigenmode vs capacitance)
+- How to queue a campaign and run it from the command line or the GUI
+
+| Folder | Ansys | Purpose |
+|---|---|---|
+| `demo/` | not needed | Tiny projects that "solve" in 5 s: try the queue, runner and GUI |
+| `coupled_transmon_chip/` | needed | The tutorial chip's studies as templates, a campaign `tune_Q1` |
