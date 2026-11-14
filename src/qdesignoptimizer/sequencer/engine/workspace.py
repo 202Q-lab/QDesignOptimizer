@@ -102,14 +102,27 @@ class Workspace:
     ):
         if not projects:
             raise QueueError("no project to open")
-        self.projects: dict[str, Project] = {}
-        for project in projects:
+        # Names are given in path order, not opening order: the shared
+        # state folder is the same for the same projects in any order,
+        # so the names its order.json and runner.json use must be too
+        # (two projects of one folder name are "chip" and "chip-2"
+        # whichever was opened first).
+        names: dict[int, str] = {}
+        taken: set[str] = set()
+        for i in sorted(
+            range(len(projects)),
+            key=lambda i: str(projects[i].out.resolve()).lower(),
+        ):
             # Not starting with "~": the GUI marks a study sequence draft so.
-            base = project.out.parent.name.lstrip("~") or "project"
+            base = projects[i].out.parent.name.lstrip("~") or "project"
             name, n = base, 2
-            while name in self.projects:
+            while name in taken:
                 name, n = f"{base}-{n}", n + 1
-            self.projects[name] = project
+            taken.add(name)
+            names[i] = name
+        self.projects: dict[str, Project] = {
+            names[i]: project for i, project in enumerate(projects)
+        }
         self.refs = list(refs or [])
         self.single = len(projects) == 1
         if state_dir is None:

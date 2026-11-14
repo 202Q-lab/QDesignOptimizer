@@ -62,15 +62,28 @@ def load_sequence(path: Path, words: Words = Words()) -> SequenceSpec:
     if extra:
         problems.append(f"unknown top-level key(s) {extra}")
     defaults = raw.get("defaults") or {}
+    if not isinstance(defaults, dict):
+        problems.append("defaults must be a mapping")
+        defaults = {}
+    elif not isinstance(defaults.get("settings") or {}, dict):
+        problems.append("defaults: settings must be a mapping")
+        defaults = {k: v for k, v in defaults.items() if k != "settings"}
     bad = sorted(set(defaults) - _ENTRY)
     if bad:
         problems.append(f"defaults cannot set {bad}")
+    studies = raw.get("studies") or []
+    if not isinstance(studies, list):
+        problems.append("studies must be a list")
+        studies = []
     entries = []
-    for n, item in enumerate(raw.get("studies") or [], 1):
+    for n, item in enumerate(studies, 1):
         if isinstance(item, str):
             item = {words.task: item}
         if not isinstance(item, dict):
             problems.append(f"entry {n} is not a mapping")
+            continue
+        if not isinstance(item.get("settings") or {}, dict):
+            problems.append(f"entry {n}: settings must be a mapping")
             continue
         keys = [k for k in ("task", words.task) if k in item]
         unknown = sorted(set(item) - _ENTRY - {"task", words.task})
@@ -97,6 +110,11 @@ def load_sequence(path: Path, words: Words = Words()) -> SequenceSpec:
             # One name, not its letters: tuple("mode_identity") would
             # give every study the checks 'm', 'o', 'd', ...
             checks = [checks]
+        if checks is not None and (
+            not isinstance(checks, list) or not all(isinstance(c, str) for c in checks)
+        ):
+            problems.append(f"entry {n}: checks must be a list of names")
+            continue
         entries.append(
             SequenceEntry(
                 task=str(item[keys[0]]),
@@ -135,4 +153,6 @@ def load_sequence_dir(
             specs.append(load_sequence(path, words))
         except SequenceError as exc:
             problems.extend(exc.problems)
+        except Exception as exc:  # noqa: BLE001 -- one file, not the catalog
+            problems.append(f"{path.name}: cannot be read: {exc}")
     return specs, problems

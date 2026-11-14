@@ -241,6 +241,11 @@ def draft_screen(view: dict, selected: dict | None, launching: bool = False) -> 
                 if view.get("from")
                 else None
             ),
+            (
+                html.Div(f"why this order: {view['why_ordered']}", className="qs-small")
+                if view.get("why_ordered")
+                else None
+            ),
             html.Div(
                 "Click a study to edit it on the right; nothing is queued "
                 "until you launch.",

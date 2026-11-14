@@ -35,10 +35,12 @@ python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/
 ```
 
 Open <http://127.0.0.1:8051>, **Add** the study sequence `tune_R1` of
-`chip_qdo`, press **Start**. Two studies run (about 10 s), frequency then
+`chip_qdo`: a popup lists its studies; press **Launch** to queue them,
+then **Start**. Two studies run (about 10 s), frequency then
 linewidth, and each writes the design variable it tuned back into
 `demo/chip_qdo/design_variables.json`; click one under **Completed** to
-see its files and convergence plot. More in [`demo/README.md`](demo/README.md).
+see its files and convergence plot. `tune_all` chains four studies
+from a sequence file, `chip_qdo/study_sequences/tune_all.yaml`. More in [`demo/README.md`](demo/README.md).
 
 ## A project on top of QDO
 

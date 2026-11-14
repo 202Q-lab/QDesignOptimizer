@@ -289,8 +289,19 @@ class FolderQueue:
         tmp.replace(path)
 
     def delete_file(self, job_id: str, name: str) -> None:
-        """Delete an optional file, so it is pulled from the project."""
-        path = self.folder(job_id) / name
+        """Delete an optional file, so it is pulled from the project.
+
+        Raises:
+            QueueError: If the study is no longer queued (claimed by a
+                runner meanwhile): the deletion would not count, so it
+                must not be reported as done.
+        """
+        folder = self.folder(job_id)
+        if not folder.is_dir():
+            raise QueueError(f"{job_id} is not queued")
+        if "/" in name or "\\" in name or name.startswith("."):
+            raise QueueError(f"{name!r} is not a file name")
+        path = folder / name
         if path.exists():
             path.unlink()
 

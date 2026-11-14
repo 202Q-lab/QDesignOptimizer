@@ -64,6 +64,8 @@ def update_json(
     with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
         json.dump(current, handle, indent=4)
         handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())  # never an empty store after a power cut
     try:
         for attempt in range(_TRIES):
             try:
@@ -175,6 +177,8 @@ def _write(path: Path, data: dict) -> None:
     with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
         json.dump(data, handle, indent=4)
         handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
     try:
         for attempt in range(_TRIES):
             try:

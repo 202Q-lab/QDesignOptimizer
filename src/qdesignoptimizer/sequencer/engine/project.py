@@ -281,6 +281,8 @@ class Project:
             {
                 "label": label or (from_spec.label if from_spec else ""),
                 "from": from_spec.key if from_spec else "",
+                "from_label": from_spec.label if from_spec else "",
+                "why_ordered": from_spec.why_ordered if from_spec else "",
                 "created": st.now(),
             },
         )
@@ -454,7 +456,7 @@ class Project:
     ) -> list[str]:
         """Queue a whole draft as one study sequence, in its order.
 
-        Every study gets a study sequence id (``s<NN>-<n>_<task>``) and goes to
+        Every study gets a study sequence id (``s<NN>-<sequence>-<study>``) and goes to
         the end of the queue. The draft is removed, unless studies were
         added to it while it launched: those stay in it, and launching
         it again continues the same study sequence.
@@ -514,8 +516,15 @@ class Project:
             meta = st.read_json(self.drafts_dir / name / DRAFT_FILE) or {}
             earlier = meta.get("launched") or {}
             # A study sequence launched in parts keeps the name it was first
-            # launched with: its ids carry it, and should match.
-            label = earlier.get("label") or label or meta.get("label") or name
+            # launched with: its ids carry it, and should match. A draft
+            # made from a sequence and not renamed is recorded under that
+            # sequence's key, as the CLI's ``sequence`` records it (short
+            # ids, one name in design_variables.meta.json); a renamed one
+            # is a sequence of its own, under its new name.
+            label = label or meta.get("label") or ""
+            if meta.get("from") and label in ("", meta.get("from_label", "")):
+                label = meta["from"]
+            label = earlier.get("label") or label or name
             sequence_id = earlier.get("sequence") or self._next_sequence_id()
             first = int(earlier.get("count", 0))
             state.update(sequence=sequence_id, first=first, label=label)
@@ -749,7 +758,6 @@ class Project:
         missing = [e.task for e in spec.entries if catalog.task(e.task) is None]
         if missing:
             raise QueueError(f"{spec.key}: unknown {self.words.task}(s) " f"{missing}")
-        sequence_id = self.queue.next_sequence_id()
         generated = []
         for entry in spec.entries:
             try:
@@ -759,28 +767,43 @@ class Project:
                     f"{spec.key}: generating {entry.task} failed: "
                     f"{type(exc).__name__}: {exc}"
                 ) from exc
-        ids = []
-        for n, (entry, (files, by)) in enumerate(zip(spec.entries, generated), 1):
-            spec_t = catalog.task(entry.task)
-            assert spec_t is not None  # unknown tasks were refused above
-            job = Job(
-                id=self.queue.new_id(entry.task, sequence_id, n, spec.key),
-                task=entry.task,
-                subject=spec_t.subject,
-                settings={
-                    **self.backend.default_settings(entry.task),
-                    **entry.settings,
-                },
-                checks=list(entry.checks or []),
-                save=bool(entry.save),
-                on_failure=entry.on_failure or "abort",
-                notes=entry.notes,
-                sequence={"id": sequence_id, "name": spec.key, "entry": n},
-                created=st.now(),
-                generated_by=by,
-            )
-            self.queue.add(job, files, self.words)
-            ids.append(job.id)
+        ids: list[str] = []
+        # Under the launch lock, numbered past drafts launched in part:
+        # a draft keeps its number, and no launch takes one meanwhile.
+        lock = self._launch_lock(wait=5.0)
+        try:
+            sequence_id = self._next_sequence_id()
+            for n, (entry, (files, by)) in enumerate(zip(spec.entries, generated), 1):
+                spec_t = catalog.task(entry.task)
+                assert spec_t is not None  # unknown tasks were refused above
+                job = Job(
+                    id=self.queue.new_id(entry.task, sequence_id, n, spec.key),
+                    task=entry.task,
+                    subject=spec_t.subject,
+                    settings={
+                        **self.backend.default_settings(entry.task),
+                        **entry.settings,
+                    },
+                    checks=list(entry.checks or []),
+                    save=bool(entry.save),
+                    on_failure=entry.on_failure or "abort",
+                    notes=entry.notes,
+                    sequence={"id": sequence_id, "name": spec.key, "entry": n},
+                    created=st.now(),
+                    generated_by=by,
+                )
+                self.queue.add(job, files, self.words)
+                ids.append(job.id)
+        except BaseException:
+            # All or nothing: take back what was queued (to removed/).
+            for job_id in ids:
+                try:
+                    self.queue.remove(job_id)
+                except QueueError:
+                    pass  # claimed by a runner meanwhile; it runs
+            raise
+        finally:
+            st.release_lock(lock)
         return ids
 
 

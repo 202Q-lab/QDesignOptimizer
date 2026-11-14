@@ -10,6 +10,7 @@ is then ``<project>/<id>`` (a plain id when one project is open).
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import subprocess
@@ -364,6 +365,22 @@ class Bridge:
             },
             "catalog": catalog_rows,
         }
+
+    def convergence_png(self, kind: str, key: str) -> str | None:
+        """A completed study's ``convergence.png``, base64; None when it
+        is not a completed study or has no such picture (a fake-backend
+        study, or one that failed before its first iteration)."""
+        if kind != "completed":
+            return None
+        try:
+            project, local = self._study(key)
+        except GuiError:
+            return None
+        path = project.queue.completed_dir / local / "convergence.png"
+        try:
+            return base64.b64encode(path.read_bytes()).decode("ascii")
+        except OSError:
+            return None
 
     def details(self, kind: str, key: str) -> dict[str, Any]:
         """One study's files and record, for the details pane.
@@ -878,6 +895,7 @@ class Bridge:
             "key": key,
             "label": meta.get("label", ""),
             "from": meta.get("from", ""),
+            "why_ordered": meta.get("why_ordered", ""),
             "project": self.workspace.name_of(project),
             "studies": studies,
             "tasks": [

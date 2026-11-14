@@ -909,5 +909,23 @@ def register_draft_callbacks(app, bridge) -> None:
         Output("preview-view", "children"),
         Input("selected", "data"),
     )
-    def _clear_preview(_selected):
-        return None
+    def _clear_preview(selected):
+        # A completed study opens on its convergence plot (the preview
+        # button replaces it with the pictures of what it simulated).
+        if not selected:
+            return None
+        png = bridge.convergence_png(selected.get("kind", ""), selected.get("key", ""))
+        if not png:
+            return None
+        return html.Div(
+            [
+                html.Img(
+                    src="data:image/png;base64," + png,
+                    style={"width": "100%", "marginTop": "8px"},
+                ),
+                html.Div(
+                    "convergence: each target parameter per iteration",
+                    className="qs-small",
+                ),
+            ]
+        )

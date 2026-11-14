@@ -2,7 +2,7 @@
 
     python -m qdesignoptimizer.sequencer <sequencer.py> list
     python -m qdesignoptimizer.sequencer <sequencer.py> add <study> [--settings JSON]
-    python -m qdesignoptimizer.sequencer <sequencer.py> study sequence <file.yaml or key>
+    python -m qdesignoptimizer.sequencer <sequencer.py> sequence <file.yaml or key>
     python -m qdesignoptimizer.sequencer <sequencer.py> check
     python -m qdesignoptimizer.sequencer <sequencer.py> check-templates
     python -m qdesignoptimizer.sequencer <sequencer.py> run --yes
@@ -152,8 +152,12 @@ def _command(args, workspace: Workspace) -> int:
             configure_console_logging()
             final = Runner(workspace).run()
             print(f"runner {final.status}: {final.message}")
+            failed = [d for d in final.done if d.endswith("_failed")]
+            if failed:
+                # on_failure: continue ran on past them; still a failure.
+                print(f"{len(failed)} failed: " + ", ".join(failed))
             ended_well = (st.FINISHED, st.STOPPED, st.HELD)
-            return 0 if final.status in ended_well else 1
+            return 0 if final.status in ended_well and not failed else 1
         if args.command == "stop":
             runner = st.RunnerState.load(state_dir)
             if not runner.alive(state_dir):

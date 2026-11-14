@@ -189,8 +189,10 @@ class QDOProject(Protocol):
     # ``study_sequences(tasks) -> [SequenceSpec]``: study sequences built in code;
     # ``resolve(task: TaskSpec, settings) -> list[str]``: the project's
     #   own refusals (a MiniStudy with too few passes, say);
-    # ``modes_checked(settings) -> bool``: False when these settings
-    #   switch the per-iteration mode-identity check off;
+    # ``modes_checked(settings) -> bool``: whether ``solve`` checks, on
+    #   every iteration, that each mode is the intended one (False when
+    #   these settings switch that off). Without this hook a study's
+    #   ``mode_identity`` check fails: nothing vouches for it;
     # ``reload()``: re-import project modules (the GUI's "Reload");
     # ``code_modules``: extra top-level modules a study file may name;
     # ``design()``: the built qiskit-metal design, to check names.
@@ -896,7 +898,7 @@ class QDOBackend:
                 else "capacitance"
             ),
             "runs": [r["title"] for r in runs],
-            "passes": getattr(study, "nbr_passes", None),
+            "passes": _passes(study),
         }
         entries = qf.active_targets(
             (yaml.safe_load((folder / TARGETS).read_text("utf-8")) or {}).get("targets")
@@ -1258,7 +1260,15 @@ class QDOBackend:
             # there and the study has already failed -- unless the
             # project was told not to check, which must not pass quietly.
             asked = getattr(self.project, "modes_checked", None)
-            if asked is not None and not asked(dict(job.settings)):
+            if asked is None:
+                # Nothing says solve checks the modes: passing would
+                # vouch for a check nobody made.
+                return CheckResult(
+                    False,
+                    "modes not checked: the project has no modes_checked "
+                    "hook saying its solve checks them",
+                )
+            if not asked(dict(job.settings)):
                 return CheckResult(
                     False, "mode identity was switched off " "for this study"
                 )
@@ -1587,6 +1597,20 @@ def judge_targets(
                 bool(ok),
             )
     return out
+
+
+def _passes(study) -> int | None:
+    """The passes a study's solves ran with: the MiniStudy's own for an
+    eigenmode solve, the chained capacitance studies' (the most of
+    them) for a capacitance-only study, whose ``nbr_passes`` is unused."""
+    if not getattr(study, "run_capacitance_studies_only", False):
+        return getattr(study, "nbr_passes", None)
+    passes = [
+        getattr(c, "nbr_passes", None)
+        for c in getattr(study, "capacitance_matrix_studies", None) or []
+    ]
+    passes = [p for p in passes if isinstance(p, int)]
+    return max(passes) if passes else getattr(study, "nbr_passes", None)
 
 
 def _now() -> str:

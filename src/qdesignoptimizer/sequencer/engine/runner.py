@@ -40,7 +40,7 @@ from pathlib import Path
 
 from . import state as st
 from .backend import StepResult
-from .job import load_job
+from .job import load_job, parse_completed
 from .project import Project
 from .queue import INPUTS, QueueError, load_job_from
 from .workspace import Workspace, user_home
@@ -210,7 +210,7 @@ class Runner:
         store = None
         aborted: list[str] = []
         for path in self.queue.cut_off():
-            record = st.result_of(path) or {"id": path.name}
+            record = st.result_of(path) or {"id": parse_completed(path.name)[0]}
             updates = record.get("updates") or {}
             if record.get("status") == st.COMMITTING and updates:
                 if store is None:

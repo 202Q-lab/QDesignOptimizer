@@ -78,6 +78,10 @@ def write_json(path: Path, data: Any, seconds: float = 1.0) -> None:
     with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
         json.dump(data, handle, indent=2, default=_jsonable)
         handle.write("\n")
+        # On disk before the rename: after a power cut the file is the
+        # old one or the new one, never an empty one.
+        handle.flush()
+        os.fsync(handle.fileno())
     deadline = time.monotonic() + seconds
     while True:
         try:
@@ -142,8 +146,15 @@ class RunnerState:
 
 
 def result_of(folder: Path) -> dict:
-    """A study's ``result.json``, {} when it has none."""
-    return read_json(Path(folder) / RESULT_FILE) or {}
+    """A study's ``result.json``; {} when it has none or it is damaged
+    (not JSON, e.g. cut short by a power cut). Such a study then counts
+    as cut off and is closed as failed, rather than one bad file
+    stopping the runner and every add for good."""
+    try:
+        data = read_json(Path(folder) / RESULT_FILE)
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def request_stop(out_dir: Path) -> None:
