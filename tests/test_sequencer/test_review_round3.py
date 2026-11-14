@@ -132,3 +132,54 @@ def test_a_draft_from_a_sequence_is_recorded_under_its_key(project):
     ids = project.launch_draft(name)
     assert ids[0].startswith("s01-full_A-")
     assert project.job(ids[0]).sequence["name"] == "full_A"
+
+
+# -- review round 4 ------------------------------------------------------
+
+
+def test_a_rerun_after_out_is_deleted_is_recorded_again(tmp_path):
+    """Ids restart at s01 once out/ is gone; the meta record must not
+    take the new run for the old one."""
+    from qdesignoptimizer.sequencer.backends._store import read_meta, record_writes
+
+    store = tmp_path / "design_variables.json"
+    store.write_text('{"L": "1 um"}', encoding="utf-8")
+    old = {"study": "s01-x-a", "folder": "out/completed/s01-x-a_2026-01-01T00-00-00"}
+    new = {"study": "s01-x-a", "folder": "out/completed/s01-x-a_2026-02-01T00-00-00"}
+    record_writes(store, {"L": "2 um"}, {"L": "1 um"}, old)
+    record_writes(store, {"L": "2 um"}, {"L": "1 um"}, old)  # a recovery
+    assert len(read_meta(store)["L"]["history"]) == 1
+    record_writes(store, {"L": "2 um"}, {"L": "1 um"}, new)
+    item = read_meta(store)["L"]
+    assert item["latest"]["folder"] == new["folder"]
+    assert len(item["history"]) == 2
+
+
+def test_the_runner_lists_what_failed_under_continue(project):
+    first = project.add("A.calibrate", on_failure="continue")
+    project.add("B.calibrate")
+    from .helpers import set_task
+
+    set_task(project, first, fail=True)
+    final = Runner(project).run()
+    assert final.status == st.FINISHED
+    assert final.failed == [first]
+
+
+def test_a_crash_cut_off_study_is_listed_as_failed(project):
+    first = project.add("A.calibrate", on_failure="continue")
+    claimed = project.queue.claim(first)
+    folder = project.queue.start(claimed, first)
+    st.write_json(folder / st.RESULT_FILE, {"id": first, "status": st.RUNNING})
+    assert Runner(project).run().failed == [first]
+
+
+def test_a_listed_code_module_does_not_open_its_whole_package(monkeypatch):
+    from qdesignoptimizer.sequencer.backends import qdo_files as qf
+
+    monkeypatch.setattr(qf, "ALLOWED_MODULES", set())
+    qf.allow_modules("qdesignoptimizer.estimation")
+    assert qf._trusted("qdesignoptimizer.estimation")
+    assert qf._trusted("qdesignoptimizer.estimation.purcell_limit")
+    assert not qf._trusted("qdesignoptimizer.sequencer.backends._store")
+    assert not qf._trusted("qdesignoptimizer.estimationx")

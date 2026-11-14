@@ -125,6 +125,9 @@ class RunnerState:
     current: str = ""
     message: str = ""
     done: list[str] = field(default_factory=list)
+    #: The studies this run closed as failed: run ones, and ones a
+    #: crash cut off (as ``<project>/<id>`` when several are open).
+    failed: list[str] = field(default_factory=list)
 
     @classmethod
     def load(cls, out_dir: Path) -> RunnerState:

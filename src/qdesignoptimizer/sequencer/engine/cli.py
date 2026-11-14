@@ -152,7 +152,7 @@ def _command(args, workspace: Workspace) -> int:
             configure_console_logging()
             final = Runner(workspace).run()
             print(f"runner {final.status}: {final.message}")
-            failed = [d for d in final.done if d.endswith("_failed")]
+            failed = list(final.failed)
             if failed:
                 # on_failure: continue ran on past them; still a failure.
                 print(f"{len(failed)} failed: " + ", ".join(failed))

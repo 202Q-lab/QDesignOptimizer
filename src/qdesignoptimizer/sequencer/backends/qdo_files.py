@@ -90,12 +90,15 @@ ALLOWED_MODULES: set[str] = set()
 
 
 def allow_modules(*names: str) -> None:
-    """Let study files also name these top-level modules."""
-    ALLOWED_MODULES.update(n.split(".")[0] for n in names if n)
+    """Let study files also name these modules (and their submodules).
+    Exactly these: listing ``pkg.sub`` does not open all of ``pkg``."""
+    ALLOWED_MODULES.update(n for n in names if n)
 
 
 def _trusted(module_name: str) -> bool:
-    return module_name.split(".")[0] in ALLOWED_MODULES
+    return any(
+        module_name == m or module_name.startswith(m + ".") for m in ALLOWED_MODULES
+    )
 
 
 def _check_allowed(module_name: str, what: str, role: str | None = None) -> None:

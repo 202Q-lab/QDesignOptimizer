@@ -142,8 +142,10 @@ def record_writes(
     it, plus ``details[name]`` where the backend has more to say about
     that one value (the simulation, the target it chased).
 
-    The same study writing the same value again is not a second write
-    (a recovered write-back already recorded) and is skipped. A damaged
+    The same run (same study folder, which carries its start time)
+    writing the same value again is not a second write (a recovered
+    write-back already recorded) and is skipped. Ids alone are not
+    enough: they restart at s01 once ``out/`` is deleted. A damaged
     record (a git merge conflict in it) is set aside as
     ``<name>.damaged-<time>.json`` and a fresh one started, so recording
     does not stop for good.
@@ -159,7 +161,10 @@ def record_writes(
     for name, value in updates.items():
         item = data.get(name) or {}
         latest = item.get("latest") or {}
-        if latest.get("study") == source.get("study") and latest.get("value") == value:
+        same_run = latest.get("folder") == source.get("folder") and (
+            latest.get("study") == source.get("study")
+        )
+        if same_run and latest.get("value") == value:
             continue
         entry = {
             "value": value,

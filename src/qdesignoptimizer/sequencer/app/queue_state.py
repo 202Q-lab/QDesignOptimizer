@@ -803,7 +803,13 @@ class Bridge:
                 f"{job_id} is no longer in the queue (it may "
                 f"have just started); nothing was deleted"
             )
-        project.queue.delete_file(local, name)
+        try:
+            project.queue.delete_file(local, name)
+        except QueueError as exc:
+            raise GuiError(
+                f"{job_id} is no longer in the queue (it may "
+                f"have just started); nothing was deleted"
+            ) from exc
 
     def requeue(self, folder_name: str, exact: bool = False) -> str:
         """Queue a completed study again as a fresh copy: as it was

@@ -76,10 +76,12 @@ study sequence plus one more study takes about 15 s.
   study starts from the frequency its frequency study wrote back; click
   a completed study for its files and convergence plot, and see
   `chip_qdo/design_variables.meta.json` for which study wrote each value.
-- **A failure that does not stop the rest**: under `on_failure: continue`
-  (as in `tune_all`) the queue goes on; under `abort` (the default) the
-  runner stops at the failed study. In `chip_a`, set `fail: true` in a
-  queued study's `task.yaml` to see it.
+- **A failure that does not stop the rest**: in `tune_all`'s popup, give
+  the first study (`R1.frequency`) `iterations: 1` before you Launch. It
+  ends off target, fails its `converged` check and writes nothing back;
+  under `on_failure: continue` the other three still run. Under `abort`
+  (the default) the runner stops at the failed study. (In `chip_a`,
+  `fail: true` in a queued study's `task.yaml` makes it raise instead.)
 - **Per-study values**: click a queued chip_qdo study and set its
   *Parameter targets* or *Design variables*: they hold only for that
   study (written to its folder) and are never written back unless a
@@ -116,7 +118,8 @@ python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo
 
 ## Reset
 
-Delete each project's `out/`, `chip_a/store.json`, `chip_b/store.json`
-and `chip_qdo/design_variables.json` (all git-ignored). With several
+Delete each project's `out/`, `chip_a/store.json`, `chip_b/store.json`,
+`chip_qdo/design_variables.json` and the `*.meta.json` next to them (all
+git-ignored). With several
 projects open, the shared order and runner state live in your user
 folder (`%LOCALAPPDATA%\qdo_sequencer\workspaces\`), which is safe to delete while no runner is going.

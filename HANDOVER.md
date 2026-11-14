@@ -52,27 +52,22 @@ into the docs.
 
 ## Open items, in order
 
-1. **CI fails on PR #56; `main` passes.** Both the `Lint-Test-Mypy` job
-   (step "Analyze the code with pylint") and the `Docs` job (step
-   "Compile documentation") exit 1. Neither reproduces locally:
-   - pylint 3.3.4 / astroid 3.3.8 under Python 3.12 (`qdesignenv-new`)
-     reports no E/F messages except "Unable to import 'dash'" (Dash is not
-     installed there);
-   - a Sphinx 7.3.7 build of a copy of the branch (notebooks excluded, no
-     Pandoc here) succeeds with warnings only.
-
-   So the cause is in CI's environment. Read the logs (needs a GitHub
-   login): https://github.com/202Q-lab/QDesignOptimizer/actions/runs/43312013612
-   (lint) and .../runs/43312013597 (docs). Suspects: Dash 4.5.0 from the
-   lock (local runs used 4.4.1) giving pylint errors in `app/`; the
-   environment having drifted since main's last CI run (2026-10-07).
+1. **CI: cause found and fixed locally, not yet confirmed on GitHub.**
+   `poetry.lock`'s content hash was stale, so `poetry install` refused in
+   CI; the PowerShell step still passed because `pip install` ran last,
+   Dash was never installed, and `pylint src` failed on `import dash`.
+   With the hash regenerated (no version changes), a local conda env
+   built like CI's (`qdo-ci`: Python 3.12, Poetry 2.0.1, Dash 4.5.0,
+   Pandoc) gives: pylint exit 28 (no E/F, so `pylint-exit` passes), mypy
+   clean, `pytest tests` all pass, and the Sphinx build succeeds with
+   warnings only. Check the PR's checks after the next push.
 2. **Nothing from `coupled_transmon_chip` has run in Ansys.** First run:
    one cheap capacitance study, `Q1.resonator_kappa`; then
    `Q1.qubit_resonator`. One Ansys at a time; never close Ansys with
    `taskkill` (that is why the adapter's `before_step` does nothing).
-3. **GUI not clicked through** in this repo.
-4. **Local Python is 3.10** (`qdesignenv`); the project requires >=3.11.
-   The test suite ran on 3.10 only.
+3. **GUI only partly clicked through**: a reviewer drove the demo in a
+   browser (Dash 4.4.1); not the coupled chip, not Dash 4.5.0.
+4. **Python**: the suite runs on 3.12 in the `qdo-ci` env (and on 3.10).
 5. **`gh` is not logged in** on this machine (`gh auth login`), so PRs and
    CI logs are not reachable from a session.
 

@@ -301,9 +301,14 @@ class FolderQueue:
             raise QueueError(f"{job_id} is not queued")
         if "/" in name or "\\" in name or name.startswith("."):
             raise QueueError(f"{name!r} is not a file name")
-        path = folder / name
-        if path.exists():
-            path.unlink()
+        try:
+            (folder / name).unlink()
+        except FileNotFoundError:
+            pass
+        if not folder.is_dir():
+            # Claimed between the check above and the unlink: the
+            # runner took the folder as it was, file and all.
+            raise QueueError(f"{job_id} is not queued")
 
     # -- running ---------------------------------------------------------
 

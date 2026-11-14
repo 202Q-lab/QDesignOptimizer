@@ -238,13 +238,13 @@ class Runner:
                 on_failure = load_job_from(path, self.backend.words).on_failure
             except Exception:  # noqa: BLE001 -- unreadable: the default
                 on_failure = "abort"
+            key = self.workspace.key(
+                self.workspace.name_of(self.project),
+                record.get("id") or path.name,
+            )
+            self.state.failed.append(key)
             if on_failure == "abort":
-                aborted.append(
-                    self.workspace.key(
-                        self.workspace.name_of(self.project),
-                        record.get("id") or path.name,
-                    )
-                )
+                aborted.append(key)
             self.queue.finish(path, ok=False)
             log.warning(
                 "%s was cut off with its runner; marked failed "
@@ -371,6 +371,8 @@ class Runner:
             status, folder = self._run_one(job_id, job, folder)
             name = self.workspace.name_of(self.project)
             self.state.done.append(self.workspace.key(name, folder.name))
+            if status == st.FAILED:
+                self.state.failed.append(self.workspace.key(name, job_id))
             self.state.save(out)
             if status == st.FAILED and job.on_failure == "abort":
                 self.state.status = st.ABORTED

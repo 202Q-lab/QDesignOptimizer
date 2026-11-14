@@ -632,7 +632,11 @@ class Project:
         launched or reserved by a draft launched in part -- a launch that
         published nothing still owns its number (the draft keeps it)."""
         highest = int(self.queue.next_sequence_id()[1:]) - 1
-        for draft in self.drafts():
+        try:
+            drafts = self.drafts()
+        except (OSError, ValueError):  # a damaged draft.json
+            drafts = []
+        for draft in drafts:
             number = str((draft.get("launched") or {}).get("sequence", ""))
             if number[:1] == "s" and number[1:].isdigit():
                 highest = max(highest, int(number[1:]))
@@ -768,9 +772,10 @@ class Project:
                     f"{type(exc).__name__}: {exc}"
                 ) from exc
         ids: list[str] = []
-        # Under the launch lock, numbered past drafts launched in part:
-        # a draft keeps its number, and no launch takes one meanwhile.
-        lock = self._launch_lock(wait=5.0)
+        # Numbered past drafts launched in part (a draft keeps its
+        # number) and past a launch under way (its staged ids count as
+        # taken). Not under the launch lock: a GUI launch holds it for
+        # its whole deep check, minutes for a real design.
         try:
             sequence_id = self._next_sequence_id()
             for n, (entry, (files, by)) in enumerate(zip(spec.entries, generated), 1):
@@ -802,8 +807,6 @@ class Project:
                 except QueueError:
                     pass  # claimed by a runner meanwhile; it runs
             raise
-        finally:
-            st.release_lock(lock)
         return ids
 
 
