@@ -1,0 +1,24 @@
+# A resonator's linewidth, from a chained capacitance study. The
+# capacitance study needs the mode's frequency: "=p[...]" reads it from
+# parameter_targets.py when the study is queued.
+class: qdesignoptimizer.design_analysis_types:MiniStudy
+args:
+  qiskit_component_names: ["res_{subject}", "tee_{subject}"]
+  port_list: []
+  open_pins: []
+  modes: ["resonator_{subject}"]
+  run_capacitance_studies_only: true
+  design_name: "{subject}_linewidth"
+  capacitance_matrix_studies:
+  - class: qdesignoptimizer.sim_capacitance_matrix:ResonatorDecayIntoWaveguideStudy
+    args:
+      mode: "resonator_{subject}"
+      mode_freq_GHz: "=p['resonator_{subject}_freq'] / 1e9"
+      resonator_name: "res_{subject}"
+      waveguide_name: "tee_{subject}"
+      impedance_ohm: 50
+      qiskit_component_names: ["res_{subject}", "tee_{subject}"]
+      resonator_type: lambda_4
+      open_pins:
+      - ["res_{subject}", end]
+      nbr_passes: 8

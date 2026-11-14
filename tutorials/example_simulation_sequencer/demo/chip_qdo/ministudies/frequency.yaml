@@ -1,0 +1,14 @@
+# A resonator's frequency, from an eigenmode-shaped study. The file is
+# the MiniStudy alone. {subject} makes it one study per resonator (the
+# adapter's subjects: R1.frequency, R2.frequency); the study takes the
+# opt targets of its mode from ../opt_targets/.
+class: qdesignoptimizer.design_analysis_types:MiniStudy
+args:
+  qiskit_component_names: ["res_{subject}", "tee_{subject}"]
+  port_list:
+  - ["tee_{subject}", prime_start, 50]
+  open_pins: []
+  modes: ["resonator_{subject}"]
+  nbr_passes: 15
+  delta_f: 0.001
+  design_name: "{subject}_frequency"

@@ -1,0 +1,5 @@
+# What running the demo writes: the queue, results and the "store".
+*/out/
+*/store.json
+*/design_variables.json
+*/*.meta.json

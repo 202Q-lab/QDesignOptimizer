@@ -1,0 +1,15 @@
+version: 1
+name: Tune qubit 1 and its resonator
+why_ordered: >-
+  The capacitance studies first: a few minutes each, they surface a
+  broken model before an eigenmode solve commits half an hour, and the
+  eigenmode solve then starts from their linewidth and T1 geometry.
+defaults:
+  settings: {iterations: 3}
+  checks: [converged]
+  save: true
+  on_failure: abort        # or continue
+studies:
+- study: Q1.resonator_kappa
+- study: Q1.qubit_charge_line
+- {study: Q1.qubit_resonator, settings: {iterations: 4}}

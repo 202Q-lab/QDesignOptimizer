@@ -1,0 +1,27 @@
+# A study sequence written as a file: a template of studies queued in one
+# go, in this order. (The adapter, simulations/sequencer.py, builds
+# tune_R1 and tune_R2 in code; both kinds show up in the Add menu.)
+#
+# Queue it with
+#   python -m qdesignoptimizer.sequencer <this project> sequence tune_all
+# or Add -> tune_all in the GUI, then Launch. Once queued, each study is an
+# ordinary queue entry: edit, reorder, hold or remove it there.
+version: 1
+name: Tune both resonators
+why_ordered: >-
+  Each linewidth study starts from the frequency its resonator's
+  frequency study wrote back, so each frequency comes first.
+# Every entry gets these unless it sets its own.
+defaults:
+  settings: {iterations: 3, seconds: 4}
+  checks: [converged]   # write back only when every target is within tolerance
+  save: true            # write the tuned design variables back to the store
+  on_failure: continue  # a failed study does not stop the rest (default: abort)
+studies:
+- study: R1.frequency
+- study: R1.linewidth
+- study: R2.frequency
+  settings: {iterations: 5}   # this entry only; seconds stays 4
+  notes: R2 starts further from its target, so it gets more iterations.
+- study: R2.linewidth
+  on_failure: abort     # the last one: stop if it fails

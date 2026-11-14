@@ -34,6 +34,8 @@ dependencies = [
   "pyyaml>=6.0.3",
   "ipython>=9.10.0",
   "ipykernel",
+  "dash>=2.16",
+  "psutil>=5.9",
 ]
 
 [build-system]
@@ -68,7 +70,7 @@ sphinx-mdinclude = "*"
 testpaths = ['tests/']
 
 [[tool.mypy.overrides]]
-module = ["qiskit_metal.*", "matplotlib.*", "pyEPR.*", "pyaedt.*", "scipy.*"]
+module = ["qiskit_metal.*", "matplotlib.*", "pyEPR.*", "pyaedt.*", "scipy.*", "yaml.*", "psutil.*"]
 ignore_missing_imports = true
 
 [tool.mypy]

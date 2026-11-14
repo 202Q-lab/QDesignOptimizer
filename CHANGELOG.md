@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `qdesignoptimizer.sequencer`: a queue of QDO studies run one at a time. A study is a
+  folder of editable YAML files made from a project's MiniStudy and opt-target templates;
+  converged studies write their tuned design variables back; study sequences queue a sequence of
+  studies; a Dash GUI (`python -m qdesignoptimizer.sequencer.app`) and a CLI
+  (`python -m qdesignoptimizer.sequencer`) drive it. Ported from the qiskit-metal
+  `qdo_sequencer` package.
+- Tutorial `tutorials/example_simulation_sequencer/`: demo projects that run without Ansys,
+  and the coupled-transmon chip set up for the sequencer.
+
+### Changed
+- New dependencies: `dash` (the sequencer GUI) and `psutil`.
+
 
 ## [0.2.0] - 2026-10-07
 

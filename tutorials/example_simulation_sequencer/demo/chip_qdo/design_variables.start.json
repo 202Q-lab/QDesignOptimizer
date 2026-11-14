@@ -1,0 +1,6 @@
+{
+    "design_var_length_resonator_R1": "4000.0 um",
+    "design_var_coupl_length_resonator_R1_tee": "500.0 um",
+    "design_var_length_resonator_R2": "4000.0 um",
+    "design_var_coupl_length_resonator_R2_tee": "500.0 um"
+}
