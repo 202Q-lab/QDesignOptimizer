@@ -36,7 +36,6 @@ import yaml
 from . import state as st
 from .job import (
     JOB_FILE,
-    OLD_JOB_FILE,
     Job,
     JobError,
     completed_name,
@@ -478,7 +477,7 @@ class FolderQueue:
         files = {
             p.name: p.read_text(encoding="utf-8")
             for p in source.iterdir()
-            if p.is_file() and p.name not in (JOB_FILE, OLD_JOB_FILE)
+            if p.is_file() and p.name != JOB_FILE
         }
         self.add(old, files, words)
         return new_id

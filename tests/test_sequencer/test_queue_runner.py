@@ -65,15 +65,6 @@ def test_order_and_remove(project):
     assert project.queue.ids() == [a]
 
 
-def test_a_folder_from_before_the_rename_is_still_read(project):
-    """``study.yaml`` was the queue entry's name until 2026-11-12."""
-    job_id = project.add("A.calibrate")
-    folder = project.queue.folder(job_id)
-    (folder / "job.yaml").rename(folder / "study.yaml")
-    assert project.queue.ids() == [job_id]
-    assert project.job(job_id).task == "A.calibrate"
-
-
 def test_a_hand_made_folder_joins_the_end(project):
     a = project.add("A.calibrate")
     folder = project.queue.folder(a)
@@ -677,7 +668,7 @@ def test_cli_hold_and_release(tmp_path, capsys):
     assert cli([str(catalog), "release", job_id]) == 0
 
 
-def test_completed_names_old_and_new_are_both_read(project):
+def test_completed_names_are_read(project):
     stamp = "2026-11-12T09-00-02"
     assert parse_completed(f"s01-tune_ATS1-ats1_kappa_{stamp}") == (
         "s01-tune_ATS1-ats1_kappa",
@@ -692,19 +683,6 @@ def test_completed_names_old_and_new_are_both_read(project):
         "x-a7f3-t",
         f"{stamp}-2",
     )
-    assert parse_completed(f"ministudy_{stamp}_s01-01_a_b_failed") == (
-        "s01-01_a_b",
-        stamp,
-    )
-    # A run from before the rename is still listed, and requeues.
-    job_id = project.add("A.calibrate")
-    Runner(project).run()
-    (done,) = project.queue.completed()
-    old = done.with_name(f"ministudy_2026-11-10T08-00-00_{job_id}")
-    done.rename(old)
-    assert project.queue.completed() == [old]
-    assert job_id in project.queue.taken()
-    assert project.queue.requeue(old, project.words).startswith(job_id)
 
 
 def test_a_name_sort_groups_a_sequence(project):

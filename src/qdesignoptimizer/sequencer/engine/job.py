@@ -34,8 +34,6 @@ import yaml
 from .backend import Words
 
 JOB_FILE = "job.yaml"
-#: The file's name before 2026-11-12; still read, never written.
-OLD_JOB_FILE = "study.yaml"
 VERSION = 1
 ON_FAILURE = ("abort", "continue")
 _KEYS = {
@@ -255,14 +253,8 @@ def exponent_floats(value: Any) -> Any:
 
 
 def job_file(folder: Path) -> Path:
-    """A study folder's queue-entry file: ``job.yaml``, or the
-    ``study.yaml`` of a folder written before the rename when that is
-    the one it has."""
-    folder = Path(folder)
-    old = folder / OLD_JOB_FILE
-    if old.exists() and not (folder / JOB_FILE).exists():
-        return old
-    return folder / JOB_FILE
+    """A study folder's queue-entry file, ``job.yaml``."""
+    return Path(folder) / JOB_FILE
 
 
 def load_job(folder: Path, words: Words = Words()) -> Job:
@@ -295,7 +287,6 @@ FAILED = "_failed"
 #: ``-2``, ``-3`` that keeps two starts in one second apart.
 _STAMP = r"\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(?:-\d+)?"
 _COMPLETED = re.compile(rf"^(?P<id>.+)_(?P<stamp>{_STAMP})$")
-_OLD = re.compile(rf"^ministudy_(?P<stamp>{_STAMP})_(?P<id>.+)$")
 
 
 def completed_name(job_id: str, stamp: str) -> str:
@@ -308,14 +299,9 @@ def parse_completed(name: str) -> tuple[str, str]:
     """``(id, start)`` of a completed folder's name (``_failed`` or not).
 
     The start time has a fixed shape, so it is found from the right
-    although ids hold underscores. Reads the names used before
-    2026-11-12 too (``ministudy_<start>_<id>``); a name that is neither
-    is all id.
+    although ids hold underscores; a name without one is all id.
     """
     base = name[: -len(FAILED)] if name.endswith(FAILED) else name
-    old = _OLD.match(base)
-    if old:
-        return old.group("id"), old.group("stamp")
     new = _COMPLETED.match(base)
     if new:
         return new.group("id"), new.group("stamp")
