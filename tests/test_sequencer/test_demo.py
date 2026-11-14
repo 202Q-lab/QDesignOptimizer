@@ -22,7 +22,7 @@ def test_the_demo_folder_opens_both_projects():
     assert found == ["chip_a", "chip_b", "chip_qdo"]
 
 
-def test_a_demo_campaign_runs_and_writes_back(tmp_path):
+def test_a_demo_plan_runs_and_writes_back(tmp_path):
     project = Project(DemoBackend(tmp_path, ("R1", "R2")))
     catalog = project.backend.catalog()
     assert {t.key for t in catalog.tasks} == {
@@ -31,7 +31,7 @@ def test_a_demo_campaign_runs_and_writes_back(tmp_path):
         "R2.frequency",
         "R2.linewidth",
     }
-    ids = project.add_campaign(catalog.campaign("tune_R1"))
+    ids = project.add_plan(catalog.plan("tune_R1"))
     assert project.job(ids[0]).settings == {"seconds": SOLVE_SECONDS}
     for job_id in ids:  # no waiting in a test
         folder = project.queue.folder(job_id)
@@ -44,7 +44,7 @@ def test_a_demo_campaign_runs_and_writes_back(tmp_path):
     assert project.backend.store_values()["R1_value"] == 1.0
 
 
-def test_the_qdo_demo_runs_a_campaign_on_the_dummy_solver(tmp_path):
+def test_the_qdo_demo_runs_a_plan_on_the_dummy_solver(tmp_path):
     """chip_qdo end to end, in a copy and with 0 s solves: real QDO
     files queued, three dummy iterations, the tuned values written back
     and the targets hit."""
@@ -63,7 +63,7 @@ def test_the_qdo_demo_runs_a_campaign_on_the_dummy_solver(tmp_path):
         (project,) = workspace.projects.values()
         catalog = project.backend.catalog()
         assert {t.key for t in catalog.tasks} >= {"R1.frequency"}
-        ids = project.add_campaign(catalog.campaign("tune_R1"))
+        ids = project.add_plan(catalog.plan("tune_R1"))
         for job_id in ids:
             folder = project.queue.folder(job_id)
             text = (folder / "job.yaml").read_text(encoding="utf-8")

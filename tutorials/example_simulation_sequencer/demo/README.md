@@ -5,7 +5,7 @@ queue, the runner and the GUI without Ansys:
 
 | Project | Backend | Resonators | Studies |
 | --- | --- | --- | --- |
-| `chip_qdo` | QDO, dummy solver | R1, R2 | `<R>.frequency`, `<R>.linewidth`; campaign `tune_<R>` |
+| `chip_qdo` | QDO, dummy solver | R1, R2 | `<R>.frequency`, `<R>.linewidth`; measurement plan `tune_<R>` |
 | `chip_a` | fake | R1, R2 | the same names |
 | `chip_b` | fake | R3 | the same names |
 
@@ -23,7 +23,7 @@ MiniStudy, filled in, plus every opt target whose modes are its modes
 (here the frequency and the linewidth of its resonator). The one its
 simulation produces is switched on; the other is kept in the study's
 `opt_targets.yaml` with `active: false`, one flag to flip. `job.yaml`
-in the folder is its queue entry (campaign, run settings, checks).
+in the folder is its queue entry (measurement plan, run settings, checks).
 
 Edit a template and the Add menu has it at once; save any study's
 MiniStudy as a new one with "Save as template"; check them all with
@@ -61,16 +61,16 @@ All three, one shared queue (each project in its own worker process):
 python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/demo
 ```
 
-Then: **Add** a study or a `tune_R1` campaign, drag rows to reorder, click
+Then: **Add** a study or a `tune_R1` measurement plan, drag rows to reorder, click
 a study to edit its files, **Start** (it asks you to confirm), and watch
 the runner banner, the Completed list and the runner log. Open
 <http://127.0.0.1:8051>. Each study "solves" for 5 s; a `tune_R1`
-campaign plus one more study takes about 15 s.
+measurement plan plus one more study takes about 15 s.
 
 ## Command line
 
 ```bash
-python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_a campaign tune_R1
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_a plan tune_R1
 ```
 
 ```bash

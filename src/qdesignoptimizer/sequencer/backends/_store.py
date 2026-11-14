@@ -84,8 +84,8 @@ def update_json(
 
 # -- who wrote what ----------------------------------------------------------
 #
-# ``<store>.writes.json`` next to the store (``design_variables.json`` ->
-# ``design_variables.writes.json``): per value the study that last wrote
+# ``<store>.meta.json`` next to the store (``design_variables.json`` ->
+# ``design_variables.meta.json``): per value the study that last wrote
 # it back, and the writes before that. Only values a study tuned are
 # ever written back (its switched-on opt targets' design variables that
 # moved), so only those are recorded. Kept beside the store, so it is
@@ -116,16 +116,16 @@ def _read_record(path: Path):
     return data if isinstance(data, dict) else None
 
 
-def writes_path(store: Path) -> Path:
+def meta_path(store: Path) -> Path:
     """The record of a store's write-backs."""
     store = Path(store)
-    return store.with_name(f"{store.stem}.writes.json")
+    return store.with_name(f"{store.stem}.meta.json")
 
 
-def read_writes(store: Path) -> dict[str, Any]:
+def read_meta(store: Path) -> dict[str, Any]:
     """``{value name: {"latest": {...}, "history": [...]}}`` ({} for a
     damaged file, e.g. a git merge left in it)."""
-    return _read_record(writes_path(store)) or {}
+    return _read_record(meta_path(store)) or {}
 
 
 def record_writes(
@@ -136,7 +136,7 @@ def record_writes(
     details: dict[str, dict] | None = None,
 ) -> None:
     """Note a write-back: each value, what it replaced, and the study
-    (``source``: id, task, campaign, folder, settings, time) that wrote
+    (``source``: id, task, measurement plan, folder, settings, time) that wrote
     it, plus ``details[name]`` where the backend has more to say about
     that one value (the simulation, the target it chased).
 
@@ -146,7 +146,7 @@ def record_writes(
     ``<name>.damaged-<time>.json`` and a fresh one started, so recording
     does not stop for good.
     """
-    path = writes_path(store)
+    path = meta_path(store)
     data = _read_record(path)
     if data is None:
         aside = path.with_name(
@@ -197,7 +197,7 @@ def sources_text(store: Path) -> dict[str, str]:
     longer is what that study wrote (edited by hand since) says so."""
     current = read_json(store)
     out = {}
-    for name, item in read_writes(store).items():
+    for name, item in read_meta(store).items():
         latest = (item or {}).get("latest") or {}
         if not latest.get("study"):
             continue

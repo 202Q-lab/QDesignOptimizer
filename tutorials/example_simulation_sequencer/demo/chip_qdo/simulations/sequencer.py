@@ -5,7 +5,7 @@ The adapter a real design has, with ``solve`` handed to
 QDO path: the MiniStudy templates in ``ministudies/`` and the project's
 opt targets in ``opt_targets/`` filled in to a study's files, queued as
 forms, judged by each target's ``tolerance``, the write-back into
-``design_variables.json``. Campaign files go in ``campaigns/``.
+``design_variables.json``. Measurement plan files go in ``measurement_plans/``.
 
 The design folder is not a package: its modules import each other by
 bare name, so it goes on the import path here, as in every design.
@@ -26,8 +26,8 @@ import dummy_solver  # noqa: E402
 
 from qdesignoptimizer.sequencer.backends.qdo import QDOBackend  # noqa: E402
 from qdesignoptimizer.sequencer.engine.backend import (  # noqa: E402
-    CampaignEntry,
-    CampaignSpec,
+    PlanEntry,
+    PlanSpec,
 )
 
 
@@ -68,18 +68,16 @@ class DemoQDOProject:
     def solve(self, study, targets, folder, settings, variables, params):
         return dummy_solver.solve(study, targets, folder, settings, variables, params)
 
-    def campaigns(self, tasks) -> list:
+    def measurement_plans(self, tasks) -> list:
         """``tune_R<n>``: frequency, then linewidth, each written back."""
         out = []
         for name in self.subjects:
             out.append(
-                CampaignSpec(
+                PlanSpec(
                     f"tune_{name}",
                     f"Tune {name}: frequency, then linewidth",
                     tuple(
-                        CampaignEntry(
-                            f"{name}.{kind}", save=True, checks=("converged",)
-                        )
+                        PlanEntry(f"{name}.{kind}", save=True, checks=("converged",))
                         for kind in ("frequency", "linewidth")
                     ),
                     why_ordered="the linewidth depends on the frequency "

@@ -104,7 +104,7 @@ class Workspace:
             raise QueueError("no project to open")
         self.projects: dict[str, Project] = {}
         for project in projects:
-            # Not starting with "~": the GUI marks a campaign draft so.
+            # Not starting with "~": the GUI marks a measurement plan draft so.
             base = project.out.parent.name.lstrip("~") or "project"
             name, n = base, 2
             while name in self.projects:
@@ -164,7 +164,7 @@ class Workspace:
         )
 
     def locate_task(self, key: str) -> tuple[Project, str]:
-        """The project of a study or campaign key (``<project>/``
+        """The project of a study or measurement plan key (``<project>/``
         prefix, or a key only one project has)."""
         if "/" in key:
             return self.locate(key)
@@ -174,7 +174,7 @@ class Workspace:
             p
             for p in self.projects.values()
             if p.backend.catalog().task(key) is not None
-            or p.backend.catalog().campaign(key) is not None
+            or p.backend.catalog().plan(key) is not None
         ]
         if len(holders) == 1:
             return holders[0], key

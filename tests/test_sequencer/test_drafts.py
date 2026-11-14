@@ -1,4 +1,4 @@
-"""Draft campaigns: put together, edited and launched as one."""
+"""Draft measurement plans: put together, edited and launched as one."""
 
 from __future__ import annotations
 
@@ -19,9 +19,9 @@ def bridge(tmp_path):
     return Bridge(project=make_project(tmp_path))
 
 
-def test_a_draft_is_built_edited_and_launched_as_one_campaign(bridge):
+def test_a_draft_is_built_edited_and_launched_as_one_plan(bridge):
     project = bridge.project
-    key = bridge.new_draft(label="my run", from_campaign="full_A")
+    key = bridge.new_draft(label="my run", from_plan="full_A")
     view = bridge.draft_view(key)
     assert view["label"] == "my run"
     assert [s["task"] for s in view["studies"]] == [
@@ -56,9 +56,9 @@ def test_a_draft_is_built_edited_and_launched_as_one_campaign(bridge):
     text = bridge.launch_draft(key)
     assert "launched 2" in text
     ids = project.queue.ids()
-    assert ids == ["c01-my_run-b_measure", "c01-my_run-a_measure"]
+    assert ids == ["p01-my_run-b_measure", "p01-my_run-a_measure"]
     job = project.job(ids[0])
-    assert job.campaign == {"id": "c01", "name": "my run", "entry": 1}
+    assert job.plan == {"id": "p01", "name": "my run", "entry": 1}
     assert job.notes == "third" and job.save is True
     assert bridge.drafts() == []
     with pytest.raises(GuiError, match="no draft"):
@@ -97,5 +97,5 @@ def test_drafts_with_several_projects_open(tmp_path):
     assert key.startswith("b/~")
     bridge.draft_add(key, "A.calibrate")
     bridge.launch_draft(key)
-    assert workspace.ids() == ["b/c01-on_b-a_calibrate"]
-    assert st.read_json(workspace.order_file) == ["b/c01-on_b-a_calibrate"]
+    assert workspace.ids() == ["b/p01-on_b-a_calibrate"]
+    assert st.read_json(workspace.order_file) == ["b/p01-on_b-a_calibrate"]

@@ -10,10 +10,10 @@
         resolved/ (as filled in from the project, before the solve),
         result.json, and whatever the solve wrote
 
-An id is ``c07-tune_ATS1-ats1_eigenmode`` (campaign c07, called
+An id is ``p07-tune_ATS1-ats1_eigenmode`` (measurement plan p07, called
 tune_ATS1; the study) or ``x-a7f3-ats1_eigenmode`` (queued on its
 own). A completed folder is the id, then its start time, so sorting
-``completed/`` by name in Explorer groups each campaign's studies, with
+``completed/`` by name in Explorer groups each measurement plan's studies, with
 the ones run on their own after them. A study folder moves to
 ``completed/`` when it starts, so the solver writes its outputs straight
 into the folder they stay in; a failed one is renamed ``..._failed``.
@@ -55,7 +55,7 @@ RESOLVED = "resolved"
 STAGE = ".launch-"
 LAUNCH_FILE = "launch.json"
 CLAIMED = ".claimed-"
-_CAMPAIGN = re.compile(r"^c(\d+)-")
+_PLAN = re.compile(r"^p(\d+)-")
 
 
 class QueueError(RuntimeError):
@@ -85,8 +85,8 @@ def slug(text: str) -> str:
     return re.sub(r"[^0-9a-zA-Z]+", "_", text).strip("_").lower()
 
 
-def campaign_tag(name: str, length: int = 32) -> str:
-    """A campaign's name as it goes into its studies' ids: folder-safe,
+def plan_tag(name: str, length: int = 32) -> str:
+    """A measurement plan's name as it goes into its studies' ids: folder-safe,
     case kept, at most ``length`` characters."""
     tag = re.sub(r"[^0-9a-zA-Z]+", "_", str(name or "")).strip("_")
     return tag[:length].rstrip("_")
@@ -131,7 +131,7 @@ class FolderQueue:
 
     def completed(self, limit: int | None = None) -> list[Path]:
         """Completed study folders, newest first (by start time, not by
-        name: the name sorts by campaign)."""
+        name: the name sorts by measurement plan)."""
         if not self.completed_dir.is_dir():
             return []
         runs = sorted(
@@ -147,7 +147,7 @@ class FolderQueue:
 
     def taken(self) -> set[str]:
         """Every id ever used here: queued, being started, completed or
-        removed. Ids are never reused, so a campaign queued again after
+        removed. Ids are never reused, so a measurement plan queued again after
         its studies were removed gets a new number."""
         ids = set(self.ids())
         if self.queue_dir.is_dir():
@@ -163,7 +163,7 @@ class FolderQueue:
             ids.add(recorded or parse_completed(path.name)[0])
         if self.queue_dir.is_dir():
             # The ids a launch under way has given out, before it
-            # publishes them: a campaign started meanwhile must not get
+            # publishes them: a measurement plan started meanwhile must not get
             # the same number.
             for stage in self.queue_dir.iterdir():
                 if stage.name.startswith(STAGE) and stage.is_dir():
@@ -180,32 +180,30 @@ class FolderQueue:
                     ids.add(parts[1])
         return ids
 
-    def next_campaign_id(self) -> str:
-        """``c<NN>``, one past the highest in queue/ and completed/."""
+    def next_plan_id(self) -> str:
+        """``p<NN>``, one past the highest in queue/ and completed/."""
         highest = 0
         for job_id in self.taken():
-            match = _CAMPAIGN.match(job_id)
+            match = _PLAN.match(job_id)
             if match:
                 highest = max(highest, int(match.group(1)))
-        return f"c{highest + 1:02d}"
+        return f"p{highest + 1:02d}"
 
     def new_id(
         self,
         task: str,
-        campaign: str = "",
+        plan: str = "",
         entry: int = 0,
-        campaign_name: str = "",
+        plan_name: str = "",
     ) -> str:
-        """A fresh id for a study of ``task``: in a campaign
-        ``c<NN>-<campaign>-<study>``, else ``x-<hex>-<study>``. The
-        same study twice in one campaign gets ``_2``."""
+        """A fresh id for a study of ``task``: in a measurement plan
+        ``p<NN>-<plan>-<study>``, else ``x-<hex>-<study>``. The
+        same study twice in one measurement plan gets ``_2``."""
         del entry  # the run order is order.json's, not the id's
         taken = self.taken()
-        if campaign:
-            tag = campaign_tag(campaign_name)
-            base = (
-                f"{campaign}-{tag}-{slug(task)}" if tag else f"{campaign}-{slug(task)}"
-            )
+        if plan:
+            tag = plan_tag(plan_name)
+            base = f"{plan}-{tag}-{slug(task)}" if tag else f"{plan}-{slug(task)}"
             job_id, n = base, 2
             while job_id in taken:
                 job_id, n = f"{base}_{n}", n + 1

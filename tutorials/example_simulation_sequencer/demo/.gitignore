@@ -2,5 +2,5 @@
 */out/
 */store.json
 */design_variables.json
-*/campaigns/
-*/*.writes.json
+*/measurement_plans/
+*/*.meta.json

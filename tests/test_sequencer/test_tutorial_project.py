@@ -2,7 +2,7 @@
 
 ``tutorials/example_simulation_sequencer/coupled_transmon_chip`` solves in
 Ansys, which no test has; what a test can hold is everything before the
-solve: its templates and targets read, the studies they make, a campaign
+solve: its templates and targets read, the studies they make, a measurement plan
 queued and every study deep-checked against the built chip.
 """
 
@@ -35,7 +35,7 @@ def _targets(folder: Path) -> dict:
     return {e["name"]: e.get("active", True) for e in entries["targets"]}
 
 
-def test_the_tutorial_project_queues_its_campaign_and_checks_clean(tmp_path):
+def test_the_tutorial_project_queues_its_plan_and_checks_clean(tmp_path):
     root = _copy(tmp_path)
     workspace = open_workspace([root], isolate=True)
     try:
@@ -49,7 +49,7 @@ def test_the_tutorial_project_queues_its_campaign_and_checks_clean(tmp_path):
             "Q1.resonator_kappa",
             "Q2.resonator_kappa",
         }
-        ids = project.add_campaign(catalog.campaign("tune_Q1"))
+        ids = project.add_plan(catalog.plan("tune_Q1"))
         assert len(ids) == 3
         for job_id in ids:
             assert project.problems(job_id, deep=True) == []
@@ -90,9 +90,7 @@ def test_the_deep_check_refuses_what_qdo_would_fail_on_after_a_solve(tmp_path):
     workspace = open_workspace([root], isolate=True)
     try:
         (project,) = workspace.projects.values()
-        (job_id,) = project.add_campaign(project.backend.catalog().campaign("tune_Q1"))[
-            2:
-        ]
+        (job_id,) = project.add_plan(project.backend.catalog().plan("tune_Q1"))[2:]
         folder = project.queue.folder(job_id)
         path = folder / "opt_targets.yaml"
         data = yaml.safe_load(path.read_text("utf-8"))

@@ -9,9 +9,9 @@ import pytest
 import yaml
 
 from qdesignoptimizer.sequencer.engine import state as st
-from qdesignoptimizer.sequencer.engine.campaign import CampaignError, load_campaign
 from qdesignoptimizer.sequencer.engine.cli import main as cli
 from qdesignoptimizer.sequencer.engine.job import JobError, parse_completed, parse_job
+from qdesignoptimizer.sequencer.engine.plan import PlanError, load_plan
 from qdesignoptimizer.sequencer.engine.queue import QueueError
 from qdesignoptimizer.sequencer.engine.runner import Runner, RunRefused
 
@@ -41,16 +41,16 @@ def test_add_writes_a_self_contained_folder(project):
     assert project.queue.ids() == [job_id]
 
 
-def test_a_campaign_is_tagged_and_numbered(project):
-    spec = project.backend.catalog().campaign("full_A")
-    ids = project.add_campaign(spec)
-    assert ids == ["c01-full_A-a_calibrate", "c01-full_A-a_measure"]
-    assert project.job(ids[0]).campaign == {
-        "id": "c01",
+def test_a_plan_is_tagged_and_numbered(project):
+    spec = project.backend.catalog().plan("full_A")
+    ids = project.add_plan(spec)
+    assert ids == ["p01-full_A-a_calibrate", "p01-full_A-a_measure"]
+    assert project.job(ids[0]).plan == {
+        "id": "p01",
         "name": "full_A",
         "entry": 1,
     }
-    assert project.add_campaign(spec)[0].startswith("c02-full_A-")
+    assert project.add_plan(spec)[0].startswith("p02-full_A-")
 
 
 def test_order_and_remove(project):
@@ -98,7 +98,7 @@ def test_a_study_runs_moves_and_writes_back(project):
     assert final.status == st.FINISHED
     assert project.queue.ids() == []
     (done,) = project.queue.completed()
-    # <id>__<start>: a name sort in Explorer groups by campaign
+    # <id>__<start>: a name sort in Explorer groups by measurement plan
     assert done.name.startswith(f"{job_id}_20")
     rec = result(done)
     assert rec["status"] == "done" and rec["committed"] == {"A_value": 5.0}
@@ -274,7 +274,7 @@ def test_study_yaml_errors_are_collected():
     assert "true or false" in text and "retry" in text and "colour" in text
 
 
-def test_campaign_file(tmp_path, project):
+def test_plan_file(tmp_path, project):
     path = tmp_path / "night.yaml"
     path.write_text(
         yaml.safe_dump(
@@ -289,22 +289,22 @@ def test_campaign_file(tmp_path, project):
             }
         )
     )
-    spec = load_campaign(path)
+    spec = load_plan(path)
     assert [e.task for e in spec.entries] == ["A.calibrate", "B.measure"]
     assert spec.entries[1].save is False
-    ids = project.add_campaign(spec)
+    ids = project.add_plan(spec)
     assert project.job(ids[0]).save and not project.job(ids[1]).save
     path.write_text(
         yaml.safe_dump(
             {"version": 1, "studies": [{"task": "A.calibrate", "colour": 1}]}
         )
     )
-    with pytest.raises(CampaignError, match="colour"):
-        load_campaign(path)
+    with pytest.raises(PlanError, match="colour"):
+        load_plan(path)
 
 
 def test_a_failing_generator_queues_nothing(project):
-    spec = project.backend.catalog().campaign("full_A")
+    spec = project.backend.catalog().plan("full_A")
     original = project.backend.generate
 
     def gen(task):
@@ -314,7 +314,7 @@ def test_a_failing_generator_queues_nothing(project):
 
     project.backend.generate = gen
     with pytest.raises(QueueError, match="generator broke"):
-        project.add_campaign(spec)
+        project.add_plan(spec)
     assert project.queue.ids() == []
 
 
@@ -330,7 +330,7 @@ def test_cli(tmp_path, capsys):
         "    return FakeBackend(Path(__file__).parent)\n"
     )
     assert cli([str(catalog), "add", "A.calibrate"]) == 0
-    assert cli([str(catalog), "campaign", "full_A"]) == 0
+    assert cli([str(catalog), "plan", "full_A"]) == 0
     assert cli([str(catalog), "check"]) == 0
     assert cli([str(catalog), "run"]) == 1
     assert "--yes" in capsys.readouterr().err
@@ -343,7 +343,7 @@ def test_cli(tmp_path, capsys):
 # -- review fixes (2026-11-10) -----------------------------------------
 
 
-def test_a_single_check_name_in_a_campaign_is_not_split(tmp_path):
+def test_a_single_check_name_in_a_plan_is_not_split(tmp_path):
     path = tmp_path / "c.yaml"
     path.write_text(
         yaml.safe_dump(
@@ -354,7 +354,7 @@ def test_a_single_check_name_in_a_campaign_is_not_split(tmp_path):
             }
         )
     )
-    assert load_campaign(path).entries[0].checks == ("converged",)
+    assert load_plan(path).entries[0].checks == ("converged",)
 
 
 def test_an_unknown_check_is_caught_before_the_run(project):
@@ -384,10 +384,10 @@ def test_an_invalid_study_is_released_back_to_its_place(project):
 
 
 def test_ids_are_not_reused_after_a_remove(project):
-    spec = project.backend.catalog().campaign("full_A")
-    for job_id in project.add_campaign(spec):
+    spec = project.backend.catalog().plan("full_A")
+    for job_id in project.add_plan(spec):
         project.queue.remove(job_id)
-    assert project.add_campaign(spec)[0].startswith("c02-")
+    assert project.add_plan(spec)[0].startswith("p02-")
 
 
 def test_the_lock_is_the_os_lock_not_the_file(project):
@@ -469,6 +469,33 @@ def test_a_study_cut_off_with_its_runner_is_closed(project):
     assert rec["status"] == "failed" and "interrupted" in rec["message"]
 
 
+def _cut_off_first(project, on_failure):
+    first = project.add("A.calibrate", on_failure=on_failure)
+    second = project.add("B.calibrate")
+    claimed = project.queue.claim(first)
+    folder = project.queue.start(claimed, first)
+    st.write_json(folder / st.RESULT_FILE, {"id": first, "status": st.RUNNING})
+    return first, second
+
+
+def test_a_crash_under_on_failure_abort_stops_the_queue(project):
+    first, second = _cut_off_first(project, "abort")
+    final = Runner(project).run()
+    assert final.status == st.ABORTED
+    assert first in final.message and "on_failure: abort" in final.message
+    assert project.queue.ids() == [second]
+    # Started again, the runner goes on: the cut-off study is closed.
+    assert Runner(project).run().status == st.FINISHED
+    assert project.queue.ids() == []
+
+
+def test_a_crash_under_on_failure_continue_runs_the_rest(project):
+    _, second = _cut_off_first(project, "continue")
+    assert Runner(project).run().status == st.FINISHED
+    assert project.queue.ids() == []
+    assert any(second in p.name for p in project.queue.completed())
+
+
 def test_the_store_write_retries_while_the_file_is_held(tmp_path, monkeypatch):
     from qdesignoptimizer.sequencer.backends import _store
 
@@ -514,7 +541,7 @@ def test_yaml_number_strings_become_numbers_in_settings(tmp_path):
     path.write_text(
         "version: 1\ndefaults: {settings: {delta_f: 1e-3}}\n" "studies: [A.calibrate]\n"
     )
-    assert load_campaign(path).entries[0].settings == {"delta_f": 0.001}
+    assert load_plan(path).entries[0].settings == {"delta_f": 0.001}
 
 
 def test_any_malformed_study_yaml_is_a_job_error():
@@ -652,8 +679,8 @@ def test_cli_hold_and_release(tmp_path, capsys):
 
 def test_completed_names_old_and_new_are_both_read(project):
     stamp = "2026-11-12T09-00-02"
-    assert parse_completed(f"c01-tune_ATS1-ats1_kappa_{stamp}") == (
-        "c01-tune_ATS1-ats1_kappa",
+    assert parse_completed(f"p01-tune_ATS1-ats1_kappa_{stamp}") == (
+        "p01-tune_ATS1-ats1_kappa",
         stamp,
     )
     # a task whose name ends in "failed" is not confused with the suffix
@@ -665,8 +692,8 @@ def test_completed_names_old_and_new_are_both_read(project):
         "x-a7f3-t",
         f"{stamp}-2",
     )
-    assert parse_completed(f"ministudy_{stamp}_c01-01_a_b_failed") == (
-        "c01-01_a_b",
+    assert parse_completed(f"ministudy_{stamp}_p01-01_a_b_failed") == (
+        "p01-01_a_b",
         stamp,
     )
     # A run from before the rename is still listed, and requeues.
@@ -680,15 +707,15 @@ def test_completed_names_old_and_new_are_both_read(project):
     assert project.queue.requeue(old, project.words).startswith(job_id)
 
 
-def test_a_name_sort_groups_a_campaign(project):
-    spec = project.backend.catalog().campaign("full_A")
+def test_a_name_sort_groups_a_plan(project):
+    spec = project.backend.catalog().plan("full_A")
     project.add("B.measure")
-    project.add_campaign(spec)
+    project.add_plan(spec)
     Runner(project).run()
     names = sorted(p.name for p in project.queue.completed())
     ids = [parse_completed(n)[0] for n in names]
     assert ids[:2] == [
-        "c01-full_A-a_calibrate",
-        "c01-full_A-a_measure",
+        "p01-full_A-a_calibrate",
+        "p01-full_A-a_measure",
     ]
     assert ids[2].startswith("x-") and ids[2].endswith("-b_measure")

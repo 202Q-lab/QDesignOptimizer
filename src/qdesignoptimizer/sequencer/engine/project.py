@@ -1,13 +1,13 @@
 """A project: its backend plus its folder queue.
 
-The one place that turns a study key or a campaign into queued
+The one place that turns a study key or a measurement plan into queued
 study folders, used alike by the CLI, the GUI and the tests.
 
-**Drafts.** A campaign can be put together before any of it is queued:
+**Drafts.** A measurement plan can be put together before any of it is queued:
 ``out/drafts/<name>/`` is a queue of its own (the same folders, the
 same ``order.json``, plus ``draft.json`` for its label) that the runner
 never reads. Studies are added, edited, reordered and removed there;
-``launch_draft`` then gives each a campaign id and moves the whole
+``launch_draft`` then gives each a measurement plan id and moves the whole
 draft, in order, to the end of the queue.
 """
 
@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from . import state as st
-from .backend import Backend, CampaignSpec
+from .backend import Backend, PlanSpec
 from .job import (
     CUSTOM,
     JOB_FILE,
@@ -152,7 +152,7 @@ class Project:
                 getattr(self.backend, "path_limit_note", "")
                 or "the solver cannot write there"
             )
-            + "; a shorter campaign name or a project nearer the drive "
+            + "; a shorter measurement plan name or a project nearer the drive "
             "root avoids it"
         ]
 
@@ -179,7 +179,7 @@ class Project:
         save: bool | None = None,
         on_failure: str | None = None,
         notes: str = "",
-        campaign: dict | None = None,
+        plan: dict | None = None,
         position: int | None = None,
         queue: FolderQueue | None = None,
     ) -> str:
@@ -202,7 +202,7 @@ class Project:
             raise QueueError(
                 f"generating {task} failed: {type(exc).__name__}: {exc}"
             ) from exc
-        tag = campaign or {}
+        tag = plan or {}
         job_id = queue.new_id(
             task,
             tag.get("id", ""),
@@ -221,7 +221,7 @@ class Project:
             save=bool(save) if save is not None else False,
             on_failure=on_failure or "abort",
             notes=notes,
-            campaign=dict(tag),
+            plan=dict(tag),
             created=st.now(),
             generated_by=generated_by,
         )
@@ -267,8 +267,8 @@ class Project:
             )
         return out
 
-    def new_draft(self, label: str = "", from_spec: CampaignSpec | None = None) -> str:
-        """Start a draft campaign, empty or with a campaign's studies.
+    def new_draft(self, label: str = "", from_spec: PlanSpec | None = None) -> str:
+        """Start a draft measurement plan, empty or with a measurement plan's studies.
 
         Returns:
             The draft's name.
@@ -302,7 +302,7 @@ class Project:
         return name
 
     def set_draft_label(self, name: str, label: str) -> None:
-        """Rename a draft (the campaign's name once launched)."""
+        """Rename a draft (the measurement plan's name once launched)."""
         with self._draft_locked(name):
             path = self.drafts_dir / name / DRAFT_FILE
             meta = st.read_json(path) or {}
@@ -321,7 +321,7 @@ class Project:
     ) -> str:
         """Generate one study into a draft. Returns its id there.
 
-        A study added to a campaign writes back by default (``save``):
+        A study added to a measurement plan writes back by default (``save``):
         the studies after it build on what it tuned.
         """
         with self._draft_locked(name) as queue:
@@ -387,12 +387,12 @@ class Project:
     #
     # 1. stage: every study is moved in, then checked THERE (an edit made
     #    after the move cannot reach it: the GUI finds it gone);
-    # 2. name: each gets its campaign id, recorded before it is written;
+    # 2. name: each gets its measurement plan id, recorded before it is written;
     # 3. publish: each is renamed into the queue.
     #
     # Any failure before 3 puts every study back. A failure during 3
     # keeps what was published and puts the rest back; launching again
-    # continues the same campaign. The launch lock (``out/drafts/``)
+    # continues the same measurement plan. The launch lock (``out/drafts/``)
     # makes launches, discards and recovery one at a time; a launch cut
     # off by a crash is finished (if it was publishing) or undone by the
     # next launch, the next runner or the GUI when it opens.
@@ -406,7 +406,7 @@ class Project:
             return st.acquire_lock(self.drafts_dir, wait=wait)
         except st.LockHeld as exc:
             raise QueueError(
-                "a campaign is being launched; try again when it is done"
+                "a measurement plan is being launched; try again when it is done"
             ) from exc
 
     @contextmanager
@@ -452,12 +452,12 @@ class Project:
         deep: bool = True,
         progress=None,
     ) -> list[str]:
-        """Queue a whole draft as one campaign, in its order.
+        """Queue a whole draft as one measurement plan, in its order.
 
-        Every study gets a campaign id (``c<NN>-<n>_<task>``) and goes to
+        Every study gets a measurement plan id (``p<NN>-<n>_<task>``) and goes to
         the end of the queue. The draft is removed, unless studies were
         added to it while it launched: those stay in it, and launching
-        it again continues the same campaign.
+        it again continues the same measurement plan.
 
         Args:
             deep: Rebuild every study's objects first (the check the
@@ -487,7 +487,7 @@ class Project:
         draft = self.draft_queue(name)
         ids = draft.ids()
         if not ids:
-            raise QueueError("the campaign has no studies yet")
+            raise QueueError("the measurement plan has no studies yet")
         stage = self._stage_dir(name)
         stage.mkdir(parents=True)
         state: dict = {"draft": name, "phase": "staging", "entries": []}
@@ -513,19 +513,19 @@ class Project:
                 )
             meta = st.read_json(self.drafts_dir / name / DRAFT_FILE) or {}
             earlier = meta.get("launched") or {}
-            # A campaign launched in parts keeps the name it was first
+            # A measurement plan launched in parts keeps the name it was first
             # launched with: its ids carry it, and should match.
             label = earlier.get("label") or label or meta.get("label") or name
-            campaign_id = earlier.get("campaign") or self._next_campaign_id()
+            plan_id = earlier.get("plan") or self._next_plan_id()
             first = int(earlier.get("count", 0))
-            state.update(campaign=campaign_id, first=first, label=label)
+            state.update(plan=plan_id, first=first, label=label)
             for n, old_id in enumerate(staged, first + 1):
                 folder = stage / old_id
                 text = (folder / JOB_FILE).read_text(encoding="utf-8")
                 (folder / ORIGINAL).write_text(text, encoding="utf-8")
                 job = load_job(folder, self.words)
-                job.id = self.queue.new_id(job.task, campaign_id, n, label)
-                job.campaign = {"id": campaign_id, "name": label, "entry": n}
+                job.id = self.queue.new_id(job.task, plan_id, n, label)
+                job.plan = {"id": plan_id, "name": label, "entry": n}
                 # Recorded before it is written, so the id is taken
                 # (``FolderQueue.taken``) and a crash knows where it goes.
                 state["entries"].append({"old_id": old_id, "new_id": job.id})
@@ -555,24 +555,24 @@ class Project:
             ]
             self._append_order(published)
             self._unstage(name)
-            self._note_launched(name, campaign_id, first + len(published), label)
+            self._note_launched(name, plan_id, first + len(published), label)
             raise QueueError(
                 f"launched {len(published)} of {len(state['entries'])} as "
-                f"{campaign_id} ({type(exc).__name__}: {exc}); the rest "
+                f"{plan_id} ({type(exc).__name__}: {exc}); the rest "
                 f"are back in the draft -- launch it again to finish the "
-                f"same campaign"
+                f"same measurement plan"
             ) from exc
         self._append_order(published)
-        self._finish(name, campaign_id, first + len(published), label)
+        self._finish(name, plan_id, first + len(published), label)
         return published
 
     def _publish(self, stage: Path, entries: list[dict]) -> list[str]:
-        """Rename each staged study to its campaign id, in order.
+        """Rename each staged study to its measurement plan id, in order.
 
         Their order is written first: a folder ``order.json`` does not
         list goes to the end of the queue by name, so a runner picking its
         next study while the renames happen (each may wait seconds on
-        Windows) would otherwise take a campaign's studies alphabetically.
+        Windows) would otherwise take a measurement plan's studies alphabetically.
         A listed id whose folder does not exist (yet) is skipped.
         """
         self._append_order([e["new_id"] for e in entries])
@@ -587,30 +587,30 @@ class Project:
                 published.append(entry["new_id"])
         return published
 
-    def _finish(self, name: str, campaign_id: str, count: int, label: str = "") -> None:
+    def _finish(self, name: str, plan_id: str, count: int, label: str = "") -> None:
         """Remove the stage folder and the draft -- unless studies were
         added to the draft while it launched: then it stays, and a
-        launch of it continues this campaign."""
+        launch of it continues this measurement plan."""
         shutil.rmtree(self._stage_dir(name), ignore_errors=True)
         folder = self.drafts_dir / name
         if not folder.is_dir():
             return
         if self.draft_queue(name).ids():
-            self._note_launched(name, campaign_id, count, label)
+            self._note_launched(name, plan_id, count, label)
         else:
             # Moved, not deleted: whatever is still in it is kept.
             self.queue.removed_dir.mkdir(parents=True, exist_ok=True)
             _rename(
                 folder,
-                self.queue.removed_dir / f"{st.stamp()}_{name}_launched-{campaign_id}",
+                self.queue.removed_dir / f"{st.stamp()}_{name}_launched-{plan_id}",
             )
 
-    def _note_launched(self, name: str, campaign_id: str, count: int, label: str = ""):
+    def _note_launched(self, name: str, plan_id: str, count: int, label: str = ""):
         path = self.drafts_dir / name / DRAFT_FILE
         if path.exists():  # never recreate a draft that is gone
             meta = st.read_json(path) or {}
             meta["launched"] = {
-                "campaign": campaign_id,
+                "plan": plan_id,
                 "count": count,
                 "label": label
                 or (meta.get("launched") or {}).get("label")
@@ -618,16 +618,16 @@ class Project:
             }
             st.write_json(path, meta)
 
-    def _next_campaign_id(self) -> str:
-        """``c<NN>`` past every campaign queued, completed, being
+    def _next_plan_id(self) -> str:
+        """``p<NN>`` past every measurement plan queued, completed, being
         launched or reserved by a draft launched in part -- a launch that
         published nothing still owns its number (the draft keeps it)."""
-        highest = int(self.queue.next_campaign_id()[1:]) - 1
+        highest = int(self.queue.next_plan_id()[1:]) - 1
         for draft in self.drafts():
-            number = str((draft.get("launched") or {}).get("campaign", ""))
-            if number[:1] == "c" and number[1:].isdigit():
+            number = str((draft.get("launched") or {}).get("plan", ""))
+            if number[:1] == "p" and number[1:].isdigit():
                 highest = max(highest, int(number[1:]))
-        return f"c{highest + 1:02d}"
+        return f"p{highest + 1:02d}"
 
     def _append_order(self, ids: list[str]) -> None:
         if ids:
@@ -675,7 +675,7 @@ class Project:
                 self._unstage(name)  # anything it did not get to
                 self._finish(
                     name,
-                    state.get("campaign", ""),
+                    state.get("plan", ""),
                     int(state.get("first", 0)) + len(published),
                     state.get("label", ""),
                 )
@@ -739,8 +739,8 @@ class Project:
                 scratch.remove(job_id)
         return found
 
-    def add_campaign(self, spec: CampaignSpec) -> list[str]:
-        """Queue every study of a campaign under a fresh campaign id.
+    def add_plan(self, spec: PlanSpec) -> list[str]:
+        """Queue every study of a measurement plan under a fresh measurement plan id.
 
         All studies are made before any is queued, so one failing
         half-way leaves the queue as it was.
@@ -749,7 +749,7 @@ class Project:
         missing = [e.task for e in spec.entries if catalog.task(e.task) is None]
         if missing:
             raise QueueError(f"{spec.key}: unknown {self.words.task}(s) " f"{missing}")
-        campaign_id = self.queue.next_campaign_id()
+        plan_id = self.queue.next_plan_id()
         generated = []
         for entry in spec.entries:
             try:
@@ -764,7 +764,7 @@ class Project:
             spec_t = catalog.task(entry.task)
             assert spec_t is not None  # unknown tasks were refused above
             job = Job(
-                id=self.queue.new_id(entry.task, campaign_id, n, spec.key),
+                id=self.queue.new_id(entry.task, plan_id, n, spec.key),
                 task=entry.task,
                 subject=spec_t.subject,
                 settings={
@@ -775,7 +775,7 @@ class Project:
                 save=bool(entry.save),
                 on_failure=entry.on_failure or "abort",
                 notes=entry.notes,
-                campaign={"id": campaign_id, "name": spec.key, "entry": n},
+                plan={"id": plan_id, "name": spec.key, "entry": n},
                 created=st.now(),
                 generated_by=by,
             )

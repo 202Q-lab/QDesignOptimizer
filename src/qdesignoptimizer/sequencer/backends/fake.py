@@ -1,7 +1,7 @@
 """An in-process backend with no solver, for tests and the GUI demo.
 
 Two subjects (``A``, ``B``), a ``calibrate`` and a ``measure`` task each,
-and one campaign. A study's own file is ``task.yaml``::
+and one measurement plan. A study's own file is ``task.yaml``::
 
     value: 3.0         # output ``value``, proposed as <subject>_value
     fail: false        # true: the task raises
@@ -31,11 +31,11 @@ from typing import Any
 import yaml
 
 from ..engine.backend import (
-    CampaignEntry,
-    CampaignSpec,
     Catalog,
     CheckResult,
     FileSpec,
+    PlanEntry,
+    PlanSpec,
     StepResult,
     SubjectSpec,
     TaskSpec,
@@ -76,13 +76,13 @@ class FakeBackend:
                 for s in ("A", "B")
                 for kind in ("calibrate", "measure")
             ],
-            campaigns=[
-                CampaignSpec(
+            plans=[
+                PlanSpec(
                     "full_A",
                     "Calibrate then measure A",
                     (
-                        CampaignEntry("A.calibrate", save=True),
-                        CampaignEntry("A.measure"),
+                        PlanEntry("A.calibrate", save=True),
+                        PlanEntry("A.measure"),
                     ),
                     why_ordered="measure reads what calibrate wrote back",
                 )
@@ -195,7 +195,7 @@ class FakeBackend:
         return read_json(self.store_path)
 
     def note_commit(self, updates, previous, source) -> None:
-        """Record which study wrote the values (``store.writes.json``)."""
+        """Record which study wrote the values (``store.meta.json``)."""
         record_writes(self.store_path, updates, previous, source)
 
     def value_sources(self, name: str) -> dict:

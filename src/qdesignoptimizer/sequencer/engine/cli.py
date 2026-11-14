@@ -2,7 +2,7 @@
 
     python -m qdesignoptimizer.sequencer <sequencer.py> list
     python -m qdesignoptimizer.sequencer <sequencer.py> add <study> [--settings JSON]
-    python -m qdesignoptimizer.sequencer <sequencer.py> campaign <file.yaml or key>
+    python -m qdesignoptimizer.sequencer <sequencer.py> measurement plan <file.yaml or key>
     python -m qdesignoptimizer.sequencer <sequencer.py> check
     python -m qdesignoptimizer.sequencer <sequencer.py> check-templates
     python -m qdesignoptimizer.sequencer <sequencer.py> run --yes
@@ -29,8 +29,8 @@ import sys
 from pathlib import Path
 
 from . import state as st
-from .campaign import CampaignError, load_campaign
 from .loading import BackendError
+from .plan import PlanError, load_plan
 from .queue import QueueError
 from .runner import Runner, RunRefused, check_queue, configure_console_logging
 from .worker import WorkerError
@@ -56,8 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     p_add = sub.add_parser("add", help="queue one study")
     p_add.add_argument("task")
     p_add.add_argument("--settings", default="{}")
-    p_camp = sub.add_parser("campaign", help="queue every study of one")
-    p_camp.add_argument("campaign")
+    p_plan = sub.add_parser("plan", help="queue every study of one")
+    p_plan.add_argument("plan")
     sub.add_parser("check", help="rebuild every queued study; no solve")
     sub.add_parser(
         "check-templates",
@@ -99,24 +99,24 @@ def _command(args, workspace: Workspace) -> int:
             job_id = project.add(task, json.loads(args.settings))
             print(f"queued {workspace.added(project, [job_id])[0]}")
             return 0
-        if args.command == "campaign":
-            if Path(args.campaign).is_file():
+        if args.command == "plan":
+            if Path(args.plan).is_file():
                 if not workspace.single:
                     print(
-                        "a campaign file needs one project; name it by "
+                        "a measurement plan file needs one project; name it by "
                         "<project>/<key> instead",
                         file=sys.stderr,
                     )
                     return 2
                 project = first
-                spec = load_campaign(Path(args.campaign), words)
+                spec = load_plan(Path(args.plan), words)
             else:
-                project, key = workspace.locate_task(args.campaign)
-                found = project.backend.catalog().campaign(key)
+                project, key = workspace.locate_task(args.plan)
+                found = project.backend.catalog().plan(key)
                 if found is None:
-                    raise QueueError(f"no {words.campaign} {key!r}")
+                    raise QueueError(f"no {words.plan} {key!r}")
                 spec = found
-            ids = workspace.added(project, project.add_campaign(spec))
+            ids = workspace.added(project, project.add_plan(spec))
             print(f"queued {len(ids)} {words.task}(s): {', '.join(ids)}")
             return 0
         if args.command == "check-templates":
@@ -175,7 +175,7 @@ def _command(args, workspace: Workspace) -> int:
     except (QueueError, RunRefused) as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    except (CampaignError, json.JSONDecodeError) as exc:
+    except (PlanError, json.JSONDecodeError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
 

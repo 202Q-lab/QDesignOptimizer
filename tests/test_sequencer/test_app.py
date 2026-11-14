@@ -20,13 +20,13 @@ def bridge(tmp_path):
 
 
 def test_snapshot_lists_queue_completed_and_catalog(bridge):
-    bridge.add("campaign", "full_A")
+    bridge.add("plan", "full_A")
     bridge.add("task", "B.measure")
     snap = bridge.snapshot()
-    assert [r["campaign"] for r in snap["rows"]] == ["c01", "c01", ""]
+    assert [r["plan"] for r in snap["rows"]] == ["p01", "p01", ""]
     assert all(r["problems"] == [] for r in snap["rows"])
     kinds = {c["kind"] for c in snap["catalog"]}
-    assert kinds == {"task", "campaign"}
+    assert kinds == {"task", "plan"}
     Runner(bridge.project).run()
     snap = bridge.snapshot()
     assert snap["rows"] == [] and len(snap["completed"]) == 3

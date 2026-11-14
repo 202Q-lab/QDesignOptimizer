@@ -1,8 +1,8 @@
-"""The campaign popup: put a campaign together before it is queued.
+"""The measurement plan popup: put a measurement plan together before it is queued.
 
 Two screens. **Start**: pick the project (several open), name the
-campaign, optionally start from a campaign's studies, or resume a draft
-left earlier. **Draft**: the campaign's studies in order -- add one,
+measurement plan, optionally start from a measurement plan's studies, or resume a draft
+left earlier. **Draft**: the measurement plan's studies in order -- add one,
 move it, remove it, click it to edit its files in the details pane
 (which moves beside the popup while it is open) -- then Launch.
 
@@ -34,9 +34,9 @@ def _button(name: str, text: str, primary=False, title="", disabled=False):
     )
 
 
-def start_screen(projects: list[str], campaigns: list[dict], drafts: list[dict]) -> Any:
-    """Name the campaign and say where it starts from."""
-    parts: list[Any] = [html.H3("New campaign", className="qs-h")]
+def start_screen(projects: list[str], plans: list[dict], drafts: list[dict]) -> Any:
+    """Name the measurement plan and say where it starts from."""
+    parts: list[Any] = [html.H3("New measurement plan", className="qs-h")]
     if len(projects) > 1:
         parts.append(
             html.Div(
@@ -59,7 +59,7 @@ def start_screen(projects: list[str], campaigns: list[dict], drafts: list[dict])
                 html.Label("name"),
                 dcc.Input(
                     id={"type": "dval", "name": "new-label"},
-                    placeholder="what this campaign does",
+                    placeholder="what this measurement plan does",
                     className="qs-input",
                 ),
             ],
@@ -70,7 +70,7 @@ def start_screen(projects: list[str], campaigns: list[dict], drafts: list[dict])
                 html.Label("start from"),
                 dcc.Dropdown(
                     id={"type": "dval", "name": "from"},
-                    options=campaigns,
+                    options=plans,
                     placeholder="empty: add studies one by one",
                 ),
             ],
@@ -157,7 +157,7 @@ def launch_progress(status: dict | None) -> Any:
 
 
 def draft_screen(view: dict, selected: dict | None, launching: bool = False) -> Any:
-    """The campaign's studies, in order, and what to do with them."""
+    """The measurement plan's studies, in order, and what to do with them."""
     picked = (
         (selected or {}).get("key") if (selected or {}).get("kind") == "draft" else None
     )
@@ -217,7 +217,8 @@ def draft_screen(view: dict, selected: dict | None, launching: bool = False) -> 
     return html.Div(
         [
             html.H3(
-                "Campaign" + (f" for {view['project']}" if view.get("project") else ""),
+                "Measurement plan"
+                + (f" for {view['project']}" if view.get("project") else ""),
                 className="qs-h",
             ),
             html.Div(
@@ -272,7 +273,7 @@ def draft_screen(view: dict, selected: dict | None, launching: bool = False) -> 
                         placeholder="Add a study ...",
                         style={"minWidth": "300px"},
                     ),
-                    _button("add", "Add to campaign"),
+                    _button("add", "Add to measurement plan"),
                 ],
             ),
             html.Div(
@@ -299,7 +300,7 @@ def draft_screen(view: dict, selected: dict | None, launching: bool = False) -> 
                 children=[
                     _button(
                         "launch",
-                        f"Launch campaign ({len(studies)})",
+                        f"Launch measurement plan ({len(studies)})",
                         primary=True,
                         disabled=blocked,
                         title=(
@@ -309,14 +310,14 @@ def draft_screen(view: dict, selected: dict | None, launching: bool = False) -> 
                                 "fix the studies that cannot run first"
                                 if studies and blocked
                                 else "check every study (in the background), "
-                                "then queue them in this order as one campaign"
+                                "then queue them in this order as one measurement plan"
                             )
                         ),
                     ),
                     _button(
                         "close",
                         "Close (keep the draft)",
-                        title="come back to it from New campaign",
+                        title="come back to it from New measurement plan",
                     ),
                     _button("discard", "Discard"),
                 ],
@@ -340,6 +341,6 @@ def _actions(study: dict, count: int) -> Any:
         [
             icon("up", "↑", "move up", study["n"] == 1),
             icon("down", "↓", "move down", study["n"] == count),
-            icon("remove", "✕", "take out of the campaign"),
+            icon("remove", "✕", "take out of the measurement plan"),
         ]
     )

@@ -9,9 +9,9 @@ import pytest
 
 from qdesignoptimizer.sequencer.app.queue_state import Bridge, GuiError
 from qdesignoptimizer.sequencer.backends._store import (
-    read_writes,
+    meta_path,
+    read_meta,
     sources_text,
-    writes_path,
 )
 from qdesignoptimizer.sequencer.engine import project as project_module
 from qdesignoptimizer.sequencer.engine import state as st
@@ -67,9 +67,9 @@ def test_a_launch_failing_while_staging_puts_everything_back(project, monkeypatc
     assert project.queue.ids() == [] and _staged(project) == []
     draft = project.draft_queue(name)
     assert sorted(draft.ids()) == before
-    for i in draft.ids():  # as they were: no campaign written into them
+    for i in draft.ids():  # as they were: no measurement plan written into them
         assert project.problems(i, folder=draft.folder(i)) == []
-        assert "campaign" not in (draft.folder(i) / "job.yaml").read_text()
+        assert "plan" not in (draft.folder(i) / "job.yaml").read_text()
 
 
 def test_a_launch_failing_while_publishing_is_finished_by_a_relaunch(
@@ -77,15 +77,15 @@ def test_a_launch_failing_while_publishing_is_finished_by_a_relaunch(
 ):
     name = _draft(project)
     _failing_rename(monkeypatch, fail_on=3 + 2)  # 3 stagings, 2nd publish
-    with pytest.raises(QueueError, match="launched 1 of 3 as c01"):
+    with pytest.raises(QueueError, match="launched 1 of 3 as p01"):
         project.launch_draft(name)
-    assert project.queue.ids() == ["c01-three-a_calibrate"]
+    assert project.queue.ids() == ["p01-three-a_calibrate"]
     assert _staged(project) == []
     assert len(project.draft_queue(name).ids()) == 2
     monkeypatch.undo()
     moved = project.launch_draft(name)
-    assert moved == ["c01-three-a_measure", "c01-three-b_measure"]
-    assert project.queue.ids() == ["c01-three-a_calibrate"] + moved
+    assert moved == ["p01-three-a_measure", "p01-three-b_measure"]
+    assert project.queue.ids() == ["p01-three-a_calibrate"] + moved
     assert project.drafts() == []
 
 
@@ -151,7 +151,7 @@ def test_a_study_added_during_a_launch_is_refused_not_lost(project, monkeypatch)
     monkeypatch.setattr(project, "problems", problems)
     moved = project.launch_draft(name)
     monkeypatch.undo()
-    assert moved == ["c01-three-a_calibrate"]
+    assert moved == ["p01-three-a_calibrate"]
     assert refused and "being launched" in refused[0]
     assert project.drafts() == []
 
@@ -198,11 +198,11 @@ def test_ids_a_launch_has_given_out_are_taken(project):
         stage / "launch.json",
         {
             "phase": "staging",
-            "entries": [{"old_id": "x", "new_id": "c01-01_t"}],
+            "entries": [{"old_id": "x", "new_id": "p01-01_t"}],
         },
     )
-    assert "c01-01_t" in project.queue.taken()
-    assert project.queue.next_campaign_id() == "c02"
+    assert "p01-01_t" in project.queue.taken()
+    assert project.queue.next_plan_id() == "p02"
     stage.joinpath("launch.json").unlink()
     stage.rmdir()
 
@@ -235,14 +235,14 @@ def test_a_recovered_write_back_is_not_recorded_twice(project):
     record["status"] = st.COMMITTING  # as if cut off after the record
     st.write_json(done / st.RESULT_FILE, record)
     Runner(project).run()
-    item = read_writes(project.backend.store_path)["A_value"]
+    item = read_meta(project.backend.store_path)["A_value"]
     assert [h["study"] for h in item["history"]] == [job_id]
     assert item["latest"]["previous"] == 0.0
 
 
-def test_a_recovered_write_back_keeps_its_campaign(project):
-    spec = project.backend.catalog().campaign("full_A")
-    job_id, _ = project.add_campaign(spec)
+def test_a_recovered_write_back_keeps_its_plan(project):
+    spec = project.backend.catalog().plan("full_A")
+    job_id, _ = project.add_plan(spec)
     claimed = project.queue.claim(job_id)
     folder = project.queue.start(claimed, job_id)
     project.backend.commit({"A_value": 6.0})
@@ -256,8 +256,8 @@ def test_a_recovered_write_back_keeps_its_campaign(project):
         },
     )
     Runner(project).run()
-    latest = read_writes(project.backend.store_path)["A_value"]["latest"]
-    assert latest["recovered"] is True and latest["campaign"] == "c01"
+    latest = read_meta(project.backend.store_path)["A_value"]["latest"]
+    assert latest["recovered"] is True and latest["plan"] == "p01"
     assert latest["previous"] == 0.0
 
 
@@ -280,17 +280,17 @@ def test_a_recovered_write_that_changed_nothing_is_not_credited(project):
         },
     )
     Runner(project).run()
-    latest = read_writes(project.backend.store_path)["A_value"]["latest"]
+    latest = read_meta(project.backend.store_path)["A_value"]["latest"]
     assert latest["study"] == first
 
 
 def test_a_record_that_is_not_a_mapping_is_set_aside(project):
-    path = writes_path(project.backend.store_path)
+    path = meta_path(project.backend.store_path)
     path.write_text("[1, 2]\n", encoding="utf-8")
-    assert read_writes(project.backend.store_path) == {}
+    assert read_meta(project.backend.store_path) == {}
     project.add("A.calibrate", save=True)
     Runner(project).run()
-    assert "A_value" in read_writes(project.backend.store_path)
+    assert "A_value" in read_meta(project.backend.store_path)
 
 
 def test_a_helper_that_gives_a_list_or_nothing(monkeypatch):
@@ -319,7 +319,7 @@ def test_a_value_that_did_not_change_is_not_recorded(project):
     job_id = project.add("A.calibrate", save=True)
     set_task(project, job_id, value=0.0)  # what the store holds already
     Runner(project).run()
-    assert not writes_path(project.backend.store_path).exists()
+    assert not meta_path(project.backend.store_path).exists()
 
 
 def test_a_store_that_cannot_be_read_does_not_fail_the_write(project, monkeypatch):
@@ -341,12 +341,12 @@ def test_a_store_that_cannot_be_read_does_not_fail_the_write(project, monkeypatc
 
 
 def test_a_damaged_record_is_set_aside_not_left_broken(project):
-    path = writes_path(project.backend.store_path)
+    path = meta_path(project.backend.store_path)
     path.write_text("<<<<<<< HEAD\n{}\n", encoding="utf-8")
     project.add("A.calibrate", save=True)
     Runner(project).run()
-    assert "A_value" in read_writes(project.backend.store_path)
-    assert list(path.parent.glob("store.writes.damaged-*.json"))
+    assert "A_value" in read_meta(project.backend.store_path)
+    assert list(path.parent.glob("store.meta.damaged-*.json"))
 
 
 def test_a_value_edited_by_hand_says_so(project):
@@ -411,27 +411,25 @@ def test_a_draft_is_not_changed_while_it_launches(project):
     assert not (project.drafts_dir / name).exists()
     # The launched draft is kept in removed/, not deleted.
     assert any(
-        p.name.endswith(f"{name}_launched-c01")
+        p.name.endswith(f"{name}_launched-p01")
         for p in project.queue.removed_dir.iterdir()
     )
 
 
-def test_a_launch_that_published_nothing_keeps_its_campaign_number(
-    project, monkeypatch
-):
+def test_a_launch_that_published_nothing_keeps_its_plan_number(project, monkeypatch):
     first = _draft(project)
     _failing_rename(monkeypatch, fail_on=3 + 1)  # the first publish
-    with pytest.raises(QueueError, match="launched 0 of 3 as c01"):
+    with pytest.raises(QueueError, match="launched 0 of 3 as p01"):
         project.launch_draft(first)
     monkeypatch.undo()
     assert project.queue.ids() == []
-    # c01 is the first draft's: another campaign must not take it.
+    # p01 is the first draft's: another measurement plan must not take it.
     other = project.new_draft("other")
     project.draft_add(other, "B.measure")
-    assert project.launch_draft(other) == ["c02-other-b_measure"]
+    assert project.launch_draft(other) == ["p02-other-b_measure"]
     # Renamed in between, the first keeps the name it launched with.
     project.set_draft_label(first, "renamed")
-    assert project.launch_draft(first)[0] == "c01-three-a_calibrate"
+    assert project.launch_draft(first)[0] == "p01-three-a_calibrate"
 
 
 def test_a_failed_launch_keeps_saying_why_until_the_popup_closes(project):

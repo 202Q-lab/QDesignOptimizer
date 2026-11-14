@@ -1,4 +1,4 @@
-"""Which study wrote each value back: ``<store>.writes.json``."""
+"""Which study wrote each value back: ``<store>.meta.json``."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from qdesignoptimizer.sequencer.app.queue_state import Bridge
-from qdesignoptimizer.sequencer.backends._store import read_writes, writes_path
+from qdesignoptimizer.sequencer.backends._store import meta_path, read_meta
 from qdesignoptimizer.sequencer.engine import state as st
 from qdesignoptimizer.sequencer.engine.runner import Runner
 
@@ -25,7 +25,7 @@ def test_a_write_back_records_the_study_that_wrote_it(project):
     first = project.add("A.calibrate", save=True)
     set_task(project, first, value=2.5)
     Runner(project).run()
-    record = read_writes(project.backend.store_path)
+    record = read_meta(project.backend.store_path)
     assert set(record) == {"A_value"}  # only what the study tuned
     latest = record["A_value"]["latest"]
     assert latest["value"] == 2.5 and latest["previous"] == 0.0
@@ -36,7 +36,7 @@ def test_a_write_back_records_the_study_that_wrote_it(project):
     second = project.add("A.calibrate", save=True)
     set_task(project, second, value=4.0)
     Runner(project).run()
-    item = read_writes(project.backend.store_path)["A_value"]
+    item = read_meta(project.backend.store_path)["A_value"]
     assert [h["study"] for h in item["history"]] == [first, second]
     assert item["latest"]["previous"] == 2.5
 
@@ -53,16 +53,16 @@ def test_nothing_is_recorded_when_nothing_is_written(project):
     Runner(project).run()
     (bad,) = (p for p in project.queue.completed() if "_failed" in p.name)
     assert st.result_of(bad)["committed"] == {}
-    assert not writes_path(project.backend.store_path).exists()
+    assert not meta_path(project.backend.store_path).exists()
 
 
-def test_a_campaign_write_names_its_campaign(project):
-    spec = project.backend.catalog().campaign("full_A")
-    project.add_campaign(spec)
+def test_a_plan_write_names_its_plan(project):
+    spec = project.backend.catalog().plan("full_A")
+    project.add_plan(spec)
     Runner(project).run()
-    latest = read_writes(project.backend.store_path)["A_value"]["latest"]
-    assert latest["campaign"] == "c01"
-    assert latest["campaign_name"] == "full_A"
+    latest = read_meta(project.backend.store_path)["A_value"]["latest"]
+    assert latest["plan"] == "p01"
+    assert latest["plan_name"] == "full_A"
 
 
 def test_a_recovered_write_back_is_recorded_as_recovered(project):
@@ -80,7 +80,7 @@ def test_a_recovered_write_back_is_recorded_as_recovered(project):
         },
     )
     Runner(project).run()
-    latest = read_writes(project.backend.store_path)["A_value"]["latest"]
+    latest = read_meta(project.backend.store_path)["A_value"]["latest"]
     assert latest["study"] == job_id and latest["recovered"] is True
 
 
@@ -119,7 +119,7 @@ def test_the_qdo_backend_records_only_the_tuned_design_variable(tmp_path):
             text.replace("seconds: 5", "seconds: 0"), encoding="utf-8"
         )
         assert Runner(workspace).run().status == st.FINISHED
-        record = read_writes(root / "design_variables.json")
+        record = read_meta(root / "design_variables.json")
         # The frequency study's target tunes the length; the coupling
         # length is in the study's variables but not its target.
         assert set(record) == {"design_var_length_resonator_R1"}

@@ -33,7 +33,7 @@ def _wait(bridge, key, seconds=30):
 
 
 def test_a_launch_runs_in_the_background_and_reports_progress(bridge, monkeypatch):
-    key = bridge.new_draft(label="bg", from_campaign="full_A")
+    key = bridge.new_draft(label="bg", from_plan="full_A")
     project = bridge.project
     real = project.problems
     seen = []
@@ -55,8 +55,8 @@ def test_a_launch_runs_in_the_background_and_reports_progress(bridge, monkeypatc
     assert status["checked"] == status["total"] == 2
     assert seen == [0, 1]
     assert project.queue.ids() == [
-        "c01-bg-a_calibrate",
-        "c01-bg-a_measure",
+        "p01-bg-a_calibrate",
+        "p01-bg-a_measure",
     ]
     bridge.forget_launch(key)
     assert bridge.launch_status(key) is None

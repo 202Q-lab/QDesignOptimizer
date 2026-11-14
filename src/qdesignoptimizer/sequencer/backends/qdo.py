@@ -3,7 +3,7 @@
 ::
 
     job.yaml                 engine: the queue entry (which study, its
-                             campaign, run settings, checks, save)
+                             measurement plan, run settings, checks, save)
     ministudy.yaml           the MiniStudy, as its constructor call
     opt_targets.yaml         the OptTargets (QDO helper calls or explicit)
     parameter_targets.yaml   optional: only the targets you set here
@@ -75,8 +75,8 @@ from ..engine.backend import (
     TaskSpec,
     Words,
 )
-from ..engine.campaign import load_campaign_dir
 from ..engine.job import dump_yaml, is_custom, numbers
+from ..engine.plan import load_plan_dir
 from . import qdo_record
 from ._store import read_json, record_writes, sources_text, update_json
 from .qdo_templates import (
@@ -96,13 +96,13 @@ log = logging.getLogger(__name__)
 
 WORDS = Words(
     task="study",
-    campaign="campaign",
+    plan="measurement plan",
     subject="subsystem",
     store="design variables",
     live="solve",
 )
 
-CAMPAIGN_DIR = "campaigns"
+PLAN_DIR = "measurement_plans"
 MINISTUDY, TARGETS = "ministudy.yaml", "opt_targets.yaml"
 PARAMS, VARIABLES = "parameter_targets.yaml", "design_variables.json"
 
@@ -140,8 +140,8 @@ class QDOProject(Protocol):
     The adapter says HOW the project solves. WHAT can be queued is not
     listed here: it is the project's templates, in ``<root>/ministudies``
     and ``<root>/opt_targets`` (or the folders ``ministudy_dir`` and
-    ``opt_targets_dir`` name), and its campaigns, in
-    ``<root>/campaigns`` (or ``campaign_dir``).
+    ``opt_targets_dir`` name), and its measurement plans, in
+    ``<root>/measurement plans`` (or ``plan_dir``).
     """
 
     #: The design folder; ``out/`` lives under it.
@@ -184,9 +184,9 @@ class QDOProject(Protocol):
     # ``subjects``: the subsystems, ``{key: (label, group)}`` or
     #   ``{key: (label, group, values)}`` -- ``values`` are the
     #   ``{placeholders}`` a template is filled in with for it;
-    # ``campaign_dir``: where campaign files are, if not
-    #   ``<root>/campaigns``;
-    # ``campaigns(tasks) -> [CampaignSpec]``: campaigns built in code;
+    # ``plan_dir``: where measurement plan files are, if not
+    #   ``<root>/measurement plans``;
+    # ``measurement_plans(tasks) -> [PlanSpec]``: measurement plans built in code;
     # ``resolve(task: TaskSpec, settings) -> list[str]``: the project's
     #   own refusals (a MiniStudy with too few passes, say);
     # ``modes_checked(settings) -> bool``: False when these settings
@@ -264,11 +264,11 @@ class QDOBackend:
         )
 
     @property
-    def campaign_dir(self) -> Path:
-        """Campaign files: ``<design>/campaigns/`` by default."""
+    def plan_dir(self) -> Path:
+        """Measurement plan files: ``<design>/measurement_plans/`` by default."""
         return Path(
-            getattr(self.project, "campaign_dir", None)
-            or Path(self.project.root) / CAMPAIGN_DIR
+            getattr(self.project, "plan_dir", None)
+            or Path(self.project.root) / PLAN_DIR
         )
 
     def subjects(self) -> dict[str, dict]:
@@ -350,15 +350,15 @@ class QDOBackend:
         for key in dict.fromkeys(t.subject for t in tasks):
             group = known_subjects.get(key, {}).get("group", "")
             subjects.append(SubjectSpec(key, subject_label(key), group))
-        hook = getattr(self.project, "campaigns", None)
-        campaigns = list(hook(tasks)) if hook is not None else []
+        hook = getattr(self.project, "measurement_plans", None)
+        plans = list(hook(tasks)) if hook is not None else []
         problems = list(self._discovery_problems)
-        specs, more = load_campaign_dir(self.campaign_dir, self.words)
-        known = {c.key for c in campaigns}
-        campaigns.extend(s for s in specs if s.key not in known)
+        specs, more = load_plan_dir(self.plan_dir, self.words)
+        known = {c.key for c in plans}
+        plans.extend(s for s in specs if s.key not in known)
         problems.extend(more)
         self.catalog_problems = problems
-        return Catalog(tasks=tasks, campaigns=campaigns, subjects=subjects)
+        return Catalog(tasks=tasks, plans=plans, subjects=subjects)
 
     def files(self) -> list[FileSpec]:
         return [
@@ -852,7 +852,7 @@ class QDOBackend:
 
     def note_commit(self, updates, previous, source) -> None:
         """Record which study wrote each design variable, next to the
-        file: ``design_variables.writes.json``, with the simulation that
+        file: ``design_variables.meta.json``, with the simulation that
         produced it and the target it chased (``write_details``)."""
         try:
             folder = Path(source.get("folder", ""))

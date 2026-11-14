@@ -6,7 +6,7 @@ the sequencer needs to queue and run studies of it:
 
 * ``ministudies/*.yaml``   the MiniStudies that can be queued;
 * ``opt_targets/*.yaml``   the project's OptTargets, each with a name;
-* ``campaigns/*.yaml``     named sequences of studies;
+* ``measurement_plans/*.yaml``     named sequences of studies;
 * ``parameter_targets.py`` the target values (PARAM_TARGETS);
 * this file                HOW a study is solved: build the chip with the
                            study's design variables, hand QDO's

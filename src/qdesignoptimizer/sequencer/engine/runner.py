@@ -15,7 +15,8 @@ Per study:
    every check passed and ``save`` is on. A commit that fails fails the
    study.
 6. **Record** ``result.json``; a failed study's folder gets ``_failed``.
-   ``on_failure: abort`` (the default) stops the runner there.
+   ``on_failure: abort`` (the default) stops the runner there -- also
+   when the study was cut off by a crash and a new runner closes it.
 
 Outputs never reach a later study by themselves: a value reaches the
 next study only through the store, and only once it was committed.
@@ -136,6 +137,7 @@ class Runner:
             )
             self._open_log()
             log.info("runner started in %s", out)
+            aborted: list[str] = []
             for project in self.workspace.projects.values():
                 self.project = project
                 # A runner killed between claim and start (power cut,
@@ -149,8 +151,20 @@ class Runner:
                     )
                 for line in project.recover_launches():
                     log.warning("a launch was cut short: %s", line)
-                self._settle_cut_off()
-            self._loop()
+                aborted += self._settle_cut_off()
+            if aborted:
+                # A study cut off by a crash failed as surely as one
+                # that raised: under ``on_failure: abort`` the studies
+                # below it do not run until the queue is started again.
+                self.state.status = st.ABORTED
+                self.state.message = (
+                    ", ".join(aborted) + " was cut off by a crash "
+                    "(on_failure: abort); start the runner again to "
+                    "continue the queue"
+                )
+                log.warning(self.state.message)
+            else:
+                self._loop()
         except BaseException as exc:  # noqa: BLE001 -- recorded, re-raised
             # BaseException, so Ctrl+C mid-solve is recorded as what it
             # is rather than falling through to "finished".
@@ -178,7 +192,7 @@ class Runner:
             self._release_locks()
         return self.state
 
-    def _settle_cut_off(self) -> None:
+    def _settle_cut_off(self) -> list[str]:
         """Close every study a dead runner left unfinished.
 
         Called holding the lock, so none of them is really running. A
@@ -187,8 +201,14 @@ class Runner:
         completed and the study is recorded done; otherwise nothing was
         written (the write is one atomic file replace) and it failed.
         Everything else is recorded failed and renamed ``_failed``.
+
+        Returns the failed ones whose ``on_failure`` is ``abort`` (a
+        study whose job file cannot be read counts as ``abort``, the
+        default): the runner then stops before the next study, as it
+        would have had the study failed without a crash.
         """
         store = None
+        aborted: list[str] = []
         for path in self.queue.cut_off():
             record = st.result_of(path) or {"id": path.name}
             updates = record.get("updates") or {}
@@ -214,14 +234,26 @@ class Runner:
             )
             record["finished"] = record.get("finished") or st.now()
             st.write_json(path / st.RESULT_FILE, record, 30.0)
+            try:
+                on_failure = load_job_from(path, self.backend.words).on_failure
+            except Exception:  # noqa: BLE001 -- unreadable: the default
+                on_failure = "abort"
+            if on_failure == "abort":
+                aborted.append(
+                    self.workspace.key(
+                        self.workspace.name_of(self.project),
+                        record.get("id") or path.name,
+                    )
+                )
             self.queue.finish(path, ok=False)
             log.warning(
                 "%s was cut off with its runner; marked failed "
                 "(requeue it to run again)",
                 path.name,
             )
+        return aborted
 
-    def _source(self, job_id: str, task, campaign: dict, folder, settings=None) -> dict:
+    def _source(self, job_id: str, task, plan: dict, folder, settings=None) -> dict:
         root = Path(self.backend.out_dir).parent
         try:
             where = Path(folder).relative_to(root).as_posix()
@@ -230,8 +262,8 @@ class Runner:
         return {
             "study": job_id,
             "task": task,
-            "campaign": (campaign or {}).get("id", ""),
-            "campaign_name": (campaign or {}).get("name", ""),
+            "plan": (plan or {}).get("id", ""),
+            "plan_name": (plan or {}).get("name", ""),
             "folder": where,
             "settings": dict(settings or {}),
             "written": st.now(),
@@ -249,7 +281,7 @@ class Runner:
             hook(
                 updates,
                 previous,
-                self._source(job.id, job.task, job.campaign, folder, job.settings),
+                self._source(job.id, job.task, job.plan, folder, job.settings),
             )
         except Exception:  # noqa: BLE001 -- logged; the write stands
             log.exception("%s: could not record the write-back", shown)
@@ -261,11 +293,11 @@ class Runner:
         task = record.get(self.backend.words.task, "")
         try:
             ran = load_job_from(path / INPUTS, self.backend.words)
-            campaign, settings = ran.campaign, ran.settings
+            plan, settings = ran.plan, ran.settings
         except Exception:  # noqa: BLE001 -- the record goes without it
-            campaign, settings = {}, {}
+            plan, settings = {}, {}
         source = {
-            **self._source(record.get("id", path.name), task, campaign, path, settings),
+            **self._source(record.get("id", path.name), task, plan, path, settings),
             "recovered": True,
         }
         if "before" not in record:
@@ -457,7 +489,7 @@ class Runner:
     def _open_log(self) -> None:
         # A file handler, not print: pyEPR replaces sys.stdout when the
         # first analysis starts, and every line printed after that is
-        # lost (the TsTv2 campaign of 2026-10-09 lost its stage headers).
+        # lost (the TsTv2 measurement plan of 2026-10-09 lost its stage headers).
         path = self.workspace.state_dir / st.LOG_FILE
         path.parent.mkdir(parents=True, exist_ok=True)
         handler = logging.FileHandler(path, encoding="utf-8")
