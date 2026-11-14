@@ -228,8 +228,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         prevent_initial_call=True,
     )
     def _add(_n, choice, rev):
-        """A study goes straight into the queue; a measurement plan opens the
-        measurement plan popup with its studies, to be edited and launched."""
+        """A study goes straight into the queue; a study sequence opens the
+        study sequence popup with its studies, to be edited and launched."""
         if not choice:
             return (
                 no_update,
@@ -238,12 +238,12 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             )
         kind, key = choice.split(":", 1)
         try:
-            if kind == "plan":
-                draft = bridge.new_draft(from_plan=key)
+            if kind == "sequence":
+                draft = bridge.new_draft(from_sequence=key)
                 return (
                     (rev or 0) + 1,
                     _msg(
-                        "edit the measurement plan's studies, then launch it "
+                        "edit the study sequence's studies, then launch it "
                         "(nothing is queued yet)"
                     ),
                     {"key": draft},
@@ -653,12 +653,12 @@ def register_template_callbacks(app, bridge) -> None:
 
 
 def register_draft_callbacks(app, bridge) -> None:
-    """The measurement plan popup (``draft_layout``)."""
+    """The study sequence popup (``draft_layout``)."""
     from . import draft_layout
 
     @app.callback(
         Output("draft", "data", allow_duplicate=True),
-        Input("btn-new-plan", "n_clicks"),
+        Input("btn-new-sequence", "n_clicks"),
         prevent_initial_call=True,
     )
     def _open(n):
@@ -690,14 +690,14 @@ def register_draft_callbacks(app, bridge) -> None:
                 *shown,
             )
         snap = snap or {}
-        plans = [
+        sequences = [
             {"value": c["key"], "label": f"{c['label']} ({c['key']})"}
             for c in snap.get("catalog") or []
-            if c["kind"] == "plan"
+            if c["kind"] == "sequence"
         ]
         return (
             draft_layout.start_screen(
-                snap.get("projects") or [], plans, bridge.drafts()
+                snap.get("projects") or [], sequences, bridge.drafts()
             ),
             *shown,
         )
@@ -751,7 +751,7 @@ def register_draft_callbacks(app, bridge) -> None:
                 new = bridge.new_draft(
                     project=form.get("project") or "",
                     label=form.get("new-label") or "",
-                    from_plan=form.get("from") or "",
+                    from_sequence=form.get("from") or "",
                 )
                 return {"key": new}, bump, no_update, no_update
             if name == "blank":
@@ -802,7 +802,7 @@ def register_draft_callbacks(app, bridge) -> None:
         prevent_initial_call=True,
     )
     def _label(values, ids, state):
-        """Save the measurement plan's name as soon as it is entered."""
+        """Save the study sequence's name as soon as it is entered."""
         trig = ctx.triggered_id
         key = (state or {}).get("key")
         if not trig or trig.get("name") != "label" or not key:

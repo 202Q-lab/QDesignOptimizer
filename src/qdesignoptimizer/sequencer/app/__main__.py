@@ -1,4 +1,4 @@
-"""``python -m qdesignoptimizer.sequencer.app --plan <plan.yaml>``."""
+"""``python -m qdesignoptimizer.sequencer.app <project folder> [...]``."""
 
 from qdesignoptimizer.sequencer.app.server import main
 

@@ -18,8 +18,8 @@ from typing import Any, Protocol, runtime_checkable
 class Words:
     """The names a repo's users know the engine's concepts by.
 
-    The engine says task / measurement plan / subject / store. The simulation
-    backend says study / measurement plan / subsystem / design variables; a
+    The engine says task / sequence / subject / store. The simulation
+    backend says study / study sequence / subsystem / design variables; a
     measurement backend would say experiment / measurement plan / element /
     calibration database. ``job.yaml`` accepts the backend's word as
     a key (``study: ATS1.kappa``) as well as ``task:``, and the GUI
@@ -27,7 +27,7 @@ class Words:
     """
 
     task: str = "task"
-    plan: str = "measurement plan"
+    sequence: str = "study sequence"
     subject: str = "subject"
     store: str = "store"
     live: str = "live"
@@ -61,8 +61,8 @@ class TaskSpec:
 
 
 @dataclass(frozen=True)
-class PlanEntry:
-    """One study of a measurement plan, with what it changes from the defaults."""
+class SequenceEntry:
+    """One study of a study sequence, with what it changes from the defaults."""
 
     task: str
     settings: dict = field(default_factory=dict)
@@ -73,12 +73,12 @@ class PlanEntry:
 
 
 @dataclass(frozen=True)
-class PlanSpec:
+class SequenceSpec:
     """A named sequence of studies. Enqueueing it writes one study
-    folder per entry, tagged with the measurement plan's id.
+    folder per entry, tagged with the study sequence's id.
 
     Attributes:
-        key: Stable id (``tune_ATS1``, or a measurement plan file's stem).
+        key: Stable id (``tune_ATS1``, or a study sequence file's stem).
         label: Human name.
         entries: The studies, in order.
         why_ordered: Why that order; shown in the GUI.
@@ -87,7 +87,7 @@ class PlanSpec:
 
     key: str
     label: str
-    entries: tuple[PlanEntry, ...]
+    entries: tuple[SequenceEntry, ...]
     why_ordered: str = ""
     source: str = ""
 
@@ -124,16 +124,16 @@ class Catalog:
     """Everything a backend can enqueue; the GUI's Add menu."""
 
     tasks: list[TaskSpec] = field(default_factory=list)
-    plans: list[PlanSpec] = field(default_factory=list)
+    sequences: list[SequenceSpec] = field(default_factory=list)
     subjects: list[SubjectSpec] = field(default_factory=list)
 
     def task(self, key: str) -> TaskSpec | None:
         """The task with this key, or None."""
         return next((t for t in self.tasks if t.key == key), None)
 
-    def plan(self, key: str) -> PlanSpec | None:
-        """The measurement plan with this key, or None."""
-        return next((c for c in self.plans if c.key == key), None)
+    def sequence(self, key: str) -> SequenceSpec | None:
+        """The study sequence with this key, or None."""
+        return next((c for c in self.sequences if c.key == key), None)
 
 
 @dataclass
@@ -172,7 +172,7 @@ class Backend(Protocol):
         """Where ``queue/`` and ``completed/`` live."""
 
     def catalog(self) -> Catalog:
-        """Every study and measurement plan. Must be cheap (no Ansys)."""
+        """Every study and study sequence. Must be cheap (no Ansys)."""
 
     def files(self) -> list[FileSpec]:
         """The backend's files in a study folder, in display order."""

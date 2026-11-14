@@ -136,7 +136,7 @@ def record_writes(
     details: dict[str, dict] | None = None,
 ) -> None:
     """Note a write-back: each value, what it replaced, and the study
-    (``source``: id, task, measurement plan, folder, settings, time) that wrote
+    (``source``: id, task, study sequence, folder, settings, time) that wrote
     it, plus ``details[name]`` where the backend has more to say about
     that one value (the simulation, the target it chased).
 

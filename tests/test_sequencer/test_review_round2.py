@@ -115,7 +115,7 @@ def test_runner_state_waits_like_a_result_file(tmp_path, monkeypatch):
 
 def test_a_launched_draft_is_ordered_before_its_studies_appear(tmp_path, monkeypatch):
     """The order is written before the first rename: a runner looking at
-    the queue between two renames sees the measurement plan in measurement plan order,
+    the queue between two renames sees the study sequence in study sequence order,
     not the unlisted folders by name (b_measure before a_measure here)."""
     from qdesignoptimizer.sequencer.app.queue_state import Bridge
     from qdesignoptimizer.sequencer.engine import project as project_module
@@ -123,11 +123,11 @@ def test_a_launched_draft_is_ordered_before_its_studies_appear(tmp_path, monkeyp
     from .helpers import make_project
 
     bridge = Bridge(project=make_project(tmp_path))
-    key = bridge.new_draft(label="run", from_plan="full_A")
+    key = bridge.new_draft(label="run", from_sequence="full_A")
     added = bridge.draft_add(key, "B.measure")
     first = bridge.draft_view(key)["studies"][0]["key"]
     bridge.draft_remove(first)
-    bridge.draft_move(added, -1)  # measurement plan order: B.measure, A.measure
+    bridge.draft_move(added, -1)  # study sequence order: B.measure, A.measure
     seen = []
     real = project_module._rename
 
@@ -139,4 +139,4 @@ def test_a_launched_draft_is_ordered_before_its_studies_appear(tmp_path, monkeyp
     monkeypatch.setattr(project_module, "_rename", rename)
     bridge.launch_draft(key)
     # Right after the last rename, before anything else runs.
-    assert seen[-1] == ["p01-run-b_measure", "p01-run-a_measure"]
+    assert seen[-1] == ["s01-run-b_measure", "s01-run-a_measure"]

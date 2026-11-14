@@ -56,13 +56,13 @@ def test_nothing_is_recorded_when_nothing_is_written(project):
     assert not meta_path(project.backend.store_path).exists()
 
 
-def test_a_plan_write_names_its_plan(project):
-    spec = project.backend.catalog().plan("full_A")
-    project.add_plan(spec)
+def test_a_sequence_write_names_its_sequence(project):
+    spec = project.backend.catalog().sequence("full_A")
+    project.add_sequence(spec)
     Runner(project).run()
     latest = read_meta(project.backend.store_path)["A_value"]["latest"]
-    assert latest["plan"] == "p01"
-    assert latest["plan_name"] == "full_A"
+    assert latest["sequence"] == "s01"
+    assert latest["sequence_name"] == "full_A"
 
 
 def test_a_recovered_write_back_is_recorded_as_recovered(project):

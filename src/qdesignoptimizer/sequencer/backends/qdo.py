@@ -3,7 +3,7 @@
 ::
 
     job.yaml                 engine: the queue entry (which study, its
-                             measurement plan, run settings, checks, save)
+                             study sequence, run settings, checks, save)
     ministudy.yaml           the MiniStudy, as its constructor call
     opt_targets.yaml         the OptTargets (QDO helper calls or explicit)
     parameter_targets.yaml   optional: only the targets you set here
@@ -76,7 +76,7 @@ from ..engine.backend import (
     Words,
 )
 from ..engine.job import dump_yaml, is_custom, numbers
-from ..engine.plan import load_plan_dir
+from ..engine.sequence import load_sequence_dir
 from . import qdo_record
 from ._store import read_json, record_writes, sources_text, update_json
 from .qdo_templates import (
@@ -96,13 +96,13 @@ log = logging.getLogger(__name__)
 
 WORDS = Words(
     task="study",
-    plan="measurement plan",
+    sequence="study sequence",
     subject="subsystem",
     store="design variables",
     live="solve",
 )
 
-PLAN_DIR = "measurement_plans"
+SEQUENCE_DIR = "study_sequences"
 MINISTUDY, TARGETS = "ministudy.yaml", "opt_targets.yaml"
 PARAMS, VARIABLES = "parameter_targets.yaml", "design_variables.json"
 
@@ -140,8 +140,8 @@ class QDOProject(Protocol):
     The adapter says HOW the project solves. WHAT can be queued is not
     listed here: it is the project's templates, in ``<root>/ministudies``
     and ``<root>/opt_targets`` (or the folders ``ministudy_dir`` and
-    ``opt_targets_dir`` name), and its measurement plans, in
-    ``<root>/measurement plans`` (or ``plan_dir``).
+    ``opt_targets_dir`` name), and its study sequences, in
+    ``<root>/study_sequences`` (or ``sequence_dir``).
     """
 
     #: The design folder; ``out/`` lives under it.
@@ -184,9 +184,9 @@ class QDOProject(Protocol):
     # ``subjects``: the subsystems, ``{key: (label, group)}`` or
     #   ``{key: (label, group, values)}`` -- ``values`` are the
     #   ``{placeholders}`` a template is filled in with for it;
-    # ``plan_dir``: where measurement plan files are, if not
-    #   ``<root>/measurement plans``;
-    # ``measurement_plans(tasks) -> [PlanSpec]``: measurement plans built in code;
+    # ``sequence_dir``: where study sequence files are, if not
+    #   ``<root>/study_sequences``;
+    # ``study_sequences(tasks) -> [SequenceSpec]``: study sequences built in code;
     # ``resolve(task: TaskSpec, settings) -> list[str]``: the project's
     #   own refusals (a MiniStudy with too few passes, say);
     # ``modes_checked(settings) -> bool``: False when these settings
@@ -264,11 +264,11 @@ class QDOBackend:
         )
 
     @property
-    def plan_dir(self) -> Path:
-        """Measurement plan files: ``<design>/measurement_plans/`` by default."""
+    def sequence_dir(self) -> Path:
+        """Study sequence files: ``<design>/study_sequences/`` by default."""
         return Path(
-            getattr(self.project, "plan_dir", None)
-            or Path(self.project.root) / PLAN_DIR
+            getattr(self.project, "sequence_dir", None)
+            or Path(self.project.root) / SEQUENCE_DIR
         )
 
     def subjects(self) -> dict[str, dict]:
@@ -350,15 +350,15 @@ class QDOBackend:
         for key in dict.fromkeys(t.subject for t in tasks):
             group = known_subjects.get(key, {}).get("group", "")
             subjects.append(SubjectSpec(key, subject_label(key), group))
-        hook = getattr(self.project, "measurement_plans", None)
-        plans = list(hook(tasks)) if hook is not None else []
+        hook = getattr(self.project, "study_sequences", None)
+        sequences = list(hook(tasks)) if hook is not None else []
         problems = list(self._discovery_problems)
-        specs, more = load_plan_dir(self.plan_dir, self.words)
-        known = {c.key for c in plans}
-        plans.extend(s for s in specs if s.key not in known)
+        specs, more = load_sequence_dir(self.sequence_dir, self.words)
+        known = {c.key for c in sequences}
+        sequences.extend(s for s in specs if s.key not in known)
         problems.extend(more)
         self.catalog_problems = problems
-        return Catalog(tasks=tasks, plans=plans, subjects=subjects)
+        return Catalog(tasks=tasks, sequences=sequences, subjects=subjects)
 
     def files(self) -> list[FileSpec]:
         return [

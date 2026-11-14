@@ -21,7 +21,7 @@ def page(title: str) -> html.Div:
             dcc.Store(id="snapshot"),
             # {"kind": "queue"|"completed"|"draft", "key"}
             dcc.Store(id="selected"),
-            # The measurement plan popup: None (closed), {"screen": "start"} or
+            # The study sequence popup: None (closed), {"screen": "start"} or
             # {"key": <draft key>}.
             dcc.Store(id="draft"),
             dcc.Store(id="rev", data=0),
@@ -91,14 +91,14 @@ def page(title: str) -> html.Div:
                                                 id="btn-add",
                                                 className="qs-btn",
                                                 title="a study goes straight "
-                                                "in; a measurement plan opens the "
-                                                "measurement plan popup first",
+                                                "in; a study sequence opens the "
+                                                "study sequence popup first",
                                             ),
                                             html.Button(
-                                                "New measurement plan...",
-                                                id="btn-new-plan",
+                                                "New study sequence...",
+                                                id="btn-new-sequence",
                                                 className="qs-btn " "qs-btn-primary",
-                                                title="put a measurement plan "
+                                                title="put a study sequence "
                                                 "together, edit each study, "
                                                 "then launch it",
                                             ),
@@ -190,7 +190,7 @@ def runner_banner(snap: dict) -> Any:
         )
     problems = snap.get("catalog_problems") or []
     if problems:
-        # A template or measurement plan that cannot be read is missing from
+        # A template or study sequence that cannot be read is missing from
         # the Add menu; say why rather than let it vanish.
         return html.Div(
             [
@@ -216,7 +216,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
         [
             html.Th("#"),
             *([html.Th("Project")] if multi else []),
-            html.Th(_title(words, "plan", "measurement plan")),
+            html.Th(_title(words, "sequence", "study sequence")),
             html.Th(_title(words, "subject", "subject")),
             html.Th(_title(words, "task", "task")),
             html.Th("Settings"),
@@ -262,8 +262,8 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
                         else []
                     ),
                     html.Td(
-                        row.get("plan", ""),
-                        title=row.get("plan_name", ""),
+                        row.get("sequence", ""),
+                        title=row.get("sequence_name", ""),
                     ),
                     html.Td(row.get("subject", "")),
                     # Selecting is on this cell, not the row: a click on a
@@ -290,7 +290,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
         body = [
             html.Tr(
                 html.Td(
-                    "The queue is empty. Add a study or a " "measurement plan below.",
+                    "The queue is empty. Add a study or a " "study sequence below.",
                     colSpan=8 if multi else 7,
                     className="qs-muted",
                 )
@@ -424,10 +424,10 @@ def plural(word: str) -> str:
 
 
 def add_options(snap: dict) -> list[dict]:
-    """The Add menu: every study, then every measurement plan."""
+    """The Add menu: every study, then every study sequence."""
     words = snap.get("words") or {}
     task_word = _title(words, "task", "task")
-    plan_word = _title(words, "plan", "measurement plan")
+    sequence_word = _title(words, "sequence", "study sequence")
     options = []
     for item in snap.get("catalog") or []:
         if item["kind"] == "task":
@@ -436,7 +436,7 @@ def add_options(snap: dict) -> list[dict]:
             label = f"{task_word}: {item['label']} ({item['key']}{eta})"
         else:
             label = (
-                f"{plan_word}: {item['label']} "
+                f"{sequence_word}: {item['label']} "
                 f"({item['count']} {plural(words.get('task', 'task'))})"
             )
         options.append({"label": label, "value": f"{item['kind']}:{item['key']}"})
@@ -455,7 +455,7 @@ def details(data: dict | None, words: dict) -> Any:
     head = [
         html.H3(
             (
-                f"{data['key'].rsplit('/', 1)[-1]} (in the measurement plan draft)"
+                f"{data['key'].rsplit('/', 1)[-1]} (in the study sequence draft)"
                 if data["kind"] == "draft"
                 else data["key"]
             ),

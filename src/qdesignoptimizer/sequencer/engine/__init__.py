@@ -1,1 +1,1 @@
-"""The backend-agnostic core: plan, order, conditions, state, runner."""
+"""The backend-agnostic core: sequences, order, conditions, state, runner."""

@@ -5,10 +5,10 @@ values it ran with). This file is the part the engine reads: which
 study it is, where it belongs and how the queue treats it. Example::
 
     version: 1
-    id: p07-revalidate-ats1_eigenmode
+    id: s07-revalidate-ats1_eigenmode
     study: ATS1.eigenmode            # the study key (or ``task:``)
     subsystem: ATS1                  # (or ``subject:``)
-    measurement plan: {id: p07, name: revalidate, entry: 3}
+    sequence: {id: s07, name: revalidate, entry: 3}
     settings: {iterations: 2}
     checks: [mode_identity]
     save: true                       # write tuned values back on success
@@ -49,7 +49,7 @@ _KEYS = {
     "notes",
     "created",
     "generated_by",
-    "plan",
+    "sequence",
     "requeued_from",
     "requeued_as",
 }
@@ -76,7 +76,7 @@ class Job:
     on_failure: str = "abort"
     hold: bool = False
     notes: str = ""
-    plan: dict = field(default_factory=dict)
+    sequence: dict = field(default_factory=dict)
     created: str = ""
     generated_by: str = ""
     raw: dict = field(default_factory=dict, repr=False)
@@ -90,8 +90,8 @@ class Job:
         }
         if self.subject:
             out[words.subject] = self.subject
-        if self.plan:
-            out["plan"] = dict(self.plan)
+        if self.sequence:
+            out["sequence"] = dict(self.sequence)
         out["settings"] = dict(self.settings)
         out["checks"] = list(self.checks)
         out["save"] = bool(self.save)
@@ -174,10 +174,10 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
         problems.append(
             f"on_failure {on_failure!r} is not one of " f"{list(ON_FAILURE)}"
         )
-    plan = raw.get("plan") or {}
-    if not isinstance(plan, dict):
-        problems.append("measurement plan must be a mapping")
-        plan = {}
+    sequence = raw.get("sequence") or {}
+    if not isinstance(sequence, dict):
+        problems.append("study sequence must be a mapping")
+        sequence = {}
     if problems:
         raise JobError(problems)
     return Job(
@@ -190,7 +190,7 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
         on_failure=on_failure,
         hold=hold,
         notes=str(raw.get("notes") or ""),
-        plan=dict(plan),
+        sequence=dict(sequence),
         created=str(raw.get("created") or ""),
         generated_by=str(raw.get("generated_by") or ""),
         raw=dict(raw),
@@ -299,8 +299,8 @@ _OLD = re.compile(rf"^ministudy_(?P<stamp>{_STAMP})_(?P<id>.+)$")
 
 
 def completed_name(job_id: str, stamp: str) -> str:
-    """``<id>_<start>``, e.g. ``p01-tune_ATS1-ats1_kappa_2026-11-11T
-    14-02-33``: a name sort groups each measurement plan's studies."""
+    """``<id>_<start>``, e.g. ``s01-tune_ATS1-ats1_kappa_2026-11-11T
+    14-02-33``: a name sort groups each study sequence's studies."""
     return f"{job_id}_{stamp}"
 
 

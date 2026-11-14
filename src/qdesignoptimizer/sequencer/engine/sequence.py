@@ -1,8 +1,8 @@
-"""Measurement plan files: a named sequence of studies, enqueued in one go.
+"""Study sequence files: a named sequence of studies, enqueued in one go.
 
-A measurement plan does not run. Enqueueing it writes one study folder per
-entry, tagged ``p<NN>-<entry>``; from then on each folder is an ordinary
-queued study. Measurement plans come from a project's adapter (``sequencer.py``) or
+A study sequence does not run. Enqueueing it writes one study folder per
+entry, tagged ``s<NN>-<entry>``; from then on each folder is an ordinary
+queued study. Study sequences come from a project's adapter (``sequencer.py``) or
 from a YAML file like this::
 
     version: 1
@@ -29,35 +29,35 @@ from pathlib import Path
 
 import yaml
 
-from .backend import PlanEntry, PlanSpec, Words
+from .backend import SequenceEntry, SequenceSpec, Words
 from .job import ON_FAILURE, numbers
 
 _TOP = {"version", "name", "why_ordered", "defaults", "studies", "notes"}
 _ENTRY = {"settings", "checks", "save", "on_failure", "notes"}
 
 
-class PlanError(ValueError):
-    """A measurement plan file cannot be used. Carries every problem found."""
+class SequenceError(ValueError):
+    """A study sequence file cannot be used. Carries every problem found."""
 
     def __init__(self, problems: list[str]):
         self.problems = list(problems)
         super().__init__("; ".join(self.problems))
 
 
-def load_plan(path: Path, words: Words = Words()) -> PlanSpec:
-    """Read a measurement plan file.
+def load_sequence(path: Path, words: Words = Words()) -> SequenceSpec:
+    """Read a study sequence file.
 
     Raises:
-        PlanError: Listing every problem.
+        SequenceError: Listing every problem.
     """
     path = Path(path)
     try:
         raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:
-        raise PlanError([f"{path.name}: not valid YAML: {exc}"]) from exc
+        raise SequenceError([f"{path.name}: not valid YAML: {exc}"]) from exc
     problems: list[str] = []
     if not isinstance(raw, dict):
-        raise PlanError([f"{path.name} must hold a mapping"])
+        raise SequenceError([f"{path.name} must hold a mapping"])
     extra = sorted(set(raw) - _TOP)
     if extra:
         problems.append(f"unknown top-level key(s) {extra}")
@@ -98,7 +98,7 @@ def load_plan(path: Path, words: Words = Words()) -> PlanSpec:
             # give every study the checks 'm', 'o', 'd', ...
             checks = [checks]
         entries.append(
-            PlanEntry(
+            SequenceEntry(
                 task=str(item[keys[0]]),
                 settings=settings,
                 checks=tuple(checks) if checks is not None else None,
@@ -110,8 +110,8 @@ def load_plan(path: Path, words: Words = Words()) -> PlanSpec:
     if not entries:
         problems.append(f"{path.name} lists no studies")
     if problems:
-        raise PlanError([f"{path.name}: {p}" for p in problems])
-    return PlanSpec(
+        raise SequenceError([f"{path.name}: {p}" for p in problems])
+    return SequenceSpec(
         key=path.stem,
         label=str(raw.get("name") or path.stem),
         entries=tuple(entries),
@@ -120,19 +120,19 @@ def load_plan(path: Path, words: Words = Words()) -> PlanSpec:
     )
 
 
-def load_plan_dir(
+def load_sequence_dir(
     folder: Path, words: Words = Words()
-) -> tuple[list[PlanSpec], list[str]]:
-    """Every ``*.yaml`` measurement plan in a folder, and the problems of those
+) -> tuple[list[SequenceSpec], list[str]]:
+    """Every ``*.yaml`` study sequence in a folder, and the problems of those
     that could not be read (so one bad file does not hide the rest)."""
-    specs: list[PlanSpec] = []
+    specs: list[SequenceSpec] = []
     problems: list[str] = []
     folder = Path(folder)
     if not folder.is_dir():
         return specs, problems
     for path in sorted(folder.glob("*.yaml")):
         try:
-            specs.append(load_plan(path, words))
-        except PlanError as exc:
+            specs.append(load_sequence(path, words))
+        except SequenceError as exc:
             problems.extend(exc.problems)
     return specs, problems

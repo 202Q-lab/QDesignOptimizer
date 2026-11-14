@@ -67,9 +67,9 @@ def test_a_launch_failing_while_staging_puts_everything_back(project, monkeypatc
     assert project.queue.ids() == [] and _staged(project) == []
     draft = project.draft_queue(name)
     assert sorted(draft.ids()) == before
-    for i in draft.ids():  # as they were: no measurement plan written into them
+    for i in draft.ids():  # as they were: no study sequence written into them
         assert project.problems(i, folder=draft.folder(i)) == []
-        assert "plan" not in (draft.folder(i) / "job.yaml").read_text()
+        assert "sequence" not in (draft.folder(i) / "job.yaml").read_text()
 
 
 def test_a_launch_failing_while_publishing_is_finished_by_a_relaunch(
@@ -77,15 +77,15 @@ def test_a_launch_failing_while_publishing_is_finished_by_a_relaunch(
 ):
     name = _draft(project)
     _failing_rename(monkeypatch, fail_on=3 + 2)  # 3 stagings, 2nd publish
-    with pytest.raises(QueueError, match="launched 1 of 3 as p01"):
+    with pytest.raises(QueueError, match="launched 1 of 3 as s01"):
         project.launch_draft(name)
-    assert project.queue.ids() == ["p01-three-a_calibrate"]
+    assert project.queue.ids() == ["s01-three-a_calibrate"]
     assert _staged(project) == []
     assert len(project.draft_queue(name).ids()) == 2
     monkeypatch.undo()
     moved = project.launch_draft(name)
-    assert moved == ["p01-three-a_measure", "p01-three-b_measure"]
-    assert project.queue.ids() == ["p01-three-a_calibrate"] + moved
+    assert moved == ["s01-three-a_measure", "s01-three-b_measure"]
+    assert project.queue.ids() == ["s01-three-a_calibrate"] + moved
     assert project.drafts() == []
 
 
@@ -151,7 +151,7 @@ def test_a_study_added_during_a_launch_is_refused_not_lost(project, monkeypatch)
     monkeypatch.setattr(project, "problems", problems)
     moved = project.launch_draft(name)
     monkeypatch.undo()
-    assert moved == ["p01-three-a_calibrate"]
+    assert moved == ["s01-three-a_calibrate"]
     assert refused and "being launched" in refused[0]
     assert project.drafts() == []
 
@@ -198,11 +198,11 @@ def test_ids_a_launch_has_given_out_are_taken(project):
         stage / "launch.json",
         {
             "phase": "staging",
-            "entries": [{"old_id": "x", "new_id": "p01-01_t"}],
+            "entries": [{"old_id": "x", "new_id": "s01-01_t"}],
         },
     )
-    assert "p01-01_t" in project.queue.taken()
-    assert project.queue.next_plan_id() == "p02"
+    assert "s01-01_t" in project.queue.taken()
+    assert project.queue.next_sequence_id() == "s02"
     stage.joinpath("launch.json").unlink()
     stage.rmdir()
 
@@ -240,9 +240,9 @@ def test_a_recovered_write_back_is_not_recorded_twice(project):
     assert item["latest"]["previous"] == 0.0
 
 
-def test_a_recovered_write_back_keeps_its_plan(project):
-    spec = project.backend.catalog().plan("full_A")
-    job_id, _ = project.add_plan(spec)
+def test_a_recovered_write_back_keeps_its_sequence(project):
+    spec = project.backend.catalog().sequence("full_A")
+    job_id, _ = project.add_sequence(spec)
     claimed = project.queue.claim(job_id)
     folder = project.queue.start(claimed, job_id)
     project.backend.commit({"A_value": 6.0})
@@ -257,7 +257,7 @@ def test_a_recovered_write_back_keeps_its_plan(project):
     )
     Runner(project).run()
     latest = read_meta(project.backend.store_path)["A_value"]["latest"]
-    assert latest["recovered"] is True and latest["plan"] == "p01"
+    assert latest["recovered"] is True and latest["sequence"] == "s01"
     assert latest["previous"] == 0.0
 
 
@@ -411,25 +411,27 @@ def test_a_draft_is_not_changed_while_it_launches(project):
     assert not (project.drafts_dir / name).exists()
     # The launched draft is kept in removed/, not deleted.
     assert any(
-        p.name.endswith(f"{name}_launched-p01")
+        p.name.endswith(f"{name}_launched-s01")
         for p in project.queue.removed_dir.iterdir()
     )
 
 
-def test_a_launch_that_published_nothing_keeps_its_plan_number(project, monkeypatch):
+def test_a_launch_that_published_nothing_keeps_its_sequence_number(
+    project, monkeypatch
+):
     first = _draft(project)
     _failing_rename(monkeypatch, fail_on=3 + 1)  # the first publish
-    with pytest.raises(QueueError, match="launched 0 of 3 as p01"):
+    with pytest.raises(QueueError, match="launched 0 of 3 as s01"):
         project.launch_draft(first)
     monkeypatch.undo()
     assert project.queue.ids() == []
-    # p01 is the first draft's: another measurement plan must not take it.
+    # s01 is the first draft's: another study sequence must not take it.
     other = project.new_draft("other")
     project.draft_add(other, "B.measure")
-    assert project.launch_draft(other) == ["p02-other-b_measure"]
+    assert project.launch_draft(other) == ["s02-other-b_measure"]
     # Renamed in between, the first keeps the name it launched with.
     project.set_draft_label(first, "renamed")
-    assert project.launch_draft(first)[0] == "p01-three-a_calibrate"
+    assert project.launch_draft(first)[0] == "s01-three-a_calibrate"
 
 
 def test_a_failed_launch_keeps_saying_why_until_the_popup_closes(project):

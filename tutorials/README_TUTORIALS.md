@@ -103,9 +103,9 @@ The studies of `examples_coupled_transmon_chip/` as a queue, with `qdesignoptimi
 - How to plug a QDO design into the sequencer with one adapter (`simulations/sequencer.py`)
 - How to write MiniStudies and OptTargets as YAML templates, one study per qubit-resonator group
 - How a study picks its opt targets, and which it switches on (eigenmode vs capacitance)
-- How to queue a measurement plan and run it from the command line or the GUI
+- How to queue a study sequence and run it from the command line or the GUI
 
 | Folder | Ansys | Purpose |
 |---|---|---|
 | `demo/` | not needed | Tiny projects that "solve" in 5 s: try the queue, runner and GUI |
-| `coupled_transmon_chip/` | needed | The tutorial chip's studies as templates, a measurement plan `tune_Q1` |
+| `coupled_transmon_chip/` | needed | The tutorial chip's studies as templates, a study sequence `tune_Q1` |

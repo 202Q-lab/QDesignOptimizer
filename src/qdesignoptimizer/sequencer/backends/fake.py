@@ -1,7 +1,7 @@
 """An in-process backend with no solver, for tests and the GUI demo.
 
 Two subjects (``A``, ``B``), a ``calibrate`` and a ``measure`` task each,
-and one measurement plan. A study's own file is ``task.yaml``::
+and one study sequence. A study's own file is ``task.yaml``::
 
     value: 3.0         # output ``value``, proposed as <subject>_value
     fail: false        # true: the task raises
@@ -34,8 +34,8 @@ from ..engine.backend import (
     Catalog,
     CheckResult,
     FileSpec,
-    PlanEntry,
-    PlanSpec,
+    SequenceEntry,
+    SequenceSpec,
     StepResult,
     SubjectSpec,
     TaskSpec,
@@ -76,13 +76,13 @@ class FakeBackend:
                 for s in ("A", "B")
                 for kind in ("calibrate", "measure")
             ],
-            plans=[
-                PlanSpec(
+            sequences=[
+                SequenceSpec(
                     "full_A",
                     "Calibrate then measure A",
                     (
-                        PlanEntry("A.calibrate", save=True),
-                        PlanEntry("A.measure"),
+                        SequenceEntry("A.calibrate", save=True),
+                        SequenceEntry("A.measure"),
                     ),
                     why_ordered="measure reads what calibrate wrote back",
                 )

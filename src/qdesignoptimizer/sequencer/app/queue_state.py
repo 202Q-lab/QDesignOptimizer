@@ -244,7 +244,7 @@ class Bridge:
                         "task": "",
                         "label": "",
                         "subject": "",
-                        "plan": "",
+                        "sequence": "",
                         "settings": "",
                         "notes": "",
                         "problems": exc.problems,
@@ -260,8 +260,8 @@ class Bridge:
                     "task": job.task,
                     "label": spec.label if spec else job.task,
                     "subject": job.subject,
-                    "plan": job.plan.get("id", ""),
-                    "plan_name": job.plan.get("name", ""),
+                    "sequence": job.sequence.get("id", ""),
+                    "sequence_name": job.sequence.get("name", ""),
                     "settings": ", ".join(f"{k} {v}" for k, v in job.settings.items()),
                     "save": job.save,
                     "hold": job.hold,
@@ -326,12 +326,12 @@ class Bridge:
             prefix = "" if workspace.single else f"{name} / "
             catalog_rows += [
                 {
-                    "kind": "plan",
+                    "kind": "sequence",
                     "key": workspace.key(name, c.key),
                     "label": prefix + c.label,
                     "count": len(c.entries),
                 }
-                for c in catalog.plans
+                for c in catalog.sequences
             ]
         return {
             "project": (
@@ -344,7 +344,7 @@ class Bridge:
             "catalog_problems": problems,
             "words": {
                 k: getattr(words, k)
-                for k in ("task", "plan", "subject", "store", "live")
+                for k in ("task", "sequence", "subject", "store", "live")
             },
             "rows": rows,
             "completed": completed,
@@ -473,17 +473,17 @@ class Bridge:
     # -- queue edits -----------------------------------------------------
 
     def add(self, kind: str, key: str) -> str:
-        """Queue one study, or every study of a measurement plan."""
+        """Queue one study, or every study of a study sequence."""
         try:
             project, local = self.workspace.locate_task(key)
             if kind == "task":
                 job_id = project.add(local)
                 keys = self.workspace.added(project, [job_id])
                 return f"queued {keys[0]}" + _warned(project, [job_id])
-            spec = project.backend.catalog().plan(local)
+            spec = project.backend.catalog().sequence(local)
             if spec is None:
-                raise GuiError(f"no {project.words.plan} {key!r}")
-            ids = project.add_plan(spec)
+                raise GuiError(f"no {project.words.sequence} {key!r}")
+            ids = project.add_sequence(spec)
             self.workspace.added(project, ids)
             return (
                 f"queued {len(ids)} from {key} ({ids[0].split('-', 1)[0]})"
@@ -800,7 +800,7 @@ class Bridge:
             raise GuiError(str(exc)) from exc
         return f"queued {self.workspace.added(project, [new_id])[0]}"
 
-    # -- drafts (a measurement plan put together before it is queued) ------------
+    # -- drafts (a study sequence put together before it is queued) ------------
 
     def drafts(self) -> list[dict]:
         """Every draft of every open project."""
@@ -816,21 +816,23 @@ class Bridge:
                 )
         return out
 
-    def new_draft(self, project: str = "", label: str = "", from_plan: str = "") -> str:
-        """Start a draft measurement plan. Returns its key.
+    def new_draft(
+        self, project: str = "", label: str = "", from_sequence: str = ""
+    ) -> str:
+        """Start a draft study sequence. Returns its key.
 
         Args:
             project: The project's name (only needed with several open).
-            label: The measurement plan's name.
-            from_plan: A measurement plan key: its studies, as a start.
+            label: The study sequence's name.
+            from_sequence: A study sequence key: its studies, as a start.
         """
         workspace = self.workspace
         try:
-            if from_plan:
-                target, key = workspace.locate_task(from_plan)
-                spec = target.backend.catalog().plan(key)
+            if from_sequence:
+                target, key = workspace.locate_task(from_sequence)
+                spec = target.backend.catalog().sequence(key)
                 if spec is None:
-                    raise GuiError(f"no measurement plan {from_plan!r}")
+                    raise GuiError(f"no study sequence {from_sequence!r}")
             else:
                 spec = None
                 if project:
@@ -838,7 +840,7 @@ class Bridge:
                 elif workspace.single:
                     target = next(iter(workspace.projects.values()))
                 else:
-                    raise GuiError("pick the project the measurement plan is for")
+                    raise GuiError("pick the project the study sequence is for")
             name = target.new_draft(label, spec)
         except (QueueError, KeyError) as exc:
             raise GuiError(str(exc)) from exc
@@ -919,10 +921,10 @@ class Bridge:
             project.queue.remove(local)
         except (QueueError, OSError) as exc:
             raise GuiError(str(exc)) from exc
-        return f"removed {local} from the measurement plan"
+        return f"removed {local} from the study sequence"
 
     def draft_label(self, key: str, label: str) -> None:
-        """Rename a draft measurement plan."""
+        """Rename a draft study sequence."""
         project, name = self._draft(key)
         project.set_draft_label(name, label)
 
@@ -939,7 +941,7 @@ class Bridge:
         with self._launch_guard:
             current = self._launches.get(key)
             if current and current["state"] == "running":
-                raise GuiError("this measurement plan is already being launched")
+                raise GuiError("this study sequence is already being launched")
             status = {
                 "state": "running",
                 "checked": 0,
@@ -1003,7 +1005,7 @@ class Bridge:
                 del self._launches[key]
 
     def launch_draft(self, key: str, label: str = "", progress=None) -> str:
-        """Queue a whole draft as one measurement plan (and wait for it)."""
+        """Queue a whole draft as one study sequence (and wait for it)."""
         project, name = self._draft(key)
         try:
             ids = project.launch_draft(name, label, progress=progress)

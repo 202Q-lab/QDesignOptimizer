@@ -14,7 +14,7 @@ into a queue:
 - a study that converged **writes its tuned design variables back** into
   the project's `design_variables.json`, so the next study starts from
   them, and records each write in `design_variables.meta.json`;
-- a **measurement plan** queues a named sequence of studies in one go;
+- a **study sequence** queues a named sequence of studies in one go;
 - a Dash **GUI** shows the queue, the running study, the completed ones
   with their convergence plot, and lets you add, reorder, edit and
   requeue studies.
@@ -34,7 +34,7 @@ From the repository root:
 python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/demo
 ```
 
-Open <http://127.0.0.1:8051>, **Add** the measurement plan `tune_R1` of
+Open <http://127.0.0.1:8051>, **Add** the study sequence `tune_R1` of
 `chip_qdo`, press **Start**. Two studies run (about 10 s), frequency then
 linewidth, and each writes the design variable it tuned back into
 `demo/chip_qdo/design_variables.json`; click one under **Completed** to
@@ -56,7 +56,7 @@ coupled_transmon_chip/
 ├── opt_targets/                  the project's OptTargets, each with a name
 │   ├── qubit_resonator.yaml
 │   └── charge_line.yaml
-├── measurement_plans/tune_Q1.yaml        a named sequence of studies
+├── study_sequences/tune_Q1.yaml        a named sequence of studies
 ├── parameter_targets.py          PARAM_TARGETS, as in every QDO project
 └── design_variables.json         the store (made on first use, git-ignored)
 ```
@@ -159,7 +159,7 @@ both takes the linewidth from its capacitance study, as QDO does.
 `tolerance` decides the study's `converged` check; a study writes back
 only when its checks pass (with `save: true`).
 
-### Measurement plans: `measurement_plans/*.yaml`
+### Study sequences: `study_sequences/*.yaml`
 
 ```yaml
 name: Tune qubit 1 and its resonator
@@ -179,11 +179,11 @@ names):
 python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip check-templates
 ```
 
-Queue the measurement plan and look at what it made, under
+Queue the study sequence and look at what it made, under
 `coupled_transmon_chip/out/queue/`:
 
 ```bash
-python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip plan tune_Q1
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip sequence tune_Q1
 ```
 
 ```bash

@@ -30,7 +30,7 @@ into the docs.
   README): `demo/` runs without Ansys; `coupled_transmon_chip/` sets up the
   chip of `examples_coupled_transmon_chip/` (design reused unchanged) with
   templates `Q1/Q2.resonator_kappa`, `Q1/Q2.qubit_charge_line`,
-  `Q1.qubit_resonator` and a measurement plan `tune_Q1`.
+  `Q1.qubit_resonator` and a study sequence `tune_Q1`.
 - **Dependencies** added: `dash>=2.16`, `psutil` (`poetry.lock` regenerated
   with Poetry 2.0.1; only additions).
 - **Three independent reviews**, all findings fixed with tests:
@@ -48,7 +48,7 @@ into the docs.
     one variable or parameter;
   - `study.log` survives QDO's logger import; template `=v[...]` sees
     values without units; YAML 1.1 exponent numbers reach QDO as numbers;
-    measurement plan order written before publishing; `runner.json` waits 30 s.
+    study sequence order written before publishing; `runner.json` waits 30 s.
 
 ## Open items, in order
 
@@ -99,16 +99,17 @@ into the docs.
 - Possible later: a `needs:` field on the dependent study (skip it when
   what it needs failed, let independent studies run). Not planned.
 - What used to be called a *campaign* (a named sequence of studies,
-  queued in one go) is now a **measurement plan**: a reusable template,
-  `<project>/measurement_plans/*.yaml`, CLI `plan <name>`, queued study
-  ids `p<NN>-...`, `job.yaml` key `plan:`, adapter hook
-  `measurement_plans(tasks)`. The queue stays the ground truth: a
-  launched plan is copied into it and edited there.
+  queued in one go) is now a **study sequence**: a reusable template,
+  `<project>/study_sequences/*.yaml`, CLI `sequence <name>`, queued study
+  ids `s<NN>-...`, `job.yaml` key `sequence:`, adapter hook
+  `study_sequences(tasks)`. The queue stays the ground truth: a
+  launched sequence is copied into it and edited there. (A measurement
+  backend could show the same concept as "measurement plan" via `Words`.)
 - The word **campaign** is kept free for a new concept, not built yet:
   a lab log answering one question over a few days (tune up the chip, a
   Purcell filter, mesh sensitivity), in `<project>/campaigns/<name>/`,
   with its own copy of the design variables (copied back to the chip on
-  demand). It can run several measurement plans, and one plan can serve
+  demand). It can run several study sequences, and one sequence can serve
   several campaigns. Results stay in the chip's `out/`, tagged with the
   campaign. A conclusion may later become a rule or a skill.
 
@@ -118,7 +119,7 @@ into the docs.
   (`qdo_files.ALLOWED_MODULES` is global); both are the user's own code.
 - The deviation line reads a `_freq` deviation from a project's
   `converged` hook as Hz (the hook's documented contract).
-- The measurement plan order can still lose to an `order.json` rewrite by
+- The study sequence order can still lose to an `order.json` rewrite by
   another process at the same instant (`ORDER_LOCK` is a thread lock).
 - Template `=...` expressions drop units without converting: keep the
   variables one expression combines in one unit.

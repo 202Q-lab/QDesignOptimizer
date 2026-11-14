@@ -253,7 +253,7 @@ class Runner:
             )
         return aborted
 
-    def _source(self, job_id: str, task, plan: dict, folder, settings=None) -> dict:
+    def _source(self, job_id: str, task, sequence: dict, folder, settings=None) -> dict:
         root = Path(self.backend.out_dir).parent
         try:
             where = Path(folder).relative_to(root).as_posix()
@@ -262,8 +262,8 @@ class Runner:
         return {
             "study": job_id,
             "task": task,
-            "plan": (plan or {}).get("id", ""),
-            "plan_name": (plan or {}).get("name", ""),
+            "sequence": (sequence or {}).get("id", ""),
+            "sequence_name": (sequence or {}).get("name", ""),
             "folder": where,
             "settings": dict(settings or {}),
             "written": st.now(),
@@ -281,7 +281,7 @@ class Runner:
             hook(
                 updates,
                 previous,
-                self._source(job.id, job.task, job.plan, folder, job.settings),
+                self._source(job.id, job.task, job.sequence, folder, job.settings),
             )
         except Exception:  # noqa: BLE001 -- logged; the write stands
             log.exception("%s: could not record the write-back", shown)
@@ -293,11 +293,11 @@ class Runner:
         task = record.get(self.backend.words.task, "")
         try:
             ran = load_job_from(path / INPUTS, self.backend.words)
-            plan, settings = ran.plan, ran.settings
+            sequence, settings = ran.sequence, ran.settings
         except Exception:  # noqa: BLE001 -- the record goes without it
-            plan, settings = {}, {}
+            sequence, settings = {}, {}
         source = {
-            **self._source(record.get("id", path.name), task, plan, path, settings),
+            **self._source(record.get("id", path.name), task, sequence, path, settings),
             "recovered": True,
         }
         if "before" not in record:
@@ -489,7 +489,7 @@ class Runner:
     def _open_log(self) -> None:
         # A file handler, not print: pyEPR replaces sys.stdout when the
         # first analysis starts, and every line printed after that is
-        # lost (the TsTv2 measurement plan of 2026-10-09 lost its stage headers).
+        # lost (the TsTv2 study sequence of 2026-10-09 lost its stage headers).
         path = self.workspace.state_dir / st.LOG_FILE
         path.parent.mkdir(parents=True, exist_ok=True)
         handler = logging.FileHandler(path, encoding="utf-8")

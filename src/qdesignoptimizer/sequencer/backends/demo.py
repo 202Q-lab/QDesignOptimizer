@@ -2,7 +2,7 @@
 
 ``FakeBackend`` with names that read like a design project -- per
 resonator a ``frequency`` study (tunes its length) and a ``linewidth``
-study (tunes its coupling length), and a "tune" measurement plan per resonator
+study (tunes its coupling length), and a "tune" study sequence per resonator
 -- and every study taking ``seconds`` (default 5) to "solve". Nothing is
 simulated: a study proposes the value in its ``task.yaml``.
 
@@ -17,8 +17,8 @@ from typing import Iterable
 
 from ..engine.backend import (
     Catalog,
-    PlanEntry,
-    PlanSpec,
+    SequenceEntry,
+    SequenceSpec,
     SubjectSpec,
     TaskSpec,
     Words,
@@ -46,7 +46,7 @@ class DemoBackend(FakeBackend):
     name = "demo"
     words = Words(
         task="study",
-        plan="measurement plan",
+        sequence="study sequence",
         subject="subsystem",
         store="design variables",
         live="solve",
@@ -78,17 +78,17 @@ class DemoBackend(FakeBackend):
                 for r in self.resonators
                 for kind, (label, family) in _STUDIES.items()
             ],
-            plans=[
-                PlanSpec(
+            sequences=[
+                SequenceSpec(
                     f"tune_{r}",
                     f"Tune {r}: frequency, then linewidth",
                     (
-                        PlanEntry(
+                        SequenceEntry(
                             f"{r}.frequency",
                             save=True,
                             checks=("converged",),
                         ),
-                        PlanEntry(
+                        SequenceEntry(
                             f"{r}.linewidth",
                             save=True,
                             checks=("converged",),
