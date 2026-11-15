@@ -20,6 +20,11 @@ tutorial optimizations by hand. They need no Ansys installation:
 * ``test_design_analysis_scenarios.py`` covers features that no notebook uses
   (non-default settings, linear junctions, adjustment rate, constraints, ...), and
   ``test_scalability_example.py`` runs a scaled-down version of the cluster example.
+* ``test_sequencer_workflow.py`` runs the simulation sequencer's tutorial project
+  against the same fakes: it queues a study and a study sequence, runs them, and
+  follows each through ``out/queue`` and ``out/completed`` into the design
+  variables (also in a campaign, and for a study that fails its check). It works
+  on a copy in a temporary folder, so nothing is left in the repository.
 
 If your change intentionally alters what is sent to the simulators or how the
 optimizer updates the design, regenerate the snapshots and review the diff before
