@@ -60,6 +60,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Output("btn-start", "disabled"),
         Output("btn-stop", "disabled"),
         Output("btn-start", "children"),
+        Output("add-campaign", "options"),
+        Output("campaign-table", "children"),
         Input("snapshot", "data"),
         Input("selected", "data"),
     )
@@ -80,6 +82,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             alive or not snap.get("rows"),
             not alive or bool(runner.get("stop_requested")),
             f"Start ({live} the queue)",
+            layout.campaign_options(snap),
+            layout.campaign_table(snap),
         )
 
     @app.callback(
@@ -204,6 +208,53 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
         Output("message", "data", allow_duplicate=True),
+        Output("campaign-key", "value"),
+        Output("campaign-question", "value"),
+        Input("btn-new-campaign", "n_clicks"),
+        State("campaign-key", "value"),
+        State("campaign-question", "value"),
+        State("campaign-own-store", "value"),
+        State("rev", "data"),
+        prevent_initial_call=True,
+    )
+    def _new_campaign(n, key, question, own, rev):
+        if not n:
+            return no_update, no_update, no_update, no_update
+        if not (key or "").strip():
+            return (
+                no_update,
+                _msg("name the campaign first", False),
+                no_update,
+                no_update,
+            )
+        try:
+            text = bridge.new_campaign(
+                key.strip(), question or "", "own" in (own or [])
+            )
+        except GuiError as exc:
+            return no_update, _msg(str(exc), False), no_update, no_update
+        return (rev or 0) + 1, _msg(text), "", ""
+
+    @app.callback(
+        Output("rev", "data", allow_duplicate=True),
+        Output("message", "data", allow_duplicate=True),
+        Input({"type": "promote", "index": ALL}, "n_clicks"),
+        State("rev", "data"),
+        prevent_initial_call=True,
+    )
+    def _promote(_clicks, rev):
+        if not _clicked():
+            return no_update, no_update
+        project, _, key = ctx.triggered_id["index"].partition("::")
+        try:
+            text = bridge.promote(key, "" if bridge.workspace.single else project)
+        except GuiError as exc:
+            return no_update, _msg(str(exc), False)
+        return (rev or 0) + 1, _msg(text)
+
+    @app.callback(
+        Output("rev", "data", allow_duplicate=True),
+        Output("message", "data", allow_duplicate=True),
         Input("drag-order", "data"),
         State("rev", "data"),
         prevent_initial_call=True,
@@ -224,10 +275,11 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Output("draft", "data", allow_duplicate=True),
         Input("btn-add", "n_clicks"),
         State("add-choice", "value"),
+        State("add-campaign", "value"),
         State("rev", "data"),
         prevent_initial_call=True,
     )
-    def _add(_n, choice, rev):
+    def _add(_n, choice, campaign, rev):
         """A study goes straight into the queue; a study sequence opens the
         study sequence popup with its studies, to be edited and launched."""
         if not choice:
@@ -239,7 +291,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         kind, key = choice.split(":", 1)
         try:
             if kind == "sequence":
-                draft = bridge.new_draft(from_sequence=key)
+                draft = bridge.new_draft(from_sequence=key, campaign=campaign or None)
                 return (
                     (rev or 0) + 1,
                     _msg(
@@ -248,7 +300,11 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                     ),
                     {"key": draft},
                 )
-            return (rev or 0) + 1, _msg(bridge.add(kind, key)), no_update
+            return (
+                (rev or 0) + 1,
+                _msg(bridge.add(kind, key, campaign or "")),
+                no_update,
+            )
         except GuiError as exc:
             return (rev or 0) + 1, _msg(str(exc), False), no_update
 
@@ -256,6 +312,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Output("rev", "data", allow_duplicate=True),
         Output("message", "data", allow_duplicate=True),
         Output("details-orig", "data", allow_duplicate=True),
+        Output("selected", "data", allow_duplicate=True),
         Input("btn-save-job", "n_clicks"),
         State("selected", "data"),
         State({"type": "jf", "name": ALL}, "value"),
@@ -274,7 +331,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 "draft",
             )
         ):
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         form = {i["name"]: v for i, v in zip(ids, values)}
         try:
             fields = {
@@ -287,13 +344,19 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 "on_failure": form.get("on_failure") or "abort",
                 "save": bool(form.get("save")),
                 "notes": form.get("notes") or "",
+                "campaign": form.get("campaign") or "",
             }
             text = bridge.save_job(selected["key"], fields)
         except (GuiError, ValueError) as exc:
-            return no_update, _msg(str(exc), False), no_update
+            return no_update, _msg(str(exc), False), no_update, no_update
+        before = ((orig or {}).get("job") or {}).get("campaign") or ""
+        if fields["campaign"] != before:
+            # Another campaign, other design variables: the study is
+            # drawn again, so its tabs show that campaign's values.
+            return (rev or 0) + 1, _msg(text), no_update, dict(selected)
         orig = dict(orig or {})
         orig["job"] = form
-        return (rev or 0) + 1, _msg(text), orig
+        return (rev or 0) + 1, _msg(text), orig, no_update
 
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
@@ -802,9 +865,18 @@ def register_draft_callbacks(app, bridge) -> None:
         prevent_initial_call=True,
     )
     def _label(values, ids, state):
-        """Save the study sequence's name as soon as it is entered."""
+        """Save the study sequence's name as soon as it is entered, and
+        its campaign as soon as it is picked."""
         trig = ctx.triggered_id
         key = (state or {}).get("key")
+        if trig and trig.get("name") == "campaign" and key:
+            value = next(
+                (v for i, v in zip(ids, values) if i["name"] == "campaign"), None
+            )
+            try:
+                return _msg(bridge.draft_campaign(key, value or ""))
+            except GuiError as exc:
+                return _msg(str(exc), False)
         if not trig or trig.get("name") != "label" or not key:
             return no_update
         value = next((v for i, v in zip(ids, values) if i["name"] == "label"), None)

@@ -25,7 +25,9 @@ def _copy(tmp_path: Path) -> Path:
     shutil.copytree(
         _PROJECT,
         root,
-        ignore=shutil.ignore_patterns("out", "design_variables.json"),
+        ignore=shutil.ignore_patterns(
+            "out", "design_variables.json", "*.meta.json", "campaigns"
+        ),
     )
     return root
 

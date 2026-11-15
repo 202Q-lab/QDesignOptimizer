@@ -7,6 +7,7 @@ import json
 import pytest
 import yaml
 
+from qdesignoptimizer.sequencer.app.queue_state import GuiError
 from qdesignoptimizer.sequencer.engine import campaign as cp
 from qdesignoptimizer.sequencer.engine import cli
 from qdesignoptimizer.sequencer.engine import state as st
@@ -181,3 +182,123 @@ def test_the_cli_makes_lists_and_promotes(project, capsys):
     assert cli.main([ref, "add", "A.calibrate", "--campaign", "nope"]) == 1
     assert cli.main([ref, "campaign", "promote", "tuneup_chip"]) == 0
     assert "nothing to promote" in capsys.readouterr().out
+
+
+# -- the GUI --------------------------------------------------------------
+
+
+def test_the_gui_lists_campaigns_and_tags_their_studies(project):
+    from qdesignoptimizer.sequencer.app import layout
+    from qdesignoptimizer.sequencer.app.queue_state import Bridge
+
+    bridge = Bridge(project=project)
+    assert "made campaign tuneup_chip" in bridge.new_campaign("tuneup_chip", "Q?")
+    bridge.new_campaign("tuneup_chip/q1", own_store=False)
+    snap = bridge.snapshot()
+    assert [
+        (c["key"], c["depth"], c["own_store"], c["store"]) for c in snap["campaigns"]
+    ] == [
+        ("tuneup_chip", 0, True, "campaigns/tuneup_chip/store.json"),
+        ("tuneup_chip/q1", 1, False, "campaigns/tuneup_chip/store.json"),
+    ]
+    assert [o["value"] for o in layout.campaign_options(snap)] == [
+        "tuneup_chip",
+        "tuneup_chip/q1",
+    ]
+    assert "campaign" in str(layout.campaign_table(snap))
+
+    bridge.add("task", "A.calibrate", "tuneup_chip/q1")
+    (row,) = bridge.snapshot()["rows"]
+    assert row["campaign"] == "tuneup_chip/q1"
+    assert "campaign tuneup_chip/q1" in str(layout.queue_table(bridge.snapshot(), None))
+    with pytest.raises(GuiError, match="does not exist"):
+        bridge.add("task", "A.calibrate", "nope")
+
+    job_id = row["id"]
+    queue = project.queue.folder(job_id)
+    (queue / "job.yaml").write_text(
+        (queue / "job.yaml").read_text("utf-8").replace("save: false", "save: true"),
+        "utf-8",
+    )
+    Runner(project).run()
+    (done,) = bridge.snapshot()["completed"]
+    assert done["campaign"] == "tuneup_chip/q1"
+
+
+def test_the_gui_moves_a_queued_study_into_or_out_of_a_campaign(project):
+    from qdesignoptimizer.sequencer.app.queue_state import Bridge
+
+    bridge = Bridge(project=project)
+    project.new_campaign("tuneup_chip")
+    job_id = project.add("A.calibrate")
+    assert bridge.details("queue", job_id)["campaigns"] == ["tuneup_chip"]
+    bridge.save_job(job_id, {"campaign": "tuneup_chip"})
+    assert project.job(job_id).campaign == "tuneup_chip"
+    with pytest.raises(GuiError, match="does not exist"):
+        bridge.save_job(job_id, {"campaign": "nope"})
+    bridge.save_job(job_id, {"campaign": ""})
+    assert project.job(job_id).campaign == ""
+    assert "campaign" not in (project.queue.folder(job_id) / "job.yaml").read_text()
+
+
+def test_a_draft_launched_into_a_campaign_queues_its_studies_there(project):
+    from qdesignoptimizer.sequencer.app.queue_state import Bridge
+
+    bridge = Bridge(project=project)
+    project.new_campaign("mesh_sensitivity")
+    key = bridge.new_draft(label="sweep")
+    bridge.draft_add(key, "A.calibrate")
+    bridge.draft_add(key, "B.calibrate")
+    assert bridge.draft_view(key)["campaign"] == ""
+    with pytest.raises(GuiError, match="does not exist"):
+        bridge.draft_campaign(key, "nope")
+    bridge.draft_campaign(key, "mesh_sensitivity")
+    assert bridge.draft_view(key)["campaign"] == "mesh_sensitivity"
+    bridge.launch_draft(key)
+    assert [project.job(i).campaign for i in project.queue.ids()] == [
+        "mesh_sensitivity"
+    ] * 2
+
+
+def test_a_draft_from_a_sequence_takes_the_picked_campaign(project):
+    from qdesignoptimizer.sequencer.app.queue_state import Bridge
+
+    bridge = Bridge(project=project)
+    project.new_campaign("tuneup_chip")
+    key = bridge.new_draft(from_sequence="full_A", campaign="tuneup_chip")
+    assert bridge.draft_view(key)["campaign"] == "tuneup_chip"
+    with pytest.raises(GuiError, match="does not exist"):
+        bridge.new_draft(from_sequence="full_A", campaign="nope")
+
+
+def test_the_gui_promotes_a_campaign(project):
+    from qdesignoptimizer.sequencer.app.queue_state import Bridge
+
+    bridge = Bridge(project=project)
+    project.new_campaign("tuneup_chip")
+    assert bridge.promote("tuneup_chip").startswith("nothing to promote")
+    project.campaign_store("tuneup_chip").write_text(
+        json.dumps({"A_value": 4.0, "B_value": 0.0}), "utf-8"
+    )
+    assert bridge.promote("tuneup_chip") == "promoted to store.json: A_value"
+    assert store(project)["A_value"] == 4.0
+    project.new_campaign("shared", own_store=False)
+    with pytest.raises(GuiError, match="no store of its own"):
+        bridge.promote("shared")
+
+
+def test_a_draft_study_shows_the_drafts_campaign_and_its_values(project):
+    from qdesignoptimizer.sequencer.app.queue_state import Bridge
+
+    bridge = Bridge(project=project)
+    project.new_campaign("tuneup_chip")
+    project.campaign_store("tuneup_chip").write_text(
+        json.dumps({"A_value": 4.0, "B_value": 0.0}), "utf-8"
+    )
+    key = bridge.new_draft(label="sweep", campaign="tuneup_chip")
+    study = bridge.draft_add(key, "A.calibrate")
+    data = bridge.details("draft", study)
+    assert data["campaign_locked"] is True
+    assert data["job"]["campaign"] == "tuneup_chip"
+    (variables,) = (f for f in data["files"] if f["name"] == "design_variables.json")
+    assert variables["project"] == {"A_value": 4.0, "B_value": 0.0}

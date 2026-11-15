@@ -236,6 +236,22 @@ def draft_screen(view: dict, selected: dict | None, launching: bool = False) -> 
                     ),
                 ],
             ),
+            html.Div(
+                className="qs-frow",
+                children=[
+                    html.Label("campaign"),
+                    dcc.Dropdown(
+                        id={"type": "dval", "name": "campaign"},
+                        options=sorted(
+                            set(view.get("campaigns") or [])
+                            | ({view["campaign"]} if view.get("campaign") else set())
+                        ),
+                        value=view.get("campaign") or None,
+                        placeholder="none: the project's design variables",
+                        style={"minWidth": "260px"},
+                    ),
+                ],
+            ),
             (
                 html.Div(f"started from {view['from']}", className="qs-small")
                 if view.get("from")

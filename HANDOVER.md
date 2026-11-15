@@ -52,22 +52,27 @@ into the docs.
 
 ## Open items, in order
 
-1. **CI: cause found and fixed locally, not yet confirmed on GitHub.**
-   `poetry.lock`'s content hash was stale, so `poetry install` refused in
-   CI; the PowerShell step still passed because `pip install` ran last,
-   Dash was never installed, and `pylint src` failed on `import dash`.
-   With the hash regenerated (no version changes), a local conda env
-   built like CI's (`qdo-ci`: Python 3.12, Poetry 2.0.1, Dash 4.5.0,
-   Pandoc) gives: pylint exit 28 (no E/F, so `pylint-exit` passes), mypy
-   clean, `pytest tests` all pass, and the Sphinx build succeeds with
-   warnings only. Check the PR's checks after the next push.
-2. **Nothing from `coupled_transmon_chip` has run in Ansys.** First run:
-   one cheap capacitance study, `Q1.resonator_kappa`; then
-   `Q1.qubit_resonator`. One Ansys at a time; never close Ansys with
+1. **CI on the latest pushes** (`5dc244a`, `c3f43d6`, `0846c57`) is not
+   checked yet. It was green on `140a988` (Lint-Test-Mypy #220, Docs
+   #216) after the stale `poetry.lock` hash was regenerated. The new
+   integration tests add about 4 minutes to `pytest tests`.
+2. **Campaigns in the GUI** (done 2026-11-15, clicked through on the
+   demo): a campaign tag on queued and completed studies; a campaign
+   picker next to Add (a study, or a study sequence's popup, which has
+   its own picker); a campaign field in a queued study's form (changing
+   it redraws the study with that campaign's values); a Campaigns card
+   listing each campaign with the store it uses, Promote, and a form to
+   make one. A study in a draft shows the draft's campaign, read-only.
+   The first study opened after a start still takes ~15 s (the worker
+   imports QDO); the pane now shows a loading sign meanwhile.
+3. **Ansys**: `Q1.resonator_kappa` converged and wrote back (2026-11-14).
+   `Q1.qubit_resonator` (HFSS eigenmode, 15 passes) ran 3 iterations in
+   about 18.5 h and ended off target (qubit 4.05 GHz, resonator
+   5.85 GHz); nothing was written back. More iterations, or a closer
+   start, are needed. One Ansys at a time; never close Ansys with
    `taskkill` (that is why the adapter's `before_step` does nothing).
-3. **GUI only partly clicked through**: a reviewer drove the demo in a
-   browser (Dash 4.4.1); not the coupled chip, not Dash 4.5.0.
-4. **Python**: the suite runs on 3.12 in the `qdo-ci` env (and on 3.10).
+4. **Before merge**: delete this `HANDOVER.md`; decide the reusable
+   `solve` base class (below).
 5. **`gh` is not logged in** on this machine (`gh auth login`), so PRs and
    CI logs are not reachable from a session.
 

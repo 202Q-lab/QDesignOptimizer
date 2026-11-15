@@ -86,6 +86,16 @@ def page(title: str) -> html.Div:
                                                 placeholder="Add ...",
                                                 style={"minWidth": "380px"},
                                             ),
+                                            html.Div(
+                                                dcc.Dropdown(
+                                                    id="add-campaign",
+                                                    placeholder="no campaign",
+                                                ),
+                                                style={"minWidth": "200px"},
+                                                title="the campaign the "
+                                                "study (or the study "
+                                                "sequence) is queued in",
+                                            ),
                                             html.Button(
                                                 "Add to queue",
                                                 id="btn-add",
@@ -114,6 +124,56 @@ def page(title: str) -> html.Div:
                                     html.Div(id="completed-table"),
                                 ],
                             ),
+                            html.Div(
+                                className="qs-card",
+                                style={"marginTop": "16px"},
+                                children=[
+                                    html.H3("Campaigns", className="qs-h"),
+                                    html.Div(
+                                        "A campaign answers one question; its "
+                                        "README.md is the lab log. A study in "
+                                        "a campaign reads and writes the "
+                                        "campaign's design variables; Promote "
+                                        "copies them one level up.",
+                                        className="qs-small",
+                                    ),
+                                    html.Div(id="campaign-table"),
+                                    html.Div(
+                                        className="qs-bar",
+                                        children=[
+                                            dcc.Input(
+                                                id="campaign-key",
+                                                placeholder="name, or parent/name",
+                                                className="qs-input",
+                                                style={"width": "200px"},
+                                            ),
+                                            dcc.Input(
+                                                id="campaign-question",
+                                                placeholder="the question it answers",
+                                                className="qs-input",
+                                                style={"width": "260px"},
+                                            ),
+                                            dcc.Checklist(
+                                                id="campaign-own-store",
+                                                options=[
+                                                    {
+                                                        "label": " own design "
+                                                        "variables",
+                                                        "value": "own",
+                                                    }
+                                                ],
+                                                value=["own"],
+                                                inline=True,
+                                            ),
+                                            html.Button(
+                                                "New campaign",
+                                                id="btn-new-campaign",
+                                                className="qs-btn",
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
                         ]
                     ),
                     html.Div(
@@ -121,7 +181,15 @@ def page(title: str) -> html.Div:
                         className="qs-card",
                         children=[
                             html.Div(id="details-problems"),
-                            html.Div(id="details"),
+                            # Only redrawn when a study is picked: the
+                            # first one after a start takes seconds (the
+                            # worker imports the backend), and the old
+                            # study must not look like the new one.
+                            dcc.Loading(
+                                html.Div(id="details"),
+                                type="dot",
+                                delay_show=300,
+                            ),
                             dcc.Loading(
                                 html.Div(id="preview-view"),
                                 type="dot",
@@ -275,6 +343,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
                             row.get("label", ""),
                             html.Br(),
                             html.Span(row["id"], className="qs-small"),
+                            *_campaign_tag(row.get("campaign")),
                         ],
                         id={"type": "qrow", "index": row["id"]},
                         className="qs-pick",
@@ -367,6 +436,7 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
                                 row.get("message", "")[:120],
                                 className="qs-small",
                             ),
+                            *_campaign_tag(row.get("campaign")),
                         ],
                         id={"type": "crow", "index": row["name"]},
                         className="qs-pick",
@@ -399,6 +469,92 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
             *([html.Th("Project")] if multi else []),
             html.Th("Status"),
             html.Th("Study"),
+            html.Th(""),
+        ]
+    )
+    return html.Table(
+        className="qs-table", children=[html.Thead(head), html.Tbody(body)]
+    )
+
+
+def _campaign_tag(campaign: str | None) -> list:
+    """A study's campaign as a small tag on its own line ([] for none)."""
+    if not campaign:
+        return []
+    return [html.Br(), html.Span(f"campaign {campaign}", className="qs-tag")]
+
+
+def campaign_options(snap: dict) -> list[dict]:
+    """The Add bar's campaign picker: every campaign, sub-campaigns
+    indented under their parent."""
+    multi = bool(snap.get("multi"))
+    return [
+        {
+            "label": (f"{c['project']} / " if multi else "") + c["key"],
+            "value": c["key"],
+        }
+        for c in snap.get("campaigns") or []
+    ]
+
+
+def campaign_table(snap: dict) -> Any:
+    """Every campaign: its name, question title, the store its studies
+    use, and Promote (for one with a store of its own)."""
+    rows = snap.get("campaigns") or []
+    multi = bool(snap.get("multi"))
+    if not rows:
+        return html.Div(
+            "No campaigns yet. Make one below; a name with a / makes a "
+            "sub-campaign of the part before it.",
+            className="qs-muted",
+            style={"margin": "6px 0"},
+        )
+    body = []
+    for c in rows:
+        parent = c["key"].rpartition("/")[0]
+        body.append(
+            html.Tr(
+                [
+                    *([html.Td(c["project"], className="qs-small")] if multi else []),
+                    html.Td(
+                        [
+                            html.Span("\u2003" * c["depth"]),
+                            html.B(c["key"].rpartition("/")[2]),
+                            html.Br(),
+                            html.Span(
+                                ("\u2003" * c["depth"]) + c["title"],
+                                className="qs-small",
+                            ),
+                        ]
+                    ),
+                    html.Td(c["store"], className="qs-small"),
+                    html.Td(
+                        html.Button(
+                            "Promote",
+                            id={
+                                "type": "promote",
+                                "index": f"{c['project']}::{c['key']}",
+                            },
+                            className="qs-btn qs-btn-small",
+                            n_clicks=0,
+                            disabled=not c["own_store"],
+                            title=(
+                                "copy its changed values to "
+                                + (f"campaign {parent}" if parent else "the project")
+                                if c["own_store"]
+                                else "it uses its parent's design variables: "
+                                "nothing to promote"
+                            ),
+                        )
+                    ),
+                ]
+            )
+        )
+    head = html.Tr(
+        [
+            *([html.Th("Project")] if multi else []),
+            html.Th("Campaign"),
+            html.Th("Design variables"),
             html.Th(""),
         ]
     )
@@ -469,7 +625,14 @@ def details(data: dict | None, words: dict) -> Any:
     ]
     parts = head
     if editable:
-        parts.append(_job_form(job, data.get("settings_keys") or ()))
+        parts.append(
+            _job_form(
+                job,
+                data.get("settings_keys") or (),
+                data.get("campaigns"),
+                bool(data.get("campaign_locked")),
+            )
+        )
     else:
         parts.append(_result_view(data))
     tabs = []
@@ -576,7 +739,7 @@ def _setting_text(value) -> str:
     return "" if value is None else str(value)
 
 
-def _job_form(job: dict, keys=()) -> Any:
+def _job_form(job: dict, keys=(), campaigns=None, campaign_locked=False) -> Any:
     def field(label, child):
         return html.Div(className="qs-field", children=[html.Label(label), child])
 
@@ -636,6 +799,31 @@ def _job_form(job: dict, keys=()) -> Any:
                     value=job.get("notes", ""),
                     style={"width": "100%"},
                 ),
+            ),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.Label("campaign"),
+                    dcc.Dropdown(
+                        id={"type": "jf", "name": "campaign"},
+                        options=sorted(
+                            set(campaigns or [])
+                            | ({job["campaign"]} if job.get("campaign") else set())
+                        ),
+                        value=job.get("campaign") or None,
+                        placeholder="none: the project's design variables",
+                        style={"minWidth": "260px"},
+                        disabled=campaign_locked,
+                    ),
+                    (
+                        html.Span(
+                            "the study sequence's: set it in the popup",
+                            className="qs-small",
+                        )
+                        if campaign_locked
+                        else None
+                    ),
+                ],
             ),
             html.Button(
                 "Save job.yaml",
@@ -724,4 +912,5 @@ def job_fields(job: dict, keys=()) -> dict:
         "on_failure": job.get("on_failure", "abort"),
         "save": ["save"] if job.get("save") else [],
         "notes": job.get("notes", ""),
+        "campaign": job.get("campaign") or None,
     }

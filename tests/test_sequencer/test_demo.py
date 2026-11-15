@@ -56,7 +56,9 @@ def test_the_qdo_demo_runs_a_sequence_on_the_dummy_solver(tmp_path):
     shutil.copytree(
         _DEMO / "chip_qdo",
         root,
-        ignore=shutil.ignore_patterns("out", "design_variables.json"),
+        ignore=shutil.ignore_patterns(
+            "out", "design_variables.json", "*.meta.json", "campaigns"
+        ),
     )
     workspace = open_workspace([root], isolate=True)
     try:

@@ -391,12 +391,24 @@ class Project:
             )
         return out
 
-    def new_draft(self, label: str = "", from_spec: SequenceSpec | None = None) -> str:
+    def new_draft(
+        self,
+        label: str = "",
+        from_spec: SequenceSpec | None = None,
+        campaign: str | None = None,
+    ) -> str:
         """Start a draft study sequence, empty or with a study sequence's studies.
+
+        Args:
+            campaign: The campaign its studies are queued in when it is
+                launched; None takes the study sequence's own (``from_spec``).
 
         Returns:
             The draft's name.
         """
+        if campaign is None:
+            campaign = from_spec.campaign if from_spec else ""
+        campaign = self._campaign_key(campaign)
         name = f"draft-{st.stamp()}-{secrets.token_hex(2)}"
         folder = self.drafts_dir / name
         folder.mkdir(parents=True)
@@ -407,6 +419,7 @@ class Project:
                 "from": from_spec.key if from_spec else "",
                 "from_label": from_spec.label if from_spec else "",
                 "why_ordered": from_spec.why_ordered if from_spec else "",
+                "campaign": campaign,
                 "created": st.now(),
             },
         )
@@ -426,6 +439,20 @@ class Project:
                 shutil.rmtree(folder, ignore_errors=True)
                 raise
         return name
+
+    def set_draft_campaign(self, name: str, campaign: str) -> None:
+        """Set the campaign a draft's studies are queued in at launch
+        ("" for none).
+
+        Raises:
+            QueueError: If the campaign does not exist.
+        """
+        campaign = self._campaign_key(campaign)
+        with self._draft_locked(name):
+            path = self.drafts_dir / name / DRAFT_FILE
+            meta = st.read_json(path) or {}
+            meta["campaign"] = campaign
+            st.write_json(path, meta)
 
     def set_draft_label(self, name: str, label: str) -> None:
         """Rename a draft (the study sequence's name once launched)."""
@@ -614,6 +641,12 @@ class Project:
         ids = draft.ids()
         if not ids:
             raise QueueError("the study sequence has no studies yet")
+        # Refused before anything moves: a campaign deleted since it was
+        # picked.
+        campaign = self._campaign_key(
+            (st.read_json(self.drafts_dir / name / DRAFT_FILE) or {}).get("campaign")
+            or ""
+        )
         stage = self._stage_dir(name)
         stage.mkdir(parents=True)
         state: dict = {"draft": name, "phase": "staging", "entries": []}
@@ -659,6 +692,8 @@ class Project:
                 job = load_job(folder, self.words)
                 job.id = self.queue.new_id(job.task, sequence_id, n, label)
                 job.sequence = {"id": sequence_id, "name": label, "entry": n}
+                if campaign:
+                    job.campaign = campaign
                 # Recorded before it is written, so the id is taken
                 # (``FolderQueue.taken``) and a crash knows where it goes.
                 state["entries"].append({"old_id": old_id, "new_id": job.id})

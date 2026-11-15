@@ -105,7 +105,9 @@ def test_the_qdo_backend_records_only_the_tuned_design_variable(tmp_path):
     shutil.copytree(
         demo / "chip_qdo",
         root,
-        ignore=shutil.ignore_patterns("out", "design_variables.json"),
+        ignore=shutil.ignore_patterns(
+            "out", "design_variables.json", "*.meta.json", "campaigns"
+        ),
     )
     from qdesignoptimizer.sequencer.engine.workspace import open_workspace
 

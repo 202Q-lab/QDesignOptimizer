@@ -30,7 +30,9 @@ def qdo(tmp_path):
     shutil.copytree(
         _DEMO / "chip_qdo",
         root,
-        ignore=shutil.ignore_patterns("out", "design_variables.json"),
+        ignore=shutil.ignore_patterns(
+            "out", "design_variables.json", "*.meta.json", "campaigns"
+        ),
     )
     bridge = Bridge([str(root)])  # worker process, as the GUI runs it
     yield bridge, root

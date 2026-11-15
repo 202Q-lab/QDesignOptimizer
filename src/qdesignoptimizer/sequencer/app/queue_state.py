@@ -17,12 +17,14 @@ import subprocess
 import sys
 import threading
 from collections import deque
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from ..engine import state as st
+from ..engine.campaign import problems_of as campaign_problems
 from ..engine.job import (
     JOB_FILE,
     JobError,
@@ -32,7 +34,7 @@ from ..engine.job import (
     parse_completed,
     parse_job,
 )
-from ..engine.project import Project
+from ..engine.project import DRAFT_FILE, Project
 from ..engine.queue import INPUTS, RESOLVED, QueueError
 from ..engine.runner import ACTIVE_FILE
 from ..engine.workspace import Workspace, open_workspace, user_home
@@ -274,6 +276,7 @@ class Bridge:
                     "save": job.save,
                     "hold": job.hold,
                     "notes": job.notes,
+                    "campaign": job.campaign,
                     "problems": self._problems(key),
                     "warnings": project.warnings(job_id),
                 }
@@ -312,6 +315,7 @@ class Bridge:
                     "finished": res.get("finished", ""),
                     "message": res.get("message", ""),
                     "committed": res.get("committed", {}),
+                    "campaign": res.get("campaign", ""),
                 }
             )
         problems = []
@@ -371,7 +375,74 @@ class Bridge:
                 "elsewhere": elsewhere,
             },
             "catalog": catalog_rows,
+            "campaigns": self.campaigns(),
         }
+
+    # -- campaigns -------------------------------------------------------
+
+    def campaigns(self) -> list[dict]:
+        """Every campaign of every open project, parents first: key,
+        title, depth and the store its studies use (relative to the
+        project)."""
+        out = []
+        for name, project in self.workspace.projects.items():
+            try:
+                found = project.campaigns()
+            except Exception:  # noqa: BLE001 -- the card says none
+                continue
+            for item in found:
+                out.append(
+                    {
+                        "project": name,
+                        "key": item.key,
+                        "title": item.title,
+                        "depth": item.depth,
+                        "own_store": item.own_store,
+                        "store": _relative(project, project.campaign_store(item.key)),
+                    }
+                )
+        return out
+
+    def _project_for(self, project: str = ""):
+        workspace = self.workspace
+        if project:
+            if project not in workspace.projects:
+                raise GuiError(f"no project {project!r}")
+            return workspace.projects[project]
+        if not workspace.single:
+            raise GuiError("pick the project the campaign is in")
+        return next(iter(workspace.projects.values()))
+
+    def new_campaign(
+        self, key: str, question: str = "", own_store: bool = True, project: str = ""
+    ) -> str:
+        """Make a campaign (a sub-campaign when ``key`` has a ``/``)."""
+        target = self._project_for(project)
+        try:
+            folder = target.new_campaign(key, question, own_store)
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        store = (
+            "with its own copy of the design variables"
+            if own_store
+            else "sharing its parent's design variables"
+        )
+        return f"made campaign {key.strip()} {store}: {_relative(target, folder)}"
+
+    def promote(self, key: str, project: str = "") -> str:
+        """Write a campaign's changed values one level up."""
+        target = self._project_for(project)
+        try:
+            changed = target.promote(key)
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        # The file it went to, not "campaign X": a campaign sharing its
+        # parent's store passes the values straight through.
+        where = _relative(target, target.campaign_store(key.rpartition("/")[0]))
+        if not changed:
+            return f"nothing to promote: {where} has the same values"
+        self._deep.clear()
+        return f"promoted to {where}: " + ", ".join(sorted(changed))
 
     def convergence_png(self, kind: str, key: str) -> str | None:
         """A completed study's ``convergence.png``, base64; None when it
@@ -405,6 +476,15 @@ class Bridge:
             raise GuiError(f"{key} is no longer there")
         specs = project.backend.files()
         campaign = _campaign_of(project, folder)
+        locked = kind == "draft"
+        if locked:
+            # A draft's studies are launched into the draft's campaign,
+            # whatever their own job.yaml says: show (and edit against)
+            # that one.
+            owner, name = self._draft(key)
+            campaign = (st.read_json(owner.drafts_dir / name / DRAFT_FILE) or {}).get(
+                "campaign"
+            ) or ""
         files = []
         for spec in specs:
             path = folder / spec.name
@@ -460,17 +540,22 @@ class Bridge:
             )
         except JobError:
             job = None
+        raw = job.to_raw(project.words) if job else {}
+        if locked:
+            raw["campaign"] = campaign
         return {
             "kind": kind,
             "key": key,
             "folder": str(folder),
-            "job": job.to_raw(project.words) if job else {},
+            "job": raw,
+            "campaign_locked": locked,
             "job_text": job_text,
             "files": files,
             "result": st.result_of(folder) if kind == "completed" else {},
             "has_inputs": (folder / INPUTS).is_dir(),
             "has_resolved": (folder / RESOLVED).is_dir(),
             "settings_keys": sorted(project.backend.settings_keys()),
+            "campaigns": _campaign_keys(project),
             "problems": (self._problems(key) if kind in ("queue", "draft") else []),
             "warnings": (project.warnings(local) if kind in ("queue", "draft") else []),
         }
@@ -499,17 +584,20 @@ class Bridge:
 
     # -- queue edits -----------------------------------------------------
 
-    def add(self, kind: str, key: str) -> str:
-        """Queue one study, or every study of a study sequence."""
+    def add(self, kind: str, key: str, campaign: str = "") -> str:
+        """Queue one study, or every study of a study sequence (in
+        ``campaign`` when given)."""
         try:
             project, local = self.workspace.locate_task(key)
             if kind == "task":
-                job_id = project.add(local)
+                job_id = project.add(local, campaign=campaign)
                 keys = self.workspace.added(project, [job_id])
                 return f"queued {keys[0]}" + _warned(project, [job_id])
             spec = project.backend.catalog().sequence(local)
             if spec is None:
                 raise GuiError(f"no {project.words.sequence} {key!r}")
+            if campaign:
+                spec = replace(spec, campaign=campaign)
             ids = project.add_sequence(spec)
             self.workspace.added(project, ids)
             return (
@@ -593,6 +681,12 @@ class Bridge:
             raise GuiError("; ".join(exc.problems)) from exc
         raw = job.to_raw(project.words)
         raw.update(fields)
+        if not raw.get("campaign"):
+            raw.pop("campaign", None)
+        elif raw["campaign"] != job.campaign:
+            bad = campaign_problems(project.root, raw["campaign"])
+            if bad:
+                raise GuiError("not saved: " + bad[0])
         try:
             parse_job(raw, project.words, folder_id=local)
         except JobError as exc:
@@ -860,7 +954,11 @@ class Bridge:
         return out
 
     def new_draft(
-        self, project: str = "", label: str = "", from_sequence: str = ""
+        self,
+        project: str = "",
+        label: str = "",
+        from_sequence: str = "",
+        campaign: str | None = None,
     ) -> str:
         """Start a draft study sequence. Returns its key.
 
@@ -868,6 +966,8 @@ class Bridge:
             project: The project's name (only needed with several open).
             label: The study sequence's name.
             from_sequence: A study sequence key: its studies, as a start.
+            campaign: The campaign it is launched into; None keeps the
+                study sequence's own.
         """
         workspace = self.workspace
         try:
@@ -884,7 +984,7 @@ class Bridge:
                     target = next(iter(workspace.projects.values()))
                 else:
                     raise GuiError("pick the project the study sequence is for")
-            name = target.new_draft(label, spec)
+            name = target.new_draft(label, spec, campaign=campaign or None)
         except (QueueError, KeyError) as exc:
             raise GuiError(str(exc)) from exc
         return self._draft_key(target, name)
@@ -922,12 +1022,27 @@ class Bridge:
             "label": meta.get("label", ""),
             "from": meta.get("from", ""),
             "why_ordered": meta.get("why_ordered", ""),
+            "campaign": meta.get("campaign", ""),
+            "campaigns": _campaign_keys(project),
             "project": self.workspace.name_of(project),
             "studies": studies,
             "tasks": [
                 {"value": t.key, "label": f"{t.label} ({t.key})"} for t in catalog.tasks
             ],
         }
+
+    def draft_campaign(self, key: str, campaign: str) -> str:
+        """Set the campaign a draft is launched into ("" for none)."""
+        project, name = self._draft(key)
+        try:
+            project.set_draft_campaign(name, campaign or "")
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        return (
+            f"launched into campaign {campaign}"
+            if campaign
+            else "launched into no campaign"
+        )
 
     def draft_add(self, key: str, task: str) -> str:
         """Add one study to a draft. Returns the study's key."""
@@ -1181,6 +1296,24 @@ def _render(name: str, data, old: str | None) -> str:
     return dump_yaml(data, forms.header(old or "") or None)
 
 
+def _relative(project, path) -> str:
+    """``path`` relative to the project's folder where it can be."""
+    if path is None:
+        return ""
+    try:
+        return Path(path).resolve().relative_to(project.root.resolve()).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def _campaign_keys(project) -> list[str]:
+    """The project's campaign keys, parents first ([] if unreadable)."""
+    try:
+        return [c.key for c in project.campaigns()]
+    except Exception:  # noqa: BLE001 -- the picker is then empty
+        return []
+
+
 #: Said after a save that the runner took the study right after: the
 #: edit is in, but a later one to the same study would not be.
 TAKEN = (
@@ -1281,6 +1414,16 @@ class _Scoped:
 
     def job(self, job_id: str):
         return load_job(self.queue.folder(job_id), self.words)
+
+    @property
+    def root(self) -> Path:
+        return self._project.root
+
+    def campaigns(self):
+        return self._project.campaigns()
+
+    def campaign_store(self, key: str):
+        return self._project.campaign_store(key)
 
     def warnings(self, job_id: str) -> list[str]:
         # Its draft id: the id it gets at launch may differ in length;
