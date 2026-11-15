@@ -100,13 +100,20 @@ into the docs.
   `study_sequences(tasks)`. The queue stays the ground truth: a
   launched sequence is copied into it and edited there. (A measurement
   backend could show the same concept as "measurement plan" via `Words`.)
-- The word **campaign** is kept free for a new concept, not built yet:
-  a lab log answering one question over a few days (tune up the chip, a
-  Purcell filter, mesh sensitivity), in `<project>/campaigns/<name>/`,
-  with its own copy of the design variables (copied back to the chip on
-  demand). It can run several study sequences, and one sequence can serve
-  several campaigns. Results stay in the chip's `out/`, tagged with the
-  campaign. A conclusion may later become a rule or a skill.
+- A **campaign** (built, `engine/campaign.py`) is a lab log answering
+  one question (tune up the chip, a Purcell filter, mesh sensitivity):
+  `<project>/campaigns/<name>/` with a `README.md`. Sub-campaigns are
+  campaigns nested in folders; the key is the path
+  (`tuneup_chip/q1_readout`), lower-case `_` words, no dates. A study
+  says `campaign: <key>` in `job.yaml` (ids and `out/` folders
+  unchanged, for short Ansys paths) and reads and writes the nearest
+  `design_variables.json` from its campaign up, the project's if none
+  has one. `campaign new` copies the store it would use (`--shared`
+  skips the copy); `campaign promote` writes changed values one level
+  up, recorded as `promoted_from`. Any study sequence can serve any
+  campaign (`--campaign`, or `campaign:` in the file). Not in the GUI
+  yet: a study's `job.yaml` there shows its campaign, but adding a
+  study cannot pick one.
 
 ## Known limits, left as they are
 
@@ -116,6 +123,18 @@ into the docs.
   `converged` hook as Hz (the hook's documented contract).
 - The study sequence order can still lose to an `order.json` rewrite by
   another process at the same instant (`ORDER_LOCK` is a thread lock).
+  A study the runner holds claimed keeps its place in any rewrite
+  (`keep_listed`, review of 2026-11-15).
+- Two study sequences added by two processes at the same instant can get
+  the same `s<NN>` (ids stay distinct; only the number is shared).
+- Edits are saved one file at a time: a change spread over two files
+  (ministudy, then opt targets) can be cut by the runner taking the
+  study in between; the GUI then says the second save came too late.
+- Store writes (`update_json`, the `.meta.json` record) hold a
+  machine-wide lock (`_store.store_lock`), so a write-back and a
+  `promote` never drop each other's values; a hand edit in an editor
+  is not covered, and a value a study tuned overwrites a hand edit of
+  the same value.
 - Template `=...` expressions drop units without converting: keep the
   variables one expression combines in one unit.
 - Capacitance targets are matched to studies by qiskit-metal's conductor

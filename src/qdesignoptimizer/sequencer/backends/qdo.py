@@ -78,7 +78,14 @@ from ..engine.backend import (
 from ..engine.job import dump_yaml, is_custom, numbers
 from ..engine.sequence import load_sequence_dir
 from . import qdo_record
-from ._store import read_json, record_writes, sources_text, update_json
+from ._store import (
+    SwitchableStore,
+    read_json,
+    record_writes,
+    sources_text,
+    update_json,
+    uses_job_store,
+)
 from .qdo_templates import (
     MINISTUDY_DIR,
     TARGETS_DIR,
@@ -205,7 +212,7 @@ class QDOProject(Protocol):
     # of a study, when the solve overrides the study's settings.
 
 
-class QDOBackend:
+class QDOBackend(SwitchableStore):
     """Drives a :class:`QDOProject` through the engine's interface."""
 
     name = "qdo"
@@ -463,6 +470,7 @@ class QDOBackend:
             ),
         }, by
 
+    @uses_job_store
     def save_template(self, folder: Path, job, name: str) -> list[Path]:
         """Write a study's MiniStudy as ``ministudies/<name>.yaml`` ("Save
         as template"), and those of its opt targets the project does not
@@ -555,6 +563,7 @@ class QDOBackend:
 
     # -- checking --------------------------------------------------------
 
+    @uses_job_store
     def check_folder(self, folder: Path, job, deep: bool) -> list[str]:
         folder = Path(folder)
         problems: list[str] = []
@@ -845,12 +854,25 @@ class QDOBackend:
 
     # -- store -----------------------------------------------------------
 
-    def store_values(self) -> dict[str, Any]:
-        return read_json(self.project.design_variables_file)
+    @property
+    def default_store(self) -> Path:
+        """The project's ``design_variables.json``."""
+        return Path(self.project.design_variables_file)
 
-    def commit(self, updates: dict[str, Any]) -> dict[str, Any]:
+    @property
+    def project_root(self) -> Path:
+        return Path(self.project.root)
+
+    def store_values(self, campaign: str | None = None) -> dict[str, Any]:
+        with self.store_of(campaign):
+            return read_json(self.store_file)
+
+    def commit(
+        self, updates: dict[str, Any], campaign: str | None = None
+    ) -> dict[str, Any]:
         """Write the values; return those that changed."""
-        return update_json(self.project.design_variables_file, updates)
+        with self.store_of(campaign):
+            return update_json(self.store_file, updates)
 
     def note_commit(self, updates, previous, source) -> None:
         """Record which study wrote each design variable, next to the
@@ -863,13 +885,14 @@ class QDOBackend:
             details = self.write_details(folder, list(updates), source.get("settings"))
         except Exception:  # noqa: BLE001 -- the study and its writer
             details = {}  # are recorded regardless
-        record_writes(
-            self.project.design_variables_file,
-            updates,
-            previous,
-            source,
-            details,
-        )
+        with self.store_of(source.get("campaign") or ""):
+            record_writes(
+                self.store_file,
+                updates,
+                previous,
+                source,
+                details,
+            )
 
     def write_details(
         self, folder: Path, names: list[str], settings: dict | None = None
@@ -942,11 +965,12 @@ class QDOBackend:
             out[name] = item
         return out
 
-    def value_sources(self, name: str) -> dict:
+    def value_sources(self, name: str, campaign: str | None = None) -> dict:
         """Which study last wrote each design variable."""
         if name != VARIABLES:
             return {}
-        return sources_text(self.project.design_variables_file)
+        with self.store_of(campaign):
+            return sources_text(self.store_file)
 
     # -- running ---------------------------------------------------------
 
@@ -1105,15 +1129,17 @@ class QDOBackend:
             )
         return write_targets(self.opt_targets_dir, name, new)
 
-    def project_values(self, name: str):
+    def project_values(self, name: str, campaign: str | None = None):
         """The project's values a study's optional file overrides: the
-        design variables or the parameter targets, as they stand."""
+        design variables (a campaign study's: its campaign's) or the
+        parameter targets, as they stand."""
         if name == VARIABLES:
-            return self.store_values()
+            return self.store_values(campaign)
         if name == PARAMS:
             return dict(self.project.parameter_targets())
         return None
 
+    @uses_job_store
     def resolve_inputs(self, folder: Path, job) -> None:
         folder = Path(folder)
         problems: list[str] = []
@@ -1139,6 +1165,7 @@ class QDOBackend:
     def before_step(self, job) -> None:
         self.project.before_step()
 
+    @uses_job_store
     def run(self, folder: Path, job) -> StepResult:
         from . import qdo_files as qf
 
@@ -1275,6 +1302,7 @@ class QDOBackend:
             return CheckResult(True, "checked every iteration")
         return CheckResult(False, f"no check named {name!r}")
 
+    @uses_job_store
     def describe(self, folder: Path, job) -> dict[str, Any]:
         from . import qdo_files as qf
 

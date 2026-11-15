@@ -128,6 +128,28 @@ class FolderQueue:
         """The queued folder of an id."""
         return self.queue_dir / job_id
 
+    def claimed_ids(self) -> set[str]:
+        """The ids a runner holds claimed (checking them before a start)."""
+        if not self.queue_dir.is_dir():
+            return set()
+        return {
+            p.name[len(CLAIMED) :]
+            for p in self.queue_dir.iterdir()
+            if p.name.startswith(CLAIMED)
+        }
+
+    def write_order(self, order: list[str]) -> None:
+        """Write ``order.json`` as ``order``, keeping every claimed id
+        where it was listed: a claimed study is out of ``ids()`` only
+        while the runner checks it, and goes back to the queue, at its
+        place, if it may not start (a failed check, a hold). Call holding
+        ``ORDER_LOCK``."""
+        listed = st.read_json(self.queue_dir / ORDER_FILE) or []
+        st.write_json(
+            self.queue_dir / ORDER_FILE,
+            keep_listed(list(order), listed, self.claimed_ids()),
+        )
+
     def completed(self, limit: int | None = None) -> list[Path]:
         """Completed study folders, newest first (by start time, not by
         name: the name sorts by study sequence)."""
@@ -148,13 +170,7 @@ class FolderQueue:
         """Every id ever used here: queued, being started, completed or
         removed. Ids are never reused, so a study sequence queued again after
         its studies were removed gets a new number."""
-        ids = set(self.ids())
-        if self.queue_dir.is_dir():
-            ids |= {
-                p.name[len(CLAIMED) :]
-                for p in self.queue_dir.iterdir()
-                if p.name.startswith(CLAIMED)
-            }
+        ids = set(self.ids()) | self.claimed_ids()
         for path in self.completed():
             # result.json names the id exactly; the folder name cannot
             # tell a "_failed" suffix from a task that ends in "failed".
@@ -226,7 +242,7 @@ class FolderQueue:
             current = self.ids()
             if sorted(order) != sorted(current) or len(set(order)) != len(order):
                 raise QueueError("the queue changed meanwhile; reloaded")
-            st.write_json(self.queue_dir / ORDER_FILE, list(order))
+            self.write_order(list(order))
 
     def add(
         self,
@@ -255,7 +271,7 @@ class FolderQueue:
             _rename(building, target)
             order = [i for i in self.ids() if i != job.id]
             order.insert(len(order) if position is None else position, job.id)
-            st.write_json(self.queue_dir / ORDER_FILE, order)
+            self.write_order(order)
         return target
 
     def remove(self, job_id: str) -> Path:
@@ -268,11 +284,14 @@ class FolderQueue:
         self.removed_dir.mkdir(parents=True, exist_ok=True)
         dest = self.removed_dir / f"{st.stamp()}_{job_id}"
         with st.ORDER_LOCK:
-            _rename(source, dest)
-            st.write_json(
-                self.queue_dir / ORDER_FILE,
-                [i for i in self.ids() if i != job_id],
-            )
+            try:
+                _rename(source, dest)
+            except FileNotFoundError as exc:
+                # Claimed by a runner between the check and the rename.
+                raise QueueError(
+                    f"{job_id} was just taken by the runner; nothing was removed"
+                ) from exc
+            self.write_order([i for i in self.ids() if i != job_id])
         return dest
 
     def write_file(self, job_id: str, name: str, text: str) -> None:
@@ -305,9 +324,13 @@ class FolderQueue:
         except FileNotFoundError:
             pass
         if not folder.is_dir():
-            # Claimed between the check above and the unlink: the
-            # runner took the folder as it was, file and all.
-            raise QueueError(f"{job_id} is not queued")
+            # Claimed between the check above and the unlink: whether
+            # the runner took the folder before or after the file went
+            # cannot be told, so say so rather than "nothing was deleted".
+            raise QueueError(
+                f"{job_id} was just taken by the runner; it may run with or "
+                f"without {name} (see its inputs/ once it starts)"
+            )
 
     # -- running ---------------------------------------------------------
 
@@ -487,3 +510,15 @@ def load_job_from(folder: Path, words) -> Job:
     """``load_job`` without the folder-name check (for inputs/)."""
     raw = yaml.safe_load(job_file(folder).read_text("utf-8"))
     return parse_job(raw, words)
+
+
+def keep_listed(order: list, listed: list, keep: set) -> list:
+    """``order``, with each id of ``keep`` that ``listed`` (the order as
+    it was) has and ``order`` lacks put back at the place it had there.
+    (A claimed study is the head of the queue, so it stays first however
+    the others were dragged or added meanwhile.)"""
+    out = list(order)
+    for n, item in enumerate(listed):
+        if item in keep and item not in out:
+            out.insert(min(n, len(out)), item)
+    return out

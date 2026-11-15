@@ -16,8 +16,11 @@ from __future__ import annotations
 import secrets
 import shutil
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
+from . import campaign as cp
 from . import state as st
 from .backend import Backend, SequenceSpec
 from .job import (
@@ -70,6 +73,114 @@ class Project:
         """The project's ``out`` folder."""
         return self.queue.out
 
+    @property
+    def root(self) -> Path:
+        """The project's folder (``out``'s parent)."""
+        return Path(self.backend.out_dir).parent
+
+    # -- campaigns -------------------------------------------------------
+
+    def campaigns(self) -> list[cp.CampaignInfo]:
+        """Every campaign, parents before their sub-campaigns."""
+        return [
+            replace(c, own_store=self._own_store(c.key))
+            for c in cp.campaigns(self.root)
+        ]
+
+    def campaign_store(self, key: str) -> Path | None:
+        """The store studies of campaign ``key`` use ("" for the
+        project's); None when the backend has no campaign stores."""
+        store_for = getattr(self.backend, "store_for", None)
+        return Path(store_for(key)) if callable(store_for) else None
+
+    def _own_store(self, key: str) -> bool:
+        store = self.campaign_store(key)
+        return (
+            store is not None
+            and store.parent.resolve() == cp.folder_of(self.root, key).resolve()
+        )
+
+    def store_values(self, campaign: str = "") -> dict:
+        """The store a study of ``campaign`` uses, as it stands."""
+        if campaign:
+            return self.backend.store_values(campaign=campaign)
+        return self.backend.store_values()
+
+    def commit(self, updates: dict, campaign: str = ""):
+        """Write ``updates`` to the store of ``campaign``."""
+        if campaign:
+            return self.backend.commit(updates, campaign=campaign)
+        return self.backend.commit(updates)
+
+    def new_campaign(
+        self, key: str, question: str = "", own_store: bool = True
+    ) -> Path:
+        """Make campaign ``key`` (see ``campaign.create``).
+
+        Raises:
+            QueueError: For a bad key, a missing parent or one that exists.
+        """
+        try:
+            parent = cp.check_key(key).rpartition("/")[0]
+            return cp.create(
+                self.root,
+                key,
+                question,
+                self.campaign_store(parent) if own_store else None,
+            )
+        except cp.CampaignError as exc:
+            raise QueueError(str(exc)) from exc
+
+    def promote(self, key: str, names: list[str] | None = None) -> dict[str, Any]:
+        """Copy a campaign's values one level up: into the store its
+        parent campaign uses (the project's, for a top-level one).
+
+        Only values that differ are written, and the write is recorded
+        like a study's (``promoted_from`` in the record). Returns what
+        changed.
+
+        Raises:
+            QueueError: If the campaign is not there, has no store of its
+                own, or a name is not in its store.
+        """
+        problems = cp.problems_of(self.root, key)
+        if problems:
+            raise QueueError(problems[0])
+        key = cp.check_key(key)
+        parent = key.rpartition("/")[0]
+        if not self._own_store(key):
+            raise QueueError(
+                f"campaign {key!r} has no store of its own: its studies "
+                "already write where promoting would"
+            )
+        values = self.store_values(key)
+        if names is not None:
+            missing = sorted(set(names) - set(values))
+            if missing:
+                raise QueueError(f"not in campaign {key!r}'s store: {missing}")
+            values = {k: values[k] for k in names}
+        before = self.store_values(parent)
+        updates = {k: v for k, v in values.items() if before.get(k) != v}
+        if not updates:
+            return {}
+        changed = self.commit(updates, parent)
+        changed = updates if changed is None else changed
+        hook = getattr(self.backend, "note_commit", None)
+        if hook is not None and changed:
+            source = {
+                "study": "",
+                "task": "",
+                "promoted_from": key,
+                "folder": cp.folder_of(self.root, key)
+                .relative_to(self.root)
+                .as_posix(),
+                "written": st.now(),
+            }
+            if parent:
+                source["campaign"] = parent
+            hook(dict(changed), {k: before.get(k) for k in changed}, source)
+        return dict(changed)
+
     def job(self, job_id: str) -> Job:
         """The parsed ``job.yaml`` of a queued study."""
         return load_job(self.queue.folder(job_id), self.words)
@@ -111,6 +222,15 @@ class Project:
                 f"unknown setting(s) {bad}; allowed: "
                 f"{sorted(self.backend.settings_keys())}"
             )
+        if job.campaign:
+            problems.extend(cp.problems_of(self.root, job.campaign))
+            if not problems and self.campaign_store(job.campaign) is None:
+                problems.append(
+                    f"this project's backend keeps no campaign stores; "
+                    f"campaign {job.campaign!r} cannot be used"
+                )
+            if problems:
+                return problems
         known_checks = set(self.backend.check_names())
         unknown_checks = sorted(set(job.checks) - known_checks)
         if unknown_checks:
@@ -182,17 +302,20 @@ class Project:
         sequence: dict | None = None,
         position: int | None = None,
         queue: FolderQueue | None = None,
+        campaign: str = "",
     ) -> str:
         """Generate one study and queue it. Returns its id.
 
         Args:
             queue: Where to put it (a draft's queue); the project's own
                 queue by default.
+            campaign: The campaign it belongs to, "" for none.
 
         Raises:
             QueueError: For an unknown key, or files that cannot be made.
         """
         queue = queue or self.queue
+        campaign = self._campaign_key(campaign)
         spec = self.backend.catalog().task(task)
         if spec is None:
             raise QueueError(f"no {self.words.task} {task!r}")
@@ -222,6 +345,7 @@ class Project:
             on_failure=on_failure or "abort",
             notes=notes,
             sequence=dict(tag),
+            campaign=campaign,
             created=st.now(),
             generated_by=generated_by,
         )
@@ -646,7 +770,7 @@ class Project:
         if ids:
             with st.ORDER_LOCK:
                 order = [i for i in self.queue.ids() if i not in ids]
-                st.write_json(self.queue.queue_dir / "order.json", order + list(ids))
+                self.queue.write_order(order + list(ids))
 
     def _unstage(self, name: str) -> None:
         """Put every study still in a launch's stage folder back into its
@@ -758,6 +882,7 @@ class Project:
         All studies are made before any is queued, so one failing
         half-way leaves the queue as it was.
         """
+        campaign = self._campaign_key(spec.campaign)
         catalog = self.backend.catalog()
         missing = [e.task for e in spec.entries if catalog.task(e.task) is None]
         if missing:
@@ -794,6 +919,7 @@ class Project:
                     on_failure=entry.on_failure or "abort",
                     notes=entry.notes,
                     sequence={"id": sequence_id, "name": spec.key, "entry": n},
+                    campaign=campaign,
                     created=st.now(),
                     generated_by=by,
                 )
@@ -808,6 +934,15 @@ class Project:
                     pass  # claimed by a runner meanwhile; it runs
             raise
         return ids
+
+    def _campaign_key(self, key: str) -> str:
+        """``key`` normalised, refused unless the campaign exists."""
+        if not key:
+            return ""
+        problems = cp.problems_of(self.root, key)
+        if problems:
+            raise QueueError(problems[0])
+        return cp.check_key(key)
 
 
 def open_project(ref: str | Path) -> Project:

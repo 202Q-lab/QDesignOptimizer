@@ -15,6 +15,9 @@ into a queue:
   the project's `design_variables.json`, so the next study starts from
   them, and records each write in `design_variables.meta.json`;
 - a **study sequence** queues a named sequence of studies in one go;
+- a **campaign** is a lab-log folder for one question (tune up the
+  chip, a Purcell filter, mesh sensitivity), optionally with its own
+  copy of the design variables, nested as deep as the question needs;
 - a Dash **GUI** shows the queue, the running study, the completed ones
   with their convergence plot, and lets you add, reorder, edit and
   requeue studies.
@@ -23,7 +26,7 @@ This folder holds two things:
 
 | Folder | Ansys? | What it is |
 | --- | --- | --- |
-| [`demo/`](demo/README.md) | no | Three tiny projects that "solve" in 5 s. Start here to see the queue, the runner and the GUI work. `demo/chip_qdo` is the full QDO path with a dummy in place of Ansys. |
+| `demo/` | no | Three tiny projects that "solve" in 5 s. Start here to see the queue, the runner and the GUI work. `demo/chip_qdo` is the full QDO path with a dummy in place of Ansys. |
 | `coupled_transmon_chip/` | yes | The chip of `examples_coupled_transmon_chip/`, set up for the sequencer: the same design, its studies as templates. |
 
 ## Try it without Ansys
@@ -40,7 +43,7 @@ then **Start**. Two studies run (about 10 s), frequency then
 linewidth, and each writes the design variable it tuned back into
 `demo/chip_qdo/design_variables.json`; click one under **Completed** to
 see its files and convergence plot. `tune_all` chains four studies
-from a sequence file, `chip_qdo/study_sequences/tune_all.yaml`. More in [`demo/README.md`](demo/README.md).
+from a sequence file, `chip_qdo/study_sequences/tune_all.yaml`. More in `demo/README.md` (in the online docs: *Sequencer demo*).
 
 ## A project on top of QDO
 
@@ -172,6 +175,63 @@ studies:
 - {study: Q1.qubit_resonator, settings: {iterations: 4}}
 ```
 
+A file may name a campaign (`campaign: tuneup_chip`) to queue its
+studies there; `sequence <key> --campaign <key>` does the same for any
+study sequence.
+
+### Campaigns: `campaigns/<name>/`
+
+A campaign is a folder that answers one question, with a `README.md`
+as its lab log: the question, what was run (under which study ids) and
+the conclusion. A campaign inside another is a sub-campaign; it is just
+a campaign, nested:
+
+```
+coupled_transmon_chip/campaigns/
+  tuneup_chip/
+    README.md
+    design_variables.json      its own copy of the store
+    q1_readout/                a sub-campaign
+      README.md                no store of its own: tuneup_chip's
+```
+
+- **Names**: lower-case words joined by `_`, no dates (the README and the
+  studies have those). The key is the path: `tuneup_chip/q1_readout`.
+- **Studies**: `add <study> --campaign tuneup_chip/q1_readout` (or
+  `campaign:` in a study sequence file) queues a study in it.
+  `job.yaml` says `campaign: tuneup_chip/q1_readout`; the id and the
+  folder under `out/` stay as they are, so Ansys paths stay short.
+- **Store**: a campaign's studies read and write the nearest
+  `design_variables.json` from their campaign up, the project's when
+  none on the way has one. `campaign new` gives a new campaign a copy
+  of the store it would otherwise use (`--shared` skips the copy), so
+  it changes nothing outside itself until you `campaign promote` its
+  values one level up; the write is recorded in that store's
+  `design_variables.meta.json` as `promoted_from`.
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip campaign new tuneup_chip --question "Can every mode reach its target?"
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip campaign new tuneup_chip/q1_readout --shared
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip sequence tune_Q1 --campaign tuneup_chip/q1_readout
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip campaign list
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/coupled_transmon_chip campaign promote tuneup_chip
+```
+
+The demo walks through it without Ansys: *Campaigns* in
+`demo/README.md` (in the online docs: *Sequencer demo*).
+
 ### Running it
 
 Check the templates (no Ansys; builds the chip to check the component
@@ -209,8 +269,8 @@ own `.npy` and `_design_variables.json`.
 
 Before the first Ansys run:
 
-- The studies have not been run in Ansys from this folder yet; run one
-  cheap capacitance study (`Q1.resonator_kappa`) first.
+- `Q1.resonator_kappa` (capacitance) has been run in Ansys 2022 R2
+  from this folder; on a new machine run that cheap study first.
 - One Ansys at a time: the runner takes a lock in your user folder, so
   two runners of yours never solve at once; a notebook driving Ansys, or
   another user's runner, is not stopped by it.
@@ -227,6 +287,8 @@ Before the first Ansys run:
   `design_variables.meta.json` (which study wrote each value, and when).
   Commit both in a real project; this tutorial ignores them, as its
   store is a generated copy.
+- Campaigns: `<project>/campaigns/`, each with its README and, if it
+  has one, its own store and metadata. Commit them: they are the lab log.
 - Machine-wide state (the runner lock, a multi-project queue order):
   `%LOCALAPPDATA%\qdo_sequencer\`, or the folder `QDO_SEQUENCER_HOME`
   names. Safe to delete while no runner is going.

@@ -9,6 +9,7 @@ study it is, where it belongs and how the queue treats it. Example::
     study: ATS1.eigenmode            # the study key (or ``task:``)
     subsystem: ATS1                  # (or ``subject:``)
     sequence: {id: s07, name: revalidate, entry: 3}
+    campaign: tuneup_chip/q1_readout # reads and writes that campaign's store
     settings: {iterations: 2}
     checks: [mode_identity]
     save: true                       # write tuned values back on success
@@ -48,6 +49,7 @@ _KEYS = {
     "created",
     "generated_by",
     "sequence",
+    "campaign",
     "requeued_from",
     "requeued_as",
 }
@@ -75,6 +77,8 @@ class Job:
     hold: bool = False
     notes: str = ""
     sequence: dict = field(default_factory=dict)
+    #: The campaign it belongs to (``tuneup_chip/q1_readout``), "" for none.
+    campaign: str = ""
     created: str = ""
     generated_by: str = ""
     raw: dict = field(default_factory=dict, repr=False)
@@ -90,6 +94,8 @@ class Job:
             out[words.subject] = self.subject
         if self.sequence:
             out["sequence"] = dict(self.sequence)
+        if self.campaign:
+            out["campaign"] = self.campaign
         out["settings"] = dict(self.settings)
         out["checks"] = list(self.checks)
         out["save"] = bool(self.save)
@@ -176,6 +182,10 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
     if not isinstance(sequence, dict):
         problems.append("study sequence must be a mapping")
         sequence = {}
+    campaign = raw.get("campaign") or ""
+    if not isinstance(campaign, str):
+        problems.append(f"campaign must be a campaign's name, not {campaign!r}")
+        campaign = ""
     if problems:
         raise JobError(problems)
     return Job(
@@ -189,6 +199,7 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
         hold=hold,
         notes=str(raw.get("notes") or ""),
         sequence=dict(sequence),
+        campaign=campaign.replace("\\", "/").strip("/"),
         created=str(raw.get("created") or ""),
         generated_by=str(raw.get("generated_by") or ""),
         raw=dict(raw),

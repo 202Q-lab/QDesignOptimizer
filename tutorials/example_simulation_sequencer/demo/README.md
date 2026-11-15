@@ -19,6 +19,7 @@ queue, the runner and the GUI without Ansys:
 | `opt_targets/resonators.yaml` | the project's opt targets, each with a `name` (unique in the project, over however many files) and a `tolerance` |
 | `study_sequences/tune_all.yaml` | a study sequence as a file: four chained studies, `defaults` for all of them, one entry with its own settings and notes, `on_failure`, `why_ordered` |
 | `simulations/sequencer.py` | the adapter; its `study_sequences()` builds `tune_R1`, `tune_R2` in code |
+| `campaigns/tune_resonators/README.md` | a campaign: a lab-log folder for one question, here sharing the chip's store (see *Campaigns* below) |
 
 A study is made when it is queued, and lives only in `out/`: the
 MiniStudy, filled in, plus every opt target whose modes are its modes
@@ -116,10 +117,46 @@ python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo
 python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_a -p tutorials/example_simulation_sequencer/demo/chip_b run --yes
 ```
 
+## Campaigns
+
+A campaign is a folder under `chip_qdo/campaigns/` for one question,
+with a `README.md` as its lab log. `tune_resonators` is one; try a
+sub-campaign of it with its own copy of the design variables, so its
+studies change nothing in the chip until you promote them:
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo campaign new tune_resonators/r2_check --question "Does R2 converge from the start values?"
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo sequence tune_R2 --campaign tune_resonators/r2_check
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo run --yes
+```
+
+The two studies wrote to
+`chip_qdo/campaigns/tune_resonators/r2_check/design_variables.json`
+only; `chip_qdo/design_variables.json` is as it was. List the campaigns
+(each with the store it uses), then promote the sub-campaign's values
+one level up: to the store `tune_resonators` uses, which is the chip's.
+The write is recorded in `chip_qdo/design_variables.meta.json` as
+`promoted_from`:
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo campaign list
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo campaign promote tune_resonators/r2_check
+```
+
 ## Reset
 
 Delete each project's `out/`, `chip_a/store.json`, `chip_b/store.json`,
-`chip_qdo/design_variables.json` and the `*.meta.json` next to them (all
-git-ignored). With several
+`chip_qdo/design_variables.json` and the `*.meta.json` next to them, and
+any sub-campaign you made under `chip_qdo/campaigns/tune_resonators/`
+(all git-ignored). With several
 projects open, the shared order and runner state live in your user
 folder (`%LOCALAPPDATA%\qdo_sequencer\workspaces\`), which is safe to delete while no runner is going.

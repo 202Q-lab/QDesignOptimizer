@@ -207,14 +207,17 @@ class Runner:
         default): the runner then stops before the next study, as it
         would have had the study failed without a crash.
         """
-        store = None
         aborted: list[str] = []
         for path in self.queue.cut_off():
             record = st.result_of(path) or {"id": parse_completed(path.name)[0]}
             updates = record.get("updates") or {}
             if record.get("status") == st.COMMITTING and updates:
-                if store is None:
-                    store = self.backend.store_values()
+                try:
+                    campaign = load_job_from(path, self.backend.words).campaign
+                except Exception:  # noqa: BLE001 -- the project's store
+                    campaign = ""
+                # The store the study wrote: its campaign's.
+                store = self.project.store_values(campaign)
                 if all(store.get(k) == v for k, v in updates.items()):
                     record["status"] = st.DONE
                     record["committed"] = dict(updates)
@@ -253,7 +256,9 @@ class Runner:
             )
         return aborted
 
-    def _source(self, job_id: str, task, sequence: dict, folder, settings=None) -> dict:
+    def _source(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        self, job_id: str, task, sequence: dict, folder, settings=None, campaign=""
+    ) -> dict:
         root = Path(self.backend.out_dir).parent
         try:
             where = Path(folder).relative_to(root).as_posix()
@@ -266,6 +271,7 @@ class Runner:
             "sequence_name": (sequence or {}).get("name", ""),
             "folder": where,
             "settings": dict(settings or {}),
+            **({"campaign": campaign} if campaign else {}),
             "written": st.now(),
         }
 
@@ -281,7 +287,14 @@ class Runner:
             hook(
                 updates,
                 previous,
-                self._source(job.id, job.task, job.sequence, folder, job.settings),
+                self._source(
+                    job.id,
+                    job.task,
+                    job.sequence,
+                    folder,
+                    job.settings,
+                    job.campaign,
+                ),
             )
         except Exception:  # noqa: BLE001 -- logged; the write stands
             log.exception("%s: could not record the write-back", shown)
@@ -293,11 +306,13 @@ class Runner:
         task = record.get(self.backend.words.task, "")
         try:
             ran = load_job_from(path / INPUTS, self.backend.words)
-            sequence, settings = ran.sequence, ran.settings
+            sequence, settings, campaign = ran.sequence, ran.settings, ran.campaign
         except Exception:  # noqa: BLE001 -- the record goes without it
-            sequence, settings = {}, {}
+            sequence, settings, campaign = {}, {}, ""
         source = {
-            **self._source(record.get("id", path.name), task, sequence, path, settings),
+            **self._source(
+                record.get("id", path.name), task, sequence, path, settings, campaign
+            ),
             "recovered": True,
         }
         if "before" not in record:
@@ -338,6 +353,19 @@ class Runner:
                 claimed = self.queue.claim(job_id)
             except QueueError:
                 continue  # removed or moved meanwhile; read the queue again
+            except PermissionError as exc:
+                # Windows refused the rename for ~5 s: a file of the study
+                # (or a shell inside its folder) is held open. The study
+                # stays queued and nothing below it runs, as for a failed
+                # check -- the runner stops with a message that says why.
+                self.state.status = st.ERROR
+                self.state.message = (
+                    f"{shown} could not be taken from the queue: a file or "
+                    f"window has its folder open ({exc}); close it and "
+                    "start again"
+                )
+                log.error(self.state.message)
+                return
             try:
                 if _on_hold(claimed, self.project.words):
                     # Held: it keeps its place, and the runner stops
@@ -392,6 +420,7 @@ class Runner:
             "id": job_id,
             self.backend.words.task: job.task,
             "subject": job.subject,
+            **({"campaign": job.campaign} if job.campaign else {}),
             "status": st.RUNNING,
             "started": st.now(),
             "finished": "",
@@ -440,7 +469,7 @@ class Runner:
                 try:
                     # For the record only: a store that cannot be read
                     # this instant must not fail the write-back itself.
-                    before = self.backend.store_values()
+                    before = self.project.store_values(job.campaign)
                 except Exception:  # noqa: BLE001
                     before = None
                 record["status"] = st.COMMITTING
@@ -451,7 +480,8 @@ class Runner:
                 before = before or {}
                 st.write_json(folder / st.RESULT_FILE, record, 30.0)
                 try:
-                    changed = self.backend.commit(dict(result.updates))
+                    # A campaign's study writes its campaign's store.
+                    changed = self.project.commit(dict(result.updates), job.campaign)
                     record["committed"] = dict(result.updates)
                     log.info("%s: wrote back %s", shown, sorted(result.updates))
                     # What the write actually changed (a backend that

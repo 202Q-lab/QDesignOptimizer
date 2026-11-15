@@ -42,17 +42,25 @@ from ..engine.backend import (
     Words,
 )
 from ..engine.job import dump_yaml
-from ._store import read_json, record_writes, sources_text, update_json
+from ._store import (
+    SwitchableStore,
+    read_json,
+    record_writes,
+    sources_text,
+    update_json,
+    uses_job_store,
+)
 
 TASK_FILE, VARIABLES = "task.yaml", "design_variables.json"
 _TASK_KEYS = {"value", "fail", "converged", "step"}
 
 
-class FakeBackend:
+class FakeBackend(SwitchableStore):
     """See the module docstring."""
 
     name = "fake"
     words = Words()
+    store_file_name = "store.json"
 
     def __init__(self, root: Path):
         self.root = Path(root)
@@ -64,6 +72,14 @@ class FakeBackend:
             )
         self.calls: list[tuple[str, str]] = []
         self.fail_commit = False
+
+    @property
+    def default_store(self) -> Path:
+        return self.store_path
+
+    @property
+    def project_root(self) -> Path:
+        return self.root
 
     @property
     def out_dir(self) -> Path:
@@ -121,6 +137,7 @@ class FakeBackend:
             f"fake study {task}",
         )
 
+    @uses_job_store
     def check_folder(self, folder: Path, job, deep: bool) -> list[str]:
         problems = []
         try:
@@ -146,6 +163,7 @@ class FakeBackend:
                 problems.append(f"{VARIABLES}: the project has no " f"{unknown}")
         return problems
 
+    @uses_job_store
     def resolve_inputs(self, folder: Path, job) -> None:
         path = Path(folder) / VARIABLES
         partial = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
@@ -157,6 +175,7 @@ class FakeBackend:
     def before_step(self, job) -> None:
         self.calls.append(("before_step", job.id))
 
+    @uses_job_store
     def run(self, folder: Path, job) -> StepResult:
         self.calls.append(("run", job.id))
         if job.settings.get("seconds"):
@@ -185,26 +204,33 @@ class FakeBackend:
             return CheckResult(ok, "" if ok else "did not converge")
         return CheckResult(False, f"no check named {name!r}")
 
-    def commit(self, updates: dict[str, Any]) -> dict[str, Any]:
+    def commit(
+        self, updates: dict[str, Any], campaign: str | None = None
+    ) -> dict[str, Any]:
         """Write the values; return those that changed."""
         if self.fail_commit:
             raise PermissionError("store is locked")
-        return update_json(self.store_path, updates, allow_new=True)
+        with self.store_of(campaign):
+            return update_json(self.store_file, updates, allow_new=True)
 
-    def store_values(self) -> dict[str, Any]:
-        return read_json(self.store_path)
+    def store_values(self, campaign: str | None = None) -> dict[str, Any]:
+        with self.store_of(campaign):
+            return read_json(self.store_file)
 
     def note_commit(self, updates, previous, source) -> None:
         """Record which study wrote the values (``store.meta.json``)."""
-        record_writes(self.store_path, updates, previous, source)
+        with self.store_of(source.get("campaign") or ""):
+            record_writes(self.store_file, updates, previous, source)
 
-    def value_sources(self, name: str) -> dict:
+    def value_sources(self, name: str, campaign: str | None = None) -> dict:
         """Which study last wrote each value of the optional file."""
-        return sources_text(self.store_path) if name == VARIABLES else {}
+        with self.store_of(campaign):
+            return sources_text(self.store_file) if name == VARIABLES else {}
 
-    def project_values(self, name: str):
-        """The project's values a study's optional file overrides."""
-        return self.store_values() if name == VARIABLES else None
+    def project_values(self, name: str, campaign: str | None = None):
+        """The project's (or a campaign's) values a study's optional
+        file overrides."""
+        return self.store_values(campaign) if name == VARIABLES else None
 
     def describe(self, folder: Path, job) -> dict[str, Any]:
         return {"task": job.task, "settings": job.settings}

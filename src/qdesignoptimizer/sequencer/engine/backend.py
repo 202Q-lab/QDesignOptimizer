@@ -83,6 +83,8 @@ class SequenceSpec:
         entries: The studies, in order.
         why_ordered: Why that order; shown in the GUI.
         source: The file it came from, or "" for one defined in code.
+        campaign: The campaign its studies belong to (``campaign:`` in
+            the file), "" for none.
     """
 
     key: str
@@ -90,6 +92,8 @@ class SequenceSpec:
     entries: tuple[SequenceEntry, ...]
     why_ordered: str = ""
     source: str = ""
+    #: The campaign its studies are queued in, "" for none.
+    campaign: str = ""
 
 
 @dataclass(frozen=True)
@@ -207,11 +211,15 @@ class Backend(Protocol):
     def check(self, name: str, job, result: StepResult) -> CheckResult:
         """A named check (``converged``, ``mode_identity``)."""
 
-    def commit(self, updates: dict[str, Any]) -> dict[str, Any] | None:
-        """Write accepted updates to the project's store."""
+    def commit(
+        self, updates: dict[str, Any], campaign: str | None = None
+    ) -> dict[str, Any] | None:
+        """Write accepted updates to the project's store (``campaign``:
+        that campaign's store; the engine passes it only for a study in a
+        campaign, so a backend without campaign stores may leave it out)."""
 
-    def store_values(self) -> dict[str, Any]:
-        """The project's store as it stands."""
+    def store_values(self, campaign: str | None = None) -> dict[str, Any]:
+        """The project's store as it stands (``campaign``: as ``commit``)."""
 
     def describe(self, folder: Path, job) -> dict[str, Any]:
         """What the study would hand its solver, as plain data."""

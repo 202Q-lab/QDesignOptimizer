@@ -3,3 +3,7 @@
 */store.json
 */design_variables.json
 */*.meta.json
+# A campaign's own copy of the store, and sub-campaigns made by trying it.
+*/campaigns/**/design_variables.json
+*/campaigns/**/*.meta.json
+*/campaigns/*/*/

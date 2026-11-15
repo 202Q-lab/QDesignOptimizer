@@ -7,6 +7,7 @@ from a YAML file like this::
 
     version: 1
     name: Revalidate every parameter
+    campaign: tuneup_chip       # optional: queue its studies in a campaign
     why_ordered: >-
       Linewidths first: 2-4 min capacitance studies surface a broken
       model before an eigenmode iteration commits 40 min.
@@ -32,7 +33,15 @@ import yaml
 from .backend import SequenceEntry, SequenceSpec, Words
 from .job import ON_FAILURE, numbers
 
-_TOP = {"version", "name", "why_ordered", "defaults", "studies", "notes"}
+_TOP = {
+    "version",
+    "name",
+    "why_ordered",
+    "defaults",
+    "studies",
+    "notes",
+    "campaign",
+}
 _ENTRY = {"settings", "checks", "save", "on_failure", "notes"}
 
 
@@ -71,6 +80,10 @@ def load_sequence(path: Path, words: Words = Words()) -> SequenceSpec:
     bad = sorted(set(defaults) - _ENTRY)
     if bad:
         problems.append(f"defaults cannot set {bad}")
+    campaign = raw.get("campaign") or ""
+    if not isinstance(campaign, str):
+        problems.append("campaign must be a campaign's name")
+        campaign = ""
     studies = raw.get("studies") or []
     if not isinstance(studies, list):
         problems.append("studies must be a list")
@@ -135,6 +148,7 @@ def load_sequence(path: Path, words: Words = Words()) -> SequenceSpec:
         entries=tuple(entries),
         why_ordered=str(raw.get("why_ordered") or ""),
         source=str(path),
+        campaign=campaign.replace("\\", "/").strip("/"),
     )
 
 

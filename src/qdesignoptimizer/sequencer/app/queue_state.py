@@ -194,6 +194,13 @@ class Bridge:
                 f"could not save {name}: {type(exc).__name__}: {exc}; " f"try again"
             ) from exc
 
+    def _taken(self, key: str) -> bool:
+        """Whether a study just written is no longer queued: the runner
+        took it after the write landed (a write after the take is
+        refused by ``_write``), so it runs with the edit."""
+        project, job_id = self._study(key)
+        return not project.queue.folder(job_id).is_dir()
+
     def _deep_check(self, key: str) -> list[str]:
         project, job_id = self._study(key)
         problems = project.problems(job_id, deep=True)
@@ -397,6 +404,7 @@ class Bridge:
         if not folder.is_dir():
             raise GuiError(f"{key} is no longer there")
         specs = project.backend.files()
+        campaign = _campaign_of(project, folder)
         files = []
         for spec in specs:
             path = folder / spec.name
@@ -416,12 +424,14 @@ class Bridge:
                     "data": data,
                     "problem": problem,
                     "project": (
-                        _project_values(project, spec.name)
+                        _project_values(project, spec.name, campaign)
                         if spec.optional and kind in ("queue", "draft")
                         else None
                     ),
                     "sources": (
-                        _value_sources(project, spec.name) if spec.optional else {}
+                        _value_sources(project, spec.name, campaign)
+                        if spec.optional
+                        else {}
                     ),
                     "addable": (
                         _addable(project, spec.name)
@@ -588,6 +598,8 @@ class Bridge:
         except JobError as exc:
             raise GuiError("not saved: " + "; ".join(exc.problems)) from exc
         self._write(job_id, JOB_FILE, dump_yaml(raw))
+        if self._taken(job_id):
+            return "saved; " + TAKEN
         problems = project.problems(local)
         return "saved" + (f"; it cannot run yet: {problems[0]}" if problems else "")
 
@@ -609,6 +621,8 @@ class Bridge:
         except (json.JSONDecodeError, yaml.YAMLError) as exc:
             raise GuiError(f"not saved, {name} does not parse: {exc}") from exc
         self._write(job_id, name, text)
+        if self._taken(job_id):
+            return f"saved {name}; " + TAKEN
         problems = self._deep_check(job_id)
         return f"saved {name}" + (
             f"; it cannot run yet: {'; '.join(problems[:2])}"
@@ -640,7 +654,13 @@ class Bridge:
         try:
             if overrides is not None:
                 data = forms.apply_overrides(
-                    _project_values(project, name) or {}, overrides
+                    _project_values(
+                        project,
+                        name,
+                        _campaign_of(project, project.queue.folder(local)),
+                    )
+                    or {},
+                    overrides,
                 )
                 if not data:
                     if old is not None:
@@ -1161,14 +1181,32 @@ def _render(name: str, data, old: str | None) -> str:
     return dump_yaml(data, forms.header(old or "") or None)
 
 
-def _project_values(project, name: str) -> dict | None:
-    """The project's values an optional file overrides, if the backend
-    says (``project_values``)."""
+#: Said after a save that the runner took the study right after: the
+#: edit is in, but a later one to the same study would not be.
+TAKEN = (
+    "the runner took the study right after, with this edit; any further "
+    "edit is too late (requeue it to change more)"
+)
+
+
+def _campaign_of(project, folder) -> str:
+    """The campaign a study's ``job.yaml`` names ("" for none, or when
+    it cannot be read)."""
+    try:
+        return load_job(folder, project.words).campaign
+    except Exception:  # noqa: BLE001 -- its problems are shown elsewhere
+        return ""
+
+
+def _project_values(project, name: str, campaign: str = "") -> dict | None:
+    """The project's values an optional file overrides (a campaign
+    study's: its campaign's store), if the backend says
+    (``project_values``)."""
     hook = getattr(project.backend, "project_values", None)
     if hook is None:
         return None
     try:
-        values = hook(name)
+        values = hook(name, campaign=campaign) if campaign else hook(name)
     except Exception:  # noqa: BLE001 -- the form says it cannot list them
         return None
     return dict(values) if values is not None else None
@@ -1195,14 +1233,14 @@ def _target_templates(project) -> list | None:
         return []
 
 
-def _value_sources(project, name: str) -> dict:
+def _value_sources(project, name: str, campaign: str = "") -> dict:
     """Which study last wrote each project value, if the backend keeps
     that record (``value_sources``)."""
     hook = getattr(project.backend, "value_sources", None)
     if hook is None:
         return {}
     try:
-        return dict(hook(name) or {})
+        return dict((hook(name, campaign=campaign) if campaign else hook(name)) or {})
     except Exception:  # noqa: BLE001 -- the column is left out
         return {}
 

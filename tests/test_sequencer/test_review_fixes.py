@@ -4,6 +4,7 @@ and studies made from scratch."""
 from __future__ import annotations
 
 import json
+import os
 
 import pytest
 
@@ -49,6 +50,16 @@ def _failing_rename(monkeypatch, fail_on, error=PermissionError):
     monkeypatch.setattr(project_module, "_rename", rename)
 
 
+def _undo(monkeypatch):
+    """Undo the test's patches but keep its own user folder: a plain
+    ``undo`` would also undo conftest's ``QDO_SEQUENCER_HOME``, and the
+    runner would then take the real machine lock (refused while a real
+    runner is going)."""
+    home = os.environ["QDO_SEQUENCER_HOME"]
+    monkeypatch.undo()
+    monkeypatch.setenv("QDO_SEQUENCER_HOME", home)
+
+
 def _staged(project):
     return [
         p.name for p in project.queue.queue_dir.iterdir() if p.name.startswith(STAGE)
@@ -82,7 +93,7 @@ def test_a_launch_failing_while_publishing_is_finished_by_a_relaunch(
     assert project.queue.ids() == ["s01-three-a_calibrate"]
     assert _staged(project) == []
     assert len(project.draft_queue(name).ids()) == 2
-    monkeypatch.undo()
+    _undo(monkeypatch)
     moved = project.launch_draft(name)
     assert moved == ["s01-three-a_measure", "s01-three-b_measure"]
     assert project.queue.ids() == ["s01-three-a_calibrate"] + moved
@@ -98,7 +109,7 @@ def test_a_launch_cut_off_while_publishing_is_finished_by_the_runner(
         project.launch_draft(name)
     # One stage folder per launch, holding all three.
     assert project.queue.ids() == [] and len(_staged(project)) == 1
-    monkeypatch.undo()
+    _undo(monkeypatch)
     final = Runner(project).run()
     assert len(final.done) == 3 and project.drafts() == []
     assert _staged(project) == []
@@ -112,7 +123,7 @@ def test_a_launch_cut_off_while_staging_is_undone_by_the_runner(project, monkeyp
     _failing_rename(monkeypatch, fail_on=2, error=KeyboardInterrupt)
     with pytest.raises(KeyboardInterrupt):
         project.launch_draft(name)
-    monkeypatch.undo()
+    _undo(monkeypatch)
     assert _staged(project) and len(project.draft_queue(name).ids()) == 2
     Runner(project).run()  # recovers before it looks at the queue
     assert _staged(project) == [] and project.queue.ids() == []
@@ -125,7 +136,7 @@ def test_a_relaunch_after_a_crash_launches_every_study(project, monkeypatch):
     _failing_rename(monkeypatch, fail_on=2, error=KeyboardInterrupt)
     with pytest.raises(KeyboardInterrupt):
         project.launch_draft(name)
-    monkeypatch.undo()
+    _undo(monkeypatch)
     project.draft_add(name, "B.calibrate")  # added after the crash
     moved = project.launch_draft(name)  # recovers first
     assert len(moved) == 4 and _staged(project) == []
@@ -150,7 +161,7 @@ def test_a_study_added_during_a_launch_is_refused_not_lost(project, monkeypatch)
     monkeypatch.setattr(project, "_launch_lock", _quick(project))
     monkeypatch.setattr(project, "problems", problems)
     moved = project.launch_draft(name)
-    monkeypatch.undo()
+    _undo(monkeypatch)
     assert moved == ["s01-three-a_calibrate"]
     assert refused and "being launched" in refused[0]
     assert project.drafts() == []
@@ -423,7 +434,7 @@ def test_a_launch_that_published_nothing_keeps_its_sequence_number(
     _failing_rename(monkeypatch, fail_on=3 + 1)  # the first publish
     with pytest.raises(QueueError, match="launched 0 of 3 as s01"):
         project.launch_draft(first)
-    monkeypatch.undo()
+    _undo(monkeypatch)
     assert project.queue.ids() == []
     # s01 is the first draft's: another study sequence must not take it.
     other = project.new_draft("other")

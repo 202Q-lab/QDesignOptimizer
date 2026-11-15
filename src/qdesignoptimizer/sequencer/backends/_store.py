@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import tempfile
+import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -31,10 +34,29 @@ def read_json(path: Path) -> dict[str, Any]:
     return {}
 
 
+def store_lock(store: Path):
+    """The lock held around every read-modify-write of ``store`` and of
+    its record (``.meta.json``), machine-wide: without it a runner's
+    write-back and a ``promote`` (or a second runner's) could each read
+    the file and the later write drop the earlier's values. It lives in
+    the user's sequencer folder, not next to the store, so no lock file
+    ends up in a project. (A hand edit in an editor is not covered.)"""
+    import hashlib
+
+    from ..engine import state as st
+    from ..engine.workspace import user_home
+
+    name = hashlib.sha1(str(Path(store).resolve()).lower().encode("utf-8")).hexdigest()[
+        :16
+    ]
+    return st.file_lock(user_home() / "locks" / f"store-{name}.lock")
+
+
 def update_json(
     path: Path, values: dict[str, Any], allow_new: bool = False
 ) -> dict[str, Any]:
     """Write ``values`` into the file atomically; return what changed.
+    Holds ``store_lock`` from the read to the write.
 
     The replace is retried: on Windows ``os.replace`` fails while any
     process has the target open, and the queue GUI reads the design
@@ -54,6 +76,11 @@ def update_json(
             then unchanged and no temp file is left behind.
     """
     path = Path(path)
+    with store_lock(path):
+        return _update_json(path, values, allow_new)
+
+
+def _update_json(path: Path, values: dict[str, Any], allow_new: bool) -> dict[str, Any]:
     current = read_json(path)
     unknown = sorted(set(values) - set(current))
     if unknown and not allow_new:
@@ -150,7 +177,11 @@ def record_writes(
     ``<name>.damaged-<time>.json`` and a fresh one started, so recording
     does not stop for good.
     """
-    path = meta_path(store)
+    with store_lock(store):
+        _record_writes(meta_path(store), updates, previous, source, details)
+
+
+def _record_writes(path, updates, previous, source, details) -> None:
     data = _read_record(path)
     if data is None:
         aside = path.with_name(
@@ -208,15 +239,93 @@ def sources_text(store: Path) -> dict[str, str]:
     out = {}
     for name, item in read_meta(store).items():
         latest = (item or {}).get("latest") or {}
-        if not latest.get("study"):
+        who = latest.get("study") or (
+            f"promoted from campaign {latest['promoted_from']}"
+            if latest.get("promoted_from")
+            else ""
+        )
+        if not who:
             continue
         kind = (latest.get("simulation") or {}).get("kind")
         text = (
-            f"{latest['study']}"
-            + (f" ({kind})" if kind else "")
-            + f"  {latest.get('written', '')}"
+            f"{who}" + (f" ({kind})" if kind else "") + f"  {latest.get('written', '')}"
         )
         if name in current and current[name] != latest.get("value"):
             text = f"edited since; last written by {text}"
         out[name] = text
     return out
+
+
+class SwitchableStore:
+    """The store a backend reads and writes: the project's, or a
+    campaign's (``engine/campaign.py``).
+
+    Nothing is switched from outside. A method given a study
+    (``check_folder``, ``resolve_inputs``, ``run``, ...) uses that
+    study's campaign's store for the length of the call
+    (``@uses_job_store``); ``store_values`` and ``commit`` take the
+    campaign as an argument; ``note_commit`` reads it from its source.
+    So the choice travels with each call, also through a worker process
+    that serves several GUI threads one call at a time.
+    """
+
+    #: The store's file name; a campaign's own copy has the same name.
+    store_file_name = "design_variables.json"
+
+    @property
+    def default_store(self) -> Path:
+        """The project's own store."""
+        raise NotImplementedError
+
+    @property
+    def project_root(self) -> Path:
+        """The project's folder (``campaigns/`` is in it)."""
+        raise NotImplementedError
+
+    def store_for(self, campaign: str = "") -> Path:
+        """The store of campaign ``campaign`` ("" for the project)."""
+        from ..engine import campaign as cp
+
+        return cp.store_file(
+            self.project_root, campaign, self.store_file_name, self.default_store
+        )
+
+    @property
+    def store_file(self) -> Path:
+        """The store of the call under way: its campaign's, or the
+        project's."""
+        local = self.__dict__.get("_store_local")
+        override = getattr(local, "path", None) if local is not None else None
+        return override or self.default_store
+
+    @contextmanager
+    def store_of(self, campaign: str | None):
+        """Use campaign ``campaign``'s store meanwhile, in this thread
+        (None: leave it as it is; "": the project's)."""
+        if campaign is None:
+            yield
+            return
+        if "_store_local" not in self.__dict__:
+            self.__dict__["_store_local"] = threading.local()
+        local = self.__dict__["_store_local"]
+        previous = getattr(local, "path", None)
+        local.path = self.store_for(campaign) if campaign else None
+        try:
+            yield
+        finally:
+            local.path = previous
+
+
+def uses_job_store(method):
+    """Run a backend method that is given a study (``job``) against that
+    study's campaign's store."""
+
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        job = kwargs.get("job")
+        if job is None:
+            job = next((a for a in args if hasattr(a, "campaign")), None)
+        with self.store_of(getattr(job, "campaign", None) or None):
+            return method(self, *args, **kwargs)
+
+    return wrapper

@@ -38,7 +38,7 @@ from typing import Iterable
 from . import state as st
 from .job import parse_completed
 from .project import Project, open_project
-from .queue import QueueError
+from .queue import QueueError, keep_listed
 
 ADAPTER = "sequencer.py"
 _SKIP = {"out", ".git", "__pycache__", ".ipynb_checkpoints", "node_modules"}
@@ -231,8 +231,19 @@ class Workspace:
         if not self.single:
             with st.ORDER_LOCK:
                 listed = [k for k in self.ids() if k not in keys]
-                st.write_json(self.order_file, listed + keys)
+                self._write_order(listed + keys)
         return keys
+
+    def _write_order(self, keys: list[str]) -> None:
+        """Write the shared order, keeping the studies a runner holds
+        claimed where they were (``FolderQueue.write_order``)."""
+        claimed = {
+            self.key(name, i)
+            for name, project in self.projects.items()
+            for i in project.queue.claimed_ids()
+        }
+        listed = st.read_json(self.order_file) or []
+        st.write_json(self.order_file, keep_listed(list(keys), listed, claimed))
 
     def save_order(self, keys: Iterable[str]) -> None:
         """Set the run order (keys as ``ids`` gives them).
@@ -248,7 +259,7 @@ class Workspace:
             current = self.ids()
             if sorted(keys) != sorted(current) or len(set(keys)) != len(keys):
                 raise QueueError("the queue changed meanwhile; reloaded")
-            st.write_json(self.order_file, keys)
+            self._write_order(keys)
             for name, project in self.projects.items():
                 prefix = f"{name}/"
                 own = [k[len(prefix) :] for k in keys if k.startswith(prefix)]

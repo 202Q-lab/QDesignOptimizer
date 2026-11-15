@@ -1,8 +1,11 @@
 """Command line.
 
     python -m qdesignoptimizer.sequencer <sequencer.py> list
-    python -m qdesignoptimizer.sequencer <sequencer.py> add <study> [--settings JSON]
-    python -m qdesignoptimizer.sequencer <sequencer.py> sequence <file.yaml or key>
+    python -m qdesignoptimizer.sequencer <sequencer.py> add <study> [--settings JSON] [--campaign KEY]
+    python -m qdesignoptimizer.sequencer <sequencer.py> sequence <file.yaml or key> [--campaign KEY]
+    python -m qdesignoptimizer.sequencer <sequencer.py> campaign list
+    python -m qdesignoptimizer.sequencer <sequencer.py> campaign new <key> [--question TEXT] [--shared]
+    python -m qdesignoptimizer.sequencer <sequencer.py> campaign promote <key> [<name> ...]
     python -m qdesignoptimizer.sequencer <sequencer.py> check
     python -m qdesignoptimizer.sequencer <sequencer.py> check-templates
     python -m qdesignoptimizer.sequencer <sequencer.py> run --yes
@@ -26,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from . import state as st
@@ -56,8 +60,22 @@ def main(argv: list[str] | None = None) -> int:
     p_add = sub.add_parser("add", help="queue one study")
     p_add.add_argument("task")
     p_add.add_argument("--settings", default="{}")
+    p_add.add_argument("--campaign", default="", help="queue it in this campaign")
     p_sequence = sub.add_parser("sequence", help="queue every study of one")
     p_sequence.add_argument("sequence")
+    p_sequence.add_argument(
+        "--campaign", default=None, help="queue them in this campaign"
+    )
+    p_camp = sub.add_parser("campaign", help="list, make or promote campaigns")
+    p_camp.add_argument("action", choices=["list", "new", "promote"])
+    p_camp.add_argument("key", nargs="?", default="")
+    p_camp.add_argument("names", nargs="*", help="promote only these values")
+    p_camp.add_argument("--question", default="", help="what the campaign answers")
+    p_camp.add_argument(
+        "--shared",
+        action="store_true",
+        help="no own copy of the store: use the parent's (or the project's)",
+    )
     sub.add_parser("check", help="rebuild every queued study; no solve")
     sub.add_parser(
         "check-templates",
@@ -96,7 +114,9 @@ def _command(args, workspace: Workspace) -> int:
             return _list(workspace)
         if args.command == "add":
             project, task = workspace.locate_task(args.task)
-            job_id = project.add(task, json.loads(args.settings))
+            job_id = project.add(
+                task, json.loads(args.settings), campaign=args.campaign
+            )
             print(f"queued {workspace.added(project, [job_id])[0]}")
             return 0
         if args.command == "sequence":
@@ -116,9 +136,13 @@ def _command(args, workspace: Workspace) -> int:
                 if found is None:
                     raise QueueError(f"no {words.sequence} {key!r}")
                 spec = found
+            if args.campaign is not None:
+                spec = replace(spec, campaign=args.campaign)
             ids = workspace.added(project, project.add_sequence(spec))
             print(f"queued {len(ids)} {words.task}(s): {', '.join(ids)}")
             return 0
+        if args.command == "campaign":
+            return _campaign(args, workspace)
         if args.command == "check-templates":
             bad = 0
             for name, project in workspace.projects.items():
@@ -206,3 +230,45 @@ def _list(workspace: Workspace) -> int:
         f"{' (alive)' if runner.alive(out) else ''} {runner.message}"
     )
     return 0
+
+
+def _campaign(args, workspace: Workspace) -> int:
+    if not workspace.single:
+        print("campaign commands take one project", file=sys.stderr)
+        return 2
+    project = next(iter(workspace.projects.values()))
+    if args.action == "list":
+        found = project.campaigns()
+        if not found:
+            print("no campaigns (make one: campaign new <key>)")
+        for item in found:
+            print(
+                f"{'  ' * item.depth}{item.key}  {item.title}  "
+                f"(store: {_shown(project, project.campaign_store(item.key))})"
+            )
+        return 0
+    if not args.key:
+        print(f"campaign {args.action} needs a campaign key", file=sys.stderr)
+        return 2
+    if args.action == "new":
+        folder = project.new_campaign(args.key, args.question, not args.shared)
+        print(f"made {folder}; say in its README.md what it is for")
+        return 0
+    changed = project.promote(args.key, args.names or None)
+    parent = args.key.replace("\\", "/").strip("/").rpartition("/")[0]
+    where = _shown(project, project.campaign_store(parent))
+    if not changed:
+        print(f"nothing to promote: {where} has the same values")
+    else:
+        print(f"promoted to {where}: " + ", ".join(sorted(changed)))
+    return 0
+
+
+def _shown(project, path: Path | None) -> str:
+    """A store's path, relative to the project where it can be."""
+    if path is None:
+        return "the project's"
+    try:
+        return Path(path).resolve().relative_to(project.root.resolve()).as_posix()
+    except ValueError:
+        return str(path)

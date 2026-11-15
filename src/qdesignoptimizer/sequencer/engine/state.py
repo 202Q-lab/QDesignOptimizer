@@ -19,6 +19,7 @@ import os
 import tempfile
 import threading
 import time
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any
@@ -291,6 +292,31 @@ def lock_held(out_dir: Path) -> bool:
             _unlock(handle)
             return False
         return True
+    finally:
+        handle.close()
+
+
+@contextmanager
+def file_lock(path: Path, wait: float = 60.0):
+    """Hold an operating-system lock on ``path`` meanwhile, across
+    processes (the runner, the GUI's worker, a CLI ``promote``).
+
+    Raises:
+        LockHeld: If another process holds it for ``wait`` seconds.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = open(path, "a+b")
+    deadline = time.monotonic() + wait
+    try:
+        while not _try_lock(handle):
+            if time.monotonic() > deadline:
+                raise LockHeld(f"{path.name} held for {wait:.0f} s")
+            time.sleep(0.05)
+        try:
+            yield
+        finally:
+            _unlock(handle)
     finally:
         handle.close()
 
