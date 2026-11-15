@@ -35,7 +35,9 @@ _RUNNER_LOG = "_qdo_sequencer_runner_log"
 #: for the same arguments is returned instead of waiting.
 _POLLED = {"catalog_with_problems", "check_folder"}
 #: Read once when the worker starts; they do not change.
-_STATIC = ("name", "words", "out_dir")
+#: Plain attributes sent across once, when the worker starts (a backend
+#: without one sends None). Everything else is a method, called remotely.
+_STATIC = ("name", "words", "out_dir", "sequence_dir")
 _AUTH_ENV = "QDO_SEQUENCER_WORKER_KEY"
 
 
@@ -222,7 +224,7 @@ def _describe(backend) -> dict:
     methods.append("catalog_with_problems")
     return {
         "methods": methods,
-        "values": {k: getattr(backend, k) for k in _STATIC},
+        "values": {k: getattr(backend, k, None) for k in _STATIC},
     }
 
 

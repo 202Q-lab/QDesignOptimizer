@@ -113,8 +113,8 @@ class Workspace:
             range(len(projects)),
             key=lambda i: str(projects[i].out.resolve()).lower(),
         ):
-            # Not starting with "~": the GUI marks a study sequence draft so.
-            base = projects[i].out.parent.name.lstrip("~") or "project"
+            # Not starting with "@": the GUI marks a study on hold so.
+            base = projects[i].out.parent.name.lstrip("@") or "project"
             name, n = base, 2
             while name in taken:
                 name, n = f"{base}-{n}", n + 1

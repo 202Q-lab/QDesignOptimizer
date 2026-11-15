@@ -624,35 +624,53 @@ def test_the_lock_waits_out_a_brief_check(project):
     st.release_lock(st.acquire_lock(project.out, wait=2.0))
 
 
-# -- hold (2026-11-11) ------------------------------------------------------
+# -- on hold: out/hold/, which the runner never reads (2026-11-15) -----------
 
 
-def test_a_held_study_stops_the_runner_and_keeps_its_place(project):
+def test_a_study_on_hold_is_skipped_until_it_is_queued(project):
     first = project.add("A.calibrate")
     held = project.add("B.calibrate")
     after = project.add("A.measure")
-    project.set_hold(held, True)
-    final = Runner(project).run()
-    assert final.status == st.HELD and held in final.message
-    assert project.queue.ids() == [held, after]
-    assert len(project.queue.completed()) == 1
-    project.set_hold(held, False)
+    project.park(held)
+    assert project.queue.ids() == [first, after]
+    assert project.hold.ids() == [held]
+    assert (project.out / "hold" / held / "job.yaml").is_file()
     assert Runner(project).run().status == st.FINISHED
-    assert project.queue.ids() == []
-    assert first
+    assert project.hold.ids() == [held]  # untouched
+    project.unpark(held)
+    assert project.queue.ids() == [held]
+    assert project.hold.ids() == []
+    assert Runner(project).run().status == st.FINISHED
 
 
-def test_hold_is_written_only_when_on(project):
+def test_a_study_made_on_hold_has_an_id_unique_over_both_folders(project):
+    queued = project.add("A.calibrate")
+    held = project.add("A.calibrate", hold=True)
+    assert held != queued and project.hold.ids() == [held]
+    assert held in project.queue.taken() and queued in project.hold.taken()
+    project.unpark(held, position=0)
+    assert project.queue.ids() == [held, queued]
+
+
+def test_park_and_unpark_refuse_what_is_not_there(project):
+    job_id = project.add("A.calibrate")
+    with pytest.raises(QueueError, match="not on hold"):
+        project.unpark(job_id)
+    project.park(job_id)
+    with pytest.raises(QueueError, match="not queued"):
+        project.park(job_id)
+
+
+def test_the_old_hold_flag_is_a_problem_not_a_silent_run(project):
     job_id = project.add("A.calibrate")
     path = project.queue.folder(job_id) / "job.yaml"
-    assert "hold" not in path.read_text("utf-8")
-    project.set_hold(job_id, True)
-    assert "hold: true" in path.read_text("utf-8")
-    project.set_hold(job_id, False)
-    assert "hold" not in path.read_text("utf-8")
+    path.write_text(path.read_text("utf-8") + "hold: true\n", "utf-8")
+    assert any("park" in p for p in project.problems(job_id))
+    assert Runner(project).run().status == st.ERROR
+    assert project.queue.ids() == [job_id]
 
 
-def test_cli_hold_and_release(tmp_path, capsys):
+def test_cli_park_and_unpark(tmp_path, capsys):
     catalog = tmp_path / "sequencer.py"
     catalog.write_text(
         "from pathlib import Path\n"
@@ -662,10 +680,14 @@ def test_cli_hold_and_release(tmp_path, capsys):
     )
     assert cli([str(catalog), "add", "A.calibrate"]) == 0
     job_id = capsys.readouterr().out.split()[-1]
-    assert cli([str(catalog), "hold", job_id]) == 0
-    assert cli([str(catalog), "run", "--yes"]) == 0
-    assert "held" in capsys.readouterr().out
-    assert cli([str(catalog), "release", job_id]) == 0
+    assert cli([str(catalog), "park", job_id]) == 0
+    assert cli([str(catalog), "list"]) == 0
+    out = capsys.readouterr().out
+    assert "queue (0)" in out and "on hold (1)" in out and job_id in out
+    assert cli([str(catalog), "unpark", job_id]) == 0
+    assert cli([str(catalog), "unpark", job_id]) == 1
+    assert cli([str(catalog), "add", "A.measure", "--hold"]) == 0
+    assert "on hold:" in capsys.readouterr().out
 
 
 def test_completed_names_are_read(project):
@@ -697,3 +719,11 @@ def test_a_name_sort_groups_a_sequence(project):
         "s01-full_A-a_measure",
     ]
     assert ids[2].startswith("x-") and ids[2].endswith("-b_measure")
+
+
+def test_hold_false_is_left_alone(project):
+    """Review round 4: only a set flag needs taking out."""
+    job_id = project.add("A.calibrate")
+    path = project.queue.folder(job_id) / "job.yaml"
+    path.write_text(path.read_text("utf-8") + "hold: false\n", "utf-8")
+    assert project.problems(job_id) == []

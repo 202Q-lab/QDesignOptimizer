@@ -11,7 +11,7 @@
     python -m qdesignoptimizer.sequencer <sequencer.py> run --yes
     python -m qdesignoptimizer.sequencer <sequencer.py> stop
     python -m qdesignoptimizer.sequencer <sequencer.py> requeue <completed folder name>
-    python -m qdesignoptimizer.sequencer <sequencer.py> hold <id>     (or release <id>)
+    python -m qdesignoptimizer.sequencer <sequencer.py> park <id>     (on hold; unpark <id> queues it)
 
 Several projects, one queue (``workspace``): name more with ``-p``; a
 project may also be given as its folder::
@@ -88,10 +88,13 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("stop", help="stop once the current study is done")
     p_re = sub.add_parser("requeue", help="queue a completed study again")
     p_re.add_argument("folder")
-    p_hold = sub.add_parser("hold", help="the runner stops at this study")
-    p_hold.add_argument("id")
-    p_rel = sub.add_parser("release", help="take a study off hold")
-    p_rel.add_argument("id")
+    p_add.add_argument(
+        "--hold", action="store_true", help="make it on hold, not in the queue"
+    )
+    p_park = sub.add_parser("park", help="put a queued study on hold")
+    p_park.add_argument("id")
+    p_unpark = sub.add_parser("unpark", help="move a study on hold to the queue")
+    p_unpark.add_argument("id")
     args = parser.parse_args(argv)
 
     try:
@@ -115,9 +118,15 @@ def _command(args, workspace: Workspace) -> int:
         if args.command == "add":
             project, task = workspace.locate_task(args.task)
             job_id = project.add(
-                task, json.loads(args.settings), campaign=args.campaign
+                task,
+                json.loads(args.settings),
+                campaign=args.campaign,
+                hold=args.hold,
             )
-            print(f"queued {workspace.added(project, [job_id])[0]}")
+            if args.hold:
+                print(f"on hold: {workspace.key(workspace.name_of(project), job_id)}")
+            else:
+                print(f"queued {workspace.added(project, [job_id])[0]}")
             return 0
         if args.command == "sequence":
             if Path(args.sequence).is_file():
@@ -180,7 +189,7 @@ def _command(args, workspace: Workspace) -> int:
             if failed:
                 # on_failure: continue ran on past them; still a failure.
                 print(f"{len(failed)} failed: " + ", ".join(failed))
-            ended_well = (st.FINISHED, st.STOPPED, st.HELD)
+            ended_well = (st.FINISHED, st.STOPPED)
             return 0 if final.status in ended_well and not failed else 1
         if args.command == "stop":
             runner = st.RunnerState.load(state_dir)
@@ -190,10 +199,15 @@ def _command(args, workspace: Workspace) -> int:
             st.request_stop(state_dir)
             print(f"stop requested; {runner.current or 'the study'} " f"finishes first")
             return 0
-        if args.command in ("hold", "release"):
+        if args.command == "park":
             project, job_id = workspace.locate(args.id)
-            project.set_hold(job_id, args.command == "hold")
-            print(f"{args.id}: {'on hold' if args.command == 'hold' else 'released'}")
+            project.park(job_id)
+            print(f"{args.id}: on hold")
+            return 0
+        if args.command == "unpark":
+            project, job_id = _locate_held(workspace, args.id)
+            project.unpark(job_id)
+            print(f"queued {workspace.added(project, [job_id])[0]}")
             return 0
         project, folder = workspace.locate(args.folder)
         path = project.queue.completed_dir / folder
@@ -216,6 +230,14 @@ def _list(workspace: Workspace) -> int:
         problems = project.problems(job_id)
         flag = f"  !! {problems[0]}" if problems else ""
         print(f"  {n:2d}. {key}{flag}")
+    held = [
+        workspace.key(name, i)
+        for name, project in workspace.projects.items()
+        for i in project.hold.ids()
+    ]
+    print(f"on hold ({len(held)}):")
+    for key in held:
+        print(f"      {key}")
     print("completed (latest 10):")
     for project, path in workspace.completed(10):
         result = st.result_of(path)
@@ -272,3 +294,19 @@ def _shown(project, path: Path | None) -> str:
         return Path(path).resolve().relative_to(project.root.resolve()).as_posix()
     except ValueError:
         return str(path)
+
+
+def _locate_held(workspace: Workspace, key: str):
+    """The project and id of a study on hold (``<project>/<id>`` with
+    several projects open, the bare id when it is unique)."""
+    found = [
+        (project, i)
+        for name, project in workspace.projects.items()
+        for i in project.hold.ids()
+        if key in (i, workspace.key(name, i), f"{name}/{i}")
+    ]
+    if len(found) != 1:
+        raise QueueError(
+            f"{key} is not on hold" if not found else f"{key} is ambiguous"
+        )
+    return found[0]

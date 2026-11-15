@@ -12,6 +12,12 @@ from . import form_layout, forms, layout
 from .queue_state import Bridge, GuiError
 
 
+def _queued_key(text: str) -> str:
+    """The key in a ``queued <key>[ -- warning, ...]`` message (a key may
+    hold spaces: a project is named after its folder)."""
+    return text.removeprefix("queued ").split(" -- warning", 1)[0]
+
+
 def _msg(text: str, ok: bool = True) -> dict:
     return {"text": text, "ok": ok}
 
@@ -53,6 +59,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
 
     @app.callback(
         Output("queue-table", "children"),
+        Output("held-table", "children"),
         Output("completed-table", "children"),
         Output("runner-banner", "children"),
         Output("add-choice", "options"),
@@ -61,11 +68,14 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Output("btn-stop", "disabled"),
         Output("btn-start", "children"),
         Output("add-campaign", "options"),
-        Output("campaign-table", "children"),
+        Output("browser", "children"),
+        Output("new-project", "options"),
+        Output("new-project-box", "style"),
         Input("snapshot", "data"),
         Input("selected", "data"),
+        Input("browser-open", "data"),
     )
-    def _render(snap, selected):
+    def _render(snap, selected, opened):
         snap = snap or {}
         runner = snap.get("runner") or {}
         alive = bool(runner.get("alive"))
@@ -75,6 +85,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             banner = f"Cannot read the project: {snap['error']}"
         return (
             layout.queue_table(snap, selected),
+            layout.held_table(snap, selected),
             layout.completed_table(snap, selected),
             banner,
             layout.add_options(snap),
@@ -83,68 +94,107 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             not alive or bool(runner.get("stop_requested")),
             f"Start ({live} the queue)",
             layout.campaign_options(snap),
-            layout.campaign_table(snap),
+            layout.browser(snap, selected, opened),
+            snap.get("projects") or [],
+            {"minWidth": "160px"} if snap.get("multi") else {"display": "none"},
         )
 
     @app.callback(
         Output("selected", "data"),
         Output("pending-select", "data"),
         Output("message", "data", allow_duplicate=True),
+        Output("unsaved-warning", "style"),
+        Output("unsaved-text", "children"),
         Input({"type": "qrow", "index": ALL}, "n_clicks"),
         Input({"type": "crow", "index": ALL}, "n_clicks"),
-        Input({"type": "drow", "index": ALL}, "n_clicks"),
-        State({"type": "ff", "file": ALL, "path": ALL}, "value"),
-        State({"type": "ff", "file": ALL, "path": ALL}, "id"),
-        State({"type": "fo", "file": ALL, "key": ALL, "part": ALL}, "value"),
-        State({"type": "fo", "file": ALL, "key": ALL, "part": ALL}, "id"),
-        State({"type": "jf", "name": ALL}, "value"),
-        State({"type": "jf", "name": ALL}, "id"),
-        State("details-orig", "data"),
+        Input({"type": "hrow", "index": ALL}, "n_clicks"),
+        Input({"type": "brow", "kind": ALL, "index": ALL}, "n_clicks"),
+        Input("btn-open-new-campaign", "n_clicks"),
+        Input("btn-open-new-sequence", "n_clicks"),
+        Input("btn-open-new-study", "n_clicks"),
+        *_EDIT_STATES,
         State("pending-select", "data"),
         State("selected", "data"),
         prevent_initial_call=True,
     )
-    def _select(
-        _q,
-        _c,
-        _d,
-        ff,
-        ff_ids,
-        fo,
-        fo_ids,
-        fields,
-        field_ids,
-        orig,
-        pending,
-        current,
-    ):
+    def _select(*args):
+        *edits, pending, current = args[7:]
+        del pending  # asked again whenever the edits are still there
         if not _clicked():
-            return no_update, no_update, no_update
-        kind = {"qrow": "queue", "crow": "completed", "drow": "draft"}[
-            ctx.triggered_id["type"]
-        ]
-        target = {"kind": kind, "key": ctx.triggered_id["index"]}
+            return no_update, no_update, no_update, no_update, no_update
+        trig = ctx.triggered_id
+        if isinstance(trig, str):  # one of the New buttons
+            kind = {
+                "btn-open-new-campaign": "new-campaign",
+                "btn-open-new-sequence": "new-sequence",
+                "btn-open-new-study": "new-study",
+            }[trig]
+            target = {"kind": kind, "key": ""}
+        elif trig["type"] == "brow":
+            target = {"kind": trig["kind"], "key": trig["index"]}
+        else:
+            kind = {"qrow": "queue", "crow": "completed", "hrow": "hold"}[trig["type"]]
+            target = {"kind": kind, "key": trig["index"]}
+        hidden = {"display": "none"}
         if target == current:
-            return no_update, None, no_update
-        dirty = _unsaved(
-            form_layout.current_values(ff, ff_ids, fo, fo_ids),
-            fields,
-            field_ids,
-            orig,
-        )
-        if dirty and pending != target:
-            # Moving away redraws the pane and drops these edits: ask
-            # once; a second click on the same study goes ahead.
+            return no_update, None, no_update, hidden, ""
+        dirty = _edited(*edits)
+        if dirty:
+            # Moving away redraws the editor and drops these edits: ask.
+            where = target["key"] or target["kind"].replace("-", " ")
             return (
                 no_update,
                 target,
-                _msg(
-                    f"Unsaved edits in {', '.join(dirty)}. Save them, or "
-                    f"click {target['key']} again to discard them.",
-                    False,
-                ),
+                no_update,
+                {"display": "block"},
+                f"Unsaved edits in {', '.join(dirty)}. Stay to save them, or "
+                f"discard them and open {where}.",
             )
-        return target, None, no_update
+        return target, None, no_update, hidden, ""
+
+    @app.callback(
+        Output("selected", "data", allow_duplicate=True),
+        Output("pending-select", "data", allow_duplicate=True),
+        Output("unsaved-warning", "style", allow_duplicate=True),
+        Input("btn-unsaved-stay", "n_clicks"),
+        Input("btn-unsaved-discard", "n_clicks"),
+        State("pending-select", "data"),
+        prevent_initial_call=True,
+    )
+    def _unsaved_choice(_stay, _discard, pending):
+        """The warning's answer: stay (keep editing) or discard the edits
+        and open what was clicked."""
+        if not _clicked():
+            return no_update, no_update, no_update
+        hidden = {"display": "none"}
+        if ctx.triggered_id == "btn-unsaved-discard" and pending:
+            return pending, None, hidden
+        return no_update, None, hidden
+
+    @app.callback(
+        Output("pending-select", "data", allow_duplicate=True),
+        Output("unsaved-warning", "style", allow_duplicate=True),
+        Input("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _clear_warning(_selected):
+        """Whatever moved the selection (a ▶, a requeue, a New made), the
+        warning about the pane it left is moot."""
+        return None, {"display": "none"}
+
+    @app.callback(
+        Output("browser-open", "data"),
+        Input({"type": "bsec", "index": ALL}, "n_clicks"),
+        State("browser-open", "data"),
+        prevent_initial_call=True,
+    )
+    def _toggle_section(_clicks, opened):
+        if not _clicked():
+            return no_update
+        opened = dict(opened or {})
+        name = ctx.triggered_id["index"]
+        opened[name] = not opened.get(name, True)
+        return opened
 
     @app.callback(
         Output("details-problems", "children"),
@@ -158,19 +208,54 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Output("details", "children"),
         Output("details-orig", "data"),
         Input("selected", "data"),
+        Input("new-project", "value"),
         State("snapshot", "data"),
     )
-    def _details(selected, snap):
+    def _details(selected, new_project, snap):
         # Redrawn on selection only -- never on a poll, a save or a
         # create/delete (those update their own pane), any of which
-        # would wipe a half-typed edit in another tab.
+        # would wipe a half-typed edit in another tab. The one exception:
+        # picking the project redraws a New view, which is made for it.
         if not selected:
             return layout.details(None, {}), None
+        kind, key = selected.get("kind"), selected.get("key") or ""
+        if ctx.triggered_id == "new-project" and not str(kind).startswith("new-"):
+            return no_update, no_update
+        snap = snap or {}
         try:
-            data = bridge.details(selected["kind"], selected["key"])
+            multi = not bridge.workspace.single
+            project = (new_project or "") if multi else ""
+            if multi and kind.startswith("new-") and not project:
+                return (
+                    layout.editor_message(
+                        "Pick the project first (next to the New buttons)."
+                    ),
+                    None,
+                )
+            if kind == "new-study":
+                return layout.new_study_view(snap, project), None
+            if kind == "new-campaign":
+                return layout.new_campaign_view(), None
+            if kind in ("sequence", "new-sequence"):
+                view = bridge.sequence_view(key, project)
+                return layout.sequence_editor(view), {
+                    "seq": layout.sequence_fields(view)
+                }
+            if kind == "template":
+                return layout.template_view(bridge.template_view(key)), None
+            if kind == "campaign":
+                project, _, local = key.rpartition("::")
+                multi = not bridge.workspace.single
+                return (
+                    layout.campaign_view(
+                        bridge.campaign_view(local, project if multi else ""), multi
+                    ),
+                    None,
+                )
+            data = bridge.details(kind, key)
         except GuiError as exc:
-            return str(exc), None
-        editable = selected["kind"] in ("queue", "draft")
+            return layout.editor_message(str(exc)), None
+        editable = kind in ("queue", "hold")
         forms_now = {}
         for spec in data.get("files") or []:
             forms_now.update(form_layout.form_values(spec, editable))
@@ -185,55 +270,82 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
         Output("message", "data", allow_duplicate=True),
+        Output("selected", "data", allow_duplicate=True),
         Input({"type": "act", "action": ALL, "index": ALL}, "n_clicks"),
         State("rev", "data"),
+        State("selected", "data"),
+        *_EDIT_STATES,
         prevent_initial_call=True,
     )
-    def _act(_clicks, rev):
+    def _act(_clicks, rev, selected, *edits):
         if not _clicked():
-            return no_update, no_update
+            return no_update, no_update, no_update
         job_id, action = ctx.triggered_id["index"], ctx.triggered_id["action"]
+        shown = (selected or {}).get("key") == job_id
+        follow = no_update
+        if shown and action in ("park", "unpark"):
+            dirty = _edited(*edits)
+            if dirty:
+                # Moving the study redraws the editor: its edits would go.
+                verb = "putting it on hold" if action == "park" else "queueing it"
+                return (
+                    no_update,
+                    _msg(
+                        f"{job_id} has unsaved edits in {', '.join(dirty)}: "
+                        f"save them before {verb}",
+                        False,
+                    ),
+                    no_update,
+                )
         try:
             if action == "remove":
                 text = bridge.remove(job_id)
-            elif action == "hold":
-                text = bridge.toggle_hold(job_id)
+                follow = None if shown else no_update
+            elif action == "park":
+                text = bridge.park(job_id)
+                if shown:
+                    follow = {"kind": "hold", "key": bridge.hold_key_of(job_id)}
+            elif action == "unpark":
+                text = bridge.unpark(job_id)
+                if shown:
+                    follow = {"kind": "queue", "key": _queued_key(text)}
             else:
                 bridge.move(job_id, -1 if action == "up" else 1)
                 text = f"moved {job_id}"
-            return (rev or 0) + 1, _msg(text)
+            return (rev or 0) + 1, _msg(text), follow
         except GuiError as exc:
-            return (rev or 0) + 1, _msg(str(exc), False)
+            return (rev or 0) + 1, _msg(str(exc), False), no_update
 
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
         Output("message", "data", allow_duplicate=True),
-        Output("campaign-key", "value"),
-        Output("campaign-question", "value"),
+        Output("selected", "data", allow_duplicate=True),
         Input("btn-new-campaign", "n_clicks"),
         State("campaign-key", "value"),
         State("campaign-question", "value"),
         State("campaign-own-store", "value"),
+        State("new-project", "value"),
         State("rev", "data"),
         prevent_initial_call=True,
     )
-    def _new_campaign(n, key, question, own, rev):
+    def _new_campaign(n, key, question, own, project, rev):
         if not n:
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update
         if not (key or "").strip():
-            return (
-                no_update,
-                _msg("name the campaign first", False),
-                no_update,
-                no_update,
-            )
+            return no_update, _msg("name the campaign first", False), no_update
+        key = key.strip().replace("\\", "/").strip("/")
+        multi = not bridge.workspace.single
         try:
             text = bridge.new_campaign(
-                key.strip(), question or "", "own" in (own or [])
+                key,
+                question or "",
+                "own" in (own or []),
+                (project or "") if multi else "",
             )
         except GuiError as exc:
-            return no_update, _msg(str(exc), False), no_update, no_update
-        return (rev or 0) + 1, _msg(text), "", ""
+            return no_update, _msg(str(exc), False), no_update
+        shown = f"{project}::{key}" if multi else key
+        return (rev or 0) + 1, _msg(text), {"kind": "campaign", "key": shown}
 
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
@@ -272,7 +384,6 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
         Output("message", "data", allow_duplicate=True),
-        Output("draft", "data", allow_duplicate=True),
         Input("btn-add", "n_clicks"),
         State("add-choice", "value"),
         State("add-campaign", "value"),
@@ -280,33 +391,15 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         prevent_initial_call=True,
     )
     def _add(_n, choice, campaign, rev):
-        """A study goes straight into the queue; a study sequence opens the
-        study sequence popup with its studies, to be edited and launched."""
+        """A study, or every study of a study sequence template, into the
+        queue (in the picked campaign). Edit a template in the editor."""
         if not choice:
-            return (
-                no_update,
-                _msg("pick something to add first", False),
-                no_update,
-            )
+            return no_update, _msg("pick something to add first", False)
         kind, key = choice.split(":", 1)
         try:
-            if kind == "sequence":
-                draft = bridge.new_draft(from_sequence=key, campaign=campaign or None)
-                return (
-                    (rev or 0) + 1,
-                    _msg(
-                        "edit the study sequence's studies, then launch it "
-                        "(nothing is queued yet)"
-                    ),
-                    {"key": draft},
-                )
-            return (
-                (rev or 0) + 1,
-                _msg(bridge.add(kind, key, campaign or "")),
-                no_update,
-            )
+            return (rev or 0) + 1, _msg(bridge.add(kind, key, campaign or ""))
         except GuiError as exc:
-            return (rev or 0) + 1, _msg(str(exc), False), no_update
+            return (rev or 0) + 1, _msg(str(exc), False)
 
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
@@ -322,15 +415,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         prevent_initial_call=True,
     )
     def _save_job(n, selected, values, ids, orig, rev):
-        if (
-            not n
-            or not selected
-            or selected.get("kind")
-            not in (
-                "queue",
-                "draft",
-            )
-        ):
+        if not n or not selected or selected.get("kind") not in ("queue", "hold"):
             return no_update, no_update, no_update, no_update
         form = {i["name"]: v for i, v in zip(ids, values)}
         try:
@@ -410,11 +495,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         if (
             not _clicked()
             or not selected
-            or selected.get("kind")
-            not in (
-                "queue",
-                "draft",
-            )
+            or selected.get("kind") not in ("queue", "hold")
         ):
             return no_update, no_update, no_update, panes
         trig = ctx.triggered_id
@@ -512,8 +593,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             text = bridge.requeue(name, exact)
         except GuiError as exc:
             return (rev or 0) + 1, _msg(str(exc), False), no_update
-        new_id = text.split()[-1]
-        return (rev or 0) + 1, _msg(text), {"kind": "queue", "key": new_id}
+        return (rev or 0) + 1, _msg(text), {"kind": "queue", "key": _queued_key(text)}
 
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
@@ -624,6 +704,16 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             return _msg(str(exc), False), (rev or 0) + 1
 
     @app.callback(
+        Output("inspect", "children", allow_duplicate=True),
+        Output("inspect", "style", allow_duplicate=True),
+        Input("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _hide_inspect(_selected):
+        """Another study or template picked: its Inspect is closed."""
+        return "", {"display": "none"}
+
+    @app.callback(
         Output("inspect", "children"),
         Output("inspect", "style"),
         Input("btn-inspect", "n_clicks"),
@@ -631,7 +721,13 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         prevent_initial_call=True,
     )
     def _inspect(_n, selected):
-        if not selected or selected.get("kind") not in ("queue", "draft"):
+        # Only on a real click: the button is drawn anew with each study,
+        # and that alone must not open the box.
+        if (
+            not _clicked()
+            or not selected
+            or selected.get("kind") not in ("queue", "hold")
+        ):
             return no_update, no_update
         try:
             text = json.dumps(bridge.describe(selected["key"]), indent=1, default=str)
@@ -679,6 +775,42 @@ def _settings_from(form: dict) -> dict:
     return out
 
 
+#: Every input of the editor, then what it was drawn with: what
+#: ``_edited`` compares to tell unsaved edits.
+_EDIT_STATES = (
+    State({"type": "ff", "file": ALL, "path": ALL}, "value"),
+    State({"type": "ff", "file": ALL, "path": ALL}, "id"),
+    State({"type": "fo", "file": ALL, "key": ALL, "part": ALL}, "value"),
+    State({"type": "fo", "file": ALL, "key": ALL, "part": ALL}, "id"),
+    State({"type": "jf", "name": ALL}, "value"),
+    State({"type": "jf", "name": ALL}, "id"),
+    State({"type": "seq", "name": ALL}, "value"),
+    State({"type": "seq", "name": ALL}, "id"),
+    State({"type": "seqrow", "field": ALL, "index": ALL}, "value"),
+    State({"type": "seqrow", "field": ALL, "index": ALL}, "data"),
+    State({"type": "seqrow", "field": ALL, "index": ALL}, "id"),
+    State("details-orig", "data"),
+)
+
+
+def _edited(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    ff, ff_ids, fo, fo_ids, fields, field_ids, seq, seq_ids, rvalues, rdatas, rids, orig
+) -> list[str]:
+    """What in the editor has edits not saved yet ([] for none), from
+    the values of ``_EDIT_STATES``."""
+    dirty = _unsaved(
+        form_layout.current_values(ff, ff_ids, fo, fo_ids), fields, field_ids, orig
+    )
+    if seq_ids and (orig or {}).get("seq") is not None:
+        now = layout.seq_state(
+            {i["name"]: v for i, v in zip(seq_ids, seq)},
+            _rows_from(rvalues, rdatas, rids),
+        )
+        if now != orig["seq"]:
+            dirty.append("the study sequence")
+    return dirty
+
+
 def _unsaved(now: dict, fields, field_ids, orig) -> list[str]:
     """Names of the files (and job.yaml) whose inputs differ from what
     was last drawn or saved."""
@@ -715,231 +847,9 @@ def register_template_callbacks(app, bridge) -> None:
         return _msg(text), (rev or 0) + 1
 
 
-def register_draft_callbacks(app, bridge) -> None:
-    """The study sequence popup (``draft_layout``)."""
-    from . import draft_layout
-
-    @app.callback(
-        Output("draft", "data", allow_duplicate=True),
-        Input("btn-new-sequence", "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def _open(n):
-        return {"screen": "start"} if n else no_update
-
-    @app.callback(
-        Output("draft-body", "children"),
-        Output("draft-modal", "style"),
-        Output("page-root", "className"),
-        Input("draft", "data"),
-        Input("rev", "data"),
-        Input("selected", "data"),
-        State("snapshot", "data"),
-    )
-    def _render(state, _rev, selected, snap):
-        if not state:
-            return None, {"display": "none"}, "qs-page"
-        shown = ({"display": "block"}, "qs-page qs-drafting")
-        if state.get("key"):
-            try:
-                view = bridge.draft_view(state["key"])
-            except GuiError as exc:
-                return html.Div(str(exc)), *shown
-            status = bridge.launch_status(state["key"]) or {}
-            return (
-                draft_layout.draft_screen(
-                    view, selected, status.get("state") == "running"
-                ),
-                *shown,
-            )
-        snap = snap or {}
-        sequences = [
-            {"value": c["key"], "label": f"{c['label']} ({c['key']})"}
-            for c in snap.get("catalog") or []
-            if c["kind"] == "sequence"
-        ]
-        return (
-            draft_layout.start_screen(
-                snap.get("projects") or [], sequences, bridge.drafts()
-            ),
-            *shown,
-        )
-
-    @app.callback(
-        Output("draft", "data", allow_duplicate=True),
-        Output("rev", "data", allow_duplicate=True),
-        Output("message", "data", allow_duplicate=True),
-        Output("selected", "data", allow_duplicate=True),
-        Input({"type": "dbtn", "name": ALL}, "n_clicks"),
-        Input({"type": "dact", "action": ALL, "index": ALL}, "n_clicks"),
-        Input({"type": "draft-resume", "index": ALL}, "n_clicks"),
-        State({"type": "dval", "name": ALL}, "value"),
-        State({"type": "dval", "name": ALL}, "id"),
-        State("draft", "data"),
-        State("selected", "data"),
-        State("rev", "data"),
-        prevent_initial_call=True,
-    )
-    def _act(_b, _a, _r, values, ids, state, selected, rev):
-        if not _clicked():
-            return no_update, no_update, no_update, no_update
-        trig = ctx.triggered_id
-        form = {i["name"]: v for i, v in zip(ids or [], values or [])}
-        key = (state or {}).get("key")
-        bump = (rev or 0) + 1
-        on_draft = (selected or {}).get("kind") == "draft"
-        close = None, bump, None, (None if on_draft else no_update)
-        try:
-            # Every action redraws the popup from the draft, so the name
-            # typed into it is saved first (whatever the action).
-            if key and form.get("label") is not None:
-                bridge.draft_label(key, form["label"])
-            if trig["type"] == "draft-resume":
-                return {"key": trig["index"]}, bump, no_update, no_update
-            if trig["type"] == "dact":
-                study = trig["index"]
-                if trig["action"] == "remove":
-                    text = bridge.draft_remove(study)
-                    gone = on_draft and selected.get("key") == study
-                    return (
-                        no_update,
-                        bump,
-                        _msg(text),
-                        None if gone else no_update,
-                    )
-                bridge.draft_move(study, -1 if trig["action"] == "up" else 1)
-                return no_update, bump, no_update, no_update
-            name = trig["name"]
-            if name == "create":
-                new = bridge.new_draft(
-                    project=form.get("project") or "",
-                    label=form.get("new-label") or "",
-                    from_sequence=form.get("from") or "",
-                )
-                return {"key": new}, bump, no_update, no_update
-            if name == "blank":
-                study = bridge.draft_blank(key, form.get("blank-name") or "")
-                return (
-                    no_update,
-                    bump,
-                    _msg(
-                        "a blank ministudy: fill it in on the right, add "
-                        "its opt targets, then launch"
-                    ),
-                    {"kind": "draft", "key": study},
-                )
-            if name == "add":
-                if not form.get("add"):
-                    return (
-                        no_update,
-                        no_update,
-                        _msg("pick a study to add first", False),
-                        no_update,
-                    )
-                study = bridge.draft_add(key, form["add"])
-                return (
-                    no_update,
-                    bump,
-                    _msg(f"added {study.rsplit('/', 1)[-1]}"),
-                    {"kind": "draft", "key": study},
-                )
-            if name == "launch":
-                # In the background: the popup shows how far it got
-                # (``_launch_progress``) and closes when it is done.
-                text = bridge.start_launch(key, form.get("label") or "")
-                return no_update, bump, _msg(text), no_update
-            if name == "discard":
-                text = bridge.discard_draft(key)
-                return None, bump, _msg(text), close[3]
-            if name == "close":
-                return close
-        except GuiError as exc:
-            return no_update, bump, _msg(str(exc), False), no_update
-        return no_update, no_update, no_update, no_update
-
-    @app.callback(
-        Output("message", "data", allow_duplicate=True),
-        Input({"type": "dval", "name": ALL}, "value"),
-        State({"type": "dval", "name": ALL}, "id"),
-        State("draft", "data"),
-        prevent_initial_call=True,
-    )
-    def _label(values, ids, state):
-        """Save the study sequence's name as soon as it is entered, and
-        its campaign as soon as it is picked."""
-        trig = ctx.triggered_id
-        key = (state or {}).get("key")
-        if trig and trig.get("name") == "campaign" and key:
-            value = next(
-                (v for i, v in zip(ids, values) if i["name"] == "campaign"), None
-            )
-            try:
-                return _msg(bridge.draft_campaign(key, value or ""))
-            except GuiError as exc:
-                return _msg(str(exc), False)
-        if not trig or trig.get("name") != "label" or not key:
-            return no_update
-        value = next((v for i, v in zip(ids, values) if i["name"] == "label"), None)
-        if value is None:
-            return no_update
-        try:
-            bridge.draft_label(key, value)
-        except GuiError as exc:
-            return _msg(str(exc), False)
-        return no_update
-
-    @app.callback(
-        Output("draft-status", "children"),
-        Output("draft", "data", allow_duplicate=True),
-        Output("rev", "data", allow_duplicate=True),
-        Output("message", "data", allow_duplicate=True),
-        Output("selected", "data", allow_duplicate=True),
-        Input("poll", "n_intervals"),
-        Input("draft", "data"),
-        State("selected", "data"),
-        State("rev", "data"),
-        prevent_initial_call=True,
-    )
-    def _launch_progress(_n, state, selected, rev):
-        """Show a background launch's progress; close the popup when it
-        is done, keep it open (with the reason) when it failed."""
-        key = (state or {}).get("key")
-        if not state:
-            # The popup is closed: a failure it showed has been read.
-            bridge.forget_shown_launches()
-        status = bridge.launch_status(key) if key else None
-        if not status:
-            return None, no_update, no_update, no_update, no_update
-        if status["state"] == "running":
-            return (
-                draft_layout.launch_progress(status),
-                no_update,
-                no_update,
-                no_update,
-                no_update,
-            )
-        if status["state"] != "done":
-            # Failed: the reason stays in the popup until it is closed
-            # or launched again; the message and the redraw come once.
-            reason = html.Div(status["message"], className="qs-problems")
-            if not bridge.launch_shown(key):
-                return reason, no_update, no_update, no_update, no_update
-            return (
-                reason,
-                no_update,
-                (rev or 0) + 1,
-                _msg(status["message"], False),
-                no_update,
-            )
-        bridge.forget_launch(key)
-        on_draft = (selected or {}).get("kind") == "draft"
-        return (
-            None,
-            None,
-            (rev or 0) + 1,
-            _msg(status["message"]),
-            None if on_draft else no_update,
-        )
+def register_preview_callbacks(app, bridge) -> None:
+    """The pictures of what a study simulates, and a completed study's
+    convergence plot."""
 
     @app.callback(
         Output("preview-view", "children", allow_duplicate=True),
@@ -1001,3 +911,145 @@ def register_draft_callbacks(app, bridge) -> None:
                 ),
             ]
         )
+
+
+def register_editor_callbacks(app, bridge) -> None:
+    """+ New study, and the study sequence template editor."""
+
+    @app.callback(
+        Output("rev", "data", allow_duplicate=True),
+        Output("message", "data", allow_duplicate=True),
+        Output("selected", "data", allow_duplicate=True),
+        Input("btn-make-study", "n_clicks"),
+        State("new-study-task", "data"),
+        State("new-study-template", "value"),
+        State("new-study-name", "value"),
+        State("new-study-campaign", "value"),
+        State("new-project", "value"),
+        State("rev", "data"),
+        prevent_initial_call=True,
+    )
+    def _make_study(n, task, template, name, campaign, project, rev):
+        if not n:
+            return no_update, no_update, no_update
+        try:
+            key = bridge.new_study(
+                task or template or "",
+                name or "",
+                campaign or "",
+                (project or "") if not bridge.workspace.single else "",
+            )
+        except GuiError as exc:
+            return no_update, _msg(str(exc), False), no_update
+        return (
+            (rev or 0) + 1,
+            _msg(f"made {key.rsplit('/', 1)[-1]} on hold: edit it, then queue it (▶)"),
+            {"kind": "hold", "key": key},
+        )
+
+    @app.callback(
+        Output("seq-rows-view", "children"),
+        Input({"type": "seqact", "action": ALL, "index": ALL}, "n_clicks"),
+        Input("btn-seq-add", "n_clicks"),
+        State({"type": "seqrow", "field": ALL, "index": ALL}, "value"),
+        State({"type": "seqrow", "field": ALL, "index": ALL}, "data"),
+        State({"type": "seqrow", "field": ALL, "index": ALL}, "id"),
+        State("seq-add-task", "value"),
+        State("seq-tasks", "data"),
+        prevent_initial_call=True,
+    )
+    def _seq_rows(_acts, _add, values, datas, ids, add_task, tasks):
+        trig = ctx.triggered_id
+        if trig is None or (trig != "btn-seq-add" and not _clicked()):
+            return no_update
+        rows = _rows_from(values, datas, ids)
+        if trig == "btn-seq-add":
+            if not add_task:
+                return no_update
+            rows.append({"task": add_task, "settings": "", "notes": "", "extra": {}})
+        else:
+            n, action = trig["index"], trig["action"]
+            if action == "remove":
+                rows.pop(n)
+            else:
+                m = n - 1 if action == "up" else n + 1
+                if 0 <= m < len(rows):
+                    rows[n], rows[m] = rows[m], rows[n]
+        return layout.seq_rows(rows, tasks or [])
+
+    @app.callback(
+        Output("rev", "data", allow_duplicate=True),
+        Output("message", "data", allow_duplicate=True),
+        Output("selected", "data", allow_duplicate=True),
+        Input("btn-seq-save", "n_clicks"),
+        Input("btn-seq-queue", "n_clicks"),
+        State("seq-meta", "data"),
+        State({"type": "seq", "name": ALL}, "value"),
+        State({"type": "seq", "name": ALL}, "id"),
+        State({"type": "seqrow", "field": ALL, "index": ALL}, "value"),
+        State({"type": "seqrow", "field": ALL, "index": ALL}, "data"),
+        State({"type": "seqrow", "field": ALL, "index": ALL}, "id"),
+        State("rev", "data"),
+        prevent_initial_call=True,
+    )
+    def _seq_save(_s, _q, meta, values, ids, rvalues, rdatas, rids, rev):
+        trig = ctx.triggered_id
+        if trig is None or not _clicked():
+            return no_update, no_update, no_update
+        meta = meta or {}
+        form = {i["name"]: v for i, v in zip(ids, values)}
+        multi = not bridge.workspace.single
+        project = meta.get("project") or ""
+        if trig == "btn-seq-queue":
+            # The template as saved: its own name, not what the file
+            # name field holds (empty, or a name not saved yet).
+            saved = meta.get("key") or ""
+            try:
+                text = bridge.add(
+                    "sequence",
+                    f"{project}/{saved}" if multi else saved,
+                    form.get("campaign") or "",
+                )
+            except GuiError as exc:
+                return no_update, _msg(str(exc), False), no_update
+            return (rev or 0) + 1, _msg(text), no_update
+        key = (form.get("key") or "").strip()
+        if not key:
+            return (
+                no_update,
+                _msg("give the template a file name first", False),
+                no_update,
+            )
+        catalog_key = f"{project}/{key}" if multi else key
+        data = {
+            "keep": meta.get("keep") or {},
+            "name": form.get("name") or "",
+            "why_ordered": form.get("why_ordered") or "",
+            "campaign": form.get("campaign") or "",
+            "defaults": {
+                "settings": form.get("d_settings") or "",
+                "checks": form.get("d_checks") or "",
+                "save": bool(form.get("d_save")),
+                "on_failure": form.get("d_on_failure") or "abort",
+            },
+            "studies": _rows_from(rvalues, rdatas, rids),
+        }
+        overwrite = not meta.get("new") and not meta.get("from_code")
+        try:
+            text = bridge.save_sequence(
+                key, data, overwrite=overwrite, project=project if multi else ""
+            )
+        except GuiError as exc:
+            return no_update, _msg(str(exc), False), no_update
+        return (rev or 0) + 1, _msg(text), {"kind": "sequence", "key": catalog_key}
+
+
+def _rows_from(values, datas, ids) -> list[dict]:
+    """The study rows of the sequence editor, from its fields."""
+    rows: dict[int, dict] = {}
+    for value, data, i in zip(values or [], datas or [], ids or []):
+        row = rows.setdefault(
+            i["index"], {"task": "", "settings": "", "notes": "", "extra": {}}
+        )
+        row[i["field"]] = data if i["field"] == "extra" else (value or "")
+    return [rows[n] for n in sorted(rows)]

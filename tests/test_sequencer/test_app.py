@@ -126,7 +126,8 @@ def test_the_details_pane_is_not_redrawn_by_saves_or_polls(bridge):
     app = build_app(project=bridge.project)
     (key,) = (k for k in app.callback_map if "details.children" in k)
     inputs = {i["id"] for i in app.callback_map[key]["inputs"]}
-    assert inputs == {"selected"}
+    # The project picker redraws only a New view (round 4, 2026-11-15).
+    assert inputs == {"selected", "new-project"}
 
 
 # -- review round 3 (2026-11-10) -----------------------------------------
@@ -170,12 +171,24 @@ def test_file_spec_draws_one_pane(bridge):
     form_layout.file_form(bridge.file_spec(job_id, "task.yaml"), True)
 
 
-def test_hold_toggles_from_the_gui(bridge):
+def test_the_gui_parks_edits_and_queues_a_study(bridge):
     bridge.add("task", "A.calibrate")
     job_id = bridge.project.queue.ids()[0]
-    assert "on hold" in bridge.toggle_hold(job_id)
-    assert bridge.snapshot()["rows"][0]["hold"] is True
-    assert "released" in bridge.toggle_hold(job_id)
+    assert "on hold" in bridge.park(job_id)
+    snap = bridge.snapshot()
+    assert snap["rows"] == []
+    (held,) = snap["held"]
+    assert held["id"] == f"@hold/{job_id}" and held["problems"] == []
+    # A study on hold is edited like a queued one.
+    data = bridge.details("hold", held["id"])
+    assert data["kind"] == "hold" and data["job"]["task"] == "A.calibrate"
+    bridge.save_job(held["id"], {"notes": "later"})
+    assert bridge.snapshot()["held"][0]["notes"] == "later"
+    assert bridge.unpark(held["id"]).startswith(f"queued {job_id}")
+    assert [r["id"] for r in bridge.snapshot()["rows"]] == [job_id]
+    bridge.park(job_id)
+    assert "removed" in bridge.remove(f"@hold/{job_id}")
+    assert bridge.snapshot()["held"] == []
 
 
 def test_save_as_template_needs_a_backend_with_templates(bridge):
@@ -183,3 +196,81 @@ def test_save_as_template_needs_a_backend_with_templates(bridge):
     job_id = bridge.project.queue.ids()[0]
     with pytest.raises(GuiError, match="no templates"):
         bridge.save_as_template("queue", job_id, "x")
+
+
+def test_the_project_picker_redraws_only_a_new_view(bridge):
+    from dash import no_update
+    from dash._callback_context import context_value
+    from dash._utils import AttributeDict
+
+    from qdesignoptimizer.sequencer.app.server import build_app
+
+    app = build_app(project=bridge.project)
+    (key,) = (k for k in app.callback_map if "details.children" in k)
+    details = app.callback_map[key]["callback"].__wrapped__
+    token = context_value.set(
+        AttributeDict(triggered_inputs=[{"prop_id": "new-project.value", "value": "x"}])
+    )
+    try:
+        assert (
+            details({"kind": "template", "key": "A.calibrate"}, "x", {})[0] is no_update
+        )
+        assert details({"kind": "new-campaign", "key": ""}, "x", {})[0] is not no_update
+    finally:
+        context_value.reset(token)
+
+
+def test_play_and_pause_wait_for_unsaved_edits(bridge):
+    """2026-11-15: ⏸ / ▶ on the study in the editor moves it and redraws
+    the editor, so its unsaved edits must be saved first."""
+    import json as _json
+
+    from dash import no_update
+    from dash._callback_context import context_value
+    from dash._utils import AttributeDict
+
+    from qdesignoptimizer.sequencer.app.server import build_app
+
+    bridge.add("task", "A.calibrate")
+    (job_id,) = bridge.project.queue.ids()
+    app = build_app(project=bridge.project)
+    (key,) = (
+        k
+        for k, v in app.callback_map.items()
+        if any('"act"' in str(i["id"]) or "'act'" in str(i["id"]) for i in v["inputs"])
+    )
+    act = app.callback_map[key]["callback"].__wrapped__
+    trig = _json.dumps({"action": "park", "index": job_id}, separators=(",", ":"))
+    token = context_value.set(
+        AttributeDict(triggered_inputs=[{"prop_id": trig + ".n_clicks", "value": 1}])
+    )
+    selected = {"kind": "queue", "key": job_id}
+    empty = [[]] * 10
+    try:
+        # A job.yaml field changed from what was drawn: refused.
+        _, msg, follow = act(
+            [1],
+            0,
+            selected,
+            *empty[:4],
+            ["edited"],
+            [{"type": "jf", "name": "notes"}],
+            *empty[:5],
+            {"job": {"notes": ""}},
+        )
+        assert "save them before putting it on hold" in msg["text"]
+        assert follow is no_update and bridge.project.queue.ids() == [job_id]
+        # Nothing edited: it goes on hold.
+        _, msg, follow = act(
+            [1],
+            0,
+            selected,
+            *empty[:4],
+            [""],
+            [{"type": "jf", "name": "notes"}],
+            *empty[:5],
+            {"job": {"notes": ""}},
+        )
+        assert bridge.project.hold.ids() == [job_id] and follow["kind"] == "hold"
+    finally:
+        context_value.reset(token)

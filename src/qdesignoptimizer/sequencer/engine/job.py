@@ -14,7 +14,6 @@ study it is, where it belongs and how the queue treats it. Example::
     checks: [mode_identity]
     save: true                       # write tuned values back on success
     on_failure: continue             # abort (default) or continue
-    hold: true                       # on hold: the runner stops here
     notes: ""
     created: "2026-11-11 10:00:00"
     generated_by: ministudies/ATS1_eigenmode.yaml
@@ -44,7 +43,6 @@ _KEYS = {
     "checks",
     "save",
     "on_failure",
-    "hold",
     "notes",
     "created",
     "generated_by",
@@ -74,7 +72,6 @@ class Job:
     checks: list[str] = field(default_factory=list)
     save: bool = False
     on_failure: str = "abort"
-    hold: bool = False
     notes: str = ""
     sequence: dict = field(default_factory=dict)
     #: The campaign it belongs to (``tuneup_chip/q1_readout``), "" for none.
@@ -100,8 +97,6 @@ class Job:
         out["checks"] = list(self.checks)
         out["save"] = bool(self.save)
         out["on_failure"] = self.on_failure
-        if self.hold:
-            out["hold"] = True
         out["notes"] = self.notes
         if self.created:
             out["created"] = self.created
@@ -137,7 +132,8 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
     problems: list[str] = []
     task_keys = [k for k in ("task", words.task) if k in raw]
     subject_keys = [k for k in ("subject", words.subject) if k in raw]
-    known = _KEYS | {"task", words.task, "subject", words.subject}
+    # ``hold`` is no longer a key; it gets its own message below.
+    known = _KEYS | {"task", words.task, "subject", words.subject, "hold"}
     extra = sorted(set(raw) - known)
     if extra:
         problems.append(f"unknown key(s) {extra}")
@@ -165,10 +161,14 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
     for key in ("notes", "created", "generated_by"):
         if raw.get(key) is not None and not isinstance(raw.get(key), str):
             problems.append(f"{key} must be text")
-    hold = raw.get("hold", False)
-    if not isinstance(hold, bool):
-        problems.append(f"hold must be true or false, not {hold!r}")
-        hold = False
+    if raw.get("hold"):
+        # The flag that stopped the runner at a study is gone: a study on
+        # hold is one in out/hold/, which the runner never reads.
+        problems.append(
+            "hold: is no longer read; to keep the study from running, put it "
+            "on hold (the GUI's on-hold section, or park <id>) and take this "
+            "line out"
+        )
     save = raw.get("save", False)
     if not isinstance(save, bool):
         problems.append(f"save must be true or false, not {save!r}")
@@ -196,7 +196,6 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
         checks=[str(c) for c in checks],
         save=save,
         on_failure=on_failure,
-        hold=hold,
         notes=str(raw.get("notes") or ""),
         sequence=dict(sequence),
         campaign=campaign.replace("\\", "/").strip("/"),

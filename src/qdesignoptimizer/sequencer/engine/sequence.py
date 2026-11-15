@@ -26,12 +26,15 @@ entry sets wins over ``defaults``, ``settings`` key by key.
 
 from __future__ import annotations
 
+import os
+import re
+import tempfile
 from pathlib import Path
 
 import yaml
 
 from .backend import SequenceEntry, SequenceSpec, Words
-from .job import ON_FAILURE, numbers
+from .job import ON_FAILURE, dump_yaml, numbers
 
 _TOP = {
     "version",
@@ -64,6 +67,18 @@ def load_sequence(path: Path, words: Words = Words()) -> SequenceSpec:
         raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:
         raise SequenceError([f"{path.name}: not valid YAML: {exc}"]) from exc
+    return parse_sequence(raw, path.stem, words, source=str(path))
+
+
+def parse_sequence(
+    raw, key: str, words: Words = Words(), source: str = ""
+) -> SequenceSpec:
+    """A study sequence from its file's mapping, named ``key``.
+
+    Raises:
+        SequenceError: Listing every problem.
+    """
+    path = Path(source or f"{key}.yaml")
     problems: list[str] = []
     if not isinstance(raw, dict):
         raise SequenceError([f"{path.name} must hold a mapping"])
@@ -143,11 +158,11 @@ def load_sequence(path: Path, words: Words = Words()) -> SequenceSpec:
     if problems:
         raise SequenceError([f"{path.name}: {p}" for p in problems])
     return SequenceSpec(
-        key=path.stem,
-        label=str(raw.get("name") or path.stem),
+        key=key,
+        label=str(raw.get("name") or key),
         entries=tuple(entries),
         why_ordered=str(raw.get("why_ordered") or ""),
-        source=str(path),
+        source=source,
         campaign=campaign.replace("\\", "/").strip("/"),
     )
 
@@ -170,3 +185,67 @@ def load_sequence_dir(
         except Exception as exc:  # noqa: BLE001 -- one file, not the catalog
             problems.append(f"{path.name}: cannot be read: {exc}")
     return specs, problems
+
+
+_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")
+
+
+def check_sequence_key(key: str) -> None:
+    """Refuse a file name that is not letters, digits, ``_`` and ``-``.
+
+    Raises:
+        SequenceError: Saying so.
+    """
+    if not _KEY.fullmatch(str(key)):
+        raise SequenceError(
+            [f"{key!r}: a study sequence name is letters, digits, _ and -"]
+        )
+
+
+def save_sequence(
+    folder: Path,
+    key: str,
+    raw: dict,
+    words: Words = Words(),
+    overwrite: bool = False,
+) -> Path:
+    """Write study sequence ``key`` as ``<folder>/<key>.yaml``, after
+    checking it by the same rules a file is read by.
+
+    Args:
+        raw: The file's mapping (``name``, ``why_ordered``,
+            ``campaign``, ``defaults``, ``studies``, ...).
+        overwrite: Replace an existing file (editing it); otherwise one
+            with this name is refused.
+
+    Raises:
+        SequenceError: For a bad name, an existing file, or content that
+            would not read back.
+    """
+    check_sequence_key(key)
+    folder = Path(folder)
+    path = folder / f"{key}.yaml"
+    if path.exists() and not overwrite:
+        raise SequenceError([f"{path.name} exists already; pick another name"])
+    raw = {"version": 1, **{k: v for k, v in raw.items() if k != "version"}}
+    parse_sequence(raw, key, words, source=str(path))  # raises what is wrong
+    folder.mkdir(parents=True, exist_ok=True)
+    # A temp file of its own, so two saves at once never share one.
+    fd, name = tempfile.mkstemp(prefix=f".{key}.", suffix=".tmp", dir=folder)
+    tmp = Path(name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(dump_yaml(raw))
+        if overwrite:
+            os.replace(tmp, path)
+        else:
+            try:
+                # Fails if a save of the same name won the race.
+                os.link(tmp, path)
+            except FileExistsError as exc:
+                raise SequenceError(
+                    [f"{path.name} exists already; pick another name"]
+                ) from exc
+    finally:
+        tmp.unlink(missing_ok=True)
+    return path

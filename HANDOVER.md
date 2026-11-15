@@ -58,11 +58,16 @@ into the docs.
    integration tests add about 4 minutes to `pytest tests`.
 2. **Campaigns in the GUI** (done 2026-11-15, clicked through on the
    demo): a campaign tag on queued and completed studies; a campaign
-   picker next to Add (a study, or a study sequence's popup, which has
-   its own picker); a campaign field in a queued study's form (changing
-   it redraws the study with that campaign's values); a Campaigns card
-   listing each campaign with the store it uses, Promote, and a form to
-   make one. A study in a draft shows the draft's campaign, read-only.
+   picker next to Add; a campaign field in a study's form (changing it
+   redraws the study with that campaign's values); each campaign in the
+   browser, with its README, the store it uses and Promote.
+   **Layout (2026-11-15)**: left is make-and-edit (+ New campaign,
+   + New study sequence, + New study; a browser of campaigns, study
+   sequence templates and study templates; the editor), right is run
+   (runner, queue, on hold, completed, log). The study sequence popup
+   (drafts) is gone: a study sequence is a template file, edited in the
+   editor and queued from it. "On hold" is `out/hold/`, out of the run
+   order (the old per-study flag that stopped the runner is gone).
    The first study opened after a start still takes ~15 s (the worker
    imports QDO); the pane now shows a loading sign meanwhile.
 3. **Ansys**: `Q1.resonator_kappa` converged and wrote back (2026-11-14).
@@ -114,8 +119,9 @@ into the docs.
   unchanged, for short Ansys paths) and reads and writes the nearest
   `design_variables.json` from its campaign up, the project's if none
   has one. `campaign new` copies the store it would use (`--shared`
-  skips the copy); `campaign promote` writes changed values one level
-  up, recorded as `promoted_from`. Any study sequence can serve any
+  skips the copy); `campaign promote` writes the values the campaign
+  itself changed (against its `.promoted.json`, the copy's starting
+  point) one level up, recorded as `promoted_from`. Any study sequence can serve any
   campaign (`--campaign`, or `campaign:` in the file). Not in the GUI
   yet: a study's `job.yaml` there shows its campaign, but adding a
   study cannot pick one.

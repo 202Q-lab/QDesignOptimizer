@@ -218,5 +218,5 @@ def test_a_save_just_before_the_runner_took_the_study_says_it_runs_with_it(
     claimed = project.queue.queue_dir / f".claimed-{job_id}"
     assert "2.0" in (claimed / "task.yaml").read_text()
     monkeypatch.setattr(project.queue, "write_file", real)
-    with pytest.raises(GuiError, match="no longer in the queue"):
+    with pytest.raises(GuiError, match="no longer there"):
         bridge.save_file(job_id, "task.yaml", "value: 3.0\n")

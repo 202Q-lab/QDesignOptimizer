@@ -11,7 +11,7 @@ import pytest
 from qdesignoptimizer.sequencer.app.queue_state import Bridge, GuiError
 from qdesignoptimizer.sequencer.backends import qdo_preview
 
-from .helpers import make_project, set_task
+from .helpers import make_project
 
 
 @pytest.fixture
@@ -30,47 +30,6 @@ def _wait(bridge, key, seconds=30):
 
 
 # -- launching in the background -------------------------------------------
-
-
-def test_a_launch_runs_in_the_background_and_reports_progress(bridge, monkeypatch):
-    key = bridge.new_draft(label="bg", from_sequence="full_A")
-    project = bridge.project
-    real = project.problems
-    seen = []
-
-    def slow(job_id, deep=False, folder=None):
-        seen.append(bridge.launch_status(key)["checked"])
-        time.sleep(0.2)  # as a design build would take
-        return real(job_id, deep=deep, folder=folder)
-
-    monkeypatch.setattr(project, "problems", slow)
-    started = time.monotonic()
-    assert "launching" in bridge.start_launch(key)
-    assert time.monotonic() - started < 0.2  # it did not wait
-    assert bridge.launch_status(key)["state"] == "running"
-    with pytest.raises(GuiError, match="already being launched"):
-        bridge.start_launch(key)
-    status = _wait(bridge, key)
-    assert status["state"] == "done" and "launched 2" in status["message"]
-    assert status["checked"] == status["total"] == 2
-    assert seen == [0, 1]
-    assert project.queue.ids() == [
-        "s01-bg-a_calibrate",
-        "s01-bg-a_measure",
-    ]
-    bridge.forget_launch(key)
-    assert bridge.launch_status(key) is None
-
-
-def test_a_launch_that_fails_in_the_background_says_why(bridge):
-    key = bridge.new_draft(label="bad")
-    study = bridge.draft_add(key, "A.calibrate")
-    bridge.save_file(study, "task.yaml", "nonsense: 1\n")
-    bridge.start_launch(key)
-    status = _wait(bridge, key)
-    assert status["state"] == "failed" and "fix first" in status["message"]
-    assert bridge.project.queue.ids() == []
-    assert bridge.draft_view(key)["studies"]  # still in the draft
 
 
 # -- airbridges where the renderer puts them -------------------------------

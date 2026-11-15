@@ -39,6 +39,11 @@ from pathlib import Path
 
 CAMPAIGN_DIR = "campaigns"
 README = "README.md"
+#: In a campaign with its own store: the values it started from, then as
+#: last promoted. ``promote`` writes up only what differs from them --
+#: what the campaign itself changed -- so a value the parent changed
+#: meanwhile is never overwritten by the campaign's stale copy.
+BASE_FILE = ".promoted.json"
 
 _PART = re.compile(r"^[a-z0-9][a-z0-9_]*$")
 
@@ -208,6 +213,9 @@ def create(
     if copy_of is not None and Path(copy_of).is_file():
         copy_of = Path(copy_of)
         shutil.copyfile(copy_of, folder / copy_of.name)
+        # From the copy, not the parent's store again: a commit to the
+        # parent in between must not make the two differ.
+        shutil.copyfile(folder / copy_of.name, folder / BASE_FILE)
         meta = _meta_of(copy_of)
         if meta.is_file():
             shutil.copyfile(meta, _meta_of(folder / copy_of.name))

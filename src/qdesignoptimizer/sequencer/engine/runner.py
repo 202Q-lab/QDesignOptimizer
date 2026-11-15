@@ -149,8 +149,6 @@ class Runner:
                         "it is back in the queue",
                         job_id,
                     )
-                for line in project.recover_launches():
-                    log.warning("a launch was cut short: %s", line)
                 aborted += self._settle_cut_off()
             if aborted:
                 # A study cut off by a crash failed as surely as one
@@ -367,16 +365,6 @@ class Runner:
                 log.error(self.state.message)
                 return
             try:
-                if _on_hold(claimed, self.project.words):
-                    # Held: it keeps its place, and the runner stops
-                    # rather than skip it -- order is the only
-                    # dependency the queue has, so the studies below it
-                    # may need what it writes back.
-                    self.queue.release(claimed, job_id)
-                    self.state.status = st.HELD
-                    self.state.message = f"{shown} is on hold; release it to continue"
-                    log.info(self.state.message)
-                    return
                 problems = self.project.problems(job_id, deep=True, folder=claimed)
                 if problems:
                     # Back in the queue, where it can be fixed; nothing
@@ -571,12 +559,3 @@ def configure_console_logging() -> None:
     root = logging.getLogger("qdesignoptimizer.sequencer")
     root.addHandler(handler)
     root.setLevel(logging.INFO)
-
-
-def _on_hold(folder: Path, words) -> bool:
-    """Whether a study is on hold (an unreadable job.yaml is not:
-    the check after this reports what is wrong with it)."""
-    try:
-        return load_job(folder, words).hold
-    except Exception:  # noqa: BLE001 -- reported by the problems check
-        return False

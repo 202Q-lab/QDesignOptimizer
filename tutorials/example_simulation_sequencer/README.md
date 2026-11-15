@@ -37,9 +37,12 @@ From the repository root:
 python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/demo
 ```
 
-Open <http://127.0.0.1:8051>, **Add** the study sequence `tune_R1` of
-`chip_qdo`: a popup lists its studies; press **Launch** to queue them,
-then **Start**. Two studies run (about 10 s), frequency then
+Open <http://127.0.0.1:8051>. The left side is for making and editing
+(+ New campaign, + New study sequence, + New study, a browser of
+campaigns and templates, and the editor of whatever you pick); the right
+side runs (the queue, the studies on hold, the completed ones, the log).
+**Add** the study sequence `tune_R1` of `chip_qdo` to the queue, then
+**Start**. Two studies run (about 10 s), frequency then
 linewidth, and each writes the design variable it tuned back into
 `demo/chip_qdo/design_variables.json`; click one under **Completed** to
 see its files and convergence plot. `tune_all` chains four studies
@@ -206,7 +209,11 @@ coupled_transmon_chip/campaigns/
   none on the way has one. `campaign new` gives a new campaign a copy
   of the store it would otherwise use (`--shared` skips the copy), so
   it changes nothing outside itself until you `campaign promote` its
-  values one level up; the write is recorded in that store's
+  values one level up. Promote writes only what the campaign itself
+  changed since it was made (or last promoted; its `.promoted.json`
+  keeps that starting point), so a value its parent changed meanwhile
+  is not overwritten; `campaign promote <key> <name> ...` writes those
+  names regardless. The write is recorded in that store's
   `design_variables.meta.json` as `promoted_from`.
 
 ```bash
@@ -282,7 +289,7 @@ Before the first Ansys run:
 
 ## Where things are kept
 
-- The queue and results: `<project>/out/` (git-ignored).
+- The queue, the studies on hold and the results: `<project>/out/` (`queue/`, `hold/`, `completed/`; git-ignored).
 - The store: `<project>/design_variables.json`, and its metadata
   `design_variables.meta.json` (which study wrote each value, and when).
   Commit both in a real project; this tutorial ignores them, as its

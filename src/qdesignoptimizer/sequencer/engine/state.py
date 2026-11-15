@@ -33,7 +33,7 @@ RUNNER_FILE, LOCK_FILE, LOG_FILE, STOP_FILE = (
 RESULT_FILE = "result.json"
 
 #: Held around every read-modify-write of an ``order.json`` in this
-#: process: the GUI's launch thread and its request threads would
+#: process: the GUI's request threads would
 #: otherwise each read the old order and the second write drop the
 #: first's studies from it. (Re-entrant: a workspace reorder writes
 #: each project's order inside its own.)
@@ -45,14 +45,13 @@ QUEUED, RUNNING, DONE, FAILED = "queued", "running", "done", "failed"
 #: there leaves a record the next one can settle against the store.
 COMMITTING = "committing"
 #: Runner statuses.
-IDLE, BUSY, FINISHED, STOPPED, ABORTED, ERROR, HELD = (
+IDLE, BUSY, FINISHED, STOPPED, ABORTED, ERROR = (
     "idle",
     "running",
     "finished",
     "stopped",
     "aborted",
     "error",
-    "held",
 )
 
 

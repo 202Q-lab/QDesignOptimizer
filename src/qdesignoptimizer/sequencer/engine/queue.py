@@ -49,10 +49,8 @@ from .job import (
 ORDER_FILE = "order.json"
 INPUTS = "inputs"
 RESOLVED = "resolved"
-#: A draft being launched: ``<out>/queue/.launch-<draft>/`` holds its
-#: studies (not listed) and ``launch.json``, how far the launch got.
-STAGE = ".launch-"
-LAUNCH_FILE = "launch.json"
+#: The folder of studies on hold, next to ``queue/``.
+HOLD = "hold"
 CLAIMED = ".claimed-"
 _SEQUENCE = re.compile(r"^s(\d+)-")
 
@@ -101,6 +99,8 @@ class FolderQueue:
     def __init__(self, out_dir: Path):
         self.out = Path(out_dir)
         self.queue_dir = self.out / "queue"
+        #: Studies on hold: kept out of the run order until moved back.
+        self.hold_dir = self.out / HOLD
         self.completed_dir = self.out / "completed"
         self.removed_dir = self.out / "removed"
 
@@ -171,23 +171,20 @@ class FolderQueue:
         removed. Ids are never reused, so a study sequence queued again after
         its studies were removed gets a new number."""
         ids = set(self.ids()) | self.claimed_ids()
+        # Queued and on hold alike, whichever folder this queue reads: a
+        # study moves between the two under its id.
+        for folder in (self.out / "queue", self.hold_dir):
+            if folder.is_dir():
+                for p in folder.iterdir():
+                    if p.name.startswith(CLAIMED):
+                        ids.add(p.name[len(CLAIMED) :])
+                    elif p.is_dir() and not p.name.startswith("."):
+                        ids.add(p.name)
         for path in self.completed():
             # result.json names the id exactly; the folder name cannot
             # tell a "_failed" suffix from a task that ends in "failed".
             recorded = (st.result_of(path) or {}).get("id")
             ids.add(recorded or parse_completed(path.name)[0])
-        if self.queue_dir.is_dir():
-            # The ids a launch under way has given out, before it
-            # publishes them: a study sequence started meanwhile must not get
-            # the same number.
-            for stage in self.queue_dir.iterdir():
-                if stage.name.startswith(STAGE) and stage.is_dir():
-                    state = st.read_json(stage / LAUNCH_FILE) or {}
-                    ids |= {
-                        e["new_id"]
-                        for e in state.get("entries") or []
-                        if e.get("new_id")
-                    }
         if self.removed_dir.is_dir():
             for path in self.removed_dir.iterdir():
                 parts = path.name.split("_", 1)
@@ -303,8 +300,12 @@ class FolderQueue:
             raise QueueError(f"{name!r} is not a file name")
         path = folder / name
         tmp = folder / f".{name}.tmp"
-        tmp.write_text(text, encoding="utf-8")
-        tmp.replace(path)
+        try:
+            tmp.write_text(text, encoding="utf-8")
+            tmp.replace(path)
+        except FileNotFoundError as exc:
+            # Claimed, put on hold or queued meanwhile: the folder moved.
+            raise QueueError(f"{job_id} moved meanwhile; nothing saved") from exc
 
     def delete_file(self, job_id: str, name: str) -> None:
         """Delete an optional file, so it is pulled from the project.

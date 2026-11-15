@@ -6,7 +6,6 @@ import json
 
 import pytest
 
-from qdesignoptimizer.sequencer.engine import project as project_module
 from qdesignoptimizer.sequencer.engine import state as st
 from qdesignoptimizer.sequencer.engine.queue import QueueError
 from qdesignoptimizer.sequencer.engine.runner import Runner
@@ -77,28 +76,6 @@ def test_deleting_a_file_of_a_claimed_study_is_refused(project):
         project.queue.delete_file(job_id, "task.yaml")
 
 
-def test_a_queued_sequence_skips_a_number_a_draft_keeps(project, monkeypatch):
-    """A draft whose launch published nothing keeps s01; a sequence
-    queued meanwhile takes s02, not s01."""
-    name = project.new_draft("three")
-    project.draft_add(name, "A.calibrate")
-    real = project_module._rename
-    calls = {"n": 0}
-
-    def rename(source, dest, tries=50):
-        calls["n"] += 1
-        if calls["n"] == 2:  # the first publish
-            raise PermissionError("held open")
-        return real(source, dest, tries)
-
-    monkeypatch.setattr(project_module, "_rename", rename)
-    with pytest.raises(QueueError, match="as s01"):
-        project.launch_draft(name)
-    monkeypatch.undo()
-    spec = project.backend.catalog().sequence("full_A")
-    assert project.add_sequence(spec)[0].startswith("s02-")
-
-
 def test_a_sequence_that_fails_half_way_queues_nothing(project, monkeypatch):
     spec = project.backend.catalog().sequence("full_A")
     real_add, calls = project.queue.add, {"n": 0}
@@ -122,16 +99,6 @@ def test_project_names_do_not_depend_on_opening_order(tmp_path):
     two = Workspace([b, a], state_dir=tmp_path / "s2")
     assert one.projects["chip"] is a and two.projects["chip"] is a
     assert one.projects["chip-2"] is b and two.projects["chip-2"] is b
-
-
-def test_a_draft_from_a_sequence_is_recorded_under_its_key(project):
-    """Launched from the GUI unchanged, a sequence gets the ids and the
-    name the CLI's ``sequence`` gives it, not its long label."""
-    spec = project.backend.catalog().sequence("full_A")
-    name = project.new_draft(from_spec=spec)
-    ids = project.launch_draft(name)
-    assert ids[0].startswith("s01-full_A-")
-    assert project.job(ids[0]).sequence["name"] == "full_A"
 
 
 # -- review round 4 ------------------------------------------------------

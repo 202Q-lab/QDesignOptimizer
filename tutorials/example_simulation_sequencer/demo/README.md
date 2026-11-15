@@ -64,21 +64,25 @@ All three, one shared queue (each project in its own worker process):
 python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/demo
 ```
 
-Then: **Add** a study, or a study sequence such as `tune_R1` (a popup
-lists its studies; **Launch** queues them), drag rows to reorder, click
-a study to edit its files, **Start** (it asks you to confirm), and watch
-the runner banner, the Completed list and the runner log. Open
-<http://127.0.0.1:8051>. Each study "solves" for 5 s; a `tune_R1`
+Open <http://127.0.0.1:8051>. Left: make and edit -- **+ New
+campaign**, **+ New study sequence**, **+ New study**, a browser of
+campaigns, study sequence templates and study templates, and below it
+the editor of whatever you pick (a study in the queue, on hold or
+completed opens there too). Right: run -- **Start**, **Stop after this
+study**, **Check queue**, the queue (drag rows to reorder; **Add** a
+study or a study sequence to it), the studies on hold, the completed
+ones and the runner log. Each study "solves" for 5 s; a `tune_R1`
 study sequence plus one more study takes about 15 s.
 
 ### Things to try
 
-- **A chained sequence**: Add `tune_all`, Launch, Start. Each linewidth
+- **A chained sequence**: Add `tune_all`, then Start. Each linewidth
   study starts from the frequency its frequency study wrote back; click
   a completed study for its files and convergence plot, and see
   `chip_qdo/design_variables.meta.json` for which study wrote each value.
-- **A failure that does not stop the rest**: in `tune_all`'s popup, give
-  the first study (`R1.frequency`) `iterations: 1` before you Launch. It
+- **A failure that does not stop the rest**: open `tune_all` in the
+  browser, give its first study (`R1.frequency`) the settings
+  `iterations: 1`, save the template and add it to the queue. It
   ends off target, fails its `converged` check and writes nothing back;
   under `on_failure: continue` the other three still run. Under `abort`
   (the default) the runner stops at the failed study. (In `chip_a`,
@@ -87,14 +91,23 @@ study sequence plus one more study takes about 15 s.
   *Parameter targets* or *Design variables*: they hold only for that
   study (written to its folder) and are never written back unless a
   target tunes them.
-- **Hold**: put a queued study on hold; the runner stops there until you
-  release it (CLI: `hold <id>`, `release <id>`).
+- **On hold**: put a queued study on hold (⏸) and it moves to the On hold
+  list, out of the run order: the runner skips it, and you edit it there
+  until you queue it again (▶). It lives in `out/hold/` (CLI: `park <id>`,
+  `unpark <id>`, `add <study> --hold`).
 - **Notes**: every study has a notes field; `tune_all` sets one.
 - **Requeue** a completed study: *fresh* pulls its values from the
   project again, *exact* reruns with the values it ran with (GUI;
   CLI `requeue <completed folder>` is the fresh one).
-- **New study sequence**: build one in the popup from scratch or from
-  an existing sequence, then Launch it.
+- **New study sequence**: + New study sequence opens an empty template:
+  give it a file name, defaults for every study, and its studies in
+  order; **Save template** writes `study_sequences/<name>.yaml`, and
+  **Add to queue** queues its studies. A template built in the
+  adapter's code (`tune_R1`) opens read-only: save it under a new file
+  name and a new name to change it. Every template has a name of its
+  own; saving one under a name another has is refused.
+- **New study**: + New study makes one from a study template (or a blank
+  MiniStudy) on hold; edit it, then queue it (▶).
 - **Check before running**: *Check queue* in the GUI, or `check` in the
   CLI, rebuilds every queued study without solving.
 - **Stop** between studies: *Stop after this study*, or `stop` in the CLI.

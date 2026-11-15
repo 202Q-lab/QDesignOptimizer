@@ -79,7 +79,8 @@ def test_a_campaign_study_writes_its_campaigns_store_only(project):
     assert job["campaign"] == "tuneup_chip"
     # The id says nothing of the campaign: solver paths stay short.
     assert "tuneup" not in job_id
-    project.set_hold(job_id, False)  # rewriting job.yaml keeps it
+    project.park(job_id)  # moving it keeps it
+    project.unpark(job_id)
     assert project.job(job_id).campaign == "tuneup_chip"
 
     q = project.queue.folder(job_id)
@@ -205,7 +206,7 @@ def test_the_gui_lists_campaigns_and_tags_their_studies(project):
         "tuneup_chip",
         "tuneup_chip/q1",
     ]
-    assert "campaign" in str(layout.campaign_table(snap))
+    assert "tuneup_chip" in str(layout.browser(snap, None))
 
     bridge.add("task", "A.calibrate", "tuneup_chip/q1")
     (row,) = bridge.snapshot()["rows"]
@@ -241,36 +242,6 @@ def test_the_gui_moves_a_queued_study_into_or_out_of_a_campaign(project):
     assert "campaign" not in (project.queue.folder(job_id) / "job.yaml").read_text()
 
 
-def test_a_draft_launched_into_a_campaign_queues_its_studies_there(project):
-    from qdesignoptimizer.sequencer.app.queue_state import Bridge
-
-    bridge = Bridge(project=project)
-    project.new_campaign("mesh_sensitivity")
-    key = bridge.new_draft(label="sweep")
-    bridge.draft_add(key, "A.calibrate")
-    bridge.draft_add(key, "B.calibrate")
-    assert bridge.draft_view(key)["campaign"] == ""
-    with pytest.raises(GuiError, match="does not exist"):
-        bridge.draft_campaign(key, "nope")
-    bridge.draft_campaign(key, "mesh_sensitivity")
-    assert bridge.draft_view(key)["campaign"] == "mesh_sensitivity"
-    bridge.launch_draft(key)
-    assert [project.job(i).campaign for i in project.queue.ids()] == [
-        "mesh_sensitivity"
-    ] * 2
-
-
-def test_a_draft_from_a_sequence_takes_the_picked_campaign(project):
-    from qdesignoptimizer.sequencer.app.queue_state import Bridge
-
-    bridge = Bridge(project=project)
-    project.new_campaign("tuneup_chip")
-    key = bridge.new_draft(from_sequence="full_A", campaign="tuneup_chip")
-    assert bridge.draft_view(key)["campaign"] == "tuneup_chip"
-    with pytest.raises(GuiError, match="does not exist"):
-        bridge.new_draft(from_sequence="full_A", campaign="nope")
-
-
 def test_the_gui_promotes_a_campaign(project):
     from qdesignoptimizer.sequencer.app.queue_state import Bridge
 
@@ -287,18 +258,53 @@ def test_the_gui_promotes_a_campaign(project):
         bridge.promote("shared")
 
 
-def test_a_draft_study_shows_the_drafts_campaign_and_its_values(project):
-    from qdesignoptimizer.sequencer.app.queue_state import Bridge
-
-    bridge = Bridge(project=project)
+def test_promote_carries_up_only_what_the_campaign_changed(project):
+    """Review 2026-11-15: a campaign's copy of a value the parent changed
+    since must not overwrite the parent's newer value."""
     project.new_campaign("tuneup_chip")
-    project.campaign_store("tuneup_chip").write_text(
-        json.dumps({"A_value": 4.0, "B_value": 0.0}), "utf-8"
-    )
-    key = bridge.new_draft(label="sweep", campaign="tuneup_chip")
-    study = bridge.draft_add(key, "A.calibrate")
-    data = bridge.details("draft", study)
-    assert data["campaign_locked"] is True
-    assert data["job"]["campaign"] == "tuneup_chip"
-    (variables,) = (f for f in data["files"] if f["name"] == "design_variables.json")
-    assert variables["project"] == {"A_value": 4.0, "B_value": 0.0}
+    path = project.campaign_store("tuneup_chip")
+    # The project moves on after the campaign was made ...
+    project.commit({"A_value": 5.0})
+    # ... and the campaign tunes B only.
+    data = json.loads(path.read_text("utf-8"))
+    data["B_value"] = 2.0
+    path.write_text(json.dumps(data), "utf-8")
+    assert project.promote("tuneup_chip") == {"B_value": 2.0}
+    assert store(project) == {"A_value": 5.0, "B_value": 2.0}
+    # Promoted: the new starting point, so nothing is left to promote.
+    assert project.promote("tuneup_chip") == {}
+    # Asking for a name by name promotes it regardless.
+    assert project.promote("tuneup_chip", ["A_value"]) == {"A_value": 0.0}
+
+
+def test_a_failed_promote_is_promoted_again(project, monkeypatch):
+    """Review round 4: the baseline moves only once the parent holds the
+    values, so a commit that fails is not forgotten."""
+    project.new_campaign("tuneup_chip")
+    path = project.campaign_store("tuneup_chip")
+    data = json.loads(path.read_text("utf-8"))
+    data["B_value"] = 2.0
+    path.write_text(json.dumps(data), "utf-8")
+
+    def broken(*_args, **_kwargs):
+        raise OSError("store locked")
+
+    monkeypatch.setattr(project, "commit", broken)
+    with pytest.raises(OSError):
+        project.promote("tuneup_chip")
+    monkeypatch.undo()
+    assert project.promote("tuneup_chip") == {"B_value": 2.0}
+
+
+def test_a_campaign_without_a_baseline_gets_one_at_promote(project):
+    project.new_campaign("tuneup_chip")
+    path = project.campaign_store("tuneup_chip")
+    (path.parent / ".promoted.json").unlink()
+    data = json.loads(path.read_text("utf-8"))
+    data["B_value"] = 2.0
+    path.write_text(json.dumps(data), "utf-8")
+    assert project.promote("tuneup_chip") == {"B_value": 2.0}
+    # From here on only what the campaign changes goes up.
+    project.commit({"A_value": 5.0})
+    assert project.promote("tuneup_chip") == {}
+    assert store(project)["A_value"] == 5.0

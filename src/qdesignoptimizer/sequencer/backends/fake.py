@@ -42,6 +42,7 @@ from ..engine.backend import (
     Words,
 )
 from ..engine.job import dump_yaml
+from ..engine.sequence import load_sequence_dir
 from ._store import (
     SwitchableStore,
     read_json,
@@ -85,8 +86,13 @@ class FakeBackend(SwitchableStore):
     def out_dir(self) -> Path:
         return self.root / "out"
 
+    @property
+    def sequence_dir(self) -> Path:
+        """Study sequence files, as the QDO backend keeps them."""
+        return self.root / "study_sequences"
+
     def catalog(self) -> Catalog:
-        return Catalog(
+        catalog = Catalog(
             tasks=[
                 TaskSpec(f"{s}.{kind}", s, f"{s} {kind}", family=kind, minutes=0.1)
                 for s in ("A", "B")
@@ -108,6 +114,10 @@ class FakeBackend(SwitchableStore):
                 SubjectSpec("B", "Subject B"),
             ],
         )
+        files, self.catalog_problems = load_sequence_dir(self.sequence_dir, self.words)
+        known = {c.key for c in catalog.sequences}
+        catalog.sequences.extend(f for f in files if f.key not in known)
+        return catalog
 
     def files(self) -> list[FileSpec]:
         return [

@@ -3,57 +3,52 @@
 The one place that turns a study key or a study sequence into queued
 study folders, used alike by the CLI, the GUI and the tests.
 
-**Drafts.** A study sequence can be put together before any of it is queued:
-``out/drafts/<name>/`` is a queue of its own (the same folders, the
-same ``order.json``, plus ``draft.json`` for its label) that the runner
-never reads. Studies are added, edited, reordered and removed there;
-``launch_draft`` then gives each a study sequence id and moves the whole
-draft, in order, to the end of the queue.
+**On hold.** ``out/hold/`` is a queue of its own that the runner never
+reads: a new study is made there (or parked there from the queue),
+edited, and moved into the queue when it is ready.
+
+**Study sequences** are templates: files in the project's
+``study_sequences/`` (``save_sequence`` writes one) or built in the
+adapter's code. ``add_sequence`` queues every study of one.
 """
 
 from __future__ import annotations
 
-import secrets
-import shutil
-from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from . import campaign as cp
 from . import state as st
 from .backend import Backend, SequenceSpec
 from .job import (
     CUSTOM,
-    JOB_FILE,
     Job,
     JobError,
     completed_name,
-    dump_yaml,
     is_custom,
     load_job,
     slug_name,
 )
 from .loading import load_backend
-from .queue import LAUNCH_FILE, STAGE, FolderQueue, QueueError, _rename
+from .queue import HOLD, FolderQueue, QueueError, _rename
+from .sequence import (
+    SequenceError,
+    check_sequence_key,
+    load_sequence_dir,
+    save_sequence,
+)
 
-DRAFTS = "drafts"
 #: ``check_templates``' entry for problems of the templates
 #: themselves, which belong to no one study.
 TEMPLATES_KEY = "(templates)"
-DRAFT_FILE = "draft.json"
-#: A staged study's ``job.yaml`` as it was in the draft (put back on
-#: an undo).
-ORIGINAL = ".job-in-draft.yaml"
 
 
 #: The longest start time a completed folder's name carries
 #: (``state.stamp``, plus the ``-NN`` that keeps two starts apart).
 _LONGEST_STAMP = "2026-01-01T00-00-00-99"
-
-
-class _NotLaunched(Exception):
-    """A launch refused after staging (the studies go back)."""
 
 
 class Project:
@@ -135,9 +130,13 @@ class Project:
         """Copy a campaign's values one level up: into the store its
         parent campaign uses (the project's, for a top-level one).
 
-        Only values that differ are written, and the write is recorded
-        like a study's (``promoted_from`` in the record). Returns what
-        changed.
+        Without ``names``: the values the campaign itself changed since
+        it was made (or last promoted), as its ``.promoted.json`` says --
+        not every value that differs, which would also undo what the
+        parent changed meanwhile. ``names`` promotes exactly those. Only
+        values that differ from the parent's are written, and the write
+        is recorded like a study's (``promoted_from`` in the record).
+        Returns what changed.
 
         Raises:
             QueueError: If the campaign is not there, has no store of its
@@ -154,17 +153,35 @@ class Project:
                 "already write where promoting would"
             )
         values = self.store_values(key)
+        base_path = cp.folder_of(self.root, key) / cp.BASE_FILE
+        base = st.read_json(base_path)
         if names is not None:
             missing = sorted(set(names) - set(values))
             if missing:
                 raise QueueError(f"not in campaign {key!r}'s store: {missing}")
             values = {k: values[k] for k in names}
+        elif isinstance(base, dict):
+            values = {k: v for k, v in values.items() if base.get(k, object()) != v}
         before = self.store_values(parent)
         updates = {k: v for k, v in values.items() if before.get(k) != v}
+
+        def settle() -> None:
+            # Promoted (or already equal above): the new starting point.
+            # Written only once the parent holds them, so a failed commit
+            # is promoted again next time. A campaign from before
+            # .promoted.json gets one from here on.
+            if isinstance(base, dict):
+                if values:
+                    st.write_json(base_path, {**base, **values})
+            elif names is None:
+                st.write_json(base_path, self.store_values(key))
+
         if not updates:
+            settle()
             return {}
         changed = self.commit(updates, parent)
         changed = updates if changed is None else changed
+        settle()
         hook = getattr(self.backend, "note_commit", None)
         if hook is not None and changed:
             source = {
@@ -276,20 +293,60 @@ class Project:
             "root avoids it"
         ]
 
-    def set_hold(self, job_id: str, hold: bool) -> None:
-        """Put a queued study on hold (the runner stops when it reaches
-        it) or release it.
+    # -- on hold ---------------------------------------------------------
+
+    @property
+    def hold(self) -> FolderQueue:
+        """The studies on hold (``out/hold/``), as a queue of their own
+        that the runner never reads. A study is made there, or parked
+        there from the queue, and moved to the queue when it is ready."""
+        queue = FolderQueue(self.out)
+        queue.queue_dir = queue.hold_dir
+        return queue
+
+    def park(self, job_id: str) -> None:
+        """Move a queued study on hold: out of the run order, files and
+        all, until ``unpark``.
 
         Raises:
-            QueueError: If it is not queued, or job.yaml is invalid.
+            QueueError: If it is not queued (or the runner just took it).
         """
-        folder = self.queue.folder(job_id)
-        try:
-            job = load_job(folder, self.words)
-        except JobError as exc:
-            raise QueueError("; ".join(exc.problems)) from exc
-        job.hold = bool(hold)
-        self.queue.write_file(job_id, JOB_FILE, dump_yaml(job.to_raw(self.words)))
+        self._move(self.queue, self.hold, job_id, None)
+
+    def unpark(self, job_id: str, position: int | None = None) -> None:
+        """Move a study on hold into the queue, at ``position`` (the end
+        when None).
+
+        Raises:
+            QueueError: If it is not on hold.
+        """
+        self._move(self.hold, self.queue, job_id, position)
+
+    def _move(self, source: FolderQueue, dest: FolderQueue, job_id, position):
+        folder = source.folder(job_id)
+        if not folder.is_dir():
+            where = "on hold" if source.queue_dir == self.out / HOLD else "queued"
+            raise QueueError(f"{job_id} is not {where}")
+        dest.queue_dir.mkdir(parents=True, exist_ok=True)
+        with st.ORDER_LOCK:
+            try:
+                _rename(folder, dest.folder(job_id))
+            except FileNotFoundError as exc:
+                # Claimed by the runner between the check and the rename.
+                raise QueueError(
+                    f"{job_id} was just taken by the runner; nothing moved"
+                ) from exc
+            except OSError as exc:
+                # A folder of that name there already, or a file held
+                # open for the whole retry.
+                raise QueueError(
+                    f"{job_id} could not be moved ({type(exc).__name__}: "
+                    f"{exc}); nothing moved"
+                ) from exc
+            order = [i for i in dest.ids() if i != job_id]
+            order.insert(len(order) if position is None else position, job_id)
+            dest.write_order(order)
+            source.write_order([i for i in source.ids() if i != job_id])
 
     def add(
         self,
@@ -303,18 +360,20 @@ class Project:
         position: int | None = None,
         queue: FolderQueue | None = None,
         campaign: str = "",
+        hold: bool = False,
     ) -> str:
         """Generate one study and queue it. Returns its id.
 
         Args:
-            queue: Where to put it (a draft's queue); the project's own
-                queue by default.
+            queue: Where to put it; the project's own queue (or its hold
+                folder, with ``hold``) by default.
             campaign: The campaign it belongs to, "" for none.
+            hold: Make it on hold (``out/hold/``) rather than in the queue.
 
         Raises:
             QueueError: For an unknown key, or files that cannot be made.
         """
-        queue = queue or self.queue
+        queue = queue or (self.hold if hold else self.queue)
         campaign = self._campaign_key(campaign)
         spec = self.backend.catalog().task(task)
         if spec is None:
@@ -352,157 +411,23 @@ class Project:
         queue.add(job, files, self.words, position)
         return job_id
 
-    # -- drafts ----------------------------------------------------------
-
-    @property
-    def drafts_dir(self) -> Path:
-        """``out/drafts/``."""
-        return self.out / DRAFTS
-
-    def draft_queue(self, name: str) -> FolderQueue:
-        """One draft, as a queue of its own.
+    def add_blank(self, study: str = "", hold: bool = True, campaign: str = "") -> str:
+        """Make a study from scratch: every field of the backend's blank
+        study (``blank_files``), no template behind it. Its task is
+        ``custom.<study>``. On hold by default, to be filled in before it
+        is queued. Returns its id.
 
         Raises:
-            QueueError: If there is no such draft.
-        """
-        folder = self.drafts_dir / name
-        if not (folder / DRAFT_FILE).exists():
-            raise QueueError(f"no draft {name!r}")
-        queue = FolderQueue(self.out)
-        queue.queue_dir = folder
-        return queue
-
-    def drafts(self) -> list[dict]:
-        """Every draft: name, label, how many studies, where it came
-        from."""
-        if not self.drafts_dir.is_dir():
-            return []
-        out = []
-        for folder in sorted(d for d in self.drafts_dir.iterdir() if d.is_dir()):
-            meta = st.read_json(folder / DRAFT_FILE)
-            if meta is None:
-                continue
-            out.append(
-                {
-                    **meta,
-                    "name": folder.name,
-                    "count": len(self.draft_queue(folder.name).ids()),
-                }
-            )
-        return out
-
-    def new_draft(
-        self,
-        label: str = "",
-        from_spec: SequenceSpec | None = None,
-        campaign: str | None = None,
-    ) -> str:
-        """Start a draft study sequence, empty or with a study sequence's studies.
-
-        Args:
-            campaign: The campaign its studies are queued in when it is
-                launched; None takes the study sequence's own (``from_spec``).
-
-        Returns:
-            The draft's name.
-        """
-        if campaign is None:
-            campaign = from_spec.campaign if from_spec else ""
-        campaign = self._campaign_key(campaign)
-        name = f"draft-{st.stamp()}-{secrets.token_hex(2)}"
-        folder = self.drafts_dir / name
-        folder.mkdir(parents=True)
-        st.write_json(
-            folder / DRAFT_FILE,
-            {
-                "label": label or (from_spec.label if from_spec else ""),
-                "from": from_spec.key if from_spec else "",
-                "from_label": from_spec.label if from_spec else "",
-                "why_ordered": from_spec.why_ordered if from_spec else "",
-                "campaign": campaign,
-                "created": st.now(),
-            },
-        )
-        if from_spec is not None:
-            try:
-                for entry in from_spec.entries:
-                    self.draft_add(
-                        name,
-                        entry.task,
-                        settings=entry.settings,
-                        checks=list(entry.checks or []),
-                        save=bool(entry.save),
-                        on_failure=entry.on_failure,
-                        notes=entry.notes,
-                    )
-            except QueueError:
-                shutil.rmtree(folder, ignore_errors=True)
-                raise
-        return name
-
-    def set_draft_campaign(self, name: str, campaign: str) -> None:
-        """Set the campaign a draft's studies are queued in at launch
-        ("" for none).
-
-        Raises:
-            QueueError: If the campaign does not exist.
-        """
-        campaign = self._campaign_key(campaign)
-        with self._draft_locked(name):
-            path = self.drafts_dir / name / DRAFT_FILE
-            meta = st.read_json(path) or {}
-            meta["campaign"] = campaign
-            st.write_json(path, meta)
-
-    def set_draft_label(self, name: str, label: str) -> None:
-        """Rename a draft (the study sequence's name once launched)."""
-        with self._draft_locked(name):
-            path = self.drafts_dir / name / DRAFT_FILE
-            meta = st.read_json(path) or {}
-            meta["label"] = label
-            st.write_json(path, meta)
-
-    def draft_add(
-        self,
-        name: str,
-        task: str,
-        settings: dict | None = None,
-        checks: list[str] | None = None,
-        save: bool | None = True,
-        on_failure: str | None = None,
-        notes: str = "",
-    ) -> str:
-        """Generate one study into a draft. Returns its id there.
-
-        A study added to a study sequence writes back by default (``save``):
-        the studies after it build on what it tuned.
-        """
-        with self._draft_locked(name) as queue:
-            return self.add(
-                task,
-                settings,
-                checks,
-                save,
-                on_failure,
-                notes,
-                queue=queue,
-            )
-
-    def draft_blank(self, name: str, study: str = "") -> str:
-        """Add a study made from scratch to a draft: every field of the
-        backend's blank study (``blank_files``), no template behind it.
-        Its task is ``custom.<study>``. Returns its id there.
-
-        Raises:
-            QueueError: If the backend cannot make a blank study.
+            QueueError: If the backend cannot make a blank study, or the
+                campaign does not exist.
         """
         maker = getattr(self.backend, "blank_files", None)
         if maker is None:
             raise QueueError(
                 f"this backend cannot make a {self.words.task} from scratch"
             )
-        label = slug_name(study) or "study"
-        task = f"{CUSTOM}.{label}"
+        campaign = self._campaign_key(campaign)
+        task = f"{CUSTOM}.{slug_name(study) or 'study'}"
         try:
             files = maker()
         except Exception as exc:  # noqa: BLE001 -- reported
@@ -510,10 +435,7 @@ class Project:
                 f"a blank {self.words.task} cannot be made: "
                 f"{type(exc).__name__}: {exc}"
             ) from exc
-        with self._draft_locked(name) as queue:
-            return self._add_blank(queue, task, files)
-
-    def _add_blank(self, queue: FolderQueue, task: str, files: dict) -> str:
+        queue = self.hold if hold else self.queue
         job = Job(
             id=queue.new_id(task),
             task=task,
@@ -523,359 +445,17 @@ class Project:
             save=True,
             on_failure="abort",
             notes="",
+            campaign=campaign,
             created=st.now(),
             generated_by="made from scratch in the GUI",
         )
         queue.add(job, files, self.words)
         return job.id
 
-    # -- launching a draft ---------------------------------------------
-    #
-    # A launch moves the draft's studies into ONE hidden folder,
-    # ``queue/.launch-<draft>/`` (the runner and the GUI list neither it
-    # nor what is in it), keeping their ids, so whatever is in there
-    # belongs to that launch and nothing can be stranded where no record
-    # points. Its ``launch.json`` says how far the launch got; it is not
-    # ``draft.json``, which the GUI rewrites whenever the name changes.
-    #
-    # 1. stage: every study is moved in, then checked THERE (an edit made
-    #    after the move cannot reach it: the GUI finds it gone);
-    # 2. name: each gets its study sequence id, recorded before it is written;
-    # 3. publish: each is renamed into the queue.
-    #
-    # Any failure before 3 puts every study back. A failure during 3
-    # keeps what was published and puts the rest back; launching again
-    # continues the same study sequence. The launch lock (``out/drafts/``)
-    # makes launches, discards and recovery one at a time; a launch cut
-    # off by a crash is finished (if it was publishing) or undone by the
-    # next launch, the next runner or the GUI when it opens.
-
-    def _stage_dir(self, name: str) -> Path:
-        return self.queue.queue_dir / f"{STAGE}{name}"
-
-    def _launch_lock(self, wait: float):
-        self.drafts_dir.mkdir(parents=True, exist_ok=True)
-        try:
-            return st.acquire_lock(self.drafts_dir, wait=wait)
-        except st.LockHeld as exc:
-            raise QueueError(
-                "a study sequence is being launched; try again when it is done"
-            ) from exc
-
-    @contextmanager
-    def _draft_locked(self, name: str):
-        """Hold the launch lock over a change to a draft, and yield its
-        queue: a launch cannot then take the draft away mid-change (it
-        would rename the draft's studies out from under the change, and
-        a study written after the draft was removed would sit in a
-        folder nothing lists).
-
-        Raises:
-            QueueError: If the draft is gone, or a launch holds the lock
-                for more than a few seconds.
-        """
-        self.draft_queue(name)
-        lock = self._launch_lock(wait=5.0)
-        try:
-            yield self.draft_queue(name)  # not launched while we waited
-        finally:
-            st.release_lock(lock)
-
-    def discard_draft(self, name: str) -> Path:
-        """Drop a draft; it is moved to ``out/removed/``, not deleted.
-
-        Raises:
-            QueueError: If it is gone, or being launched.
-        """
-        self.draft_queue(name)
-        lock = self._launch_lock(wait=5.0)
-        try:
-            self.draft_queue(name)  # not launched while we waited
-            self.queue.removed_dir.mkdir(parents=True, exist_ok=True)
-            dest = self.queue.removed_dir / f"{st.stamp()}_{name}"
-            _rename(self.drafts_dir / name, dest)
-            return dest
-        finally:
-            st.release_lock(lock)
-
-    def launch_draft(
-        self,
-        name: str,
-        label: str = "",
-        deep: bool = True,
-        progress=None,
-    ) -> list[str]:
-        """Queue a whole draft as one study sequence, in its order.
-
-        Every study gets a study sequence id (``s<NN>-<sequence>-<study>``) and goes to
-        the end of the queue. The draft is removed, unless studies were
-        added to it while it launched: those stay in it, and launching
-        it again continues the same study sequence.
-
-        Args:
-            deep: Rebuild every study's objects first (the check the
-                runner makes before it runs one): a study that cannot
-                run would stop the whole queue there.
-            progress: Called ``progress(checked, total, study)`` as the
-                studies are checked (the slow part), and once more as
-                ``(total, total, "")`` when they all are.
-
-        Raises:
-            QueueError: If the draft is gone or empty, a study in it
-                cannot run (nothing is queued then), another launch is
-                going, or the launch was cut short (the message says
-                what was queued; the rest is back in the draft).
-        """
-        self.draft_queue(name)
-        lock = self._launch_lock(wait=5.0)
-        try:
-            self._recover()
-            if not (self.drafts_dir / name / DRAFT_FILE).exists():
-                raise QueueError("the draft is gone: launched or discarded meanwhile")
-            return self._launch(name, label, deep, progress)
-        finally:
-            st.release_lock(lock)
-
-    def _launch(self, name: str, label: str, deep: bool, progress=None) -> list[str]:
-        draft = self.draft_queue(name)
-        ids = draft.ids()
-        if not ids:
-            raise QueueError("the study sequence has no studies yet")
-        # Refused before anything moves: a campaign deleted since it was
-        # picked.
-        campaign = self._campaign_key(
-            (st.read_json(self.drafts_dir / name / DRAFT_FILE) or {}).get("campaign")
-            or ""
-        )
-        stage = self._stage_dir(name)
-        stage.mkdir(parents=True)
-        state: dict = {"draft": name, "phase": "staging", "entries": []}
-        st.write_json(stage / LAUNCH_FILE, state)
-        try:
-            staged = []
-            for old_id in ids:
-                _rename(draft.folder(old_id), stage / old_id)
-                staged.append(old_id)
-            bad = {}
-            for n, i in enumerate(staged):
-                if progress is not None:
-                    progress(n, len(staged), i)
-                found = self.problems(i, deep=deep, folder=stage / i)
-                if found:
-                    bad[i] = found
-            if progress is not None:
-                progress(len(staged), len(staged), "")
-            if bad:
-                raise _NotLaunched(
-                    "not launched; fix first: "
-                    + "; ".join(f"{i}: {p[0]}" for i, p in bad.items())
-                )
-            meta = st.read_json(self.drafts_dir / name / DRAFT_FILE) or {}
-            earlier = meta.get("launched") or {}
-            # A study sequence launched in parts keeps the name it was first
-            # launched with: its ids carry it, and should match. A draft
-            # made from a sequence and not renamed is recorded under that
-            # sequence's key, as the CLI's ``sequence`` records it (short
-            # ids, one name in design_variables.meta.json); a renamed one
-            # is a sequence of its own, under its new name.
-            label = label or meta.get("label") or ""
-            if meta.get("from") and label in ("", meta.get("from_label", "")):
-                label = meta["from"]
-            label = earlier.get("label") or label or name
-            sequence_id = earlier.get("sequence") or self._next_sequence_id()
-            first = int(earlier.get("count", 0))
-            state.update(sequence=sequence_id, first=first, label=label)
-            for n, old_id in enumerate(staged, first + 1):
-                folder = stage / old_id
-                text = (folder / JOB_FILE).read_text(encoding="utf-8")
-                (folder / ORIGINAL).write_text(text, encoding="utf-8")
-                job = load_job(folder, self.words)
-                job.id = self.queue.new_id(job.task, sequence_id, n, label)
-                job.sequence = {"id": sequence_id, "name": label, "entry": n}
-                if campaign:
-                    job.campaign = campaign
-                # Recorded before it is written, so the id is taken
-                # (``FolderQueue.taken``) and a crash knows where it goes.
-                state["entries"].append({"old_id": old_id, "new_id": job.id})
-                st.write_json(stage / LAUNCH_FILE, state)
-                (folder / JOB_FILE).write_text(
-                    dump_yaml(job.to_raw(self.words)), encoding="utf-8"
-                )
-            state["phase"] = "publishing"
-            st.write_json(stage / LAUNCH_FILE, state)
-        except BaseException as exc:
-            self._unstage(name)
-            if isinstance(exc, _NotLaunched):
-                raise QueueError(str(exc)) from None
-            if isinstance(exc, Exception):
-                raise QueueError(
-                    f"not launched ({type(exc).__name__}: {exc}); every "
-                    f"study is back in the draft"
-                ) from exc
-            raise
-        try:
-            published = self._publish(stage, state["entries"])
-        except OSError as exc:
-            published = [
-                e["new_id"]
-                for e in state["entries"]
-                if self.queue.folder(e["new_id"]).is_dir()
-            ]
-            self._append_order(published)
-            self._unstage(name)
-            self._note_launched(name, sequence_id, first + len(published), label)
-            raise QueueError(
-                f"launched {len(published)} of {len(state['entries'])} as "
-                f"{sequence_id} ({type(exc).__name__}: {exc}); the rest "
-                f"are back in the draft -- launch it again to finish the "
-                f"same study sequence"
-            ) from exc
-        self._append_order(published)
-        self._finish(name, sequence_id, first + len(published), label)
-        return published
-
-    def _publish(self, stage: Path, entries: list[dict]) -> list[str]:
-        """Rename each staged study to its study sequence id, in order.
-
-        Their order is written first: a folder ``order.json`` does not
-        list goes to the end of the queue by name, so a runner picking its
-        next study while the renames happen (each may wait seconds on
-        Windows) would otherwise take a study sequence's studies alphabetically.
-        A listed id whose folder does not exist (yet) is skipped.
-        """
-        self._append_order([e["new_id"] for e in entries])
-        published = []
-        for entry in entries:
-            source = stage / entry["old_id"]
-            final = self.queue.folder(entry["new_id"])
-            if source.is_dir():
-                _rename(source, final)
-            if final.is_dir():
-                (final / ORIGINAL).unlink(missing_ok=True)
-                published.append(entry["new_id"])
-        return published
-
-    def _finish(self, name: str, sequence_id: str, count: int, label: str = "") -> None:
-        """Remove the stage folder and the draft -- unless studies were
-        added to the draft while it launched: then it stays, and a
-        launch of it continues this study sequence."""
-        shutil.rmtree(self._stage_dir(name), ignore_errors=True)
-        folder = self.drafts_dir / name
-        if not folder.is_dir():
-            return
-        if self.draft_queue(name).ids():
-            self._note_launched(name, sequence_id, count, label)
-        else:
-            # Moved, not deleted: whatever is still in it is kept.
-            self.queue.removed_dir.mkdir(parents=True, exist_ok=True)
-            _rename(
-                folder,
-                self.queue.removed_dir / f"{st.stamp()}_{name}_launched-{sequence_id}",
-            )
-
-    def _note_launched(self, name: str, sequence_id: str, count: int, label: str = ""):
-        path = self.drafts_dir / name / DRAFT_FILE
-        if path.exists():  # never recreate a draft that is gone
-            meta = st.read_json(path) or {}
-            meta["launched"] = {
-                "sequence": sequence_id,
-                "count": count,
-                "label": label
-                or (meta.get("launched") or {}).get("label")
-                or meta.get("label", ""),
-            }
-            st.write_json(path, meta)
-
     def _next_sequence_id(self) -> str:
-        """``s<NN>`` past every study sequence queued, completed, being
-        launched or reserved by a draft launched in part -- a launch that
-        published nothing still owns its number (the draft keeps it)."""
-        highest = int(self.queue.next_sequence_id()[1:]) - 1
-        try:
-            drafts = self.drafts()
-        except (OSError, ValueError):  # a damaged draft.json
-            drafts = []
-        for draft in drafts:
-            number = str((draft.get("launched") or {}).get("sequence", ""))
-            if number[:1] == "s" and number[1:].isdigit():
-                highest = max(highest, int(number[1:]))
-        return f"s{highest + 1:02d}"
-
-    def _append_order(self, ids: list[str]) -> None:
-        if ids:
-            with st.ORDER_LOCK:
-                order = [i for i in self.queue.ids() if i not in ids]
-                self.queue.write_order(order + list(ids))
-
-    def _unstage(self, name: str) -> None:
-        """Put every study still in a launch's stage folder back into its
-        draft, as it was (the draft is made again if it is gone)."""
-        stage = self._stage_dir(name)
-        if not stage.is_dir():
-            return
-        draft_dir = self.drafts_dir / name
-        if not (draft_dir / DRAFT_FILE).exists():
-            draft_dir.mkdir(parents=True, exist_ok=True)
-            st.write_json(
-                draft_dir / DRAFT_FILE,
-                {"label": f"{name} (recovered)", "created": st.now()},
-            )
-        for folder in sorted(p for p in stage.iterdir() if p.is_dir()):
-            original = folder / ORIGINAL
-            if original.exists():
-                (folder / JOB_FILE).write_text(
-                    original.read_text(encoding="utf-8"), encoding="utf-8"
-                )
-                original.unlink()
-            _rename(folder, draft_dir / folder.name)
-        shutil.rmtree(stage, ignore_errors=True)
-
-    def _recover(self) -> list[str]:
-        """Finish or undo every launch a crash cut short (the launch lock
-        held). One line per launch it touched."""
-        done: list[str] = []
-        if not self.queue.queue_dir.is_dir():
-            return done
-        for stage in sorted(self.queue.queue_dir.iterdir()):
-            if not (stage.is_dir() and stage.name.startswith(STAGE)):
-                continue
-            name = stage.name[len(STAGE) :]
-            state = st.read_json(stage / LAUNCH_FILE) or {}
-            if state.get("phase") == "publishing":
-                published = self._publish(stage, state.get("entries") or [])
-                self._append_order(published)
-                self._unstage(name)  # anything it did not get to
-                self._finish(
-                    name,
-                    state.get("sequence", ""),
-                    int(state.get("first", 0)) + len(published),
-                    state.get("label", ""),
-                )
-                done.append(f"{name}: finished its launch ({len(published)} queued)")
-            else:
-                self._unstage(name)
-                done.append(
-                    f"{name}: its launch was undone; every study is back "
-                    f"in the draft"
-                )
-        return done
-
-    def recover_launches(self) -> list[str]:
-        """Finish or undo launches a crash cut short; one line per launch
-        it touched. A launch going on now is left alone (the lock is
-        taken without waiting)."""
-        if not self.queue.queue_dir.is_dir() or not any(
-            p.name.startswith(STAGE) for p in self.queue.queue_dir.iterdir()
-        ):
-            return []
-        try:
-            lock = self._launch_lock(wait=0)
-        except QueueError:
-            return []
-        try:
-            return self._recover()
-        finally:
-            st.release_lock(lock)
+        """``s<NN>`` past every study sequence queued, on hold or
+        completed."""
+        return self.queue.next_sequence_id()
 
     def check_templates(self, deep: bool = True) -> dict[str, list[str]]:
         """Fill in every queueable study and check it, without queueing:
@@ -932,10 +512,6 @@ class Project:
                     f"{type(exc).__name__}: {exc}"
                 ) from exc
         ids: list[str] = []
-        # Numbered past drafts launched in part (a draft keeps its
-        # number) and past a launch under way (its staged ids count as
-        # taken). Not under the launch lock: a GUI launch holds it for
-        # its whole deep check, minutes for a real design.
         try:
             sequence_id = self._next_sequence_id()
             for n, (entry, (files, by)) in enumerate(zip(spec.entries, generated), 1):
@@ -969,6 +545,120 @@ class Project:
                     pass  # claimed by a runner meanwhile; it runs
             raise
         return ids
+
+    # -- study sequence templates ----------------------------------------
+
+    @property
+    def sequence_dir(self) -> Path | None:
+        """Where study sequence files live (None: the backend keeps none)."""
+        folder = getattr(self.backend, "sequence_dir", None)
+        return Path(folder) if folder else None
+
+    def sequence_raw(self, key: str) -> dict:
+        """A study sequence as its file's mapping, to edit: the file as
+        written, or for one built in code, its studies spelled out.
+
+        Raises:
+            QueueError: If there is no such study sequence.
+        """
+        # The file first (a template saved a moment ago is there before
+        # every catalog -- a worker's may be a poll old -- has it), unless
+        # the adapter's code defines one by that name: the catalog uses
+        # that one, so the editor must too.
+        folder = self.sequence_dir
+        path = folder / f"{key}.yaml" if folder is not None else None
+        if path is not None and path.is_file() and not self.sequence_from_code(key):
+            raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                return raw
+        spec = self.backend.catalog().sequence(key)
+        if spec is None:
+            raise QueueError(f"no {self.words.sequence} {key!r}")
+        if spec.source and Path(spec.source).is_file():
+            raw = yaml.safe_load(Path(spec.source).read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                return raw
+        studies = []
+        for entry in spec.entries:
+            item: dict[str, Any] = {self.words.task: entry.task}
+            if entry.settings:
+                item["settings"] = dict(entry.settings)
+            if entry.checks is not None:
+                item["checks"] = list(entry.checks)
+            if entry.save is not None:
+                item["save"] = entry.save
+            if entry.on_failure:
+                item["on_failure"] = entry.on_failure
+            if entry.notes:
+                item["notes"] = entry.notes
+            studies.append(item)
+        raw = {"name": spec.label, "why_ordered": spec.why_ordered, "studies": studies}
+        if spec.campaign:
+            raw["campaign"] = spec.campaign
+        return raw
+
+    def sequence_from_code(self, key: str) -> bool:
+        """Whether study sequence ``key`` is built in the adapter's code
+        (the catalog takes it over a file of the same name)."""
+        spec = self.backend.catalog().sequence(key)
+        return spec is not None and not spec.source
+
+    def save_sequence(self, key: str, raw: dict, overwrite: bool = False) -> Path:
+        """Write a study sequence template (``study_sequences/<key>.yaml``).
+
+        Its studies must be ones the project can queue and its campaign
+        (if any) must exist.
+
+        Raises:
+            QueueError: Saying what is wrong; nothing is written then.
+        """
+        folder = self.sequence_dir
+        if folder is None:
+            raise QueueError(f"this project keeps no {self.words.sequence} files")
+        catalog = self.backend.catalog()
+        tasks = [
+            (
+                str(item.get(self.words.task) or item.get("task") or "")
+                if isinstance(item, dict)
+                else str(item)
+            )
+            for item in raw.get("studies") or []
+        ]
+        unknown = sorted({t for t in tasks if t and catalog.task(t) is None})
+        if unknown:
+            raise QueueError(f"unknown {self.words.task}(s): {', '.join(unknown)}")
+        if raw.get("campaign"):
+            self._campaign_key(str(raw["campaign"]))
+        try:
+            check_sequence_key(key)
+        except SequenceError as exc:
+            raise QueueError("; ".join(exc.problems)) from exc
+        # Every template has its own name: the GUI and the queue show it.
+        # The files are read afresh (a worker's catalog may lag a save
+        # made a moment ago); the code's templates come from the catalog.
+        label = str(raw.get("name") or key)
+        on_disk, _ = load_sequence_dir(folder, self.words)
+        others = [s for s in catalog.sequences if not s.source] + on_disk
+        clash = next(
+            (s for s in others if s.key != key and s.label == label),
+            None,
+        )
+        if clash is not None:
+            raise QueueError(
+                f"the name {label!r} is taken by {clash.key!r}; give this "
+                f"{self.words.sequence} a name of its own"
+            )
+        code = catalog.sequence(key)
+        if code is not None and not code.source:
+            raise QueueError(
+                f"{key!r} is built in the adapter's code; save it under " "another name"
+            )
+        try:
+            return save_sequence(folder, key, raw, self.words, overwrite)
+        except SequenceError as exc:
+            raise QueueError("; ".join(exc.problems)) from exc
+        except OSError as exc:
+            raise QueueError(f"{key}.yaml could not be written: {exc}") from exc
 
     def _campaign_key(self, key: str) -> str:
         """``key`` normalised, refused unless the campaign exists."""

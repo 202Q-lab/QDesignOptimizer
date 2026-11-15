@@ -13,23 +13,31 @@ POLL_MS = 2000
 
 
 def page(title: str) -> html.Div:
-    """The static skeleton; callbacks fill every part."""
+    """The static skeleton; callbacks fill every part.
+
+    Left: what you make and edit -- New buttons, a browser of campaigns,
+    study sequence templates and study templates, and the editor for
+    whatever is selected. Right: what runs -- the runner, the queue, the
+    studies on hold, the completed ones and the log.
+    """
     return html.Div(
         id="page-root",
         className="qs-page",
         children=[
             dcc.Store(id="snapshot"),
-            # {"kind": "queue"|"completed"|"draft", "key"}
+            # What the editor shows: {"kind": "queue"|"hold"|"completed"|
+            # "campaign"|"sequence"|"template"|"new-study"|"new-campaign"|
+            # "new-sequence", "key"}
             dcc.Store(id="selected"),
-            # The study sequence popup: None (closed), {"screen": "start"} or
-            # {"key": <draft key>}.
-            dcc.Store(id="draft"),
             dcc.Store(id="rev", data=0),
-            # What the details pane's editors held when last drawn or
-            # saved: a selection change while they differ asks first, as
-            # moving to another study redraws the pane and drops edits.
+            # What the editor's fields held when last drawn or saved: a
+            # selection change while they differ asks first, as moving to
+            # another study redraws the editor and drops edits.
             dcc.Store(id="details-orig"),
+            # Where a click wanted to go while the editor had unsaved
+            # edits: the warning asks to stay or discard them.
             dcc.Store(id="pending-select"),
+            dcc.Store(id="browser-open", data=dict(BROWSER_SECTIONS)),
             dcc.Store(id="message"),
             # Written by assets/queue_drag.js: the order after a drop, and
             # whether a drag is under way (the refresh pauses then).
@@ -44,37 +52,143 @@ def page(title: str) -> html.Div:
                     html.Span(id="project-path", className="qs-muted"),
                 ],
             ),
-            html.Div(id="runner-banner"),
-            html.Div(
-                className="qs-bar",
-                children=[
-                    html.Button(
-                        "Check queue",
-                        id="btn-check",
-                        className="qs-btn",
-                        title="rebuild every queued study from its files; " "no solve",
-                    ),
-                    html.Button(
-                        "Start",
-                        id="btn-start",
-                        className="qs-btn qs-btn-primary",
-                    ),
-                    html.Button(
-                        "Stop after this study",
-                        id="btn-stop",
-                        className="qs-btn qs-btn-danger",
-                    ),
-                    html.Button("Reload catalog", id="btn-reload", className="qs-btn"),
-                ],
-            ),
             html.Div(id="message-view", className="qs-message"),
             html.Div(
                 className="qs-main",
                 children=[
+                    # -- left: make and edit ------------------------------
                     html.Div(
                         children=[
                             html.Div(
+                                className="qs-bar",
+                                children=[
+                                    html.Button(
+                                        "+ New campaign",
+                                        id="btn-open-new-campaign",
+                                        className="qs-btn",
+                                        title="a folder for one question, "
+                                        "with its README as the lab log",
+                                    ),
+                                    html.Button(
+                                        "+ New study sequence",
+                                        id="btn-open-new-sequence",
+                                        className="qs-btn",
+                                        title="a template: an ordered list "
+                                        "of studies, saved in study_sequences/",
+                                    ),
+                                    html.Button(
+                                        "+ New study",
+                                        id="btn-open-new-study",
+                                        className="qs-btn qs-btn-primary",
+                                        title="from a template or from "
+                                        "scratch; it starts on hold",
+                                    ),
+                                    html.Div(
+                                        dcc.Dropdown(
+                                            id="new-project",
+                                            clearable=False,
+                                            placeholder="for project ...",
+                                        ),
+                                        id="new-project-box",
+                                        style={"display": "none"},
+                                        title="the project the New buttons make things in",
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                id="browser",
                                 className="qs-card",
+                                style={"marginTop": "10px"},
+                            ),
+                            html.Div(
+                                id="details-card",
+                                className="qs-card",
+                                style={"marginTop": "10px"},
+                                children=[
+                                    html.Div(
+                                        id="unsaved-warning",
+                                        className="qs-warning",
+                                        style={"display": "none"},
+                                        children=[
+                                            html.Span(id="unsaved-text"),
+                                            html.Div(
+                                                className="qs-bar",
+                                                children=[
+                                                    html.Button(
+                                                        "Stay",
+                                                        id="btn-unsaved-stay",
+                                                        className="qs-btn qs-btn-primary",
+                                                    ),
+                                                    html.Button(
+                                                        "Discard them",
+                                                        id="btn-unsaved-discard",
+                                                        className="qs-btn qs-btn-danger",
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                    html.Div(id="details-problems"),
+                                    # Only redrawn when something is
+                                    # picked: the first study after a start
+                                    # takes seconds (the worker imports the
+                                    # backend), and the old one must not
+                                    # look like the new one.
+                                    dcc.Loading(
+                                        html.Div(id="details"),
+                                        type="dot",
+                                        delay_show=300,
+                                    ),
+                                    dcc.Loading(
+                                        html.Div(id="preview-view"),
+                                        type="dot",
+                                    ),
+                                    html.Pre(
+                                        id="inspect",
+                                        className="qs-pre",
+                                        style={"display": "none"},
+                                    ),
+                                ],
+                            ),
+                        ]
+                    ),
+                    # -- right: run ----------------------------------------
+                    html.Div(
+                        children=[
+                            html.Div(id="runner-banner"),
+                            html.Div(
+                                className="qs-bar",
+                                children=[
+                                    html.Button(
+                                        "Start",
+                                        id="btn-start",
+                                        className="qs-btn qs-btn-primary",
+                                    ),
+                                    html.Button(
+                                        "Stop after this study",
+                                        id="btn-stop",
+                                        className="qs-btn qs-btn-danger",
+                                    ),
+                                    html.Button(
+                                        "Check queue",
+                                        id="btn-check",
+                                        className="qs-btn",
+                                        title="build every queued study from "
+                                        "its files, as the runner will, and "
+                                        "list what would stop one; no solve",
+                                    ),
+                                    html.Button(
+                                        "Reload catalog",
+                                        id="btn-reload",
+                                        className="qs-btn",
+                                        title="read the templates and the "
+                                        "adapter again",
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                className="qs-card",
+                                style={"marginTop": "10px"},
                                 children=[
                                     html.H3("Queue", className="qs-h"),
                                     html.Div(id="queue-table"),
@@ -83,42 +197,40 @@ def page(title: str) -> html.Div:
                                         children=[
                                             dcc.Dropdown(
                                                 id="add-choice",
-                                                placeholder="Add ...",
-                                                style={"minWidth": "380px"},
+                                                placeholder="Add a study or a study sequence ...",
+                                                style={"minWidth": "300px"},
                                             ),
                                             html.Div(
                                                 dcc.Dropdown(
                                                     id="add-campaign",
                                                     placeholder="no campaign",
                                                 ),
-                                                style={"minWidth": "200px"},
-                                                title="the campaign the "
-                                                "study (or the study "
-                                                "sequence) is queued in",
+                                                style={"minWidth": "180px"},
+                                                title="the campaign it is " "queued in",
                                             ),
                                             html.Button(
                                                 "Add to queue",
                                                 id="btn-add",
                                                 className="qs-btn",
-                                                title="a study goes straight "
-                                                "in; a study sequence opens the "
-                                                "study sequence popup first",
-                                            ),
-                                            html.Button(
-                                                "New study sequence...",
-                                                id="btn-new-sequence",
-                                                className="qs-btn " "qs-btn-primary",
-                                                title="put a study sequence "
-                                                "together, edit each study, "
-                                                "then launch it",
                                             ),
                                         ],
                                     ),
+                                    html.H3(
+                                        "On hold",
+                                        className="qs-h",
+                                        style={"marginTop": "14px"},
+                                    ),
+                                    html.Div(
+                                        "Not in the run order: the runner "
+                                        "skips these until you queue them (▶).",
+                                        className="qs-small",
+                                    ),
+                                    html.Div(id="held-table"),
                                 ],
                             ),
                             html.Div(
                                 className="qs-card",
-                                style={"marginTop": "16px"},
+                                style={"marginTop": "10px"},
                                 children=[
                                     html.H3("Completed", className="qs-h"),
                                     html.Div(id="completed-table"),
@@ -126,99 +238,15 @@ def page(title: str) -> html.Div:
                             ),
                             html.Div(
                                 className="qs-card",
-                                style={"marginTop": "16px"},
+                                style={"marginTop": "10px"},
                                 children=[
-                                    html.H3("Campaigns", className="qs-h"),
-                                    html.Div(
-                                        "A campaign answers one question; its "
-                                        "README.md is the lab log. A study in "
-                                        "a campaign reads and writes the "
-                                        "campaign's design variables; Promote "
-                                        "copies them one level up.",
-                                        className="qs-small",
-                                    ),
-                                    html.Div(id="campaign-table"),
-                                    html.Div(
-                                        className="qs-bar",
-                                        children=[
-                                            dcc.Input(
-                                                id="campaign-key",
-                                                placeholder="name, or parent/name",
-                                                className="qs-input",
-                                                style={"width": "200px"},
-                                            ),
-                                            dcc.Input(
-                                                id="campaign-question",
-                                                placeholder="the question it answers",
-                                                className="qs-input",
-                                                style={"width": "260px"},
-                                            ),
-                                            dcc.Checklist(
-                                                id="campaign-own-store",
-                                                options=[
-                                                    {
-                                                        "label": " own design "
-                                                        "variables",
-                                                        "value": "own",
-                                                    }
-                                                ],
-                                                value=["own"],
-                                                inline=True,
-                                            ),
-                                            html.Button(
-                                                "New campaign",
-                                                id="btn-new-campaign",
-                                                className="qs-btn",
-                                            ),
-                                        ],
-                                    ),
+                                    html.H4("Runner log", style={"margin": "0 0 4px"}),
+                                    html.Pre(id="log", className="qs-pre"),
                                 ],
                             ),
                         ]
                     ),
-                    html.Div(
-                        id="details-card",
-                        className="qs-card",
-                        children=[
-                            html.Div(id="details-problems"),
-                            # Only redrawn when a study is picked: the
-                            # first one after a start takes seconds (the
-                            # worker imports the backend), and the old
-                            # study must not look like the new one.
-                            dcc.Loading(
-                                html.Div(id="details"),
-                                type="dot",
-                                delay_show=300,
-                            ),
-                            dcc.Loading(
-                                html.Div(id="preview-view"),
-                                type="dot",
-                            ),
-                            html.Pre(
-                                id="inspect",
-                                className="qs-pre",
-                                style={"display": "none"},
-                            ),
-                            html.H4("Runner log", style={"margin": "12px 0 4px"}),
-                            html.Pre(id="log", className="qs-pre"),
-                        ],
-                    ),
                 ],
-            ),
-            html.Div(
-                id="draft-modal",
-                className="qs-modal",
-                style={"display": "none"},
-                children=html.Div(
-                    className="qs-modal-panel",
-                    children=[
-                        # How a launch going on in the background stands;
-                        # its own callback, so it can refresh without
-                        # redrawing the fields above it.
-                        html.Div(id="draft-status"),
-                        html.Div(id="draft-body"),
-                    ],
-                ),
             ),
         ],
     )
@@ -306,14 +334,6 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
             if problems
             else html.Span(row.get("notes", ""), className="qs-muted")
         )
-        if row.get("hold"):
-            note = html.Span(
-                [
-                    html.B("on hold", style={"color": theme.RUN_COLORS["held"]}),
-                    " -- the runner stops here. ",
-                    note,
-                ]
-            )
         body.append(
             html.Tr(
                 className="qs-row",
@@ -385,15 +405,7 @@ def _actions(row: dict, first: bool, last: bool) -> Any:
         [
             icon("up", "↑", "move up", first),
             icon("down", "↓", "move down", last),
-            icon(
-                "hold",
-                "▶" if row.get("hold") else "⏸",
-                (
-                    "release: let the runner reach it"
-                    if row.get("hold")
-                    else "hold: the runner stops here"
-                ),
-            ),
+            icon("park", "⏸", "put on hold: out of the run order until queued again"),
             icon(
                 "remove",
                 "✕",
@@ -401,6 +413,83 @@ def _actions(row: dict, first: bool, last: bool) -> Any:
             ),
         ]
     )
+
+
+def held_table(snap: dict, selected: dict | None) -> Any:
+    """The studies on hold: not run until moved to the queue."""
+    rows = snap.get("held") or []
+    multi = bool(snap.get("multi"))
+    picked = (
+        (selected or {}).get("key") if (selected or {}).get("kind") == "hold" else None
+    )
+    if not rows:
+        return html.Div(
+            "Nothing on hold.", className="qs-muted", style={"margin": "4px 0"}
+        )
+    body = []
+    for row in rows:
+        problems = row.get("problems") or []
+
+        def icon(action, text, title, row=row):
+            return html.Button(
+                text,
+                id={"type": "act", "action": action, "index": row["id"]},
+                className="qs-icon",
+                title=title,
+                n_clicks=0,
+            )
+
+        body.append(
+            html.Tr(
+                className="qs-row",
+                style=(
+                    {"background": theme.SELECTED_BG} if row["id"] == picked else {}
+                ),
+                children=[
+                    *(
+                        [html.Td(row.get("project", ""), className="qs-small")]
+                        if multi
+                        else []
+                    ),
+                    html.Td(row.get("subject", "")),
+                    html.Td(
+                        [
+                            row.get("label", ""),
+                            html.Br(),
+                            html.Span(
+                                row["id"].rsplit("/", 1)[-1], className="qs-small"
+                            ),
+                            *_campaign_tag(row.get("campaign")),
+                        ],
+                        id={"type": "hrow", "index": row["id"]},
+                        className="qs-pick",
+                        n_clicks=0,
+                    ),
+                    html.Td(row.get("settings", ""), className="qs-small"),
+                    html.Td(
+                        html.Span(
+                            f"cannot run: {problems[0]}",
+                            style={"color": theme.STATUS_COLORS["failed"][0]},
+                        )
+                        if problems
+                        else html.Span(row.get("notes", ""), className="qs-muted")
+                    ),
+                    html.Td(
+                        html.Span(
+                            [
+                                icon(
+                                    "unpark",
+                                    "▶",
+                                    "queue it: move it to the end of the queue",
+                                ),
+                                icon("remove", "✕", "remove (kept in out/removed/)"),
+                            ]
+                        )
+                    ),
+                ],
+            )
+        )
+    return html.Table(className="qs-table", children=[html.Tbody(body)])
 
 
 def completed_table(snap: dict, selected: dict | None) -> Any:
@@ -491,76 +580,11 @@ def campaign_options(snap: dict) -> list[dict]:
     return [
         {
             "label": (f"{c['project']} / " if multi else "") + c["key"],
-            "value": c["key"],
+            # Two projects may both have a campaign of this name.
+            "value": f"{c['project']}::{c['key']}" if multi else c["key"],
         }
         for c in snap.get("campaigns") or []
     ]
-
-
-def campaign_table(snap: dict) -> Any:
-    """Every campaign: its name, question title, the store its studies
-    use, and Promote (for one with a store of its own)."""
-    rows = snap.get("campaigns") or []
-    multi = bool(snap.get("multi"))
-    if not rows:
-        return html.Div(
-            "No campaigns yet. Make one below; a name with a / makes a "
-            "sub-campaign of the part before it.",
-            className="qs-muted",
-            style={"margin": "6px 0"},
-        )
-    body = []
-    for c in rows:
-        parent = c["key"].rpartition("/")[0]
-        body.append(
-            html.Tr(
-                [
-                    *([html.Td(c["project"], className="qs-small")] if multi else []),
-                    html.Td(
-                        [
-                            html.Span("\u2003" * c["depth"]),
-                            html.B(c["key"].rpartition("/")[2]),
-                            html.Br(),
-                            html.Span(
-                                ("\u2003" * c["depth"]) + c["title"],
-                                className="qs-small",
-                            ),
-                        ]
-                    ),
-                    html.Td(c["store"], className="qs-small"),
-                    html.Td(
-                        html.Button(
-                            "Promote",
-                            id={
-                                "type": "promote",
-                                "index": f"{c['project']}::{c['key']}",
-                            },
-                            className="qs-btn qs-btn-small",
-                            n_clicks=0,
-                            disabled=not c["own_store"],
-                            title=(
-                                "copy its changed values to "
-                                + (f"campaign {parent}" if parent else "the project")
-                                if c["own_store"]
-                                else "it uses its parent's design variables: "
-                                "nothing to promote"
-                            ),
-                        )
-                    ),
-                ]
-            )
-        )
-    head = html.Tr(
-        [
-            *([html.Th("Project")] if multi else []),
-            html.Th("Campaign"),
-            html.Th("Design variables"),
-            html.Th(""),
-        ]
-    )
-    return html.Table(
-        className="qs-table", children=[html.Thead(head), html.Tbody(body)]
-    )
 
 
 def duration(minutes: float) -> str:
@@ -605,14 +629,14 @@ def details(data: dict | None, words: dict) -> Any:
         return html.Div(
             "Select a study to see and edit its files.", className="qs-muted"
         )
-    editable = data["kind"] in ("queue", "draft")
+    editable = data["kind"] in ("queue", "hold")
     job = data.get("job") or {}
     task_word = words.get("task", "task")
     head = [
         html.H3(
             (
-                f"{data['key'].rsplit('/', 1)[-1]} (in the study sequence draft)"
-                if data["kind"] == "draft"
+                f"{data['key'].rsplit('/', 1)[-1]} (on hold)"
+                if data["kind"] == "hold"
                 else data["key"]
             ),
             style={"margin": "0 0 2px", "wordBreak": "break-all"},
@@ -626,12 +650,7 @@ def details(data: dict | None, words: dict) -> Any:
     parts = head
     if editable:
         parts.append(
-            _job_form(
-                job,
-                data.get("settings_keys") or (),
-                data.get("campaigns"),
-                bool(data.get("campaign_locked")),
-            )
+            _job_form(job, data.get("settings_keys") or (), data.get("campaigns"))
         )
     else:
         parts.append(_result_view(data))
@@ -739,7 +758,7 @@ def _setting_text(value) -> str:
     return "" if value is None else str(value)
 
 
-def _job_form(job: dict, keys=(), campaigns=None, campaign_locked=False) -> Any:
+def _job_form(job: dict, keys=(), campaigns=None) -> Any:
     def field(label, child):
         return html.Div(className="qs-field", children=[html.Label(label), child])
 
@@ -813,15 +832,6 @@ def _job_form(job: dict, keys=(), campaigns=None, campaign_locked=False) -> Any:
                         value=job.get("campaign") or None,
                         placeholder="none: the project's design variables",
                         style={"minWidth": "260px"},
-                        disabled=campaign_locked,
-                    ),
-                    (
-                        html.Span(
-                            "the study sequence's: set it in the popup",
-                            className="qs-small",
-                        )
-                        if campaign_locked
-                        else None
                     ),
                 ],
             ),
@@ -865,20 +875,24 @@ def _result_view(data: dict) -> Any:
 
 
 def details_problems(snap: dict, selected: dict | None) -> Any:
-    """Why the selected queued study cannot run, from the latest poll.
+    """Why the selected queued (or held) study cannot run, from the
+    latest poll.
 
     Kept out of ``details`` so it can refresh every poll without
     redrawing the editors under it.
     """
-    if not selected or selected.get("kind") != "queue":
+    kind = (selected or {}).get("kind")
+    if kind not in ("queue", "hold"):
         return None
-    row = next(
-        (r for r in snap.get("rows") or [] if r["id"] == selected.get("key")),
-        None,
-    )
+    rows = snap.get("rows" if kind == "queue" else "held") or []
+    row = next((r for r in rows if r["id"] == (selected or {}).get("key")), None)
     if row is None:
         return html.Div(
-            "No longer in the queue (it may have started).",
+            (
+                "No longer in the queue (it may have started)."
+                if kind == "queue"
+                else "No longer on hold (queued or removed)."
+            ),
             className="qs-problems",
         )
     parts = []
@@ -913,4 +927,577 @@ def job_fields(job: dict, keys=()) -> dict:
         "save": ["save"] if job.get("save") else [],
         "notes": job.get("notes", ""),
         "campaign": job.get("campaign") or None,
+    }
+
+
+# -- the left side: browser and editor views -----------------------------------
+
+
+def _pick(kind: str, key: str, text, picked: dict | None, small: str = "", depth=0):
+    """One clickable line of the browser."""
+    chosen = (picked or {}).get("kind") == kind and (picked or {}).get("key") == key
+    return html.Div(
+        [
+            html.Span("\u2003" * depth),
+            html.Span(text),
+            html.Span(f"  {small}", className="qs-small") if small else None,
+        ],
+        id={"type": "brow", "kind": kind, "index": key},
+        className="qs-pick qs-brow",
+        style={"background": theme.SELECTED_BG} if chosen else {},
+        n_clicks=0,
+    )
+
+
+#: The browser's sections, and which start open.
+BROWSER_SECTIONS = {"campaigns": True, "sequences": True, "templates": False}
+
+
+def browser(snap: dict, selected: dict | None, opened: dict | None = None) -> Any:
+    """Campaigns, study sequence templates and study templates; a click
+    opens one in the editor. ``opened`` says which sections are open
+    (kept in a store, so a refresh does not undo a collapse)."""
+    opened = {**BROWSER_SECTIONS, **(opened or {})}
+    words = snap.get("words") or {}
+    multi = bool(snap.get("multi"))
+    campaigns = snap.get("campaigns") or []
+    sequences = [c for c in snap.get("catalog") or [] if c["kind"] == "sequence"]
+    tasks = [c for c in snap.get("catalog") or [] if c["kind"] == "task"]
+
+    def section(name, title, items, empty):
+        is_open = bool(opened.get(name))
+        return html.Div(
+            [
+                html.Div(
+                    html.B(f"{'▾' if is_open else '▸'} {title} ({len(items)})"),
+                    id={"type": "bsec", "index": name},
+                    className="qs-pick",
+                    n_clicks=0,
+                ),
+                (
+                    html.Div(items or html.Div(empty, className="qs-muted qs-small"))
+                    if is_open
+                    else None
+                ),
+            ],
+            style={"marginBottom": "6px"},
+        )
+
+    return html.Div(
+        [
+            section(
+                "campaigns",
+                "Campaigns",
+                [
+                    _pick(
+                        "campaign",
+                        (f"{c['project']}::" if multi else "") + c["key"],
+                        c["key"].rpartition("/")[2],
+                        selected,
+                        c["title"],
+                        c["depth"],
+                    )
+                    for c in campaigns
+                ],
+                "none yet: + New campaign",
+            ),
+            section(
+                "sequences",
+                _title(words, "sequence", "study sequence") + " templates",
+                [
+                    _pick(
+                        "sequence",
+                        c["key"],
+                        c["label"],
+                        selected,
+                        # The name it is saved and queued under: two
+                        # templates may share a display name.
+                        f"{c['key'].rpartition('/')[2]} · {c.get('count', 0)} studies"
+                        + ("" if c.get("source") else ", in the adapter's code"),
+                    )
+                    for c in sequences
+                ],
+                "none yet: + New study sequence",
+            ),
+            section(
+                "templates",
+                _title(words, "task", "study") + " templates",
+                [
+                    _pick("template", c["key"], c["label"], selected, c["key"])
+                    for c in tasks
+                ],
+                "none: add ministudies/*.yaml",
+            ),
+        ]
+    )
+
+
+def editor_message(text: str) -> Any:
+    return html.Div(text, className="qs-muted")
+
+
+def template_view(data: dict) -> Any:
+    """A study template: what it is, and a button that makes a study
+    from it, on hold."""
+    return html.Div(
+        [
+            html.H3(data["label"], className="qs-h"),
+            html.Div(
+                f"{data['key']}  --  {data.get('family') or 'study template'}",
+                className="qs-muted",
+            ),
+            html.Pre(data.get("summary") or "", className="qs-pre qs-light"),
+            _new_study_bar(data.get("campaigns") or [], data["key"]),
+        ]
+    )
+
+
+def _new_study_bar(campaigns: list, task: str = "") -> Any:
+    hidden = {"display": "none"}
+    return html.Div(
+        className="qs-bar",
+        children=[
+            # The form's other fields, when the bar is drawn without it (a
+            # study template's view): the callback reads them all.
+            *(
+                [
+                    html.Div(dcc.Dropdown(id="new-study-template"), style=hidden),
+                    dcc.Input(id="new-study-name", style=hidden),
+                ]
+                if task
+                else []
+            ),
+            html.Div(
+                dcc.Dropdown(
+                    id="new-study-campaign",
+                    options=list(campaigns),
+                    placeholder="no campaign",
+                ),
+                style={"minWidth": "220px"},
+            ),
+            html.Button(
+                (
+                    "Make a study from it (on hold)"
+                    if task
+                    else "Make the study (on hold)"
+                ),
+                id="btn-make-study",
+                className="qs-btn qs-btn-primary",
+            ),
+            dcc.Store(id="new-study-task", data=task),
+        ],
+    )
+
+
+def new_study_view(snap: dict, project: str = "") -> Any:
+    """+ New study: pick a template, or name a blank one (in ``project``
+    when several are open)."""
+    multi = bool(snap.get("multi"))
+    tasks = [
+        c
+        for c in snap.get("catalog") or []
+        if c["kind"] == "task" and (not multi or c["key"].startswith(f"{project}/"))
+    ]
+    campaigns = [
+        c["key"]
+        for c in snap.get("campaigns") or []
+        if not multi or c["project"] == project
+    ]
+    return html.Div(
+        [
+            html.H3("New study", className="qs-h"),
+            html.Div(
+                "It is made on hold: edit it here, then queue it (▶ in the "
+                "On hold list).",
+                className="qs-small",
+            ),
+            html.Div(
+                className="qs-frow",
+                children=[
+                    html.Label("from template"),
+                    dcc.Dropdown(
+                        id="new-study-template",
+                        options=[
+                            {"label": f"{t['label']} ({t['key']})", "value": t["key"]}
+                            for t in tasks
+                        ],
+                        placeholder="blank: a MiniStudy from scratch",
+                    ),
+                ],
+            ),
+            html.Div(
+                className="qs-frow",
+                children=[
+                    html.Label("name (blank study)"),
+                    dcc.Input(
+                        id="new-study-name",
+                        className="qs-input",
+                        placeholder="purcell_filter",
+                    ),
+                ],
+            ),
+            _new_study_bar(campaigns),
+        ]
+    )
+
+
+def new_campaign_view() -> Any:
+    """+ New campaign: its name (parent/name for a sub-campaign), its
+    question, and whether it keeps its own design variables."""
+    return html.Div(
+        [
+            html.H3("New campaign", className="qs-h"),
+            html.Div(
+                "A campaign answers one question; its README.md is the lab "
+                "log. A study in it reads and writes the campaign's design "
+                "variables; Promote copies them one level up.",
+                className="qs-small",
+            ),
+            html.Div(
+                className="qs-frow",
+                children=[
+                    html.Label("name"),
+                    dcc.Input(
+                        id="campaign-key",
+                        className="qs-input",
+                        placeholder="tuneup_chip or tuneup_chip/q1_readout",
+                    ),
+                ],
+            ),
+            html.Div(
+                className="qs-frow",
+                children=[
+                    html.Label("question"),
+                    dcc.Input(
+                        id="campaign-question",
+                        className="qs-input",
+                        placeholder="Can every mode reach its target?",
+                    ),
+                ],
+            ),
+            dcc.Checklist(
+                id="campaign-own-store",
+                options=[
+                    {"label": " its own copy of the design variables", "value": "own"}
+                ],
+                value=["own"],
+            ),
+            html.Button(
+                "Make campaign",
+                id="btn-new-campaign",
+                className="qs-btn qs-btn-primary",
+            ),
+        ]
+    )
+
+
+def campaign_view(data: dict, multi: bool = False) -> Any:
+    """A campaign: its README, where its design variables are, how many
+    studies it has, and Promote."""
+    counts = data.get("counts") or {}
+    index = f"{data['project']}::{data['key']}"
+    return html.Div(
+        [
+            html.H3(f"Campaign {data['key']}", className="qs-h"),
+            html.Div(data["folder"], className="qs-muted"),
+            html.Div(
+                className="qs-frow",
+                children=[
+                    html.Label("design variables"),
+                    html.Span(data["store"], className="qs-mono"),
+                ],
+            ),
+            html.Div(
+                className="qs-frow",
+                children=[
+                    html.Label("studies"),
+                    html.Span(", ".join(f"{n} {k}" for k, n in counts.items())),
+                ],
+            ),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.Button(
+                        "Promote",
+                        id={"type": "promote", "index": index},
+                        className="qs-btn",
+                        n_clicks=0,
+                        disabled=not data.get("own_store"),
+                        title=(
+                            f"copy its changed values into {data.get('promote_to')}"
+                            if data.get("own_store")
+                            else "it uses its parent's design variables: nothing to promote"
+                        ),
+                    ),
+                    html.Span(
+                        (
+                            f"to {data.get('promote_to')}"
+                            if data.get("own_store")
+                            else "shares its parent's design variables"
+                        ),
+                        className="qs-small",
+                    ),
+                ],
+            ),
+            html.H4("README.md", style={"margin": "12px 0 4px"}),
+            dcc.Markdown(data.get("readme") or "(empty)", className="qs-readme"),
+        ]
+    )
+
+
+def sequence_editor(view: dict) -> Any:
+    """A study sequence template: its name and file, defaults for every
+    study, and the studies in order. Saved as study_sequences/<file>.yaml."""
+    d = view.get("defaults") or {}
+    locked = not view.get("new") and not view.get("from_code")
+
+    def row(label, child):
+        return html.Div(className="qs-frow", children=[html.Label(label), child])
+
+    title = "New study sequence" if view.get("new") else f"Study sequence {view['key']}"
+    return html.Div(
+        [
+            dcc.Store(
+                id="seq-meta",
+                data={
+                    k: view.get(k)
+                    for k in ("key", "new", "from_code", "project", "keep")
+                },
+            ),
+            dcc.Store(id="seq-tasks", data=view.get("tasks") or []),
+            html.H3(title, className="qs-h"),
+            (
+                html.Div(
+                    "Built in the adapter's code: save it under a new file "
+                    "name to change it.",
+                    className="qs-small",
+                )
+                if view.get("from_code")
+                else None
+            ),
+            row(
+                "file name",
+                dcc.Input(
+                    id={"type": "seq", "name": "key"},
+                    value="" if view.get("from_code") else view.get("key", ""),
+                    disabled=locked,
+                    className="qs-input",
+                    placeholder="tune_Q2 (saved as study_sequences/tune_Q2.yaml)",
+                ),
+            ),
+            row(
+                "name",
+                dcc.Input(
+                    id={"type": "seq", "name": "name"},
+                    value=view.get("name", ""),
+                    className="qs-input",
+                ),
+            ),
+            row(
+                "why this order",
+                dcc.Textarea(
+                    id={"type": "seq", "name": "why_ordered"},
+                    value=view.get("why_ordered", ""),
+                    className="qs-input",
+                    style={"height": "48px"},
+                ),
+            ),
+            row(
+                "campaign",
+                dcc.Dropdown(
+                    id={"type": "seq", "name": "campaign"},
+                    options=sorted(
+                        set(view.get("campaigns") or [])
+                        | ({view["campaign"]} if view.get("campaign") else set())
+                    ),
+                    value=view.get("campaign") or None,
+                    placeholder="none (or pick one when queueing it)",
+                ),
+            ),
+            html.B("For every study", style={"display": "block", "marginTop": "8px"}),
+            row(
+                "settings",
+                dcc.Input(
+                    id={"type": "seq", "name": "d_settings"},
+                    value=d.get("settings", ""),
+                    className="qs-input",
+                    placeholder="iterations: 3",
+                ),
+            ),
+            row(
+                "checks",
+                dcc.Input(
+                    id={"type": "seq", "name": "d_checks"},
+                    value=d.get("checks", ""),
+                    className="qs-input",
+                    placeholder=", ".join(view.get("check_names") or []),
+                ),
+            ),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    dcc.Checklist(
+                        id={"type": "seq", "name": "d_save"},
+                        options=[{"label": " write back on success", "value": "save"}],
+                        value=["save"] if d.get("save") else [],
+                        inline=True,
+                    ),
+                    html.Label("on failure"),
+                    dcc.Dropdown(
+                        id={"type": "seq", "name": "d_on_failure"},
+                        options=["abort", "continue"],
+                        value=d.get("on_failure", "abort"),
+                        clearable=False,
+                        style={"minWidth": "120px"},
+                    ),
+                ],
+            ),
+            html.B("Studies, in order", style={"display": "block", "marginTop": "8px"}),
+            html.Div(
+                id="seq-rows-view",
+                children=seq_rows(view.get("studies") or [], view.get("tasks") or []),
+            ),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.Button(
+                        "Save template",
+                        id="btn-seq-save",
+                        className="qs-btn qs-btn-primary",
+                    ),
+                    html.Button(
+                        "Add to queue",
+                        id="btn-seq-queue",
+                        className="qs-btn",
+                        title="queue every study of the saved template (in its campaign)",
+                        disabled=bool(view.get("new")),
+                        n_clicks=0,
+                    ),
+                ],
+            ),
+        ]
+    )
+
+
+def seq_rows(rows: list[dict], tasks: list[dict]) -> Any:
+    """The studies of a study sequence being edited, each with its own
+    settings and notes; reorder, remove, add."""
+    body = []
+    for n, r in enumerate(rows):
+
+        def icon(action, text, title, disabled=False, n=n):
+            return html.Button(
+                text,
+                id={"type": "seqact", "action": action, "index": n},
+                className="qs-icon",
+                title=title,
+                n_clicks=0,
+                disabled=disabled,
+            )
+
+        body.append(
+            html.Div(
+                className="qs-seqrow",
+                children=[
+                    html.Div(
+                        className="qs-bar",
+                        style={"flexWrap": "nowrap"},
+                        children=[
+                            html.Span(str(n + 1), className="qs-muted"),
+                            html.Div(
+                                dcc.Dropdown(
+                                    id={"type": "seqrow", "field": "task", "index": n},
+                                    options=tasks,
+                                    value=r.get("task") or None,
+                                    clearable=False,
+                                ),
+                                style={"flex": "1", "minWidth": "0"},
+                            ),
+                            icon("up", "↑", "move up", n == 0),
+                            icon("down", "↓", "move down", n == len(rows) - 1),
+                            icon("remove", "✕", "take out"),
+                        ],
+                    ),
+                    html.Div(
+                        className="qs-bar",
+                        children=[
+                            dcc.Input(
+                                id={"type": "seqrow", "field": "settings", "index": n},
+                                value=r.get("settings", ""),
+                                className="qs-input",
+                                placeholder="settings: as for every study",
+                                style={"flex": "1", "minWidth": "140px"},
+                            ),
+                            dcc.Input(
+                                id={"type": "seqrow", "field": "notes", "index": n},
+                                value=r.get("notes", ""),
+                                className="qs-input",
+                                placeholder="notes",
+                                style={"flex": "1", "minWidth": "140px"},
+                            ),
+                            # Per-study checks, save, on_failure, as written
+                            # in the file: kept as they are.
+                            dcc.Store(
+                                id={"type": "seqrow", "field": "extra", "index": n},
+                                data=r.get("extra") or {},
+                            ),
+                        ],
+                    ),
+                ],
+            )
+        )
+    return html.Div(
+        [
+            html.Div(
+                body
+                or html.Div(
+                    "No studies yet: add the first below.", className="qs-muted"
+                )
+            ),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.Div(
+                        dcc.Dropdown(
+                            id="seq-add-task",
+                            options=tasks,
+                            placeholder="add a study ...",
+                        ),
+                        style={"minWidth": "260px"},
+                    ),
+                    html.Button("Add", id="btn-seq-add", className="qs-btn"),
+                ],
+            ),
+        ]
+    )
+
+
+def sequence_fields(view: dict) -> dict:
+    """The sequence editor's fields exactly as ``sequence_editor`` draws
+    them (what "unsaved" is measured against)."""
+    d = view.get("defaults") or {}
+    return seq_state(
+        {
+            "key": "" if view.get("from_code") else view.get("key", ""),
+            "name": view.get("name", ""),
+            "why_ordered": view.get("why_ordered", ""),
+            "campaign": view.get("campaign") or None,
+            "d_settings": d.get("settings", ""),
+            "d_checks": d.get("checks", ""),
+            "d_save": ["save"] if d.get("save") else [],
+            "d_on_failure": d.get("on_failure", "abort"),
+        },
+        view.get("studies") or [],
+    )
+
+
+def seq_state(fields: dict, rows: list[dict]) -> dict:
+    """The sequence editor's fields and study rows, normalised so drawn
+    and live values compare equal (None and "" alike)."""
+    return {
+        "fields": {k: (v if v not in (None, "") else "") for k, v in fields.items()},
+        "rows": [
+            [r.get("task") or "", r.get("settings") or "", r.get("notes") or ""]
+            for r in rows
+        ],
     }

@@ -50,11 +50,18 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-icon { border: none; background: none; cursor: pointer; padding: 0 4px;
            font-size: 14px; color: #546e7a; }
 .qs-icon:hover { color: #1565c0; }
-.qs-main { display: grid; grid-template-columns: minmax(0, 3fr)
-           minmax(320px, 2fr); gap: 16px; }
-@media (max-width: 900px) { .qs-main { grid-template-columns: 1fr; } }
+.qs-main { display: grid; grid-template-columns: minmax(0, 5fr)
+           minmax(0, 6fr); gap: 16px; }
+.qs-warning { background: #fff8e1; border: 1px solid #ffb300;
+              border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+.qs-brow { padding: 2px 4px; border-radius: 4px; }
+.qs-light { background: #eceff1; color: #263238; }
+.qs-readme { font-size: 13px; }
+/* Narrower than this, the queue gets the whole width: editor above. */
+@media (max-width: 1100px) { .qs-main { grid-template-columns: 1fr; } }
 .qs-card { background: white; border: 1px solid #cfd8dc;
-           border-radius: 8px; padding: 12px; }
+           border-radius: 8px; padding: 12px; overflow-x: auto; }
+.qs-seqrow { border-bottom: 1px solid #eceff1; padding: 4px 0; }
 .qs-table { width: 100%; border-collapse: collapse; }
 .qs-table th { text-align: left; font-weight: 500; color: #607d8b;
                border-bottom: 1px solid #b0bec5; padding: 6px; }
@@ -104,20 +111,4 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
             font-size: 13px; }
 .qs-mono { font-family: Consolas, monospace; font-size: 12px; }
 .qs-scroll { max-height: 380px; overflow: auto; }
-.qs-modal { position: fixed; inset: 0; background: rgba(38, 50, 56, 0.45);
-            z-index: 1000; }
-.qs-modal-panel { position: fixed; left: 2vw; top: 4vh; width: 43vw;
-                  max-height: 92vh; overflow: auto; background: white;
-                  border-radius: 8px; padding: 16px; box-sizing: border-box;
-                  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25); }
-/* While the popup is open the details pane edits the draft's studies:
-   it moves beside the popup, above the shade. */
-.qs-drafting #details-card { position: fixed; right: 2vw; top: 4vh;
-                             width: 51vw; max-height: 92vh; overflow: auto;
-                             z-index: 1001; box-sizing: border-box;
-                             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25); }
-@media (max-width: 900px) {
-  .qs-modal-panel { width: 96vw; max-height: 44vh; }
-  .qs-drafting #details-card { width: 96vw; top: 50vh; max-height: 46vh; }
-}
 """

@@ -15,7 +15,6 @@ import json
 import os
 import subprocess
 import sys
-import threading
 from collections import deque
 from dataclasses import replace
 from pathlib import Path
@@ -31,10 +30,11 @@ from ..engine.job import (
     dump_yaml,
     job_file,
     load_job,
+    numbers,
     parse_completed,
     parse_job,
 )
-from ..engine.project import DRAFT_FILE, Project
+from ..engine.project import Project
 from ..engine.queue import INPUTS, RESOLVED, QueueError
 from ..engine.runner import ACTIVE_FILE
 from ..engine.workspace import Workspace, open_workspace, user_home
@@ -71,9 +71,6 @@ class Bridge:
             workspace = Workspace.of(project)
         self._workspace = workspace
         self._injected = workspace is not None
-        # Launches running in threads of their own: key -> status.
-        self._launches: dict[str, dict] = {}
-        self._launch_guard = threading.Lock()
         # Deep checks rebuild QDO objects -- too slow for every 2 s poll.
         # The last deep result per folder is kept with the files'
         # modification times and shown until a file changes.
@@ -90,14 +87,6 @@ class Bridge:
         """
         if self._workspace is None:
             self._workspace = open_workspace(self.refs, isolate=True)
-            # A launch a crash cut short is finished or undone now, not
-            # only when a runner next starts: its studies are hidden
-            # until then.
-            for project in self._workspace.projects.values():
-                try:
-                    project.recover_launches()
-                except Exception:  # noqa: BLE001 -- the runner retries
-                    pass
         return self._workspace
 
     @property
@@ -109,40 +98,30 @@ class Bridge:
         return next(iter(workspace.projects.values()))
 
     def _study(self, key: str):
-        """The project (scoped to a draft for a draft study's key) and
-        the study's own id."""
-        parts = _split_draft(key)
-        if parts is not None:
-            project, name = self._draft(key)
-            scoped = _Scoped(project, project.draft_queue(name))
-            scoped.draft_key = str(key).rsplit("/", 1)[0]
-            return scoped, parts[2]
+        """The project (scoped to the hold folder for a study on hold)
+        and the study's own id."""
+        held = _split_hold(key)
+        if held is not None:
+            project = self._project_named(held[0], key)
+            scoped = _Scoped(project, project.hold)
+            scoped.key_prefix = str(key).rsplit("/", 1)[0]
+            return scoped, held[1]
         return self._loc(key)
 
-    def _draft(self, key: str) -> tuple[Project, str]:
-        """The project and draft name of a draft's (or draft study's)
-        key: ``~<draft>`` or ``<project>/~<draft>``, plus ``/<id>``."""
-        parts = _split_draft(key)
-        if parts is None:
-            raise GuiError(f"{key!r} is not a draft")
-        head, draft, _ = parts
+    def _project_named(self, head: str, key: str) -> Project:
         workspace = self.workspace
         if head:
             if head not in workspace.projects:
                 raise GuiError(f"no project {head!r} is open")
-            project = workspace.projects[head]
-        elif workspace.single:
-            project = next(iter(workspace.projects.values()))
-        else:
-            raise GuiError(f"{key!r}: name the project")
-        try:
-            project.draft_queue(draft)
-        except QueueError as exc:
-            raise GuiError(str(exc)) from exc
-        return project, draft
+            return workspace.projects[head]
+        if workspace.single:
+            return next(iter(workspace.projects.values()))
+        raise GuiError(f"{key!r}: name the project")
 
-    def _draft_key(self, project: Project, name: str) -> str:
-        return self.workspace.key(self.workspace.name_of(project), DRAFT_MARK + name)
+    def _hold_key(self, project: Project, local: str) -> str:
+        return self.workspace.key(
+            self.workspace.name_of(project), f"{HOLD_MARK}/{local}"
+        )
 
     def _loc(self, key: str) -> tuple[Project, str]:
         """The project and its own id (or folder name) for a key."""
@@ -153,7 +132,7 @@ class Bridge:
 
     def _key(self, project, local: str) -> str:
         if isinstance(project, _Scoped):
-            return f"{project.draft_key}/{local}"
+            return f"{project.key_prefix}/{local}"
         return self.workspace.key(self.workspace.name_of(project), local)
 
     def _signature(self, key: str) -> tuple:
@@ -187,8 +166,8 @@ class Bridge:
         except (QueueError, OSError) as exc:
             if not project.queue.folder(job_id).is_dir():
                 raise GuiError(
-                    f"{job_id} is no longer in the queue (it may have just "
-                    f"started); nothing was saved"
+                    f"{job_id} is no longer there (started, moved or "
+                    f"removed meanwhile); nothing was saved"
                 ) from exc
             # Still queued: the write itself failed (a file held open by
             # the virus scanner, a full disk). Say that, not "gone".
@@ -274,13 +253,45 @@ class Bridge:
                     "sequence_name": job.sequence.get("name", ""),
                     "settings": ", ".join(f"{k} {v}" for k, v in job.settings.items()),
                     "save": job.save,
-                    "hold": job.hold,
                     "notes": job.notes,
                     "campaign": job.campaign,
                     "problems": self._problems(key),
                     "warnings": project.warnings(job_id),
                 }
             )
+        held = []
+        for name, project in workspace.projects.items():
+            catalog = catalogs[name]
+            for local in project.hold.ids():
+                key = self._hold_key(project, local)
+                try:
+                    job = load_job(project.hold.folder(local), project.words)
+                except JobError as exc:
+                    held.append(
+                        {
+                            "id": key,
+                            "project": name,
+                            "label": local,
+                            "problems": exc.problems,
+                        }
+                    )
+                    continue
+                spec = catalog.task(job.task)
+                held.append(
+                    {
+                        "id": key,
+                        "project": name,
+                        "task": job.task,
+                        "label": spec.label if spec else job.task,
+                        "subject": job.subject,
+                        "settings": ", ".join(
+                            f"{k} {v}" for k, v in job.settings.items()
+                        ),
+                        "notes": job.notes,
+                        "campaign": job.campaign,
+                        "problems": self._problems(key),
+                    }
+                )
         out = workspace.state_dir
         runner = st.RunnerState.load(out)
         alive = runner.alive(out)
@@ -342,6 +353,12 @@ class Bridge:
                     "key": workspace.key(name, c.key),
                     "label": prefix + c.label,
                     "count": len(c.entries),
+                    # The file, or "" for one built in the adapter's code.
+                    "source": (
+                        _relative(workspace.projects[name], c.source)
+                        if c.source
+                        else ""
+                    ),
                 }
                 for c in catalog.sequences
             ]
@@ -359,6 +376,7 @@ class Bridge:
                 for k in ("task", "sequence", "subject", "store", "live")
             },
             "rows": rows,
+            "held": held,
             "completed": completed,
             "runner": {
                 "status": (
@@ -468,7 +486,7 @@ class Bridge:
             key: The id or the folder name.
         """
         project, local = self._study(key)
-        if kind in ("queue", "draft"):
+        if kind in ("queue", "hold"):
             folder = project.queue.folder(local)
         else:
             folder = project.queue.completed_dir / local
@@ -476,15 +494,6 @@ class Bridge:
             raise GuiError(f"{key} is no longer there")
         specs = project.backend.files()
         campaign = _campaign_of(project, folder)
-        locked = kind == "draft"
-        if locked:
-            # A draft's studies are launched into the draft's campaign,
-            # whatever their own job.yaml says: show (and edit against)
-            # that one.
-            owner, name = self._draft(key)
-            campaign = (st.read_json(owner.drafts_dir / name / DRAFT_FILE) or {}).get(
-                "campaign"
-            ) or ""
         files = []
         for spec in specs:
             path = folder / spec.name
@@ -505,7 +514,7 @@ class Bridge:
                     "problem": problem,
                     "project": (
                         _project_values(project, spec.name, campaign)
-                        if spec.optional and kind in ("queue", "draft")
+                        if spec.optional and kind in ("queue", "hold")
                         else None
                     ),
                     "sources": (
@@ -515,12 +524,12 @@ class Bridge:
                     ),
                     "addable": (
                         _addable(project, spec.name)
-                        if kind in ("queue", "draft")
+                        if kind in ("queue", "hold")
                         else {}
                     ),
                     "target_templates": (
                         _target_templates(project)
-                        if kind in ("queue", "draft")
+                        if kind in ("queue", "hold")
                         and isinstance(data, dict)
                         and isinstance(data.get("targets"), list)
                         else None
@@ -541,14 +550,11 @@ class Bridge:
         except JobError:
             job = None
         raw = job.to_raw(project.words) if job else {}
-        if locked:
-            raw["campaign"] = campaign
         return {
             "kind": kind,
             "key": key,
             "folder": str(folder),
             "job": raw,
-            "campaign_locked": locked,
             "job_text": job_text,
             "files": files,
             "result": st.result_of(folder) if kind == "completed" else {},
@@ -556,8 +562,8 @@ class Bridge:
             "has_resolved": (folder / RESOLVED).is_dir(),
             "settings_keys": sorted(project.backend.settings_keys()),
             "campaigns": _campaign_keys(project),
-            "problems": (self._problems(key) if kind in ("queue", "draft") else []),
-            "warnings": (project.warnings(local) if kind in ("queue", "draft") else []),
+            "problems": (self._problems(key) if kind in ("queue", "hold") else []),
+            "warnings": (project.warnings(local) if kind in ("queue", "hold") else []),
         }
 
     def file_spec(self, job_id: str, name: str) -> dict[str, Any]:
@@ -589,6 +595,13 @@ class Bridge:
         ``campaign`` when given)."""
         try:
             project, local = self.workspace.locate_task(key)
+            if "::" in campaign:  # the Add bar's picker, several projects
+                owner, _, campaign = campaign.rpartition("::")
+                if owner != self.workspace.name_of(project):
+                    raise GuiError(
+                        f"campaign {campaign!r} is in {owner}, not in "
+                        f"{self.workspace.name_of(project)}"
+                    )
             if kind == "task":
                 job_id = project.add(local, campaign=campaign)
                 keys = self.workspace.added(project, [job_id])
@@ -627,9 +640,13 @@ class Bridge:
         self.reorder(ids)
 
     def remove(self, job_id: str) -> str:
-        """Take a study out of the queue (moved to out/removed/)."""
+        """Take a study out of the queue or off hold (moved to
+        out/removed/)."""
         try:
-            project, local = self.workspace.locate(job_id)
+            if _split_hold(job_id) is not None:
+                project, local = self._study(job_id)
+            else:
+                project, local = self.workspace.locate(job_id)
             dest = project.queue.remove(local)
         except (QueueError, OSError) as exc:
             raise GuiError(str(exc)) from exc
@@ -645,7 +662,7 @@ class Bridge:
             raise GuiError("this backend has no templates")
         folder = (
             project.queue.folder(local)
-            if kind in ("queue", "draft")
+            if kind in ("queue", "hold")
             else project.queue.completed_dir / local
         )
         try:
@@ -661,15 +678,34 @@ class Bridge:
         shown = ", ".join(p.relative_to(root).as_posix() for p in paths)
         return f"saved {shown}; it is in the Add menu"
 
-    def toggle_hold(self, job_id: str) -> str:
-        """Put a queued study on hold, or release it."""
+    def park(self, job_id: str) -> str:
+        """Put a queued study on hold: out of the run order."""
         try:
             project, local = self.workspace.locate(job_id)
-            hold = not project.job(local).hold
-            project.set_hold(local, hold)
-        except (JobError, QueueError, OSError) as exc:
+            project.park(local)
+        except (QueueError, OSError) as exc:
             raise GuiError(str(exc)) from exc
-        return f"{job_id} {'on hold' if hold else 'released'}"
+        self._deep.pop(job_id, None)
+        return f"{job_id} is on hold; the runner skips it until it is queued again"
+
+    def hold_key_of(self, key: str) -> str:
+        """The key a queued study (``key``) has once on hold."""
+        head, _, local = str(key).rpartition("/")
+        return f"{head}/{HOLD_MARK}/{local}" if head else f"{HOLD_MARK}/{local}"
+
+    def unpark(self, key: str) -> str:
+        """Move a study on hold to the end of the queue."""
+        if _split_hold(key) is None:
+            raise GuiError(f"{key} is not on hold")
+        scoped, local = self._study(key)
+        project = scoped._project  # pylint: disable=protected-access
+        try:
+            project.unpark(local)
+        except (QueueError, OSError) as exc:
+            raise GuiError(str(exc)) from exc
+        self._deep.pop(key, None)
+        queued = self.workspace.added(project, [local])[0]
+        return f"queued {queued}" + _warned(project, [local])
 
     def save_job(self, job_id: str, fields: dict[str, Any]) -> str:
         """Change ``job.yaml`` fields of a queued study."""
@@ -937,257 +973,201 @@ class Bridge:
             raise GuiError(str(exc)) from exc
         return f"queued {self.workspace.added(project, [new_id])[0]}"
 
-    # -- drafts (a study sequence put together before it is queued) ------------
+    # -- the editor: templates, study sequences, campaigns ----------------
 
-    def drafts(self) -> list[dict]:
-        """Every draft of every open project."""
-        out = []
-        for name, project in self.workspace.projects.items():
-            for draft in project.drafts():
-                out.append(
-                    {
-                        **draft,
-                        "key": self._draft_key(project, draft["name"]),
-                        "project": name,
-                    }
-                )
-        return out
-
-    def new_draft(
-        self,
-        project: str = "",
-        label: str = "",
-        from_sequence: str = "",
-        campaign: str | None = None,
-    ) -> str:
-        """Start a draft study sequence. Returns its key.
-
-        Args:
-            project: The project's name (only needed with several open).
-            label: The study sequence's name.
-            from_sequence: A study sequence key: its studies, as a start.
-            campaign: The campaign it is launched into; None keeps the
-                study sequence's own.
-        """
-        workspace = self.workspace
+    def template_view(self, key: str) -> dict[str, Any]:
+        """A study template, for the editor: what it is and what it runs."""
         try:
-            if from_sequence:
-                target, key = workspace.locate_task(from_sequence)
-                spec = target.backend.catalog().sequence(key)
-                if spec is None:
-                    raise GuiError(f"no study sequence {from_sequence!r}")
-            else:
-                spec = None
-                if project:
-                    target = workspace.projects[project]
-                elif workspace.single:
-                    target = next(iter(workspace.projects.values()))
-                else:
-                    raise GuiError("pick the project the study sequence is for")
-            name = target.new_draft(label, spec, campaign=campaign or None)
-        except (QueueError, KeyError) as exc:
+            project, local = self.workspace.locate_task(key)
+        except QueueError as exc:
             raise GuiError(str(exc)) from exc
-        return self._draft_key(target, name)
-
-    def draft_view(self, key: str) -> dict[str, Any]:
-        """A draft as the popup draws it."""
-        project, name = self._draft(key)
-        meta = next(d for d in project.drafts() if d["name"] == name)
-        queue = project.draft_queue(name)
-        scoped = _Scoped(project, queue)
-        scoped.draft_key = key
-        catalog = project.backend.catalog()
-        studies = []
-        for n, local in enumerate(queue.ids(), 1):
-            study_key = f"{key}/{local}"
-            try:
-                job = scoped.job(local)
-            except JobError as exc:
-                studies.append({"key": study_key, "n": n, "problems": exc.problems})
-                continue
-            spec = catalog.task(job.task)
-            studies.append(
-                {
-                    "key": study_key,
-                    "n": n,
-                    "task": job.task,
-                    "label": spec.label if spec else job.task,
-                    "settings": ", ".join(f"{k} {v}" for k, v in job.settings.items()),
-                    "save": job.save,
-                    "problems": self._problems(study_key),
-                }
-            )
+        spec = project.backend.catalog().task(local)
+        if spec is None:
+            raise GuiError(f"no {project.words.task} {key!r}")
         return {
             "key": key,
-            "label": meta.get("label", ""),
-            "from": meta.get("from", ""),
-            "why_ordered": meta.get("why_ordered", ""),
-            "campaign": meta.get("campaign", ""),
+            "label": spec.label,
+            "subject": spec.subject,
+            "family": spec.family,
+            "summary": spec.summary,
             "campaigns": _campaign_keys(project),
-            "project": self.workspace.name_of(project),
+        }
+
+    def new_study(
+        self, task: str = "", name: str = "", campaign: str = "", project: str = ""
+    ) -> str:
+        """Make a study on hold, from template ``task`` (a catalog key) or,
+        with no task, from scratch named ``name``. Returns its key."""
+        try:
+            if task:
+                target, local = self.workspace.locate_task(task)
+                job_id = target.add(local, campaign=campaign, hold=True)
+            else:
+                target = self._project_for(project)
+                job_id = target.add_blank(name, hold=True, campaign=campaign)
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        return self._hold_key(target, job_id)
+
+    def sequence_view(self, key: str = "", project: str = "") -> dict[str, Any]:
+        """A study sequence template for the editor: its file's mapping,
+        whether it can be saved under this name, and the choices. With
+        no key: a new, empty one."""
+        if key:
+            try:
+                target, local = _locate_sequence(self.workspace, key)
+                raw = target.sequence_raw(local)
+            except QueueError as exc:
+                raise GuiError(str(exc)) from exc
+            from_code = target.sequence_from_code(local)
+        else:
+            target = self._project_for(project)
+            local, raw, from_code = "", {"studies": []}, False
+        words = target.words
+        catalog = target.backend.catalog()
+        studies = []
+        for item in raw.get("studies") or []:
+            if isinstance(item, str):
+                item = {words.task: item}
+            item = dict(item) if isinstance(item, dict) else {}
+            task = str(item.pop(words.task, None) or item.pop("task", None) or "")
+            studies.append(
+                {
+                    "task": task,
+                    "settings": _flow(item.pop("settings", None)),
+                    "notes": str(item.pop("notes", "") or ""),
+                    # Per-study checks, save, on_failure: kept as written.
+                    "extra": item,
+                }
+            )
+        defaults: dict = (
+            raw["defaults"] if isinstance(raw.get("defaults"), dict) else {}
+        )
+        checks = defaults.get("checks") or []
+        if isinstance(checks, str):  # one name, as the file may write it
+            checks = [checks]
+        # What the editor has no field for (notes, keys of later versions):
+        # written back as it was.
+        shown_top = {
+            "version",
+            "name",
+            "why_ordered",
+            "campaign",
+            "defaults",
+            "studies",
+        }
+        shown_defaults = {"settings", "checks", "save", "on_failure"}
+        keep = {
+            "top": {k: v for k, v in raw.items() if k not in shown_top},
+            "defaults": {k: v for k, v in defaults.items() if k not in shown_defaults},
+        }
+        return {
+            "key": local,
+            "project": self.workspace.name_of(target),
+            "new": not key,
+            "from_code": from_code,
+            "name": str(raw.get("name") or ""),
+            "why_ordered": str(raw.get("why_ordered") or ""),
+            "campaign": str(raw.get("campaign") or ""),
+            "defaults": {
+                "settings": _flow(defaults.get("settings")),
+                "checks": ", ".join(str(c) for c in checks),
+                "save": bool(defaults.get("save")),
+                "on_failure": defaults.get("on_failure") or "abort",
+            },
             "studies": studies,
+            "keep": keep,
             "tasks": [
                 {"value": t.key, "label": f"{t.label} ({t.key})"} for t in catalog.tasks
             ],
+            "campaigns": _campaign_keys(target),
+            "check_names": sorted(target.backend.check_names()),
         }
 
-    def draft_campaign(self, key: str, campaign: str) -> str:
-        """Set the campaign a draft is launched into ("" for none)."""
-        project, name = self._draft(key)
+    def save_sequence(
+        self, key: str, form: dict, overwrite: bool, project: str = ""
+    ) -> str:
+        """Write a study sequence template from the editor's ``form``
+        (``sequence_view``'s shape). Returns what was written."""
+        target = self._project_for(project)
+        words = target.words
         try:
-            project.set_draft_campaign(name, campaign or "")
+            defaults: dict[str, Any] = {}
+            settings = _mapping(form["defaults"].get("settings"), "default settings")
+            if settings:
+                defaults["settings"] = settings
+            checks = [
+                c.strip()
+                for c in (form["defaults"].get("checks") or "").split(",")
+                if c.strip()
+            ]
+            if checks:
+                defaults["checks"] = checks
+            defaults["save"] = bool(form["defaults"].get("save"))
+            defaults["on_failure"] = form["defaults"].get("on_failure") or "abort"
+            studies = []
+            for n, row in enumerate(form.get("studies") or [], 1):
+                if not row.get("task"):
+                    raise GuiError(f"study {n}: pick which {words.task} it is")
+                item: dict[str, Any] = {words.task: row["task"]}
+                row_settings = _mapping(row.get("settings"), f"study {n}'s settings")
+                if row_settings:
+                    item["settings"] = row_settings
+                item.update(row.get("extra") or {})
+                if row.get("notes"):
+                    item["notes"] = row["notes"]
+                studies.append(item)
+        except ValueError as exc:
+            raise GuiError(str(exc)) from exc
+        if not studies:
+            raise GuiError(f"add at least one {words.task} first")
+        keep = form.get("keep") or {}
+        raw: dict[str, Any] = {"name": form.get("name") or key}
+        if form.get("why_ordered"):
+            raw["why_ordered"] = form["why_ordered"]
+        if form.get("campaign"):
+            raw["campaign"] = form["campaign"]
+        raw.update(keep.get("top") or {})
+        raw["defaults"] = {**defaults, **(keep.get("defaults") or {})}
+        raw["studies"] = studies
+        try:
+            path = target.save_sequence(key, raw, overwrite=overwrite)
         except QueueError as exc:
             raise GuiError(str(exc)) from exc
-        return (
-            f"launched into campaign {campaign}"
-            if campaign
-            else "launched into no campaign"
-        )
+        return f"saved {_relative(target, path)}"
 
-    def draft_add(self, key: str, task: str) -> str:
-        """Add one study to a draft. Returns the study's key."""
-        project, name = self._draft(key)
-        try:
-            local = project.draft_add(name, task)
-        except QueueError as exc:
-            raise GuiError(str(exc)) from exc
-        return f"{key}/{local}"
-
-    def draft_move(self, study_key: str, delta: int) -> None:
-        """Move a draft study up (-1) or down (+1)."""
-        project, local = self._study(study_key)
-        ids = project.queue.ids()
-        i = ids.index(local)
-        j = i + delta
-        if not 0 <= j < len(ids):
-            raise GuiError("already at the end")
-        ids[i], ids[j] = ids[j], ids[i]
-        project.queue.save_order(ids)
-
-    def draft_blank(self, key: str, name: str = "") -> str:
-        """Add a study made from scratch to a draft. Returns its key."""
-        project, draft = self._draft(key)
-        try:
-            local = project.draft_blank(draft, name)
-        except QueueError as exc:
-            raise GuiError(str(exc)) from exc
-        return f"{key}/{local}"
-
-    def draft_remove(self, study_key: str) -> str:
-        """Take a study out of a draft (kept in out/removed/)."""
-        project, local = self._study(study_key)
-        try:
-            project.queue.remove(local)
-        except (QueueError, OSError) as exc:
-            raise GuiError(str(exc)) from exc
-        return f"removed {local} from the study sequence"
-
-    def draft_label(self, key: str, label: str) -> None:
-        """Rename a draft study sequence."""
-        project, name = self._draft(key)
-        project.set_draft_label(name, label)
-
-    def start_launch(self, key: str, label: str = "") -> str:
-        """Launch a draft in a thread of its own; ``launch_status`` says
-        how far it got. Checking every study builds the design, which
-        takes seconds per study, so the GUI does not wait for it.
-
-        The building itself runs in the project's worker process; this
-        thread only waits for it. If the GUI is closed mid-launch, the
-        launch is finished or undone when it opens again.
-        """
-        project, name = self._draft(key)
-        with self._launch_guard:
-            current = self._launches.get(key)
-            if current and current["state"] == "running":
-                raise GuiError("this study sequence is already being launched")
-            status = {
-                "state": "running",
-                "checked": 0,
-                "total": len(project.draft_queue(name).ids()),
-                "current": "",
-                "message": "",
-                "started": st.now(),
-            }
-            self._launches[key] = status
-
-        def progress(checked, total, study):
-            status.update(checked=checked, total=total, current=study)
-
-        def work():
-            try:
-                text = self.launch_draft(key, label, progress=progress)
-                status.update(state="done", message=text)
-            except GuiError as exc:
-                status.update(state="failed", message=str(exc))
-            except Exception as exc:  # noqa: BLE001 -- shown in the popup
-                status.update(
-                    state="failed",
-                    message=f"{type(exc).__name__}: {exc}",
-                )
-
-        threading.Thread(target=work, name=f"launch {key}", daemon=True).start()
-        return f"launching {key}: checking its studies"
-
-    def launch_status(self, key: str) -> dict | None:
-        """How a launch started here stands (None: none was)."""
-        status = self._launches.get(key)
-        return dict(status) if status else None
-
-    def forget_launch(self, key: str) -> None:
-        """Drop a finished launch's status (once it has been shown)."""
-        with self._launch_guard:
-            status = self._launches.get(key)
-            if status and status["state"] != "running":
-                del self._launches[key]
-
-    def launch_shown(self, key: str) -> bool:
-        """Mark a failed launch's reason as announced; True the first
-        time (the GUI then says it once, and keeps showing the reason in
-        the popup until it closes)."""
-        with self._launch_guard:
-            status = self._launches.get(key)
-            if not status or status.get("shown"):
-                return False
-            status["shown"] = True
-            return True
-
-    def forget_shown_launches(self) -> None:
-        """Drop every failed launch whose reason was shown (the popup
-        showing it was closed)."""
-        with self._launch_guard:
-            for key in [
-                k
-                for k, s in self._launches.items()
-                if s["state"] != "running" and s.get("shown")
-            ]:
-                del self._launches[key]
-
-    def launch_draft(self, key: str, label: str = "", progress=None) -> str:
-        """Queue a whole draft as one study sequence (and wait for it)."""
-        project, name = self._draft(key)
-        try:
-            ids = project.launch_draft(name, label, progress=progress)
-        except QueueError as exc:
-            raise GuiError(str(exc)) from exc
-        keys = self.workspace.added(project, ids)
-        self._deep.clear()
-        left = (
-            "; studies added while it launched are still in the draft"
-            if (project.drafts_dir / name).is_dir()
-            else ""
-        )
-        return (
-            f"launched {len(keys)} {project.words.task}(s) as "
-            f"{ids[0].split('-', 1)[0]}: {', '.join(keys)}{left}"
-            + _warned(project, ids)
-        )
-
-    def discard_draft(self, key: str) -> str:
-        """Drop a draft (kept in out/removed/)."""
-        project, name = self._draft(key)
-        dest = project.discard_draft(name)
-        return f"discarded the draft (kept in removed/{dest.name})"
+    def campaign_view(self, key: str, project: str = "") -> dict[str, Any]:
+        """A campaign for the editor: its README, the store its studies
+        use, and how many studies of it are queued, on hold or done."""
+        target = self._project_for(project)
+        found = {c.key: c for c in target.campaigns()}
+        if key not in found:
+            raise GuiError(f"no campaign {key!r}")
+        info = found[key]
+        readme = info.folder / "README.md"
+        counts = {"queued": 0, "on hold": 0, "completed": 0}
+        for name, queue in (("queued", target.queue), ("on hold", target.hold)):
+            for local in queue.ids():
+                try:
+                    if load_job(queue.folder(local), target.words).campaign == key:
+                        counts[name] += 1
+                except JobError:
+                    pass
+        for path in target.queue.completed():
+            if (st.result_of(path) or {}).get("campaign") == key:
+                counts["completed"] += 1
+        parent = key.rpartition("/")[0]
+        return {
+            "key": key,
+            "project": self.workspace.name_of(target),
+            "title": info.title,
+            "readme": readme.read_text(encoding="utf-8") if readme.is_file() else "",
+            "folder": _relative(target, info.folder),
+            "store": _relative(target, target.campaign_store(key)),
+            "own_store": info.own_store,
+            "promote_to": _relative(target, target.campaign_store(parent)),
+            "counts": counts,
+        }
 
     def preview(self, kind: str, key: str) -> list[dict[str, Any]]:
         """Pictures of what a study simulates, one per solver run (its
@@ -1199,7 +1179,7 @@ class Bridge:
             raise GuiError("this backend cannot draw its studies")
         folder = (
             project.queue.folder(local)
-            if kind in ("queue", "draft")
+            if kind in ("queue", "hold")
             else project.queue.completed_dir / local
         )
         try:
@@ -1296,6 +1276,55 @@ def _render(name: str, data, old: str | None) -> str:
     return dump_yaml(data, forms.header(old or "") or None)
 
 
+def _locate_sequence(workspace, key: str):
+    """The project and own key of a study sequence; a template file saved
+    a moment ago counts even before every catalog lists it."""
+    try:
+        return workspace.locate_task(key)
+    except QueueError:
+        head, _, local = str(key).rpartition("/")
+        projects = (
+            [workspace.projects[head]]
+            if head in workspace.projects
+            else list(workspace.projects.values()) if not head else []
+        )
+        for project in projects:
+            folder = project.sequence_dir
+            if folder is not None and (folder / f"{local}.yaml").is_file():
+                return project, local
+        raise
+
+
+def _flow(value) -> str:
+    """A mapping as one line of YAML (``iterations: 3, seconds: 4``) for a
+    text field; "" for none."""
+    if not value:
+        return ""
+    if not isinstance(value, dict):
+        raise GuiError(f"{value!r} is not a mapping (key: value, ...)")
+    text = yaml.safe_dump(dict(value), default_flow_style=True, sort_keys=False).strip()
+    return text[1:-1] if text.startswith("{") else text
+
+
+def _mapping(text, what: str) -> dict:
+    """A one-line YAML mapping typed into a text field (``_flow``'s
+    form), as a dict.
+
+    Raises:
+        ValueError: If it does not read as a mapping.
+    """
+    text = (text or "").strip()
+    if not text:
+        return {}
+    try:
+        value = yaml.safe_load("{" + text + "}" if not text.startswith("{") else text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"{what}: not read as name: value pairs ({exc})") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{what}: write name: value pairs")
+    return numbers(value)
+
+
 def _relative(project, path) -> str:
     """``path`` relative to the project's folder where it can be."""
     if path is None:
@@ -1378,31 +1407,29 @@ def _value_sources(project, name: str, campaign: str = "") -> dict:
         return {}
 
 
-#: Marks a draft in a key: ``~<draft>/<id>``, at the start of a path
-#: segment only (a project folder may hold a ``~``, as a Windows short
-#: name does: ``CHIP~2``).
-DRAFT_MARK = "~"
+#: Marks a study on hold in a key: ``@hold/<id>``, or
+#: ``<project>/@hold/<id>`` with several projects open.
+HOLD_MARK = "@hold"
 
 
-def _split_draft(key) -> tuple[str, str, str] | None:
-    """``(project, draft, id)`` of a draft key, None for any other key.
-    ``project`` is "" when the key names none (one project open)."""
+def _split_hold(key) -> tuple[str, str] | None:
+    """``(project, id)`` of a key of a study on hold, None for any other
+    key. ``project`` is "" when the key names none."""
     key = str(key)
-    if key.startswith(DRAFT_MARK):
-        head, rest = "", key[len(DRAFT_MARK) :]
-    elif "/" + DRAFT_MARK in key:
-        head, rest = key.split("/" + DRAFT_MARK, 1)
-        if "/" in head:  # a draft is never deeper than <project>/~<draft>
-            return None
-    else:
-        return None
-    draft, _, local = rest.partition("/")
-    return head, draft, local
+    if key.startswith(HOLD_MARK + "/"):
+        return "", key[len(HOLD_MARK) + 1 :]
+    marker = f"/{HOLD_MARK}/"
+    if marker in key:
+        head, local = key.split(marker, 1)
+        if "/" not in head:
+            return head, local
+    return None
 
 
 class _Scoped:
-    """A project seen through one draft: its ``queue`` is the draft's,
-    so every editing method works on draft studies unchanged."""
+    """A project seen through its hold folder: its ``queue`` is
+    ``out/hold/``, so every editing method works on a study on hold
+    unchanged."""
 
     def __init__(self, project: Project, queue):
         self._project = project
@@ -1410,7 +1437,7 @@ class _Scoped:
         self.backend = project.backend
         self.words = project.words
         self.out = project.out
-        self.draft_key = ""
+        self.key_prefix = ""
 
     def job(self, job_id: str):
         return load_job(self.queue.folder(job_id), self.words)
@@ -1426,8 +1453,6 @@ class _Scoped:
         return self._project.campaign_store(key)
 
     def warnings(self, job_id: str) -> list[str]:
-        # Its draft id: the id it gets at launch may differ in length;
-        # the launch message warns again with the real one.
         return self._project.warnings(job_id)
 
     def problems(self, job_id: str, deep: bool = False, folder=None):

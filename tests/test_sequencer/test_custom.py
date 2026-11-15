@@ -40,7 +40,7 @@ def qdo(tmp_path):
 
 
 def _file(bridge, key, name):
-    data = bridge.details("draft", key)
+    data = bridge.details("hold", key)
     return next(f for f in data["files"] if f["name"] == name)
 
 
@@ -50,9 +50,10 @@ def _choice(spec, path, label):
 
 def test_a_study_from_scratch_is_filled_in_saved_as_templates_and_run(qdo):
     bridge, root = qdo
-    draft = bridge.new_draft(label="from scratch")
-    study = bridge.draft_blank(draft, "r1 kappa")
-    assert is_custom(bridge.draft_view(draft)["studies"][0]["task"])
+    study = bridge.new_study(name="r1 kappa")
+    assert study.startswith("@hold/")
+    (held,) = bridge.snapshot()["held"]
+    assert is_custom(held["task"])
     ministudy = _file(bridge, study, "ministudy.yaml")
     assert ministudy["data"]["args"]["qiskit_component_names"] == []
     assert ministudy["data"]["args"]["capacitance_matrix_studies"] is None
@@ -104,26 +105,26 @@ def test_a_study_from_scratch_is_filled_in_saved_as_templates_and_run(qdo):
     # The targets alone, as a template; then into another blank study.
     text = bridge.save_targets_template(study, "opt_targets.yaml", "r1_kappa_only")
     assert "opt_targets/r1_kappa_only.yaml" in text
-    other = bridge.draft_blank(draft, "second")
+    other = bridge.new_study(name="second")
     assert (
         "r1_kappa_only" in _file(bridge, other, "opt_targets.yaml")["target_templates"]
     )
     bridge.load_targets(other, "opt_targets.yaml", "r1_kappa_only")
     loaded = yaml.safe_load(_file(bridge, other, "opt_targets.yaml")["text"])
     assert loaded["targets"][0]["args"]["resonator"] == "resonator_R1"
-    bridge.draft_remove(other)
+    bridge.remove(other)
     # Saved once: the project has it now, so there is nothing to add.
     with pytest.raises(GuiError, match="already has every opt target"):
         bridge.save_targets_template(study, "opt_targets.yaml", "r1_kappa_only")
 
     # The whole study as a template: it is in the Add menu then.
-    bridge.save_as_template("draft", study, "r1_from_scratch")
+    bridge.save_as_template("hold", study, "r1_from_scratch")
     keys = {c["key"] for c in bridge.snapshot()["catalog"]}
     assert "r1_from_scratch" in keys
 
-    # Launched and run like any other.
+    # Queued and run like any other.
     bridge.save_job(study, {"settings": {"iterations": 3, "seconds": 0}})
-    bridge.launch_draft(draft)
+    bridge.unpark(study)
     project = bridge.project
     final = Runner(bridge.workspace).run()
     assert final.status == st.FINISHED, final.message
@@ -143,19 +144,19 @@ def test_a_custom_study_gets_its_family_from_its_ministudy():
     assert QDOBackend._custom_spec(None, Job(), capacitance).family == ("capacitance")
 
 
-def test_a_study_whose_target_is_still_blank_is_not_launched(qdo):
+def test_a_study_whose_target_is_still_blank_does_not_run(qdo):
     """Passes the quick check (it has a target), fails the deep one (the
-    target names no design variable): refused at launch, not left to
-    stop the queue."""
+    target names no design variable): queued, the runner stops at it
+    with the reason rather than solving it."""
     bridge, _ = qdo
-    draft = bridge.new_draft(label="half done")
-    study = bridge.draft_blank(draft, "half")
+    study = bridge.new_study(name="half")
     targets = _file(bridge, study, "opt_targets.yaml")
     kappa = _choice(targets, TARGETS, "get_opt_target_res_kappa_via_coupl_length")
     bridge.form_add(study, "opt_targets.yaml", ["targets"], kappa)
     scoped, local = bridge._study(study)
     assert scoped.problems(local) == []  # the quick check passes
-    with pytest.raises(GuiError, match="fix first"):
-        bridge.launch_draft(draft)
-    assert bridge.project.queue.ids() == []
-    assert len(bridge.draft_view(draft)["studies"]) == 1
+    assert scoped.problems(local, deep=True)  # the deep one does not
+    bridge.unpark(study)
+    final = Runner(bridge.workspace).run()
+    assert final.status == st.ERROR and "cannot run" in final.message
+    assert bridge.project.queue.ids() == [local]
