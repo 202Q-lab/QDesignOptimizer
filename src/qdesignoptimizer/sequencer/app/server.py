@@ -2,11 +2,13 @@
 
 Run with::
 
-    python -m qdesignoptimizer.sequencer.app <project> [<project> ...] [--port 8051]
+    python -m qdesignoptimizer.sequencer.app [<project> ...] [--port 8051]
 
 A project is its ``sequencer.py`` or its folder (searched for one); a
 parent folder opens every design below it. Several projects share one
-queue (``engine.workspace``).
+queue (``engine.workspace``). The connected project folders are
+remembered (``connected.json`` in the user's ``qdo_sequencer`` folder):
+with no project named, the last ones open again; one named is added.
 
 ``build_app()`` builds the app (layout + callbacks) without starting a
 server, so it can be imported and smoke-tested. Port 8051 by default,
@@ -23,7 +25,7 @@ from pathlib import Path
 from dash import Dash
 
 from ..engine.project import Project
-from ..engine.workspace import Workspace
+from ..engine.workspace import Workspace, user_home
 from . import layout, theme
 from .callbacks import (
     register_callbacks,
@@ -31,7 +33,10 @@ from .callbacks import (
     register_preview_callbacks,
     register_template_callbacks,
 )
-from .queue_state import Bridge
+from .queue_state import Bridge, read_connected
+
+#: The connected project folders, kept for the next start.
+CONNECTED_FILE = "connected.json"
 
 _INDEX = (
     """<!DOCTYPE html>
@@ -57,6 +62,7 @@ def build_app(
     ref: str | list = "",
     project: Project | None = None,
     workspace: Workspace | None = None,
+    remember: Path | None = None,
 ) -> Dash:
     """Build the queue GUI for one project or several.
 
@@ -64,23 +70,20 @@ def build_app(
         ref: A project's ``sequencer.py`` or folder, or a list of them.
         project: Injected project (tests); else opened from ``ref``.
         workspace: Injected workspace (tests).
+        remember: The file the connected project folders are kept in.
 
     Returns:
         The Dash app, not started.
     """
-    bridge = Bridge(ref, project=project, workspace=workspace)
-    try:
-        name = " + ".join(bridge.workspace.projects)
-    except Exception:  # noqa: BLE001 -- the page shows the error itself
-        name = Path(str(ref[0] if isinstance(ref, list) else ref)).name
+    bridge = Bridge(ref, project=project, workspace=workspace, remember=remember)
     app = Dash(
         __name__,
-        title=f"Queue - {name}",
+        title="QDesignOptimizer orchestrator",
         update_title=None,  # type: ignore[arg-type]
         suppress_callback_exceptions=True,
     )
     app.index_string = _INDEX
-    app.layout = layout.page(name)
+    app.layout = layout.page()
     register_callbacks(app, bridge)
     register_template_callbacks(app, bridge)
     register_preview_callbacks(app, bridge)
@@ -94,8 +97,9 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m qdesignoptimizer.sequencer.app")
     parser.add_argument(
         "project",
-        nargs="+",
-        help="a project's sequencer.py or folder; several share one queue",
+        nargs="*",
+        help="a project's sequencer.py or folder, added to the connected "
+        "ones (none: those connected last time); several share one queue",
     )
     parser.add_argument("--port", type=int, default=8051)
     args = parser.parse_args(argv)
@@ -104,7 +108,19 @@ def main(argv: list[str] | None = None) -> None:
         # The page polls every 2 s; one request line per poll buries
         # anything worth reading in the console.
         logging.getLogger("werkzeug").setLevel(logging.WARNING)
-    app = build_app(list(args.project))
+    remember = user_home() / CONNECTED_FILE
+    refs = read_connected(remember)
+    for given in args.project:
+        given = str(Path(given).resolve()) if Path(given).exists() else given
+        if given not in refs:
+            refs.append(given)
+    # Gone since last time (moved, deleted): not opened, not forgotten
+    # silently either -- the console says so.
+    missing = [r for r in refs if not Path(r.split(".py:", 1)[0]).exists()]
+    for ref in missing:
+        print(f"not connected (not there any more): {ref}")
+    refs = [r for r in refs if r not in missing]
+    app = build_app(refs, remember=remember)
     try:
         app.run(debug=debug, port=args.port)
     finally:

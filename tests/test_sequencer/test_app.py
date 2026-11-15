@@ -127,7 +127,7 @@ def test_the_details_pane_is_not_redrawn_by_saves_or_polls(bridge):
     (key,) = (k for k in app.callback_map if "details.children" in k)
     inputs = {i["id"] for i in app.callback_map[key]["inputs"]}
     # The project picker redraws only a New view (round 4, 2026-11-15).
-    assert inputs == {"selected", "new-project"}
+    assert inputs == {"selected", "new-project", "work-campaign"}
 
 
 # -- review round 3 (2026-11-10) -----------------------------------------
@@ -213,9 +213,13 @@ def test_the_project_picker_redraws_only_a_new_view(bridge):
     )
     try:
         assert (
-            details({"kind": "template", "key": "A.calibrate"}, "x", {})[0] is no_update
+            details({"kind": "template", "key": "A.calibrate"}, "x", None, {})[0]
+            is no_update
         )
-        assert details({"kind": "new-campaign", "key": ""}, "x", {})[0] is not no_update
+        assert (
+            details({"kind": "new-campaign", "key": ""}, "x", None, {})[0]
+            is not no_update
+        )
     finally:
         context_value.reset(token)
 
@@ -274,3 +278,33 @@ def test_play_and_pause_wait_for_unsaved_edits(bridge):
         assert bridge.project.hold.ids() == [job_id] and follow["kind"] == "hold"
     finally:
         context_value.reset(token)
+
+
+# -- inspect or edit (2026-11-15) ---------------------------------------------
+
+
+def test_a_study_is_inspected_until_edit_is_pressed(bridge):
+    from qdesignoptimizer.sequencer.app import layout
+
+    bridge.add("task", "A.calibrate")
+    (job_id,) = bridge.project.queue.ids()
+    data = bridge.details("queue", job_id)
+    seen = str(layout.details(data, {}))
+    assert "Inspecting" in seen and "'index': 'edit'" in seen
+    assert "disabled=True" in seen and "'display': 'none'" in seen  # no Save
+    edited = str(layout.details(data, {}, editing=True))
+    assert "Editing" in edited and "Done editing" in edited
+    assert "disabled=True" not in edited
+
+
+def test_a_run_study_offers_only_an_edit_copy(bridge):
+    from qdesignoptimizer.sequencer.app import layout
+
+    bridge.add("task", "A.calibrate")
+    Runner(bridge.project).run()
+    (name,) = (c["name"] for c in bridge.snapshot()["completed"])
+    seen = str(layout.details(bridge.details("completed", name), {}, editing=True))
+    assert "Edit copy" in seen and "Requeue" not in seen and "Editing" not in seen
+    key = bridge.edit_copy(name)
+    assert key.startswith("@hold/") and bridge.project.hold.ids()
+    assert bridge.project.queue.ids() == []  # never in the run order

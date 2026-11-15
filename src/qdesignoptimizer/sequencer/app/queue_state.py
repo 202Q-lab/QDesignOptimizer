@@ -37,8 +37,32 @@ from ..engine.job import (
 from ..engine.project import Project
 from ..engine.queue import INPUTS, RESOLVED, QueueError
 from ..engine.runner import ACTIVE_FILE
-from ..engine.workspace import Workspace, open_workspace, user_home
+from ..engine.workspace import Workspace, find_adapters, open_workspace, user_home
 from . import forms
+
+#: What the page says with no project connected.
+NO_PROJECT = "no project folder is connected: + Connected project folders"
+
+
+def repo_label(folder: str | Path) -> str:
+    """A project folder as the GUI names it: relative to the root of the
+    git repository it is in (``tutorials/.../chip_qdo``), or its own
+    name outside one."""
+    folder = Path(folder).resolve()
+    for parent in [folder, *folder.parents]:
+        if (parent / ".git").exists():
+            if parent == folder:
+                return folder.name
+            return folder.relative_to(parent).as_posix()
+    return folder.name
+
+
+def read_connected(path: Path) -> list[str]:
+    """The remembered project folders ([] when none or unreadable)."""
+    data = st.read_json(path)
+    if not isinstance(data, list):
+        return []
+    return [str(p) for p in data if isinstance(p, str)]
 
 
 class GuiError(RuntimeError):
@@ -53,6 +77,8 @@ class Bridge:
             (several projects sharing one queue).
         project: Injected project (tests); else opened from ``ref``.
         workspace: Injected workspace (tests).
+        remember: A file to keep the connected project folders in, for
+            the next start (``connect`` / ``disconnect`` write it).
     """
 
     def __init__(
@@ -60,7 +86,9 @@ class Bridge:
         ref: str | list = "",
         project: Project | None = None,
         workspace: Workspace | None = None,
+        remember: Path | None = None,
     ):
+        self.remember = remember
         self.refs = (
             [str(r) for r in ref]
             if isinstance(ref, list)
@@ -86,8 +114,96 @@ class Bridge:
         worker has. The command line runs in-process.
         """
         if self._workspace is None:
+            if not self.refs:
+                raise GuiError(NO_PROJECT)
             self._workspace = open_workspace(self.refs, isolate=True)
         return self._workspace
+
+    # -- connected project folders --------------------------------------
+
+    def connected(self) -> list[dict]:
+        """The connected project folders: as given, how the GUI names
+        them, and the full path (shown on hover)."""
+        if self._injected:
+            return [
+                {
+                    "path": str(p.out.parent),
+                    "label": repo_label(p.out.parent),
+                    "title": str(p.out.parent.resolve()),
+                }
+                for p in self.workspace.projects.values()
+            ]
+        return [
+            {
+                "path": ref,
+                "label": repo_label(_folder_of(ref)),
+                "title": str(_folder_of(ref)),
+            }
+            for ref in self.refs
+        ]
+
+    def _runner_going(self) -> bool:
+        if self._workspace is None:
+            return False
+        out = self._workspace.state_dir
+        return st.lock_held(out) or st.RunnerState.load(out).alive(out)
+
+    def _reopen(self, refs: list[str]) -> None:
+        """Open ``refs`` in place of what is open (the runner must be
+        stopped: it runs the queue of the projects it was started with)."""
+        if self._injected:
+            raise GuiError("these projects were not opened from folders")
+        if self._runner_going():
+            raise GuiError(
+                "the runner is going: stop it (Stop after this study) before "
+                "connecting or disconnecting a project folder"
+            )
+        new = None
+        if refs:
+            try:
+                new = open_workspace(refs, isolate=True)
+            except Exception as exc:  # noqa: BLE001 -- shown to the user
+                raise GuiError(f"cannot open it: {exc}") from exc
+        if self._workspace is not None:
+            self._workspace.close()
+        self._workspace = new
+        self.refs = list(refs)
+        self.ref = self.refs[0] if self.refs else ""
+        self._deep.clear()
+        if self.remember is not None:
+            self.remember.parent.mkdir(parents=True, exist_ok=True)
+            st.write_json(self.remember, self.refs)
+
+    def connect(self, path: str) -> str:
+        """Connect a project folder (or its ``sequencer.py``): its queue
+        joins the shared one."""
+        text = str(path or "").strip().strip('"')
+        if not text:
+            raise GuiError("type the path of a project folder")
+        target = Path(text).expanduser()
+        if not target.exists():
+            raise GuiError(f"{text} does not exist")
+        target = target.resolve()
+        try:
+            find_adapters(target)
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        folder = _folder_of(str(target))
+        if any(_folder_of(r) == folder for r in self.refs):
+            raise GuiError(f"{repo_label(folder)} is connected already")
+        self._reopen([*self.refs, str(target)])
+        return f"connected {repo_label(folder)}"
+
+    def disconnect(self, path: str) -> str:
+        """Disconnect a project folder: its studies stay in its ``out/``
+        and come back when it is connected again."""
+        if path not in self.refs:
+            raise GuiError(f"{path} is not connected")
+        self._reopen([r for r in self.refs if r != path])
+        return (
+            f"disconnected {repo_label(_folder_of(path))}; its studies stay "
+            "in its out/"
+        )
 
     @property
     def project(self) -> Project:
@@ -213,6 +329,19 @@ class Bridge:
 
     def snapshot(self) -> dict[str, Any]:
         """Everything the page shows, as plain data."""
+        if self._workspace is None and not self.refs and not self._injected:
+            return {
+                "empty": NO_PROJECT,
+                "rows": [],
+                "held": [],
+                "completed": [],
+                "runner": {},
+                "words": {},
+                "catalog": [],
+                "campaigns": [],
+                "projects": [],
+                "connected": [],
+            }
         workspace = self.workspace
         first = next(iter(workspace.projects.values()))
         words = first.words
@@ -369,7 +498,17 @@ class Bridge:
                 else "; ".join(str(p.out.parent) for p in workspace.projects.values())
             ),
             "multi": not workspace.single,
-            "projects": list(workspace.projects),
+            # The project picker: the name keys use, the folder relative
+            # to its repository, and the full path on hover.
+            "projects": [
+                {
+                    "value": name,
+                    "label": repo_label(p.out.parent),
+                    "title": str(p.out.parent.resolve()),
+                }
+                for name, p in workspace.projects.items()
+            ],
+            "connected": self.connected(),
             "catalog_problems": problems,
             "words": {
                 k: getattr(words, k)
@@ -961,6 +1100,18 @@ class Bridge:
                 f"have just started); nothing was deleted"
             ) from exc
 
+    def edit_copy(self, folder_name: str) -> str:
+        """A copy of a completed study, as it was queued, made on hold
+        (to be edited, then queued). Returns its key."""
+        project, local = self._loc(folder_name)
+        try:
+            new_id = project.hold.requeue(
+                project.queue.completed_dir / local, project.words
+            )
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        return self._hold_key(project, new_id)
+
     def requeue(self, folder_name: str, exact: bool = False) -> str:
         """Queue a completed study again as a fresh copy: as it was
         queued (project values pulled again), or ``exact``ly as it ran."""
@@ -1260,6 +1411,20 @@ class Bridge:
             f"stop requested: {runner.current or 'the current study'} "
             f"finishes first"
         )
+
+
+def _folder_of(ref: str) -> Path:
+    """The project folder a connected path names (a ``sequencer.py``
+    sits in the folder or its ``simulations/``)."""
+    text = str(ref)
+    if ".py:" in text:  # file.py:factory
+        text = text.split(".py:", 1)[0] + ".py"
+    path = Path(text).resolve()
+    if path.suffix == ".py":
+        path = path.parent
+        if path.name == "simulations":
+            path = path.parent
+    return path
 
 
 def _parse(name: str, text: str):

@@ -64,14 +64,26 @@ All three, one shared queue (each project in its own worker process):
 python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/demo
 ```
 
-Open <http://127.0.0.1:8051>. Left: make and edit -- **+ New
-campaign**, **+ New study sequence**, **+ New study**, a browser of
-campaigns, study sequence templates and study templates, and below it
-the editor of whatever you pick (a study in the queue, on hold or
-completed opens there too). Right: run -- **Start**, **Stop after this
-study**, **Check queue**, the queue (drag rows to reorder; **Add** a
-study or a study sequence to it), the studies on hold, the completed
-ones and the runner log. Each study "solves" for 5 s; a `tune_R1`
+Open <http://127.0.0.1:8051>. Three areas, each scrolling on its own;
+drag the divider between left and right to share the width. Top left,
+the **Shared queue** of every connected project: **Start**, **Stop
+after this study**, **Check queue**, the queue (drag rows to reorder;
+**Add** a study or a study sequence to it), the studies on hold, the
+completed ones and the runner log. Right, the **Study editor**: a study
+you pick opens read only (*Inspecting*); press **Edit** to change one
+that has not run yet (*Editing*, with **Done editing**, and for one on
+hold **Add to queue ▶**). A study that has run stays read only: **Edit
+copy** makes a copy of it on hold, opened for editing. Bottom left, the
+**Project**, one at a time. **+ Connected project folders** lists the connected ones (✕
+disconnects; type a folder and **Connect** to add one; the list is
+remembered, so `python -m qdesignoptimizer.sequencer.app` with no
+folder opens them again). Below it, the project worked on (its folder
+relative to the repository; hover for the full path), then its study
+sequence templates, study templates and campaigns, each heading with
+**+ New**. Pick a campaign to work in: it opens in the editor, and
+**+ New study** makes studies in it, from a study template or blank,
+on hold or straight into the queue. Below, the editor of whatever you
+pick opens in the Study editor. Each study "solves" for 5 s; a `tune_R1`
 study sequence plus one more study takes about 15 s.
 
 ### Things to try
@@ -106,8 +118,12 @@ study sequence plus one more study takes about 15 s.
   adapter's code (`tune_R1`) opens read-only: save it under a new file
   name and a new name to change it. Every template has a name of its
   own; saving one under a name another has is refused.
-- **New study**: + New study makes one from a study template (or a blank
-  MiniStudy) on hold; edit it, then queue it (▶).
+- **New study**: + New study (next to the campaign picker) makes one
+  from a study template or a blank MiniStudy, in the campaign picked,
+  on hold (edit it, then ▶) or straight into the queue.
+- **New study template**: its + New starts one as a study on hold (a
+  copy of a template, or blank); edit it, then **Save as template** at
+  the bottom of its page.
 - **Check before running**: *Check queue* in the GUI, or `check` in the
   CLI, rebuilds every queued study without solving.
 - **Stop** between studies: *Stop after this study*, or `stop` in the CLI.

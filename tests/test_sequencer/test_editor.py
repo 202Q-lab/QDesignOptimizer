@@ -147,8 +147,7 @@ def test_the_browser_lists_campaigns_templates_and_sequences(bridge, project):
         c["key"]: c.get("source") for c in snap["catalog"] if c["kind"] == "sequence"
     }
     assert sources == {"full_A": "", "both": "study_sequences/both.yaml"}
-    every = {"campaigns": True, "sequences": True, "templates": True}
-    text = str(layout.browser(snap, {"kind": "sequence", "key": "both"}, every))
+    text = str(layout.browser(snap, {"kind": "sequence", "key": "both"}))
     for word in (
         "tuneup_chip",
         "Calibrate both",
@@ -158,9 +157,7 @@ def test_the_browser_lists_campaigns_templates_and_sequences(bridge, project):
         assert word in text
     # Templates show the name they are saved under: two may share a label.
     assert "both · 2 studies" in text and "full_A · 2 studies" in text
-    # A closed section lists nothing (its state is kept in a store).
-    closed = str(layout.browser(snap, None, {"sequences": False}))
-    assert "Calibrate both" not in closed and "▸ Study sequence templates" in closed
+    assert "Campaigns (1)" in text
 
 
 def test_the_campaign_view_counts_its_studies(bridge, project):

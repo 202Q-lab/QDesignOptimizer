@@ -68,6 +68,26 @@ into the docs.
    (drafts) is gone: a study sequence is a template file, edited in the
    editor and queued from it. "On hold" is `out/hold/`, out of the run
    order (the old per-study flag that stopped the runner is gone).
+   **Left side, one project at a time (2026-11-15)**: header "The
+   QDesignOptimizer orchestrator by" + the 202Q-LAB logo
+   (`app/assets/202Q_lab_logo.png`); **+ Connected project folders**
+   (connect / disconnect; kept in `connected.json` in the user's
+   qdo_sequencer folder; refused while the runner goes, since it runs
+   the queue of the projects it was started with); a project picker
+   (folder relative to its git root, full path on hover); its study
+   sequence templates, study templates and campaigns, each with + New;
+   a campaign picker (opens it, and + New study makes studies in it, on
+   hold or into the queue). Creating a new project folder from the GUI
+   is not done yet (asked to wait). Queue on the right stays shared.
+   **Three areas (later 2026-11-15)**: Shared queue (top left), Project
+   (bottom left), Study editor (right, full height), each scrolling on
+   its own; the divider drags (`assets/splitter.js`, width kept in
+   localStorage); below 1100 px they stack. A study opens *Inspecting*
+   (fields disabled); **Edit** (queued / on hold) switches to *Editing*
+   (`selected["edit"]`), **Done editing** asks if unsaved; a completed
+   study has only **Edit copy** (`Bridge.edit_copy`: a fresh copy made
+   straight into out/hold/, opened for editing). The editor's Requeue
+   buttons are gone; the completed list's row requeue stays.
    The first study opened after a start still takes ~15 s (the worker
    imports QDO); the pane now shows a loading sign meanwhile.
 3. **Ansys**: `Q1.resonator_kappa` converged and wrote back (2026-11-14).

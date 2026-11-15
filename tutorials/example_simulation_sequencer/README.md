@@ -37,10 +37,14 @@ From the repository root:
 python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/demo
 ```
 
-Open <http://127.0.0.1:8051>. The left side is for making and editing
-(+ New campaign, + New study sequence, + New study, a browser of
-campaigns and templates, and the editor of whatever you pick); the right
-side runs (the queue, the studies on hold, the completed ones, the log).
+Open <http://127.0.0.1:8051>. Top left is the **Shared queue** of every
+connected project (the queue, the studies on hold, the completed ones,
+the log); bottom left the **Project** worked on, one at a time (**+
+Connected project folders** connects or disconnects one, remembered for
+the next start), with its study sequence templates, study templates
+and campaigns, each with **+ New**; right, the **Study editor**, where a
+study opens read only until you press **Edit** (a study that has run
+offers **Edit copy** instead).
 **Add** the study sequence `tune_R1` of `chip_qdo` to the queue, then
 **Start**. Two studies run (about 10 s), frequency then
 linewidth, and each writes the design variable it tuned back into
