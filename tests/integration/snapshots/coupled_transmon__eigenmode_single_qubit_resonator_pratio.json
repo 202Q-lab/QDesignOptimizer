@@ -1,0 +1,980 @@
+{
+ "optimization_results": [
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 203.56036422892385,
+      "('0', 1)": 0.9777924619327394
+     },
+     "1": {
+      "('0', 0)": 0.9777924619327394,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "100um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "400um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7500um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "12.1nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "400um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.212599999999999,
+     "1": 6.318899999999999
+    },
+    "Freq. (Hz)": {
+     "0": 4212599999.999999,
+     "1": 6318899999.999999
+    },
+    "Kappas (Hz)": {
+     "0": 100000.0,
+     "1": 1095818.4535148188
+    },
+    "Kappas (kHz)": {
+     "0": 100.0,
+     "1": 1095.8184535148189
+    },
+    "Quality Factor": {
+     "0": 42125.99999999999,
+     "1": 5766.374876907973
+    }
+   },
+   "minimization_groups": [],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4200000000.0,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 203560364.22892386,
+    "qubit_1_to_resonator_1_nonlin": 977792.4619327394,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 6300000000.0,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1095818.4535148188,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  }
+ ],
+ "simulator_calls": [
+  [
+   "qiskit_metal.EPRanalysis",
+   {
+    "solver": "hfss"
+   }
+  ],
+  [
+   "hfss.renderer.start",
+   {}
+  ],
+  [
+   "hfss.renderer.activate_ansys_design",
+   {
+    "design_name": "get_mini_study_qb_res",
+    "solution_type": "eigenmode"
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "100um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "400um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7500um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "12.1nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "400um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.oEditor.Ungroup",
+   {
+    "args": [
+     [
+      "Groups:=",
+      [
+       "substrate_air",
+       "metal_substrate",
+       "underside_air",
+       "metal_air"
+      ]
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Section",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "main",
+      "NewPartsModelFlag:=",
+      "Model"
+     ],
+     [
+      "NAME:SectionToParameters",
+      "CreateNewObjects:=",
+      true,
+      "SectionPlane:=",
+      "XY",
+      "SectionCrossObject:=",
+      false
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Copy",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "pad_top_metal"
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Paste",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.modeler.subtract",
+   {
+    "blank_name": "main_Section1",
+    "keep_originals": false,
+    "tool_names": [
+     "pad_top_metal1"
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Copy",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "pad_bot_metal"
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Paste",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.modeler.subtract",
+   {
+    "blank_name": "main_Section1",
+    "keep_originals": false,
+    "tool_names": [
+     "pad_bot_metal1"
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Copy",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "trace_metal"
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Paste",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.modeler.subtract",
+   {
+    "blank_name": "main_Section1",
+    "keep_originals": false,
+    "tool_names": [
+     "trace_metal1"
+    ]
+   }
+  ],
+  [
+   "hfss.modeler.subtract",
+   {
+    "blank_name": "main_Section1",
+    "keep_originals": true,
+    "tool_names": [
+     "pad_top_metal",
+     "pad_bot_metal",
+     "trace_metal"
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.CreateGroup",
+   {
+    "args": [
+     [
+      "NAME:GroupParameter",
+      "ParentGroupID:=",
+      "Model",
+      "Parts:=",
+      "main_Section1",
+      "SubmodelInstances:=",
+      "",
+      "Groups:=",
+      ""
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.ChangeProperty",
+   {
+    "args": [
+     [
+      "NAME:AllTabs",
+      [
+       "NAME:Attributes",
+       [
+        "NAME:PropServers",
+        "Group1"
+       ],
+       [
+        "NAME:ChangedProps",
+        [
+         "NAME:Name",
+         "Value:=",
+         "substrate_air"
+        ]
+       ]
+      ]
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Copy",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "pad_top_metal"
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Paste",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.oEditor.Copy",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "pad_bot_metal"
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Paste",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.oEditor.Copy",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "trace_metal"
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Paste",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.modeler.unite",
+   {
+    "keep_originals": false,
+    "names": [
+     "pad_top_metal2",
+     "pad_bot_metal2",
+     "trace_metal2"
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.CreateGroup",
+   {
+    "args": [
+     [
+      "NAME:GroupParameter",
+      "ParentGroupID:=",
+      "Model",
+      "Parts:=",
+      "pad_top_metal2,pad_bot_metal2,trace_metal2",
+      "SubmodelInstances:=",
+      "",
+      "Groups:=",
+      ""
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.ChangeProperty",
+   {
+    "args": [
+     [
+      "NAME:AllTabs",
+      [
+       "NAME:Attributes",
+       [
+        "NAME:PropServers",
+        "Group2"
+       ],
+       [
+        "NAME:ChangedProps",
+        [
+         "NAME:Name",
+         "Value:=",
+         "metal_substrate"
+        ]
+       ]
+      ]
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.modeler.unite",
+   {
+    "keep_originals": false,
+    "names": [
+     "pad_top_metal",
+     "pad_bot_metal",
+     "trace_metal"
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.ThickenSheet",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "pad_top_metal",
+      "NewPartsModelFlag:=",
+      "Model"
+     ],
+     [
+      "NAME:SheetThickenParameters",
+      "Thickness:=",
+      "0.00015mm",
+      "BothSides:=",
+      true
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.modeler.translate",
+   {
+    "name": "pad_top_metal",
+    "vector": [
+     "0mm",
+     "0mm",
+     "7.5e-05mm"
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.CreateGroup",
+   {
+    "args": [
+     [
+      "NAME:GroupParameter",
+      "ParentGroupID:=",
+      "Model",
+      "Parts:=",
+      "pad_top_metal,pad_bot_metal,trace_metal",
+      "SubmodelInstances:=",
+      "",
+      "Groups:=",
+      ""
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.ChangeProperty",
+   {
+    "args": [
+     [
+      "NAME:AllTabs",
+      [
+       "NAME:Attributes",
+       [
+        "NAME:PropServers",
+        "Group3"
+       ],
+       [
+        "NAME:ChangedProps",
+        [
+         "NAME:Name",
+         "Value:=",
+         "metal_air"
+        ]
+       ]
+      ]
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.ChangeProperty",
+   {
+    "args": [
+     [
+      "NAME:AllTabs",
+      [
+       "NAME:Geometry3DAttributeTab",
+       [
+        "NAME:PropServers",
+        "metal_air_object"
+       ],
+       [
+        "NAME:ChangedProps",
+        [
+         "NAME:Material",
+         "Value:=",
+         "\"Aluminum\""
+        ]
+       ]
+      ]
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.Section",
+   {
+    "args": [
+     [
+      "NAME:Selections",
+      "Selections:=",
+      "main",
+      "NewPartsModelFlag:=",
+      "Model"
+     ],
+     [
+      "NAME:SectionToParameters",
+      "CreateNewObjects:=",
+      true,
+      "SectionPlane:=",
+      "XY",
+      "SectionCrossObject:=",
+      false
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.modeler.translate",
+   {
+    "name": "main_Section2",
+    "vector": [
+     "0mm",
+     "0mm",
+     "-300um"
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.CreateGroup",
+   {
+    "args": [
+     [
+      "NAME:GroupParameter",
+      "ParentGroupID:=",
+      "Model",
+      "Parts:=",
+      "main_Section2",
+      "SubmodelInstances:=",
+      "",
+      "Groups:=",
+      ""
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.oEditor.ChangeProperty",
+   {
+    "args": [
+     [
+      "NAME:AllTabs",
+      [
+       "NAME:Attributes",
+       [
+        "NAME:PropServers",
+        "Group4"
+       ],
+       [
+        "NAME:ChangedProps",
+        [
+         "NAME:Name",
+         "Value:=",
+         "underside_air"
+        ]
+       ]
+      ]
+     ]
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.03,
+    "dissipative": {
+     "dielectric_surfaces": {
+      "metal_air_object": {
+       "eps_r": 11.4,
+       "tan_delta_surf": 1,
+       "th": 1e-06
+      },
+      "metal_substrate_object": {
+       "eps_r": 11.4,
+       "tan_delta_surf": 1,
+       "th": 1e-06
+      },
+      "substrate_air_object": {
+       "eps_r": 11.4,
+       "tan_delta_surf": 1,
+       "th": 1e-06
+      },
+      "underside_air_object": {
+       "eps_r": 11.4,
+       "tan_delta_surf": 1,
+       "th": 1e-06
+      }
+     }
+    },
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "100um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "400um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7500um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "12.1nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "400um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 7,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "substrate_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "substrate_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "metal_substrate_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "metal_substrate_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "underside_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "underside_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "metal_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "metal_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.calc_p_junction_single",
+   {
+    "mode": 0,
+    "variation": null
+   }
+  ],
+  [
+   "epr.calc_p_junction_single",
+   {
+    "mode": 1,
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qdielectric",
+   {
+    "dielectric": "main",
+    "mode": 0,
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qdielectric",
+   {
+    "dielectric": "main",
+    "mode": 1,
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "substrate_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "substrate_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "metal_substrate_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "metal_substrate_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "underside_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "underside_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 0,
+    "name": "metal_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qsurface",
+   {
+    "mode": 1,
+    "name": "metal_air_object",
+    "variation": null
+   }
+  ],
+  [
+   "epr.calc_p_junction_single",
+   {
+    "mode": 0,
+    "variation": null
+   }
+  ],
+  [
+   "epr.calc_p_junction_single",
+   {
+    "mode": 1,
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qdielectric",
+   {
+    "dielectric": "main",
+    "mode": 0,
+    "variation": null
+   }
+  ],
+  [
+   "epr.get_Qdielectric",
+   {
+    "dielectric": "main",
+    "mode": 1,
+    "variation": null
+   }
+  ]
+ ],
+ "surface_participation_ratios": {
+  "Junction(inductive energy)": {
+   "0": 0.9,
+   "1": 0.45
+  },
+  "dielectric": {
+   "0": 0.5,
+   "1": 0.25
+  },
+  "metal_air": {
+   "0": 6.705882352941177e-07,
+   "1": 3.3529411764705883e-07
+  },
+  "metal_substrate": {
+   "0": 4.956521739130434e-07,
+   "1": 2.478260869565217e-07
+  },
+  "substrate_air": {
+   "0": 5.428571428571428e-07,
+   "1": 2.714285714285714e-07
+  },
+  "underside_air": {
+   "0": 5.428571428571428e-07,
+   "1": 2.714285714285714e-07
+  }
+ }
+}
