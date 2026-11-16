@@ -89,6 +89,14 @@ into the docs.
    study has only **Edit copy** (`Bridge.edit_copy`: a fresh copy made
    straight into out/hold/, opened for editing). The editor's Requeue
    buttons are gone; the completed list's row requeue stays.
+   **Poll cost (2026-11-16)**: the GUI's 2 s snapshot keeps each queued
+   or held study's row (parsed job.yaml, problems, warnings) with its
+   files' modification times (`Bridge._row`), re-reading only changed
+   studies; problems depending on files outside the study are rechecked
+   every `ROW_RECHECK_S` (30 s) or at once after `_forget()`. Campaigns
+   are kept until a file under `campaigns/` changes; job.yaml uses
+   libyaml's loader when present. 200 queued: 650 -> ~50 ms; the demo:
+   150 -> ~25 ms (`tests/test_sequencer/test_poll_cache.py`).
    **Validate / pre-figures / rename (2026-11-15)**: Validate =
    `Bridge.validate` (the deep check of one study); Generate pre-figures
    = the old Picture, now `QDOBackend.preview(folder, campaign)` builds

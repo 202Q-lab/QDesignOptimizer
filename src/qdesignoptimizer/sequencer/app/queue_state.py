@@ -15,6 +15,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from collections import deque
 from dataclasses import replace
 from pathlib import Path
@@ -22,6 +23,7 @@ from typing import Any
 
 import yaml
 
+from ..engine import campaign as cp
 from ..engine import state as st
 from ..engine.campaign import problems_of as campaign_problems
 from ..engine.job import (
@@ -106,6 +108,15 @@ class Bridge:
         # The last deep result per folder is kept with the files'
         # modification times and shown until a file changes.
         self._deep: dict[str, tuple[tuple, list[str]]] = {}
+        # What each queued or held study's row shows (its job.yaml, its
+        # problems, its warnings), kept with the files' modification
+        # times: a poll re-reads only the studies whose files changed.
+        # Problems that depend on files outside the study (templates, a
+        # campaign, the store) are rechecked every ROW_RECHECK_S, and at
+        # once after anything done here that changes them.
+        self._rows: dict[str, tuple[tuple, float, Any, list[str], list[str]]] = {}
+        # The campaigns, with the README files they were read from.
+        self._campaigns: tuple[tuple, list[dict]] | None = None
 
     @property
     def workspace(self) -> Workspace:
@@ -172,7 +183,7 @@ class Bridge:
         self._workspace = new
         self.refs = list(refs)
         self.ref = self.refs[0] if self.refs else ""
-        self._deep.clear()
+        self._forget()
         if self.remember is not None:
             self.remember.parent.mkdir(parents=True, exist_ok=True)
             st.write_json(self.remember, self.refs)
@@ -256,17 +267,34 @@ class Bridge:
 
     def _signature(self, key: str) -> tuple:
         project, job_id = self._study(key)
-        folder = project.queue.folder(job_id)
+        return _folder_signature(project.queue.folder(job_id))
+
+    def _forget(self, key: str | None = None) -> None:
+        """Drop what is kept of one study's checks, or of every study's."""
+        if key is None:
+            self._deep.clear()
+            self._rows.clear()
+            self._campaigns = None
+        else:
+            self._deep.pop(key, None)
+            self._rows.pop(key, None)
+
+    def _row(self, key: str, project, local: str, folder: Path, held: bool):
+        """A study's parsed job (or its JobError), problems and warnings:
+        from what is kept while its files are unchanged."""
+        sig = _folder_signature(folder)
+        now = time.monotonic()
+        kept = self._rows.get(key)
+        if kept and kept[0] == sig and now - kept[1] < ROW_RECHECK_S:
+            return kept[2], kept[3], kept[4]
         try:
-            return tuple(
-                sorted(
-                    (p.name, p.stat().st_mtime_ns)
-                    for p in folder.iterdir()
-                    if p.is_file()
-                )
-            )
-        except FileNotFoundError:
-            return ()
+            job: Any = load_job(folder, project.words)
+        except JobError as exc:
+            job = exc
+        problems = [] if isinstance(job, JobError) else self._problems(key)
+        warnings = [] if held or isinstance(job, JobError) else project.warnings(local)
+        self._rows[key] = (sig, now, job, problems, warnings)
+        return job, problems, warnings
 
     def _problems(self, key: str) -> list[str]:
         """Deep problems while the files are unchanged, else shallow."""
@@ -305,6 +333,7 @@ class Bridge:
         project, job_id = self._study(key)
         problems = project.problems(job_id, deep=True)
         self._deep[key] = (self._signature(key), problems)
+        self._rows.pop(key, None)  # the row shows this result next poll
         return problems
 
     def reload(self) -> None:
@@ -321,7 +350,7 @@ class Bridge:
                 hook = getattr(project.backend, "reload", None)
                 if hook is not None:
                     hook()
-        self._deep.clear()
+        self._forget()
 
     def close(self) -> None:
         """End worker processes (the GUI is closing)."""
@@ -354,9 +383,11 @@ class Bridge:
             project, job_id = workspace.locate(key)
             name = workspace.name_of(project)
             catalog = catalogs[name]
-            try:
-                job = project.job(job_id)
-            except JobError as exc:
+            job, problems, warnings = self._row(
+                key, project, job_id, project.queue.folder(job_id), held=False
+            )
+            if isinstance(job, JobError):
+                exc = job
                 rows.append(
                     {
                         "id": key,
@@ -387,8 +418,8 @@ class Bridge:
                     "save": job.save,
                     "notes": job.notes,
                     "campaign": job.campaign,
-                    "problems": self._problems(key),
-                    "warnings": project.warnings(job_id),
+                    "problems": problems,
+                    "warnings": warnings,
                 }
             )
         held = []
@@ -396,9 +427,11 @@ class Bridge:
             catalog = catalogs[name]
             for local in project.hold.ids():
                 key = self._hold_key(project, local)
-                try:
-                    job = load_job(project.hold.folder(local), project.words)
-                except JobError as exc:
+                job, problems, _ = self._row(
+                    key, project, local, project.hold.folder(local), held=True
+                )
+                if isinstance(job, JobError):
+                    exc = job
                     held.append(
                         {
                             "id": key,
@@ -421,9 +454,13 @@ class Bridge:
                         ),
                         "notes": job.notes,
                         "campaign": job.campaign,
-                        "problems": self._problems(key),
+                        "problems": problems,
                     }
                 )
+        # Studies no longer queued or held: nothing to keep for them.
+        shown: set[Any] = {r["id"] for r in rows} | {h["id"] for h in held}
+        for gone in set(self._rows) - shown:
+            del self._rows[gone]
         out = workspace.state_dir
         runner = st.RunnerState.load(out)
         alive = runner.alive(out)
@@ -543,7 +580,13 @@ class Bridge:
     def campaigns(self) -> list[dict]:
         """Every campaign of every open project, parents first: key,
         title, depth and the store its studies use (relative to the
-        project)."""
+        project). Read again only when a file under campaigns/ changes."""
+        sig = tuple(
+            (name, _campaigns_signature(project.root))
+            for name, project in self.workspace.projects.items()
+        )
+        if self._campaigns is not None and self._campaigns[0] == sig:
+            return [dict(c) for c in self._campaigns[1]]
         out = []
         for name, project in self.workspace.projects.items():
             try:
@@ -561,7 +604,8 @@ class Bridge:
                         "store": _relative(project, project.campaign_store(item.key)),
                     }
                 )
-        return out
+        self._campaigns = (sig, out)
+        return [dict(c) for c in out]
 
     def _project_for(self, project: str = ""):
         workspace = self.workspace
@@ -601,7 +645,7 @@ class Bridge:
         where = _relative(target, target.campaign_store(key.rpartition("/")[0]))
         if not changed:
             return f"nothing to promote: {where} has the same values"
-        self._deep.clear()
+        self._forget()
         return f"promoted to {where}: " + ", ".join(sorted(changed))
 
     def convergence_png(self, kind: str, key: str) -> str | None:
@@ -831,7 +875,7 @@ class Bridge:
             paths = saver(folder, job, (name or "").strip())
         except Exception as exc:  # noqa: BLE001 -- shown to the user
             raise GuiError(f"not saved: {exc}") from exc
-        self._deep.clear()
+        self._forget()
         root = project.out.parent
         shown = ", ".join(p.relative_to(root).as_posix() for p in paths)
         return f"saved {shown}; it is in the Add menu"
@@ -843,7 +887,7 @@ class Bridge:
             project.park(local)
         except (QueueError, OSError) as exc:
             raise GuiError(str(exc)) from exc
-        self._deep.pop(job_id, None)
+        self._forget(job_id)
         return f"{job_id} is on hold; the runner skips it until it is queued again"
 
     def hold_key_of(self, key: str) -> str:
@@ -861,7 +905,7 @@ class Bridge:
             project.unpark(local)
         except (QueueError, OSError) as exc:
             raise GuiError(str(exc)) from exc
-        self._deep.pop(key, None)
+        self._forget(key)
         queued = self.workspace.added(project, [local])[0]
         return f"queued {queued}" + _warned(project, [local])
 
@@ -1398,7 +1442,7 @@ class Bridge:
             hook(local, new_name)
         except Exception as exc:  # noqa: BLE001 -- shown to the user
             raise GuiError(str(exc)) from exc
-        self._deep.clear()
+        self._forget()
         subject = local.split(".", 1)[0] if "." in local else ""
         new_local = f"{subject}.{new_name.strip()}" if subject else new_name.strip()
         return self.workspace.key(self.workspace.name_of(project), new_local)
@@ -1476,6 +1520,42 @@ class Bridge:
             f"stop requested: {runner.current or 'the current study'} "
             f"finishes first"
         )
+
+
+#: How long a queued or held study's row (its problems) is kept while its
+#: own files are unchanged: what it depends on outside its folder (the
+#: templates, a campaign, the store) is checked again this often.
+ROW_RECHECK_S = 30.0
+
+
+def _folder_signature(folder: Path) -> tuple:
+    """A study folder's files with their modification times (and sizes):
+    changes when any of them is written, added or removed."""
+    try:
+        return tuple(
+            sorted(
+                (e.name, e.stat().st_mtime_ns, e.stat().st_size)
+                for e in os.scandir(folder)
+                if e.is_file()
+            )
+        )
+    except (FileNotFoundError, NotADirectoryError):
+        return ()
+
+
+def _campaigns_signature(project_root: Path) -> tuple:
+    """Every file under a project's ``campaigns/`` with its modification
+    time: changes when a campaign is made, removed, retitled or gets or
+    loses its own store."""
+    found = []
+    for folder, _dirs, files in os.walk(cp.root_of(project_root)):
+        for name in files:
+            path = os.path.join(folder, name)
+            try:
+                found.append((path, os.stat(path).st_mtime_ns))
+            except OSError:
+                continue
+    return tuple(sorted(found))
 
 
 def open_in_file_browser(folder: Path) -> None:

@@ -25,6 +25,7 @@ write; it is written atomically.
 
 from __future__ import annotations
 
+import os
 import re
 import secrets
 import shutil
@@ -115,11 +116,16 @@ class FolderQueue:
         """
         if not self.queue_dir.is_dir():
             return []
-        folders = sorted(
-            p.name
-            for p in self.queue_dir.iterdir()
-            if p.is_dir() and not p.name.startswith(".") and job_file(p).exists()
-        )
+        # scandir: the GUI lists the queue every 2 s, and on Windows an
+        # entry's is_dir() costs no extra call to the disk.
+        with os.scandir(self.queue_dir) as entries:
+            folders = sorted(
+                e.name
+                for e in entries
+                if not e.name.startswith(".")
+                and e.is_dir()
+                and os.path.isfile(os.path.join(e.path, JOB_FILE))
+            )
         listed = st.read_json(self.queue_dir / ORDER_FILE) or []
         order = [i for i in listed if i in folders]
         return order + [f for f in folders if f not in order]

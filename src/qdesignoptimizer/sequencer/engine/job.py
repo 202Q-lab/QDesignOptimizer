@@ -33,6 +33,10 @@ import yaml
 
 from .backend import Words
 
+#: libyaml's loader when PyYAML was built with it (several times faster:
+#: the GUI reads every study's job.yaml), else the pure-Python one.
+_SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 JOB_FILE = "job.yaml"
 VERSION = 1
 ON_FAILURE = ("abort", "continue")
@@ -275,7 +279,7 @@ def load_job(folder: Path, words: Words = Words()) -> Job:
     """
     path = job_file(folder)
     try:
-        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+        raw = yaml.load(path.read_text(encoding="utf-8"), Loader=_SafeLoader)
     except FileNotFoundError as exc:
         raise JobError([f"{path.parent.name} has no {JOB_FILE}"]) from exc
     except yaml.YAMLError as exc:
