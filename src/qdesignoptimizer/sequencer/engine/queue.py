@@ -149,7 +149,7 @@ class FolderQueue:
         where it was listed: a claimed study is out of ``ids()`` only
         while the runner checks it, and goes back to the queue, at its
         place, if it may not start (a failed check, a hold). Call holding
-        ``ORDER_LOCK``."""
+        ``order_guard()``."""
         listed = st.read_json(self.queue_dir / ORDER_FILE) or []
         st.write_json(
             self.queue_dir / ORDER_FILE,
@@ -241,7 +241,7 @@ class FolderQueue:
         Raises:
             QueueError: If ``order`` is not exactly the queued ids.
         """
-        with st.ORDER_LOCK:
+        with st.order_guard():
             current = self.ids()
             if sorted(order) != sorted(current) or len(set(order)) != len(order):
                 raise QueueError("the queue changed meanwhile; reloaded")
@@ -270,7 +270,7 @@ class FolderQueue:
         (building / JOB_FILE).write_text(dump_yaml(job.to_raw(words)), encoding="utf-8")
         for name, text in files.items():
             (building / name).write_text(text, encoding="utf-8")
-        with st.ORDER_LOCK:
+        with st.order_guard():
             _rename(building, target)
             order = [i for i in self.ids() if i != job.id]
             order.insert(len(order) if position is None else position, job.id)
@@ -286,7 +286,7 @@ class FolderQueue:
             raise QueueError(f"{job_id} is not queued")
         self.removed_dir.mkdir(parents=True, exist_ok=True)
         dest = self.removed_dir / f"{st.stamp()}_{job_id}"
-        with st.ORDER_LOCK:
+        with st.order_guard():
             try:
                 _rename(source, dest)
             except FileNotFoundError as exc:

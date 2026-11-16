@@ -89,6 +89,16 @@ into the docs.
    study has only **Edit copy** (`Bridge.edit_copy`: a fresh copy made
    straight into out/hold/, opened for editing). The editor's Requeue
    buttons are gone; the completed list's row requeue stays.
+   **Agent alongside the GUI (2026-11-16)**: `move` (CLI) and the GUI's
+   arrows go through `Workspace.move`; every order.json read-modify-write
+   is under `state.order_guard()` (the in-process ORDER_LOCK plus a
+   machine-wide `locks/order.lock`). Edit leases: `engine/lease.py`
+   (`<study>/.editing.json`, 15 s, renewed by the GUI's poll through
+   `Bridge.keep_editing`); `Bridge.begin_edit` refuses another's lease;
+   `_write` refuses a save over a live lease or files changed since Edit
+   (`_check_not_overtaken`). CLI `write` takes a 60 s lease around one
+   file. The runner does not look at leases yet: it can start a study
+   that is open in Edit mode, as before.
    **Poll cost (2026-11-16)**: the GUI's 2 s snapshot keeps each queued
    or held study's row (parsed job.yaml, problems, warnings) with its
    files' modification times (`Bridge._row`), re-reading only changed

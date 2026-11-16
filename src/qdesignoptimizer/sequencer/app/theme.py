@@ -116,6 +116,7 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-pick { cursor: pointer; }
 .qs-pick:hover { color: #1565c0; }
 .qs-small { font-size: 12px; color: #607d8b; }
+.qs-tag-editing { background: #fff3e0 !important; color: #e65100 !important; }
 .qs-tag { display: inline-block; border-radius: 4px; padding: 0 6px;
           font-size: 11px; background: #ede7f6; color: #4527a0;
           white-space: nowrap; }

@@ -291,6 +291,34 @@ Before the first Ansys run:
   warns when a study's folder gets close. Keep the repository near the
   root of a drive.
 
+### Working next to an agent
+
+The GUI and the command line work on the same files, so you can watch
+and steer in the GUI while an agent (Claude) adds studies, reorders the
+queue and edits studies from a terminal. The GUI shows what it does
+within a poll (2 s); a runner already going picks up new studies before
+its next one.
+
+- Add: `add <study>` / `sequence <name>` (straight into the queue; with
+  `--hold` on hold).
+- Reorder: `move <id> --first`, `--last`, `--to 3`, `--before <id>`,
+  `--after <id>`. Every order write, from the GUI or the command line,
+  is made under one machine-wide lock, so two moves never undo each
+  other.
+- Edit: `write <id> <file> --by claude` replaces one file of a queued or
+  held study, read from `--from <path>` or standard input, and says
+  whether the study can still run. While it writes, and while you are in
+  Edit mode on that study in the GUI, the study holds a lease
+  (`.editing.json` in its folder, renewed every poll, gone 15 s after
+  the GUI closes): the other side is refused, and the GUI tags the study
+  "being edited by claude". A GUI save also checks that nothing changed
+  the study since you pressed Edit, and refuses if something did.
+- Read the results in `out/completed/<id>_<start>/` and the store's
+  `design_variables.meta.json`.
+
+With several projects open in the GUI, give the agent the same set
+(`<project> -p <other> ...`), so its studies join the shared order.
+
 ## Where things are kept
 
 - The queue, the studies on hold and the results: `<project>/out/` (`queue/`, `hold/`, `completed/`; git-ignored).

@@ -468,6 +468,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
                             html.Br(),
                             html.Span(row["id"], className="qs-small"),
                             *_campaign_tag(row.get("campaign")),
+                            *_editing_tag(row),
                         ],
                         id={"type": "qrow", "index": row["id"]},
                         className="qs-pick",
@@ -564,6 +565,7 @@ def held_table(snap: dict, selected: dict | None) -> Any:
                                 row["id"].rsplit("/", 1)[-1], className="qs-small"
                             ),
                             *_campaign_tag(row.get("campaign")),
+                            *_editing_tag(row),
                         ],
                         id={"type": "hrow", "index": row["id"]},
                         className="qs-pick",
@@ -668,6 +670,20 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
     return html.Table(
         className="qs-table", children=[html.Thead(head), html.Tbody(body)]
     )
+
+
+def _editing_tag(row: dict) -> list:
+    """Who else is editing a study, as a tag ([] for no one)."""
+    if not row.get("editing"):
+        return []
+    return [
+        html.Br(),
+        html.Span(
+            f"\u270e being edited by {row['editing']}",
+            className="qs-tag qs-tag-editing",
+            title="Edit is blocked here until they are done",
+        ),
+    ]
 
 
 def _campaign_tag(campaign: str | None) -> list:
@@ -1084,6 +1100,18 @@ def details_problems(snap: dict, selected: dict | None) -> Any:
             className="qs-problems",
         )
     parts = []
+    if row.get("editing"):
+        parts.append(
+            html.Div(
+                [
+                    html.B("Being edited by "),
+                    row["editing"],
+                    ": Edit is blocked until they are done; what you see "
+                    "updates as they save.",
+                ],
+                className="qs-warning",
+            )
+        )
     if row.get("problems"):
         parts.append(
             html.Div(

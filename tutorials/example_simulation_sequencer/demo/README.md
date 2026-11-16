@@ -169,6 +169,18 @@ python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo
 python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_a -p tutorials/example_simulation_sequencer/demo/chip_b run --yes
 ```
 
+Move a study (here to the front), or replace one of its files the way
+an agent would; with the GUI open, watch both show up there. `write`
+is refused while that study is open in Edit mode in the GUI:
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo move s04-tune_R1_file-r1_linewidth --first
+```
+
+```bash
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo write s04-tune_R1_file-r1_linewidth job.yaml --from my_job.yaml --by claude
+```
+
 ## Campaigns
 
 A campaign is a folder under `chip_qdo/campaigns/` for one question,

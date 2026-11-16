@@ -329,7 +329,7 @@ class Project:
             where = "on hold" if source.queue_dir == self.out / HOLD else "queued"
             raise QueueError(f"{job_id} is not {where}")
         dest.queue_dir.mkdir(parents=True, exist_ok=True)
-        with st.ORDER_LOCK:
+        with st.order_guard():
             try:
                 _rename(folder, dest.folder(job_id))
             except FileNotFoundError as exc:

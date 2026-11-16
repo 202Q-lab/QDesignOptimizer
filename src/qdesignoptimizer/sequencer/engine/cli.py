@@ -12,6 +12,12 @@
     python -m qdesignoptimizer.sequencer <sequencer.py> stop
     python -m qdesignoptimizer.sequencer <sequencer.py> requeue <completed folder name>
     python -m qdesignoptimizer.sequencer <sequencer.py> park <id>     (on hold; unpark <id> queues it)
+    python -m qdesignoptimizer.sequencer <sequencer.py> move <id> --first | --last | --to N
+        (or --before ID / --after ID: next to another queued study)
+    python -m qdesignoptimizer.sequencer <sequencer.py> write <id> <file> [--from PATH] [--by NAME]
+        (replace one file of a queued or held study; the text is read from
+        PATH or standard input. Refused while someone edits the study in
+        the GUI; the GUI shows "being edited by NAME" meanwhile.)
 
 Several projects, one queue (``workspace``): name more with ``-p``; a
 project may also be given as its folder::
@@ -28,11 +34,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from dataclasses import replace
 from pathlib import Path
 
 from . import state as st
+from .lease import LeaseHeld, release_lease, take_lease
 from .loading import BackendError
 from .queue import QueueError
 from .runner import Runner, RunRefused, check_queue, configure_console_logging
@@ -95,6 +103,24 @@ def main(argv: list[str] | None = None) -> int:
     p_park.add_argument("id")
     p_unpark = sub.add_parser("unpark", help="move a study on hold to the queue")
     p_unpark.add_argument("id")
+    p_move = sub.add_parser("move", help="move a queued study in the run order")
+    p_move.add_argument("id")
+    where = p_move.add_mutually_exclusive_group(required=True)
+    where.add_argument("--first", action="store_true", help="run it next")
+    where.add_argument("--last", action="store_true", help="run it last")
+    where.add_argument("--to", type=int, help="to this place (1 = first)")
+    where.add_argument("--before", help="just before this queued study")
+    where.add_argument("--after", help="just after this queued study")
+    p_write = sub.add_parser("write", help="replace one file of a queued or held study")
+    p_write.add_argument("id")
+    p_write.add_argument("file", help="e.g. job.yaml, ministudy.yaml")
+    p_write.add_argument("--from", dest="source", help="read it here (else stdin)")
+    p_write.add_argument(
+        "--by",
+        default=os.environ.get("QDO_SEQUENCER_AGENT", "the command line"),
+        help="who is editing, as the GUI shows it (default: "
+        "$QDO_SEQUENCER_AGENT or 'the command line')",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -204,6 +230,18 @@ def _command(args, workspace: Workspace) -> int:
             project.park(job_id)
             print(f"{args.id}: on hold")
             return 0
+        if args.command == "write":
+            return _write(args, workspace)
+        if args.command == "move":
+            order = workspace.move(
+                args.id,
+                to=1 if args.first else (10**9 if args.last else args.to),
+                before=args.before,
+                after=args.after,
+            )
+            moved = workspace.queued_key(args.id, order)
+            print(f"{moved} is now {order.index(moved) + 1} of {len(order)}")
+            return 0
         if args.command == "unpark":
             project, job_id = _locate_held(workspace, args.id)
             project.unpark(job_id)
@@ -294,6 +332,46 @@ def _shown(project, path: Path | None) -> str:
         return Path(path).resolve().relative_to(project.root.resolve()).as_posix()
     except ValueError:
         return str(path)
+
+
+def _write(args, workspace: Workspace) -> int:
+    """Replace one file of a queued or held study under a lease, then
+    say whether the study can still run."""
+    try:
+        project, job_id = workspace.locate(args.id)
+        queue = project.queue
+        if not queue.folder(job_id).is_dir():
+            raise QueueError(f"{args.id} is not queued")
+    except QueueError:
+        project, job_id = _locate_held(workspace, args.id)
+        queue = project.hold
+    folder = queue.folder(job_id)
+    if not folder.is_dir():
+        raise QueueError(f"{args.id} is not queued or on hold")
+    text = (
+        Path(args.source).read_text(encoding="utf-8")
+        if args.source
+        else sys.stdin.read()
+    )
+    try:
+        take_lease(folder, args.by, seconds=60.0)
+    except LeaseHeld as exc:
+        print(f"{args.id} is {exc}; nothing written", file=sys.stderr)
+        return 1
+    except FileNotFoundError as exc:
+        raise QueueError(f"{args.id} moved meanwhile; nothing written") from exc
+    try:
+        queue.write_file(job_id, args.file, text)
+    finally:
+        release_lease(folder, args.by)
+    problems = project.problems(job_id, folder=folder)
+    print(f"wrote {args.file} of {args.id}")
+    if problems:
+        print("cannot run yet:")
+        for problem in problems:
+            print(f"  - {problem}")
+        return 2
+    return 0
 
 
 def _locate_held(workspace: Workspace, key: str):

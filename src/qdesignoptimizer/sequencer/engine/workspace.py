@@ -229,7 +229,7 @@ class Workspace:
         name = self.name_of(project)
         keys = [self.key(name, i) for i in ids]
         if not self.single:
-            with st.ORDER_LOCK:
+            with st.order_guard():
                 listed = [k for k in self.ids() if k not in keys]
                 self._write_order(listed + keys)
         return keys
@@ -245,6 +245,51 @@ class Workspace:
         listed = st.read_json(self.order_file) or []
         st.write_json(self.order_file, keep_listed(list(keys), listed, claimed))
 
+    def move(
+        self,
+        key: str,
+        to: int | None = None,
+        before: str | None = None,
+        after: str | None = None,
+    ) -> list[str]:
+        """Move one queued study: to position ``to`` (1 = first; past the
+        end = last), or just before or after another queued study. Read
+        and written under ``order_guard``, so a move from the command
+        line and one in the GUI never undo each other. Returns the new
+        order.
+
+        Raises:
+            QueueError: If a study is not queued, or no place is given.
+        """
+        with st.order_guard():
+            keys = self.ids()
+            moving = self.queued_key(key, keys)
+            rest = [k for k in keys if k != moving]
+            if to is not None:
+                at = min(max(int(to), 1), len(keys)) - 1
+            elif before is not None or after is not None:
+                other = self.queued_key(str(before or after), keys)
+                if other == moving:
+                    raise QueueError("a study cannot move next to itself")
+                at = rest.index(other) + (0 if before is not None else 1)
+            else:
+                raise QueueError("say where: a position, or before/after a study")
+            rest.insert(at, moving)
+            self.save_order(rest)
+            return rest
+
+    def queued_key(self, key: str, keys: list[str]) -> str:
+        """``key`` as ``ids`` gives it (a bare id works when one project
+        has it)."""
+        try:
+            project, local = self.locate(key)
+        except QueueError:
+            project = None
+        found = self.key(self.name_of(project), local) if project else str(key)
+        if found not in keys:
+            raise QueueError(f"{key} is not queued")
+        return found
+
     def save_order(self, keys: Iterable[str]) -> None:
         """Set the run order (keys as ``ids`` gives them).
 
@@ -255,7 +300,7 @@ class Workspace:
         if self.single:
             next(iter(self.projects.values())).queue.save_order(keys)
             return
-        with st.ORDER_LOCK:
+        with st.order_guard():
             current = self.ids()
             if sorted(keys) != sorted(current) or len(set(keys)) != len(keys):
                 raise QueueError("the queue changed meanwhile; reloaded")

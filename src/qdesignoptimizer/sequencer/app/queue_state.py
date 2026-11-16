@@ -36,6 +36,14 @@ from ..engine.job import (
     parse_completed,
     parse_job,
 )
+from ..engine.lease import (
+    LEASE_FILE,
+    LeaseHeld,
+    describe,
+    read_lease,
+    release_lease,
+    take_lease,
+)
 from ..engine.project import Project
 from ..engine.queue import INPUTS, RESOLVED, QueueError
 from ..engine.runner import ACTIVE_FILE
@@ -115,6 +123,11 @@ class Bridge:
         # campaign, the store) are rechecked every ROW_RECHECK_S, and at
         # once after anything done here that changes them.
         self._rows: dict[str, tuple[tuple, float, Any, list[str], list[str]]] = {}
+        # The study open in Edit mode here, with its files' modification
+        # times when Edit was pressed (or after our own last save): a
+        # save finding them changed was overtaken by someone else.
+        self._editing: tuple[str, tuple] | None = None
+        self._lost_lease = ""  # the study whose lease was taken from us
         # The campaigns, with the README files they were read from.
         self._campaigns: tuple[tuple, list[dict]] | None = None
 
@@ -282,11 +295,13 @@ class Bridge:
     def _row(self, key: str, project, local: str, folder: Path, held: bool):
         """A study's parsed job (or its JobError), problems and warnings:
         from what is kept while its files are unchanged."""
-        sig = _folder_signature(folder)
+        sig, leased = _folder_scan(folder)
+        lease = read_lease(folder) if leased else None
+        editing = describe(lease) if lease and lease.get("by") != GUI_EDITOR else ""
         now = time.monotonic()
         kept = self._rows.get(key)
         if kept and kept[0] == sig and now - kept[1] < ROW_RECHECK_S:
-            return kept[2], kept[3], kept[4]
+            return kept[2], kept[3], kept[4], editing
         try:
             job: Any = load_job(folder, project.words)
         except JobError as exc:
@@ -294,7 +309,7 @@ class Bridge:
         problems = [] if isinstance(job, JobError) else self._problems(key)
         warnings = [] if held or isinstance(job, JobError) else project.warnings(local)
         self._rows[key] = (sig, now, job, problems, warnings)
-        return job, problems, warnings
+        return job, problems, warnings, editing
 
     def _problems(self, key: str) -> list[str]:
         """Deep problems while the files are unchanged, else shallow."""
@@ -308,8 +323,10 @@ class Bridge:
         """Write a study file, or say why not: the runner may have
         claimed the study since the page was drawn."""
         project, job_id = self._study(key)
+        self._check_not_overtaken(key, project.queue.folder(job_id))
         try:
             project.queue.write_file(job_id, name, text)
+            self._saved(key, project.queue.folder(job_id))
         except (QueueError, OSError) as exc:
             if not project.queue.folder(job_id).is_dir():
                 raise GuiError(
@@ -321,6 +338,89 @@ class Bridge:
             raise GuiError(
                 f"could not save {name}: {type(exc).__name__}: {exc}; " f"try again"
             ) from exc
+
+    # -- who edits a study ----------------------------------------------
+
+    def begin_edit(self, kind: str, key: str) -> None:
+        """Edit pressed: take the study's lease, and note its files as
+        they are now (``_check_not_overtaken``).
+
+        Raises:
+            GuiError: If someone else (an agent at the command line) is
+                editing it.
+        """
+        _, folder = self._study_folder(kind, key)
+        if self._editing and self._editing[0] != key:
+            self.end_edit()
+        try:
+            take_lease(folder, GUI_EDITOR)
+        except LeaseHeld as exc:
+            raise GuiError(
+                f"{key} is {exc}: Edit is blocked until they are done"
+            ) from exc
+        except OSError as exc:
+            raise GuiError(f"{key} is no longer there") from exc
+        if not self._editing or self._editing[0] != key:
+            self._editing = (key, _folder_scan(folder)[0])
+
+    def keep_editing(self, selected: dict | None) -> str:
+        """Every poll: renew the lease of the study open in Edit mode, or
+        drop it once the study is no longer edited here. Returns why
+        editing cannot go on ("" when it can)."""
+        selected = selected or {}
+        if not selected.get("edit") or selected.get("kind") not in ("queue", "hold"):
+            self.end_edit()
+            return ""
+        key = selected["key"]
+        try:
+            self._study_folder(selected["kind"], key)
+        except GuiError:
+            # Gone (the runner took it, or it moved): the pane says so.
+            if self._editing and self._editing[0] == key:
+                self._editing = None
+            return ""
+        try:
+            self.begin_edit(selected["kind"], key)
+        except GuiError as exc:
+            # Someone took it while ours lapsed: say so once, not every poll.
+            if self._lost_lease == key:
+                return ""
+            self._lost_lease = key
+            return str(exc)
+        self._lost_lease = ""
+        return ""
+
+    def end_edit(self) -> None:
+        """Done editing (or another study opened): drop our lease."""
+        if self._editing is None:
+            return
+        key = self._editing[0]
+        self._editing = None
+        for kind in ("hold", "queue"):
+            try:
+                _, folder = self._study_folder(kind, key)
+            except GuiError:
+                continue
+            release_lease(folder, GUI_EDITOR)
+
+    def _check_not_overtaken(self, key: str, folder: Path) -> None:
+        """Refuse a save over someone else's edit: their lease is live,
+        or the files changed since Edit was pressed here."""
+        lease = read_lease(folder)
+        if lease and lease.get("by") != GUI_EDITOR:
+            raise GuiError(f"{key} is being edited by {describe(lease)}; nothing saved")
+        if self._editing and self._editing[0] == key:
+            if _folder_scan(folder)[0] != self._editing[1]:
+                raise GuiError(
+                    f"{key} was changed outside the GUI since you pressed "
+                    f"Edit; nothing saved. Press Done editing, then Edit, "
+                    f"to see it as it is now (copy your change first)"
+                )
+
+    def _saved(self, key: str, folder: Path) -> None:
+        """Our own save: the files as they are now are the ones we know."""
+        if self._editing and self._editing[0] == key:
+            self._editing = (key, _folder_scan(folder)[0])
 
     def _taken(self, key: str) -> bool:
         """Whether a study just written is no longer queued: the runner
@@ -383,7 +483,7 @@ class Bridge:
             project, job_id = workspace.locate(key)
             name = workspace.name_of(project)
             catalog = catalogs[name]
-            job, problems, warnings = self._row(
+            job, problems, warnings, editing = self._row(
                 key, project, job_id, project.queue.folder(job_id), held=False
             )
             if isinstance(job, JobError):
@@ -400,6 +500,7 @@ class Bridge:
                         "settings": "",
                         "notes": "",
                         "problems": exc.problems,
+                        "editing": editing,
                     }
                 )
                 continue
@@ -420,6 +521,7 @@ class Bridge:
                     "campaign": job.campaign,
                     "problems": problems,
                     "warnings": warnings,
+                    "editing": editing,
                 }
             )
         held = []
@@ -427,7 +529,7 @@ class Bridge:
             catalog = catalogs[name]
             for local in project.hold.ids():
                 key = self._hold_key(project, local)
-                job, problems, _ = self._row(
+                job, problems, _, editing = self._row(
                     key, project, local, project.hold.folder(local), held=True
                 )
                 if isinstance(job, JobError):
@@ -438,6 +540,7 @@ class Bridge:
                             "project": name,
                             "label": local,
                             "problems": exc.problems,
+                            "editing": editing,
                         }
                     )
                     continue
@@ -455,6 +558,7 @@ class Bridge:
                         "notes": job.notes,
                         "campaign": job.campaign,
                         "problems": problems,
+                        "editing": editing,
                     }
                 )
         # Studies no longer queued or held: nothing to keep for them.
@@ -834,12 +938,13 @@ class Bridge:
         ids = self.workspace.ids()
         if job_id not in ids:
             raise GuiError(f"{job_id} is no longer queued")
-        i = ids.index(job_id)
-        j = i + delta
+        j = ids.index(job_id) + delta
         if not 0 <= j < len(ids):
             raise GuiError("already at the end")
-        ids[i], ids[j] = ids[j], ids[i]
-        self.reorder(ids)
+        try:  # read and written under one lock: a move from elsewhere stays
+            self.workspace.move(job_id, to=j + 1)
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
 
     def remove(self, job_id: str) -> str:
         """Take a study out of the queue or off hold (moved to
@@ -1155,8 +1260,10 @@ class Bridge:
                 f"{job_id} is no longer in the queue (it may "
                 f"have just started); nothing was deleted"
             )
+        self._check_not_overtaken(job_id, project.queue.folder(local))
         try:
             project.queue.delete_file(local, name)
+            self._saved(job_id, project.queue.folder(local))
         except QueueError as exc:
             raise GuiError(
                 f"{job_id} is no longer in the queue (it may "
@@ -1528,19 +1635,32 @@ class Bridge:
 ROW_RECHECK_S = 30.0
 
 
-def _folder_signature(folder: Path) -> tuple:
-    """A study folder's files with their modification times (and sizes):
-    changes when any of them is written, added or removed."""
+#: Who the GUI is in a study's lease (``engine/lease.py``).
+GUI_EDITOR = "you (GUI)"
+
+
+def _folder_scan(folder: Path) -> tuple[tuple, bool]:
+    """A study folder's files with their modification times (and sizes),
+    which changes when any of them is written, added or removed; and
+    whether it has a lease file. Dot-files (the lease, a half-written
+    file) are not part of the signature."""
     try:
-        return tuple(
-            sorted(
-                (e.name, e.stat().st_mtime_ns, e.stat().st_size)
-                for e in os.scandir(folder)
-                if e.is_file()
-            )
-        )
+        with os.scandir(folder) as entries:
+            found = [e for e in entries if e.is_file()]
     except (FileNotFoundError, NotADirectoryError):
-        return ()
+        return (), False
+    sig = tuple(
+        sorted(
+            (e.name, e.stat().st_mtime_ns, e.stat().st_size)
+            for e in found
+            if not e.name.startswith(".")
+        )
+    )
+    return sig, any(e.name == LEASE_FILE for e in found)
+
+
+def _folder_signature(folder: Path) -> tuple:
+    return _folder_scan(folder)[0]
 
 
 def _campaigns_signature(project_root: Path) -> tuple:

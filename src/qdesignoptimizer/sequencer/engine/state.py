@@ -38,6 +38,34 @@ RESULT_FILE = "result.json"
 #: first's studies from it. (Re-entrant: a workspace reorder writes
 #: each project's order inside its own.)
 ORDER_LOCK = threading.RLock()
+_order_depth = 0  # how deep this process is in order_guard (under ORDER_LOCK)
+
+
+@contextmanager
+def order_guard():
+    """Held around every read-modify-write of an ``order.json``: the
+    in-process ``ORDER_LOCK`` and, on the outermost entry, a machine-wide
+    file lock, so the GUI, a command line call (an agent reordering or
+    adding) and another GUI never interleave their read and write.
+    Re-entrant within a thread."""
+    global _order_depth  # pylint: disable=global-statement
+    with ORDER_LOCK:
+        if _order_depth:
+            _order_depth += 1
+            try:
+                yield
+            finally:
+                _order_depth -= 1
+            return
+        from .workspace import user_home  # pylint: disable=import-outside-toplevel
+
+        with file_lock(user_home() / "locks" / "order.lock", wait=30.0):
+            _order_depth = 1
+            try:
+                yield
+            finally:
+                _order_depth = 0
+
 
 #: Study statuses (``queued`` is never written: a folder in queue/ is).
 QUEUED, RUNNING, DONE, FAILED = "queued", "running", "done", "failed"

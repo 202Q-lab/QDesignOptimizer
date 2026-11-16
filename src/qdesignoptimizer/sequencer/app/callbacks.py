@@ -244,6 +244,10 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 return no_update, no_update, no_update, no_update, no_update
             target = {**current, "edit": trig["index"] == "edit"}
             if target["edit"]:
+                try:  # the lease: refused while someone else edits it
+                    bridge.begin_edit(current["kind"], current["key"])
+                except GuiError as exc:
+                    return no_update, None, _msg(str(exc), False), no_update, ""
                 return target, None, no_update, {"display": "none"}, ""
         elif trig["type"] == "brow":
             target = {"kind": trig["kind"], "key": trig["index"]}
@@ -304,6 +308,18 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         """Whatever moved the selection (a ▶, a requeue, a New made), the
         warning about the pane it left is moot."""
         return None, {"display": "none"}
+
+    @app.callback(
+        Output("message", "data", allow_duplicate=True),
+        Input("poll", "n_intervals"),
+        Input("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _keep_editing(_n, selected):
+        """Renew the lease of the study in Edit mode (so an agent leaves
+        it alone), or drop it once it is no longer edited here."""
+        why = bridge.keep_editing(selected)
+        return _msg(why, False) if why else no_update
 
     @app.callback(
         Output("details-problems", "children"),
