@@ -70,7 +70,8 @@ into the docs.
    order (the old per-study flag that stopped the runner is gone).
    **Left side, one project at a time (2026-11-15)**: header "The
    QDesignOptimizer orchestrator by" + the 202Q-LAB logo
-   (`app/assets/202Q_lab_logo.png`); **+ Connected project folders**
+   (`app/assets/202Q_lab_logo.png`); connected project folders (the
+   project picker's last entry)
    (connect / disconnect; kept in `connected.json` in the user's
    qdo_sequencer folder; refused while the runner goes, since it runs
    the queue of the projects it was started with); a project picker
@@ -88,6 +89,15 @@ into the docs.
    study has only **Edit copy** (`Bridge.edit_copy`: a fresh copy made
    straight into out/hold/, opened for editing). The editor's Requeue
    buttons are gone; the completed list's row requeue stays.
+   **Validate / pre-figures / rename (2026-11-15)**: Validate =
+   `Bridge.validate` (the deep check of one study); Generate pre-figures
+   = the old Picture, now `QDOBackend.preview(folder, campaign)` builds
+   the chip with `design(variables)` = store (campaign's or project's)
+   + the study's own design_variables.json (falls back to the design as
+   it stands when `design()` takes no argument); study templates rename
+   by file (`QDOBackend.rename_template`, `Q1_` kept), sequence templates
+   by changing the file name and saving (`Project.rename_sequence`).
+   Success notes clear after 4 s; errors stay until clicked.
    The first study opened after a start still takes ~15 s (the worker
    imports QDO); the pane now shows a loading sign meanwhile.
 3. **Ansys**: `Q1.resonator_kappa` converged and wrote back (2026-11-14).

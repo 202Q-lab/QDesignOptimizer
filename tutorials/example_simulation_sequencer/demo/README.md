@@ -36,8 +36,8 @@ python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo
 ```
 
 The dummy measures a toy resonator model, moves each target's design
-variable the way QDO does, spends the study's `seconds` over its
-`iterations` (default 5 s over 3), and writes the tuned values back into
+variable the way QDO does, spends 5 s over the study's `iterations`
+(default 3), and writes the tuned values back into
 `chip_qdo/design_variables.json` -- it starts as a copy of
 `design_variables.start.json`. Edit `parameter_targets.py` to move a
 target; edit a study's settings, nested capacitance study or opt
@@ -74,7 +74,8 @@ you pick opens read only (*Inspecting*); press **Edit** to change one
 that has not run yet (*Editing*, with **Done editing**, and for one on
 hold **Add to queue ▶**). A study that has run stays read only: **Edit
 copy** makes a copy of it on hold, opened for editing. Bottom left, the
-**Project**, one at a time. **+ Connected project folders** lists the connected ones (✕
+**Projects** area, one project at a time. The project picker's last entry, **+ Connect
+or disconnect project folders**, lists the connected ones (✕
 disconnects; type a folder and **Connect** to add one; the list is
 remembered, so `python -m qdesignoptimizer.sequencer.app` with no
 folder opens them again). Below it, the project worked on (its folder
@@ -118,6 +119,10 @@ study sequence plus one more study takes about 15 s.
   adapter's code (`tune_R1`) opens read-only: save it under a new file
   name and a new name to change it. Every template has a name of its
   own; saving one under a name another has is refused.
+- **New study in the Study editor**: its header has **+ New blank study**
+  (a MiniStudy from scratch) and **+ New study from template**; both
+  make it in the project and campaign picked on the left, on hold or
+  straight into the queue.
 - **New study**: + New study (next to the campaign picker) makes one
   from a study template or a blank MiniStudy, in the campaign picked,
   on hold (edit it, then ▶) or straight into the queue.
@@ -125,7 +130,25 @@ study sequence plus one more study takes about 15 s.
   copy of a template, or blank); edit it, then **Save as template** at
   the bottom of its page.
 - **Check before running**: *Check queue* in the GUI, or `check` in the
-  CLI, rebuilds every queued study without solving.
+  CLI, rebuilds every queued study without solving. For one study,
+  **Validate** in the Study editor checks the same: that its files read,
+  its objects build, the names it gives are in the design and its
+  targets and values resolve.
+- **Pre-figures**: **Generate pre-figures** draws what each solver run
+  of a study simulates (its components, with the airbridges the solve
+  adds), the chip built with the design variables the study would
+  fetch now (its campaign's or the project's, plus its own). The project
+  needs a `design(variables)` hook (`chip_qdo` has none; the tutorial's
+  `coupled_transmon_chip` has one).
+- **Rename a template**: a study template's page has **Rename** (its
+  file in `ministudies/`); a study sequence template is renamed by
+  changing its file name and saving it. Studies already made keep their
+  own copy.
+- **Notes** at the top go away after a few seconds; an error stays
+  until you click it.
+- **Reload templates** (in the Projects area) reads every project's templates, study
+  sequences and adapter (`sequencer.py`, and what it imports) again:
+  after editing them outside the GUI.
 - **Stop** between studies: *Stop after this study*, or `stop` in the CLI.
 
 ## Command line

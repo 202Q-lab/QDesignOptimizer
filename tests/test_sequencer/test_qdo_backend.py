@@ -612,3 +612,47 @@ def test_check_templates_names_a_broken_one_and_queues_nothing(tiny):
     assert found["X.freq"] == []
     assert any("no component 'res_y'" in p for p in found["X.res"])
     assert project.queue.ids() == []
+
+
+# -- rename a template; the pre-figures' values (2026-11-15) ----------------
+
+
+def test_a_study_template_is_renamed_with_its_file(tiny):
+    from qdesignoptimizer.sequencer.backends.qdo_templates import TemplateError
+
+    qdo_project, project = tiny
+    assert project.backend.catalog().task("X.freq") is not None
+    path = project.backend.rename_template("X.freq", "frequency")
+    assert path.name == "X_frequency.yaml" and path.is_file()
+    keys = [t.key for t in project.backend.catalog().tasks]
+    assert "X.frequency" in keys and "X.freq" not in keys
+    with pytest.raises(TemplateError, match="letters"):
+        project.backend.rename_template("X.frequency", "bad name")
+    (qdo_project.root / "ministudies" / "X_taken.yaml").write_text("x: 1")
+    with pytest.raises(TemplateError, match="already exists"):
+        project.backend.rename_template("X.frequency", "taken")
+
+
+def test_pre_figures_build_the_chip_with_the_values_it_would_fetch(tiny, monkeypatch):
+    from qdesignoptimizer.sequencer.backends import qdo_preview
+
+    qdo_project, project = tiny
+    built = []
+    original = qdo_project.design
+
+    def design(variables=None):
+        built.append(dict(variables or {}))
+        return original()
+
+    qdo_project.design = design
+    monkeypatch.setattr(
+        qdo_preview, "pictures", lambda *a, **k: [{"caption": "run", "components": []}]
+    )
+    monkeypatch.setattr(qdo_preview, "unbridged_note", lambda *a: None)
+    job_id = project.add("X.freq")
+    folder = project.queue.folder(job_id)
+    (folder / "design_variables.json").write_text(json.dumps({"design_var_gap": "7um"}))
+    (picture,) = project.backend.preview(folder)
+    assert built[-1] == {LENGTH: "5000um", WIDTH: "10um", "design_var_gap": "7um"}
+    assert "it would fetch now" in picture["caption"]
+    assert "design_var_gap" in picture["caption"]

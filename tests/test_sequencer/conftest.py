@@ -7,3 +7,5 @@ import pytest
 @pytest.fixture(autouse=True)
 def _own_user_home(tmp_path_factory, monkeypatch):
     monkeypatch.setenv("QDO_SEQUENCER_HOME", str(tmp_path_factory.mktemp("home")))
+    # The demo projects' "solve" takes no time in a test.
+    monkeypatch.setenv("QDO_DEMO_SOLVE_SECONDS", "0")

@@ -6,6 +6,7 @@ import json
 
 import yaml
 from dash import ALL, Dash, Input, Output, State, ctx, dcc, html, no_update
+from dash.exceptions import PreventUpdate
 
 from ..engine.job import numbers
 from . import form_layout, forms, layout
@@ -86,6 +87,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Input("new-project", "value"),
     )
     def _render(snap, selected, project):
+        if project == layout.CONNECT:
+            raise PreventUpdate  # put back at once by _project_picked
         snap = snap or {}
         runner = snap.get("runner") or {}
         alive = bool(runner.get("alive"))
@@ -114,45 +117,58 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             parts["title_templates"],
             parts["title_campaigns"],
             parts["campaigns"],
-            projects,
+            [
+                *projects,
+                {
+                    "label": "+ Connect or disconnect project folders ...",
+                    "value": layout.CONNECT,
+                    "title": "connect a project folder, or disconnect one; "
+                    "remembered for the next start",
+                },
+            ],
             shown["title"] if shown else "",
             layout.connected_list(snap),
         )
 
     @app.callback(
         Output("new-project", "value"),
+        Output("project-last", "data"),
+        Output("connect-panel", "style"),
         Input("snapshot", "data"),
-        State("new-project", "value"),
+        Input("new-project", "value"),
+        Input("btn-connect-close", "n_clicks"),
+        State("project-last", "data"),
     )
-    def _default_project(snap, project):
-        """The first project, until one is picked (and again when the
-        picked one is disconnected)."""
+    def _project_picked(snap, project, _close, last):
+        """The project picker: the first project until one is picked (and
+        again when the picked one is disconnected); its last entry opens
+        the connected folders and leaves the project as it was."""
         names = [p["value"] for p in (snap or {}).get("projects") or []]
+        shown, hidden = {"display": "block"}, {"display": "none"}
+        if ctx.triggered_id == "btn-connect-close":
+            return no_update, no_update, hidden
+        if project == layout.CONNECT:
+            back = last if last in names else (names[0] if names else None)
+            return back, back, shown
         if project in names:
-            return no_update
-        return names[0] if names else None
+            return no_update, project, no_update
+        if not names:
+            # None connected (not merely before the first poll): the
+            # folders are what there is to do.
+            return None, None, shown if (snap or {}).get("empty") else no_update
+        return names[0], names[0], no_update
 
     @app.callback(
         Output("work-campaign", "value"),
         Input("new-project", "value"),
+        State("project-last", "data"),
         prevent_initial_call=True,
     )
-    def _new_project(_project):
+    def _new_project(project, last):
         """Another project: its own campaigns, none picked yet."""
-        return None
-
-    @app.callback(
-        Output("connect-panel", "style"),
-        Input("btn-connected", "n_clicks"),
-        State("connect-panel", "style"),
-        prevent_initial_call=True,
-    )
-    def _toggle_connect(n, style):
-        if not n:
+        if project == layout.CONNECT or project == last:
             return no_update
-        style = dict(style or {})
-        style["display"] = "block" if style.get("display") == "none" else "none"
-        return style
+        return None
 
     @app.callback(
         Output("rev", "data", allow_duplicate=True),
@@ -195,6 +211,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Input("btn-open-new-template", "n_clicks"),
         Input("work-campaign", "value"),
         Input({"type": "editmode", "index": ALL}, "n_clicks"),
+        Input("btn-open-new-blank", "n_clicks"),
+        Input("btn-open-new-fromtpl", "n_clicks"),
         State("new-project", "value"),
         *_EDIT_STATES,
         State("pending-select", "data"),
@@ -202,7 +220,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         prevent_initial_call=True,
     )
     def _select(*args):
-        project, *edits, pending, current = args[10:]
+        project, *edits, pending, current = args[12:]
         del pending  # asked again whenever the edits are still there
         if not _clicked():
             return no_update, no_update, no_update, no_update, no_update
@@ -213,6 +231,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 "btn-open-new-sequence": "new-sequence",
                 "btn-open-new-study": "new-study",
                 "btn-open-new-template": "new-template",
+                "btn-open-new-blank": "new-blank",
+                "btn-open-new-fromtpl": "new-from-template",
             }.get(trig, "campaign")
             # The campaign picker: that campaign of the project worked on.
             key = f"{project or ''}::{args[8]}" if kind == "campaign" else ""
@@ -302,6 +322,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         State("snapshot", "data"),
     )
     def _details(selected, new_project, work_campaign, snap):
+        if new_project == layout.CONNECT:
+            raise PreventUpdate
         # Redrawn on selection only -- never on a poll, a save or a
         # create/delete (those update their own pane), any of which
         # would wipe a half-typed edit in another tab. The one exception:
@@ -325,13 +347,17 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                     ),
                     None,
                 )
-            if kind in ("new-study", "new-template"):
+            if kind in ("new-study", "new-template", "new-blank", "new-from-template"):
                 return (
                     layout.new_study_view(
                         snap,
                         project,
                         work_campaign or "",
                         template=kind == "new-template",
+                        mode={
+                            "new-blank": "blank",
+                            "new-from-template": "template",
+                        }.get(kind, ""),
                     ),
                     None,
                 )
@@ -851,13 +877,35 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
     @app.callback(
         Output("message-view", "children"),
         Output("message-view", "style"),
+        Output("message-view", "title"),
+        Output("message-timer", "disabled"),
+        Output("message-timer", "n_intervals"),
         Input("message", "data"),
     )
     def _show(message):
+        """A note goes by on its own; an error stays until clicked."""
         if not message:
-            return "", {}
-        colour = "#1b5e20" if message.get("ok") else "#b71c1c"
-        return message.get("text", ""), {"color": colour}
+            return "", {}, "", True, 0
+        ok = bool(message.get("ok"))
+        colour = "#1b5e20" if ok else "#b71c1c"
+        return (
+            message.get("text", ""),
+            {"color": colour, "cursor": "pointer"},
+            "click to dismiss",
+            not ok,
+            0,
+        )
+
+    @app.callback(
+        Output("message", "data", allow_duplicate=True),
+        Input("message-timer", "n_intervals"),
+        Input("message-view", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def _dismiss(ticks, clicks):
+        if not (ticks or clicks):
+            return no_update
+        return None
 
 
 def _settings_from(form: dict) -> dict:
@@ -990,6 +1038,80 @@ def register_preview_callbacks(app, bridge) -> None:
         )
 
     @app.callback(
+        Output("message", "data", allow_duplicate=True),
+        Input("btn-open-folder", "n_clicks"),
+        State("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _open_folder(n, selected):
+        """Open the study's folder in Explorer (on the GUI's machine)."""
+        if not n or not selected:
+            return no_update
+        kind = selected.get("kind")
+        if kind not in ("queue", "hold", "completed"):
+            return no_update
+        try:
+            folder = bridge.open_folder(kind, selected["key"])
+        except GuiError as exc:
+            return _msg(str(exc), False)
+        return _msg(f"opened {folder}")
+
+    @app.callback(
+        Output("validate-view", "children"),
+        Input("btn-validate", "n_clicks"),
+        State("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _validate(n, selected):
+        """Validate: whether everything the study needs resolves."""
+        if not n or not selected or selected.get("kind") not in ("queue", "hold"):
+            return no_update
+        try:
+            problems = bridge.validate(selected["key"])
+        except GuiError as exc:
+            return html.Div(str(exc), className="qs-problems")
+        if not problems:
+            return html.Div(
+                "Valid: everything it needs resolves; it is ready to run.",
+                className="qs-valid",
+            )
+        return html.Div(
+            [html.B("Not valid yet:"), html.Ul([html.Li(p) for p in problems])],
+            className="qs-problems",
+        )
+
+    @app.callback(
+        Output("validate-view", "children", allow_duplicate=True),
+        Input("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _clear_validate(_selected):
+        return None
+
+    @app.callback(
+        Output("rev", "data", allow_duplicate=True),
+        Output("message", "data", allow_duplicate=True),
+        Output("selected", "data", allow_duplicate=True),
+        Input("btn-tpl-rename", "n_clicks"),
+        State("tpl-rename-name", "value"),
+        State("selected", "data"),
+        State("rev", "data"),
+        prevent_initial_call=True,
+    )
+    def _rename_template(n, name, selected, rev):
+        if not n or not selected or selected.get("kind") != "template":
+            return no_update, no_update, no_update
+        try:
+            key = bridge.rename_template(selected["key"], name or "")
+        except GuiError as exc:
+            return no_update, _msg(str(exc), False), no_update
+        return (
+            (rev or 0) + 1,
+            _msg(f"renamed {selected['key']} to {key}"),
+            {"kind": "template", "key": key},
+        )
+
+    @app.callback(
         Output("preview-view", "children"),
         Input("selected", "data"),
     )
@@ -1028,15 +1150,20 @@ def register_editor_callbacks(app, bridge) -> None:
         State("new-study-name", "value"),
         State("new-study-campaign", "value"),
         State("new-study-where", "value"),
+        State("new-study-mode", "data"),
         State("new-project", "value"),
         State("rev", "data"),
         prevent_initial_call=True,
     )
     def _make_study(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-        n, task, template, name, campaign, where, project, rev
+        n, task, template, name, campaign, where, mode, project, rev
     ):
         if not n:
             return no_update, no_update, no_update
+        if mode == "template" and not (task or template):
+            return no_update, _msg("pick a study template first", False), no_update
+        if mode == "blank":
+            template = None
         try:
             key = bridge.new_study(
                 task or template or "",
@@ -1154,9 +1281,15 @@ def register_editor_callbacks(app, bridge) -> None:
             "studies": _rows_from(rvalues, rdatas, rids),
         }
         overwrite = not meta.get("new") and not meta.get("from_code")
+        # A file template whose file name was changed: renamed, then saved.
+        rename_from = (meta.get("key") or "") if overwrite else ""
         try:
             text = bridge.save_sequence(
-                key, data, overwrite=overwrite, project=project if multi else ""
+                key,
+                data,
+                overwrite=overwrite,
+                project=project if multi else "",
+                rename_from=rename_from if rename_from != key else "",
             )
         except GuiError as exc:
             return no_update, _msg(str(exc), False), no_update

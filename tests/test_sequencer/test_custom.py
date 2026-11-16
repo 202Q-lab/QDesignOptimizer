@@ -123,7 +123,7 @@ def test_a_study_from_scratch_is_filled_in_saved_as_templates_and_run(qdo):
     assert "r1_from_scratch" in keys
 
     # Queued and run like any other.
-    bridge.save_job(study, {"settings": {"iterations": 3, "seconds": 0}})
+    bridge.save_job(study, {"settings": {"iterations": 3}})
     bridge.unpark(study)
     project = bridge.project
     final = Runner(bridge.workspace).run()

@@ -3,7 +3,8 @@
 ``FakeBackend`` with names that read like a design project -- per
 resonator a ``frequency`` study (tunes its length) and a ``linewidth``
 study (tunes its coupling length), and a "tune" study sequence per resonator
--- and every study taking ``seconds`` (default 5) to "solve". Nothing is
+-- and every study taking ``SOLVE_SECONDS`` (5; the environment variable
+``QDO_DEMO_SOLVE_SECONDS`` changes it) to "solve". Nothing is
 simulated: a study proposes the value in its ``task.yaml``.
 
 Used by ``tutorials/example_simulation_sequencer/demo/``; see its README.
@@ -12,6 +13,8 @@ Used by ``tutorials/example_simulation_sequencer/demo/``; see its README.
 from __future__ import annotations
 
 import json
+import os
+import time
 from pathlib import Path
 from typing import Iterable
 
@@ -104,5 +107,12 @@ class DemoBackend(FakeBackend):
             ],
         )
 
+    def settings_keys(self) -> set[str]:
+        return set()
+
     def default_settings(self, task: str) -> dict:
-        return {"seconds": SOLVE_SECONDS}
+        return {}
+
+    def run(self, folder: Path, job):
+        time.sleep(float(os.environ.get("QDO_DEMO_SOLVE_SECONDS", SOLVE_SECONDS)))
+        return super().run(folder, job)

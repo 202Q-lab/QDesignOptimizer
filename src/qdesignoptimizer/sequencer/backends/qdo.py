@@ -57,9 +57,11 @@ hooks and ``qdo_files`` do, when a study is generated, checked or run.
 from __future__ import annotations
 
 import difflib
+import inspect
 import json
 import logging
 import math
+import os
 from numbers import Real
 from pathlib import Path
 from typing import Any, Protocol
@@ -406,7 +408,7 @@ class QDOBackend(SwitchableStore):
 
     def reload(self) -> None:
         """Read every template again and call the project's own
-        ``reload`` hook, for the GUI's "Reload catalog"."""
+        ``reload`` hook, for the GUI's "Reload templates"."""
         self._template_stamp = ()
         hook = getattr(self.project, "reload", None)
         if hook is not None:
@@ -505,6 +507,37 @@ class QDOBackend(SwitchableStore):
             written.append(write_targets(self.opt_targets_dir, name, new))
         written.insert(0, write_ministudy(self.ministudy_dir, name, ministudy))
         return written
+
+    def rename_template(self, key: str, new_name: str) -> Path:
+        """Rename the ministudy template behind study ``key``: its file,
+        so every study it makes is named anew. A template of one
+        subsystem (``Q1_freq.yaml``) keeps its ``Q1_``. Studies made from
+        it already keep their own copy, so they are not touched.
+
+        Raises:
+            TemplateError: For a bad name, one in use, or no such study.
+        """
+        from .qdo_templates import check_name
+
+        template = self.templates().get(key)
+        if template is None:
+            raise TemplateError(f"no study template {key!r}")
+        path = template.ministudy_file
+        new_name = (new_name or "").strip()
+        stem = new_name
+        if template.subject and path.stem.startswith(f"{template.subject}_"):
+            stem = f"{template.subject}_{new_name}"
+        check_name(stem)
+        if stem == path.stem:
+            raise TemplateError(f"it is called {new_name!r} already")
+        target = path.with_name(f"{stem}.yaml")
+        if target.exists():
+            raise TemplateError(
+                f"ministudies/{target.name} already exists; pick another name"
+            )
+        os.rename(path, target)  # refuses one made meanwhile
+        self._template_stamp = ()
+        return target
 
     def _new_targets(self, entries: list, name: str) -> list[dict]:
         """A study's opt targets the project does not have yet: by name,
@@ -671,22 +704,49 @@ class QDOBackend(SwitchableStore):
             return None
         return self._design_cache[1]
 
-    def preview(self, folder: Path) -> list[dict[str, Any]]:
-        """Pictures of what a study simulates, one per solver run (the
-        HFSS eigenmode model, then each chained capacitance study), each
-        of only that run's components with the airbridges its solver
-        puts in -- see ``qdo_preview``.
+    def preview(
+        self, folder: Path, campaign: str | None = None
+    ) -> list[dict[str, Any]]:
+        """The pre-figures: pictures of what a study simulates, one per
+        solver run (the HFSS eigenmode model, then each chained
+        capacitance study), each of only that run's components with the
+        airbridges its solver puts in -- see ``qdo_preview``.
+
+        The chip is built with the design variables the study would
+        fetch now: its store's (``campaign``'s, or the project's), with
+        what its own ``design_variables.json`` sets on top -- when the
+        project's ``design()`` takes them; else as the design stands.
 
         Raises:
-            ValueError: If the project cannot build its design.
+            ValueError: If the project cannot build its design, or the
+                study's design variables do not read.
         """
         from . import qdo_files as qf
         from . import qdo_preview
 
-        design = self.built_design()
-        if design is None:
+        build = getattr(self.project, "design", None)
+        if build is None:
             raise ValueError(
-                "this project has no design() hook, so there is no " "design to draw"
+                "this project has no design() hook, so there is no design to draw"
+            )
+        if inspect.signature(build).parameters:
+            problems: list[str] = []
+            own = self._partial(Path(folder) / VARIABLES, problems, True)
+            if problems:
+                raise ValueError("; ".join(problems))
+            variables = {**self.store_values(campaign or None), **own}
+            design = build(variables)
+            where = (
+                "geometry with the design variables it would fetch now ("
+                + (f"campaign {campaign}'s" if campaign else "the project's")
+                + (f", and its own {sorted(own)}" if own else "")
+                + ")"
+            )
+        else:
+            design = self.built_design()
+            where = (
+                "geometry as the project's design stands now (its design() "
+                "takes no values, so this study's are not applied)"
             )
         study = qf.load_object(
             yaml.safe_load((Path(folder) / MINISTUDY).read_text("utf-8"))
@@ -700,8 +760,7 @@ class QDOBackend(SwitchableStore):
                 for n in (
                     picture["caption"],
                     note,
-                    "geometry as the project's design stands now "
-                    "(this study's own design variables are not applied)",
+                    where,
                 )
                 if n
             )

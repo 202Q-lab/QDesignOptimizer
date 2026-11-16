@@ -16,7 +16,8 @@ and each iteration moves every target's design variable the way QDO
 does: so that the target's ``prop_to`` ratio equals target / measured.
 The model's exponents (0.9, 2.2) are deliberately not the helpers'
 (1, 2), so a study takes a few iterations to converge -- as a real one
-does. A study's ``seconds`` setting is split over its iterations.
+does. A study takes 5 s, split over its iterations (the environment
+variable ``QDO_DEMO_SOLVE_SECONDS`` changes that; the tests set 0).
 
 Whether a target was hit is not judged here: each opt target carries
 its own ``tolerance`` (``opt_targets/resonators.yaml``).
@@ -27,6 +28,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 import re
 import time
 from pathlib import Path
@@ -105,7 +107,7 @@ def _step(target, values: dict, measured: dict, wanted: float) -> float:
 def solve(study, targets, folder, settings, variables, params):
     """Iterate the toy model; see the module docstring."""
     iterations = int(settings.get("iterations") or 3)
-    seconds = float(settings.get("seconds", 5))
+    seconds = float(os.environ.get("QDO_DEMO_SOLVE_SECONDS", 5))
     units = {}
     values = {}
     for name, value in variables.items():

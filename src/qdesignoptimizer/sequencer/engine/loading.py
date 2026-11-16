@@ -8,7 +8,7 @@ arguments and returns the backend.
 A file target is imported under a name derived from its path, leaving
 the import path alone; whatever the project file itself does to find
 its own flat modules is the project's business. It is re-imported when
-the file changes, so "Reload catalog" in the GUI picks up an edit.
+the file changes, so "Reload templates" in the GUI picks up an edit.
 """
 
 from __future__ import annotations

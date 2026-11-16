@@ -39,8 +39,8 @@ python -m qdesignoptimizer.sequencer.app tutorials/example_simulation_sequencer/
 
 Open <http://127.0.0.1:8051>. Top left is the **Shared queue** of every
 connected project (the queue, the studies on hold, the completed ones,
-the log); bottom left the **Project** worked on, one at a time (**+
-Connected project folders** connects or disconnects one, remembered for
+the log); bottom left the **Projects** area, with the project worked on, one at a time (the picker's last entry,
+**+ Connect or disconnect project folders**, does that, remembered for
 the next start), with its study sequence templates, study templates
 and campaigns, each with **+ New**; right, the **Study editor**, where a
 study opens read only until you press **Edit** (a study that has run

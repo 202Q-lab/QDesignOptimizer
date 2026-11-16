@@ -51,10 +51,10 @@ class DemoQDOProject:
             )
 
     def settings_keys(self) -> set:
-        return {"iterations", "seconds"}
+        return {"iterations"}
 
     def default_settings(self, task) -> dict:
-        return {"iterations": 3, "seconds": 5}
+        return {"iterations": 3}
 
     def parameter_targets(self) -> dict:
         import parameter_targets

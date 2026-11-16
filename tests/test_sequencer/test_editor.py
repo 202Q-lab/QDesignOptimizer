@@ -397,3 +397,32 @@ def test_a_bad_settings_value_in_a_template_is_shown_not_crashed(project, bridge
     )
     with pytest.raises(GuiError):
         bridge.sequence_view("odd")
+
+
+# -- rename and validate (2026-11-15) ----------------------------------------
+
+
+def test_a_sequence_template_is_renamed_when_saved_under_a_new_file_name(
+    bridge, project
+):
+    bridge.save_sequence("one", _form(name="Calibrate"), overwrite=False)
+    text = bridge.save_sequence(
+        "two", _form(name="Calibrate"), overwrite=True, rename_from="one"
+    )
+    assert "renamed one.yaml to two.yaml" in text
+    folder = project.sequence_dir
+    assert (folder / "two.yaml").is_file() and not (folder / "one.yaml").exists()
+    bridge.save_sequence("three", _form(name="Other"), overwrite=False)
+    with pytest.raises(GuiError, match="taken"):
+        bridge.save_sequence(
+            "three", _form(name="Calibrate"), overwrite=True, rename_from="two"
+        )
+    assert (folder / "two.yaml").is_file()
+
+
+def test_validate_says_what_would_stop_a_study(bridge, project):
+    job_id = project.add("A.calibrate")
+    assert bridge.validate(job_id) == []
+    path = project.queue.folder(job_id) / "job.yaml"
+    path.write_text(path.read_text("utf-8") + "checks: 5\n", "utf-8")
+    assert bridge.validate(job_id)

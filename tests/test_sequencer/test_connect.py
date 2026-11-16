@@ -103,3 +103,27 @@ def test_new_study_starts_in_the_campaign_worked_in(project):
 @pytest.fixture
 def project(tmp_path):
     return make_project(tmp_path / "p")
+
+
+def test_the_editor_s_new_buttons_offer_one_way_each(project):
+    snap = Bridge(project=project).snapshot()
+    blank = str(layout.new_study_view(snap, mode="blank"))
+    assert "New blank study" in blank and "data='blank'" in blank
+    from_template = str(layout.new_study_view(snap, mode="template"))
+    assert "New study from template" in from_template
+    assert "pick one of the project's study templates" in from_template
+
+
+def test_open_folder_opens_the_study_s_own_folder(project, monkeypatch):
+    from qdesignoptimizer.sequencer.app import queue_state
+
+    opened = []
+    monkeypatch.setattr(queue_state, "open_in_file_browser", opened.append)
+    bridge = Bridge(project=project)
+    job_id = project.add(project.backend.catalog().tasks[0].key)
+    folder = bridge.open_folder("queue", job_id)
+    assert opened == [folder] and folder == project.queue.folder(job_id)
+    view = str(layout.details(bridge.details("queue", job_id), {}))
+    assert "Open folder" in view and str(folder).replace("\\", "\\\\") in view
+    with pytest.raises(GuiError, match="no longer there"):
+        bridge.open_folder("completed", "nope")

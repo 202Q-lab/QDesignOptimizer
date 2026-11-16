@@ -14,6 +14,7 @@ adapter's code. ``add_sequence`` queues every study of one.
 
 from __future__ import annotations
 
+import os
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -602,6 +603,32 @@ class Project:
         (the catalog takes it over a file of the same name)."""
         spec = self.backend.catalog().sequence(key)
         return spec is not None and not spec.source
+
+    def rename_sequence(self, key: str, new: str) -> Path:
+        """Rename study sequence template ``key``'s file to ``new``.
+
+        Raises:
+            QueueError: For a bad name, one in use, a template built in
+                code, or no such file.
+        """
+        folder = self.sequence_dir
+        if folder is None:
+            raise QueueError(f"this project keeps no {self.words.sequence} files")
+        try:
+            check_sequence_key(new)
+        except SequenceError as exc:
+            raise QueueError("; ".join(exc.problems)) from exc
+        path, target = folder / f"{key}.yaml", folder / f"{new}.yaml"
+        if not path.is_file():
+            raise QueueError(f"{key!r} has no file in {folder.name}/ to rename")
+        code = self.backend.catalog().sequence(new)
+        if target.exists() or (code is not None and not code.source):
+            raise QueueError(f"{new!r} is taken; pick another file name")
+        try:
+            os.rename(path, target)  # refuses one made meanwhile
+        except OSError as exc:
+            raise QueueError(f"{path.name} could not be renamed: {exc}") from exc
+        return target
 
     def save_sequence(self, key: str, raw: dict, overwrite: bool = False) -> Path:
         """Write a study sequence template (``study_sequences/<key>.yaml``).

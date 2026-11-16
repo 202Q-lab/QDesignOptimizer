@@ -45,6 +45,11 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
               border-bottom: 1px solid #eceff1; padding-bottom: 2px; }
 .qs-btn-small { padding: 1px 8px; font-size: 12px; }
 .qs-title { font-size: 20px; font-weight: 600; }
+.qs-new-buttons { display: flex; flex-direction: column; gap: 6px;
+                  align-items: flex-start; margin: 8px 0 12px;
+                  padding-bottom: 12px; border-bottom: 1px solid #eceff1; }
+.qs-btn-large { padding: 6px 16px; font-size: 14px; min-width: 240px;
+                text-align: left; }
 .qs-muted { color: #607d8b; }
 .qs-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
           margin: 8px 0; }
@@ -79,6 +84,8 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-mode { display: flex; flex-wrap: wrap; justify-content: space-between;
            align-items: center; gap: 8px; border-radius: 6px;
            padding: 6px 10px; margin-bottom: 8px; }
+.qs-valid { background: #e8f5e9; border: 1px solid #66bb6a;
+            border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
 .qs-mode-inspect { background: #eceff1; border: 1px solid #cfd8dc; }
 .qs-mode-edit { background: #e8f5e9; border: 1px solid #66bb6a; }
 .qs-warning { background: #fff8e1; border: 1px solid #ffb300;

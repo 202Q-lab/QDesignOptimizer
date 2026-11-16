@@ -115,11 +115,6 @@ def test_the_qdo_backend_records_only_the_tuned_design_variable(tmp_path):
     try:
         (project,) = workspace.projects.values()
         job_id = project.add("R1.frequency", save=True)
-        folder = project.queue.folder(job_id)
-        text = (folder / "job.yaml").read_text(encoding="utf-8")
-        (folder / "job.yaml").write_text(
-            text.replace("seconds: 5", "seconds: 0"), encoding="utf-8"
-        )
         assert Runner(workspace).run().status == st.FINISHED
         record = read_meta(root / "design_variables.json")
         # The frequency study's target tunes the length; the coupling
@@ -131,7 +126,7 @@ def test_the_qdo_backend_records_only_the_tuned_design_variable(tmp_path):
         # What produced it: the simulation, and the target it chased.
         assert latest["simulation"]["kind"] == "eigenmode"
         assert latest["simulation"]["runs"] == ["HFSS eigenmode"]
-        assert latest["settings"]["seconds"] == 0
+        assert latest["settings"] == {"iterations": 3}
         (target,) = latest["target"]
         assert target["parameter"] == "resonator_R1_freq"
         assert target["type"] == "freq"

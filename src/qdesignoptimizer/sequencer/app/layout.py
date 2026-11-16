@@ -9,6 +9,9 @@ from dash import dcc, html
 
 from . import form_layout, theme
 
+#: The project picker's last entry: opens the connected folders.
+CONNECT = "__connect__"
+
 POLL_MS = 2000
 
 
@@ -42,6 +45,13 @@ def page() -> html.Div:
             # edits: the warning asks to stay or discard them.
             dcc.Store(id="pending-select"),
             dcc.Store(id="message"),
+            # The project picked last (the picker's connect entry puts it
+            # back).
+            dcc.Store(id="project-last"),
+            # Clears a note (not an error) a few seconds after it shows.
+            dcc.Interval(
+                id="message-timer", interval=4000, max_intervals=1, disabled=True
+            ),
             # Written by assets/queue_drag.js: the order after a drop, and
             # whether a drag is under way (the refresh pauses then).
             dcc.Store(id="drag-order"),
@@ -59,7 +69,7 @@ def page() -> html.Div:
                         alt="202Q-LAB",
                         className="qs-logo",
                     ),
-                    html.Div(id="message-view", className="qs-message"),
+                    html.Div(id="message-view", className="qs-message", n_clicks=0),
                 ],
             ),
             html.Div(
@@ -115,12 +125,6 @@ def _queue_area() -> Any:
                         "the runner will, and list what would stop one; no "
                         "solve",
                     ),
-                    html.Button(
-                        "Reload catalog",
-                        id="btn-reload",
-                        className="qs-btn",
-                        title="read the templates and the adapter again",
-                    ),
                 ],
             ),
             html.H3("Queue", className="qs-h"),
@@ -168,15 +172,23 @@ def _project_area() -> Any:
                 style={"borderBottom": "none", "margin": "0"},
                 children=[
                     _area_head(
-                        "Project",
+                        "Projects",
                         "one project at a time: its templates and campaigns",
                     ),
-                    html.Button(
-                        "+ Connected project folders",
-                        id="btn-connected",
-                        className="qs-btn qs-btn-small",
-                        title="connect a project folder, or disconnect one; "
-                        "remembered for the next start",
+                    html.Div(
+                        className="qs-bar",
+                        style={"margin": "0"},
+                        children=[
+                            html.Button(
+                                "Reload templates",
+                                id="btn-reload",
+                                className="qs-btn qs-btn-small",
+                                title="read the templates, study sequences "
+                                "and adapter (sequencer.py and what it "
+                                "imports) of every project again: after "
+                                "editing them outside the GUI",
+                            ),
+                        ],
                     ),
                 ],
             ),
@@ -185,6 +197,19 @@ def _project_area() -> Any:
                 className="qs-inset",
                 style={"display": "none"},
                 children=[
+                    html.Div(
+                        className="qs-navhead",
+                        style={"margin": "0 0 4px"},
+                        children=[
+                            html.B("Connected project folders"),
+                            html.Button(
+                                "\u2715",
+                                id="btn-connect-close",
+                                className="qs-icon",
+                                title="close",
+                            ),
+                        ],
+                    ),
                     html.Div(id="connected-list"),
                     html.Div(
                         className="qs-bar",
@@ -272,6 +297,31 @@ def _editor_area() -> Any:
                 "a study is inspected (read only) until you press Edit",
             ),
             html.Div(
+                "Pick a study in the queue, on hold or completed to inspect "
+                "it, or make a new one in the project and campaign picked on "
+                "the left.",
+                className="qs-muted",
+            ),
+            html.Div(
+                className="qs-new-buttons",
+                children=[
+                    html.Button(
+                        "+ New blank study",
+                        id="btn-open-new-blank",
+                        className="qs-btn qs-btn-large",
+                        title="a MiniStudy from scratch, in the project "
+                        "and campaign picked on the left",
+                    ),
+                    html.Button(
+                        "+ New study from template",
+                        id="btn-open-new-fromtpl",
+                        className="qs-btn qs-btn-large qs-btn-primary",
+                        title="a copy of one of the project's study "
+                        "templates, in the campaign picked on the left",
+                    ),
+                ],
+            ),
+            html.Div(
                 id="unsaved-warning",
                 className="qs-warning",
                 style={"display": "none"},
@@ -299,6 +349,7 @@ def _editor_area() -> Any:
             # a start takes seconds (the worker imports the backend), and
             # the old one must not look like the new one.
             dcc.Loading(html.Div(id="details"), type="dot", delay_show=300),
+            dcc.Loading(html.Div(id="validate-view"), type="dot"),
             dcc.Loading(html.Div(id="preview-view"), type="dot"),
             html.Pre(id="inspect", className="qs-pre", style={"display": "none"}),
         ],
@@ -680,22 +731,34 @@ def details(data: dict | None, words: dict, editing: bool = False) -> Any:
     """The selected study: its job.yaml fields and its files, inspected
     (read only) or, for a study not run yet, ``editing``."""
     if not data:
-        return html.Div(
-            "Pick a study in the queue, on hold or completed to inspect it.",
-            className="qs-muted",
-        )
+        return html.Div()  # the hint and the New buttons are above
     can_edit = data["kind"] in ("queue", "hold")
     editable = can_edit and editing
     job = data.get("job") or {}
     task_word = words.get("task", "task")
     head = [
-        html.H3(
-            (
-                f"{data['key'].rsplit('/', 1)[-1]} (on hold)"
-                if data["kind"] == "hold"
-                else data["key"]
-            ),
-            style={"margin": "0 0 2px", "wordBreak": "break-all"},
+        html.Div(
+            className="qs-bar",
+            style={"margin": "0 0 2px", "flexWrap": "nowrap"},
+            children=[
+                html.H3(
+                    (
+                        f"{data['key'].rsplit('/', 1)[-1]} (on hold)"
+                        if data["kind"] == "hold"
+                        else data["key"]
+                    ),
+                    style={"margin": "0", "wordBreak": "break-all"},
+                    title=data.get("folder", ""),
+                ),
+                html.Button(
+                    "📂 Open folder",
+                    id="btn-open-folder",
+                    className="qs-btn qs-btn-small",
+                    style={"whiteSpace": "nowrap"},
+                    title="open the study's folder in Explorer: "
+                    + data.get("folder", ""),
+                ),
+            ],
         ),
         html.Div(
             f"{task_word} {job.get(task_word, job.get('task', ''))}"
@@ -762,14 +825,27 @@ def details(data: dict | None, words: dict, editing: bool = False) -> Any:
                 title="the study as the runner will read it",
             )
         )
+    if can_edit:
+        buttons.append(
+            html.Button(
+                "Validate",
+                id="btn-validate",
+                className="qs-btn qs-btn-primary",
+                title="check, as the runner will, that everything resolves: "
+                "its files read, its objects build, the names it gives are "
+                "in the design, its targets and values are there (no solve; "
+                "a few seconds)",
+            )
+        )
     buttons.append(
         html.Button(
-            "Picture",
+            "Generate pre-figures",
             id="btn-preview",
             className="qs-btn",
-            title="draw only the components this study simulates, with "
-            "the airbridges the solve adds (builds the design the first "
-            "time: a few seconds)",
+            title="draw what each solver run of this study simulates (its "
+            "components, with the airbridges the solve adds), the chip "
+            "built with the design variables it would fetch now (a few "
+            "seconds)",
         )
     )
     task = str(job.get(words.get("task", "task"), job.get("task", "")))
@@ -1214,12 +1290,35 @@ def template_view(data: dict) -> Any:
             ),
             html.Pre(data.get("summary") or "", className="qs-pre qs-light"),
             _new_study_bar(data.get("campaigns") or [], data["key"]),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.Label("rename to"),
+                    dcc.Input(
+                        id="tpl-rename-name",
+                        value=data["key"].rpartition(".")[2].rpartition("/")[2],
+                        className="qs-input",
+                        style={"width": "200px"},
+                    ),
+                    html.Button(
+                        "Rename",
+                        id="btn-tpl-rename",
+                        className="qs-btn",
+                        title="rename its file in ministudies/; studies "
+                        "already made from it keep their own copy",
+                    ),
+                ],
+            ),
         ]
     )
 
 
 def _new_study_bar(
-    campaigns: list, task: str = "", campaign: str = "", template: bool = False
+    campaigns: list,
+    task: str = "",
+    campaign: str = "",
+    template: bool = False,
+    mode: str = "",
 ) -> Any:
     """Its campaign, where it goes (on hold or into the queue) and the
     button that makes it. ``template``: the start of a study template,
@@ -1268,17 +1367,26 @@ def _new_study_bar(
                 className="qs-btn qs-btn-primary",
             ),
             dcc.Store(id="new-study-task", data=task),
+            # "template": one must be picked (+ New study from template).
+            dcc.Store(id="new-study-mode", data=mode),
         ],
     )
 
 
 def new_study_view(
-    snap: dict, project: str = "", campaign: str = "", template: bool = False
+    snap: dict,
+    project: str = "",
+    campaign: str = "",
+    template: bool = False,
+    mode: str = "",
 ) -> Any:
     """+ New study: pick a template, or name a blank one (in ``project``
     when several are open), in ``campaign`` unless changed here, on hold
     or straight into the queue. ``template``: + New study template, which
-    starts as a study on hold, saved as a template once edited."""
+    starts as a study on hold, saved as a template once edited. ``mode``
+    ``blank`` or ``template`` shows only that way of making it (the
+    Study editor's two New buttons); "" offers both."""
+    hidden = {"display": "none"}
     multi = bool(snap.get("multi"))
     tasks = [
         c
@@ -1293,7 +1401,15 @@ def new_study_view(
     return html.Div(
         [
             html.H3(
-                "New study template" if template else "New study", className="qs-h"
+                (
+                    "New study template"
+                    if template
+                    else {
+                        "blank": "New blank study",
+                        "template": "New study from template",
+                    }.get(mode, "New study")
+                ),
+                className="qs-h",
             ),
             html.Div(
                 (
@@ -1308,22 +1424,28 @@ def new_study_view(
             ),
             html.Div(
                 className="qs-frow",
+                style=hidden if mode == "blank" else {},
                 children=[
-                    html.Label("from template"),
+                    html.Label("template"),
                     dcc.Dropdown(
                         id="new-study-template",
                         options=[
                             {"label": f"{t['label']} ({t['key']})", "value": t["key"]}
                             for t in tasks
                         ],
-                        placeholder="blank: a MiniStudy from scratch",
+                        placeholder=(
+                            "pick one of the project's study templates"
+                            if mode == "template"
+                            else "blank: a MiniStudy from scratch"
+                        ),
                     ),
                 ],
             ),
             html.Div(
                 className="qs-frow",
+                style=hidden if mode == "template" else {},
                 children=[
-                    html.Label("name (blank study)"),
+                    html.Label("name" if mode == "blank" else "name (blank study)"),
                     dcc.Input(
                         id="new-study-name",
                         className="qs-input",
@@ -1331,7 +1453,9 @@ def new_study_view(
                     ),
                 ],
             ),
-            _new_study_bar(campaigns, campaign=campaign or "", template=template),
+            _new_study_bar(
+                campaigns, campaign=campaign or "", template=template, mode=mode
+            ),
         ]
     )
 
@@ -1444,7 +1568,6 @@ def sequence_editor(view: dict) -> Any:
     """A study sequence template: its name and file, defaults for every
     study, and the studies in order. Saved as study_sequences/<file>.yaml."""
     d = view.get("defaults") or {}
-    locked = not view.get("new") and not view.get("from_code")
 
     def row(label, child):
         return html.Div(className="qs-frow", children=[html.Label(label), child])
@@ -1471,11 +1594,14 @@ def sequence_editor(view: dict) -> Any:
                 else None
             ),
             row(
-                "file name",
+                (
+                    "file name"
+                    if view.get("new") or view.get("from_code")
+                    else "file name (change it and save to rename)"
+                ),
                 dcc.Input(
                     id={"type": "seq", "name": "key"},
                     value="" if view.get("from_code") else view.get("key", ""),
-                    disabled=locked,
                     className="qs-input",
                     placeholder="tune_Q2 (saved as study_sequences/tune_Q2.yaml)",
                 ),

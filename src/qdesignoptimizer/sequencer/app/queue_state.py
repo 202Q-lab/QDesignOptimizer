@@ -41,7 +41,10 @@ from ..engine.workspace import Workspace, find_adapters, open_workspace, user_ho
 from . import forms
 
 #: What the page says with no project connected.
-NO_PROJECT = "no project folder is connected: + Connected project folders"
+NO_PROJECT = (
+    "no project folder is connected: pick + Connect or disconnect project "
+    "folders in the Project area"
+)
 
 
 def repo_label(folder: str | Path) -> str:
@@ -617,13 +620,8 @@ class Bridge:
         except OSError:
             return None
 
-    def details(self, kind: str, key: str) -> dict[str, Any]:
-        """One study's files and record, for the details pane.
-
-        Args:
-            kind: ``queue`` (a queued id) or ``completed`` (a folder).
-            key: The id or the folder name.
-        """
+    def _study_folder(self, kind: str, key: str) -> tuple[Any, Path]:
+        """The project and the folder of a queued, held or completed study."""
         project, local = self._study(key)
         if kind in ("queue", "hold"):
             folder = project.queue.folder(local)
@@ -631,6 +629,27 @@ class Bridge:
             folder = project.queue.completed_dir / local
         if not folder.is_dir():
             raise GuiError(f"{key} is no longer there")
+        return project, folder
+
+    def open_folder(self, kind: str, key: str) -> Path:
+        """Open a study's folder in the file browser of the machine the
+        GUI runs on (Explorer on Windows)."""
+        _, folder = self._study_folder(kind, key)
+        try:
+            open_in_file_browser(folder)
+        except OSError as exc:
+            raise GuiError(f"could not open {folder}: {exc}") from exc
+        return folder
+
+    def details(self, kind: str, key: str) -> dict[str, Any]:
+        """One study's files and record, for the details pane.
+
+        Args:
+            kind: ``queue`` (a queued id) or ``completed`` (a folder).
+            key: The id or the folder name.
+        """
+        project, folder = self._study_folder(kind, key)
+        local = self._study(key)[1]
         specs = project.backend.files()
         campaign = _campaign_of(project, folder)
         files = []
@@ -786,10 +805,10 @@ class Bridge:
                 project, local = self._study(job_id)
             else:
                 project, local = self.workspace.locate(job_id)
-            dest = project.queue.remove(local)
+            project.queue.remove(local)  # kept in out/removed/
         except (QueueError, OSError) as exc:
             raise GuiError(str(exc)) from exc
-        return f"removed {job_id} (kept in {dest.parent.name}/{dest.name})"
+        return f"removed {job_id}"
 
     def save_as_template(self, kind: str, key: str, name: str) -> str:
         """Write a queued or completed study's MiniStudy as a template
@@ -1236,10 +1255,16 @@ class Bridge:
         }
 
     def save_sequence(
-        self, key: str, form: dict, overwrite: bool, project: str = ""
+        self,
+        key: str,
+        form: dict,
+        overwrite: bool,
+        project: str = "",
+        rename_from: str = "",
     ) -> str:
         """Write a study sequence template from the editor's ``form``
-        (``sequence_view``'s shape). Returns what was written."""
+        (``sequence_view``'s shape), first renaming the file of
+        ``rename_from`` to ``key``. Returns what was written."""
         target = self._project_for(project)
         words = target.words
         try:
@@ -1281,11 +1306,16 @@ class Bridge:
         raw.update(keep.get("top") or {})
         raw["defaults"] = {**defaults, **(keep.get("defaults") or {})}
         raw["studies"] = studies
+        renamed = ""
         try:
+            if rename_from and rename_from != key:
+                target.rename_sequence(rename_from, key)
+                renamed = f"renamed {rename_from}.yaml to {key}.yaml; "
+                overwrite = True
             path = target.save_sequence(key, raw, overwrite=overwrite)
         except QueueError as exc:
-            raise GuiError(str(exc)) from exc
-        return f"saved {_relative(target, path)}"
+            raise GuiError(renamed + str(exc)) from exc
+        return f"{renamed}saved {_relative(target, path)}"
 
     def campaign_view(self, key: str, project: str = "") -> dict[str, Any]:
         """A campaign for the editor: its README, the store its studies
@@ -1321,9 +1351,9 @@ class Bridge:
         }
 
     def preview(self, kind: str, key: str) -> list[dict[str, Any]]:
-        """Pictures of what a study simulates, one per solver run (its
-        components and the airbridges that solve adds), for the details
-        pane."""
+        """The pre-figures: what a study simulates, one picture per solver
+        run (its components and the airbridges that solve adds), drawn
+        with the design variables it would fetch now."""
         project, local = self._study(key)
         hook = getattr(project.backend, "preview", None)
         if hook is None:
@@ -1333,10 +1363,45 @@ class Bridge:
             if kind in ("queue", "hold")
             else project.queue.completed_dir / local
         )
+        campaign = ""
+        if kind in ("queue", "hold"):
+            try:
+                campaign = load_job(folder, project.words).campaign or ""
+            except (JobError, OSError):
+                campaign = ""
         try:
-            return hook(folder)
+            return hook(folder, campaign=campaign or None)
         except Exception as exc:  # noqa: BLE001 -- shown to the user
             raise GuiError(f"cannot draw it: {type(exc).__name__}: {exc}") from exc
+
+    def validate(self, key: str) -> list[str]:
+        """Everything that would stop a queued or held study, checked as
+        the runner will: its files read, its objects build, the names it
+        gives are in the design, its targets and values resolve. No
+        solve. Returns the problems ([] when it is ready)."""
+        try:
+            return self._deep_check(key)
+        except (QueueError, JobError, OSError) as exc:
+            raise GuiError(str(exc)) from exc
+
+    def rename_template(self, key: str, new_name: str) -> str:
+        """Rename a study template (its file). Returns the new catalog key
+        of the study it now makes for the same subsystem."""
+        try:
+            project, local = self.workspace.locate_task(key)
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        hook = getattr(project.backend, "rename_template", None)
+        if hook is None:
+            raise GuiError("this backend cannot rename its templates")
+        try:
+            hook(local, new_name)
+        except Exception as exc:  # noqa: BLE001 -- shown to the user
+            raise GuiError(str(exc)) from exc
+        self._deep.clear()
+        subject = local.split(".", 1)[0] if "." in local else ""
+        new_local = f"{subject}.{new_name.strip()}" if subject else new_name.strip()
+        return self.workspace.key(self.workspace.name_of(project), new_local)
 
     def check_all(self) -> dict[str, list[str]]:
         """Every queued study's problems, objects rebuilt (no solve)."""
@@ -1411,6 +1476,15 @@ class Bridge:
             f"stop requested: {runner.current or 'the current study'} "
             f"finishes first"
         )
+
+
+def open_in_file_browser(folder: Path) -> None:
+    """Show ``folder`` in the system's file browser."""
+    if sys.platform == "win32":
+        os.startfile(folder)  # type: ignore[attr-defined]  # pylint: disable=no-member
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.Popen([opener, str(folder)])  # pylint: disable=consider-using-with
 
 
 def _folder_of(ref: str) -> Path:

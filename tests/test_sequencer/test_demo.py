@@ -3,7 +3,7 @@ tutorials/example_simulation_sequencer/demo/."""
 
 from pathlib import Path
 
-from qdesignoptimizer.sequencer.backends.demo import SOLVE_SECONDS, DemoBackend
+from qdesignoptimizer.sequencer.backends.demo import DemoBackend
 from qdesignoptimizer.sequencer.engine import state as st
 from qdesignoptimizer.sequencer.engine.project import Project
 from qdesignoptimizer.sequencer.engine.runner import Runner
@@ -32,14 +32,7 @@ def test_a_demo_sequence_runs_and_writes_back(tmp_path):
         "R2.linewidth",
     }
     ids = project.add_sequence(catalog.sequence("tune_R1"))
-    assert project.job(ids[0]).settings == {"seconds": SOLVE_SECONDS}
-    for job_id in ids:  # no waiting in a test
-        folder = project.queue.folder(job_id)
-        text = (folder / "job.yaml").read_text(encoding="utf-8")
-        (folder / "job.yaml").write_text(
-            text.replace(f"seconds: {SOLVE_SECONDS}", "seconds: 0"),
-            encoding="utf-8",
-        )
+    assert project.job(ids[0]).settings == {}  # no waiting: conftest
     assert Runner(project).run().status == st.FINISHED
     assert project.backend.store_values()["R1_value"] == 1.0
 
@@ -67,11 +60,6 @@ def test_the_qdo_demo_runs_a_sequence_on_the_dummy_solver(tmp_path):
         assert {t.key for t in catalog.tasks} >= {"R1.frequency"}
         ids = project.add_sequence(catalog.sequence("tune_R1"))
         for job_id in ids:
-            folder = project.queue.folder(job_id)
-            text = (folder / "job.yaml").read_text(encoding="utf-8")
-            (folder / "job.yaml").write_text(
-                text.replace("seconds: 5", "seconds: 0"), encoding="utf-8"
-            )
             assert project.problems(job_id, deep=True) == []
         final = Runner(workspace).run()
         assert final.status == st.FINISHED, final.message
