@@ -228,8 +228,8 @@ class Project:
 
     def need_state(self, need: str) -> str:
         """Where a needed study stands: ``done`` (a successful run, of it
-        or of a requeued copy ``<id>_rN``), ``queued``, ``hold``,
-        ``failed`` (its runs all failed, none queued again) or
+        or of a requeued copy ``<id>_rN``), ``queued``, ``running``,
+        ``hold``, ``failed`` (its runs all failed, none queued again) or
         ``missing``."""
         runs = self.runs_of(need)
         if any(st.result_of(p).get("status") == st.DONE for p in runs):
@@ -250,13 +250,21 @@ class Project:
         )
 
     def pending_state(self, job_id: str) -> str:
-        """``queued`` (or running) or ``hold`` when the study or a
-        requeued copy of it is still to run; "" when none is."""
+        """``queued``, ``running`` or ``hold`` when the study or a
+        requeued copy of it is still to run or running; "" when none is.
+
+        A running study is already in ``completed/`` (its result says
+        ``running`` or ``committing``) but has not finished."""
         same = re.compile(re.escape(job_id) + r"(_r\d+)?$")
         if any(same.match(i) for i in self.queue.ids()) or any(
             same.match(i) for i in self.queue.claimed_ids()
         ):
             return "queued"
+        if any(
+            st.result_of(p).get("status") in (st.RUNNING, st.COMMITTING)
+            for p in self.runs_of(job_id)
+        ):
+            return "running"
         if any(same.match(i) for i in self.hold.ids()):
             return "hold"
         return ""

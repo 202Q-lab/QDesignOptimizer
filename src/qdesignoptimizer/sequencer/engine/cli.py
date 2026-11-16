@@ -174,7 +174,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(args_in)
 
     try:
-        workspace = open_workspace([args.project, *args.more])
+        # A runner keeps each project in a worker process, so that a
+        # change to its code is really loaded (a new worker) before the
+        # next study -- in-process, the adapter cannot be imported anew.
+        workspace = open_workspace(
+            [args.project, *args.more],
+            isolate=True if args.command == "run" else None,
+        )
     except (BackendError, WorkerError, QueueError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
@@ -265,7 +271,10 @@ def _command(args, workspace: Workspace) -> int:
                 return 1
             configure_console_logging()
             final = Runner(workspace).run()
-            print(f"runner {final.status}: {final.message}")
+            print(
+                f"runner {final.status}"
+                + (f": {final.message}" if final.message else "")
+            )
             failed = list(final.failed)
             if failed:
                 # on_failure: continue ran on past them; still a failure.
@@ -491,7 +500,7 @@ def _wait(args, workspace: Workspace) -> int:
     while pending:
         for key, (project, local) in list(pending.items()):
             where = project.pending_state(local)
-            if where == "queued":
+            if where in ("queued", "running"):
                 continue
             del pending[key]
             if where == "hold":
@@ -535,11 +544,22 @@ def _print_run(workspace: Workspace, project, folder: Path) -> bool:
         ("files", "files"),
     ):
         value = result.get(key)
+        if key == "files" and value:
+            # Under the folder just printed: their names say enough.
+            value = [_under(folder, f) for f in value]
         if value:
             shown = value if isinstance(value, str) else json.dumps(value)
             print(f"  {label}: {shown}")
     sys.stdout.flush()
     return status == st.DONE
+
+
+def _under(folder: Path, file: str) -> str:
+    """A file's path relative to ``folder`` when it is inside it."""
+    try:
+        return Path(file).resolve().relative_to(folder.resolve()).as_posix()
+    except ValueError:
+        return str(file)
 
 
 def _locate_any(workspace: Workspace, key: str):

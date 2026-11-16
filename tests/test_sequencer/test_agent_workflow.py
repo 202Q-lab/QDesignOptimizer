@@ -177,3 +177,11 @@ def test_the_guide_ships_with_the_package(capsys):
     out = capsys.readouterr().out
     assert out.startswith("# Working the simulation sequencer as an agent")
     assert "wait <id>" in out and "--why" in out
+
+
+def test_wait_names_files_inside_the_run_folder(tmp_path):
+    inside = tmp_path / "run" / "plots" / "a.png"
+    assert cli._under(tmp_path / "run", str(inside)) == "plots/a.png"
+    assert cli._under(tmp_path / "run", str(tmp_path / "x.json")) == str(
+        tmp_path / "x.json"
+    )

@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from . import state as st
-from .job import JOB_FILE, Job, load_job, parse_completed
+from .job import JOB_FILE, Job, dump_yaml, load_job, parse_completed
 from .queue import INPUTS, QueueError, load_job_from
 
 DECISIONS_FILE = "code_decisions.json"
@@ -75,7 +75,11 @@ def code_hashes(project) -> dict[str, str]:
         # just now may change again under the same time and size.
         recent = time.time() - stat.st_mtime < 2.0
         if known is None or known[0] != stamp or recent:
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+            try:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+            except OSError:  # being saved, or held by a scanner: next time
+                out[str(path)] = "unreadable"
+                continue
             known = cache[str(path)] = (stamp, digest)
         out[str(path)] = known[1]
     return out
@@ -83,7 +87,11 @@ def code_hashes(project) -> dict[str, str]:
 
 def code_version(project) -> str:
     """One short hash of all of a project's code ("" when it names none)."""
-    hashes = code_hashes(project)
+    return version_of(code_hashes(project))
+
+
+def version_of(hashes: dict[str, str]) -> str:
+    """The short hash of a ``code_hashes`` result ("" for none)."""
     if not hashes:
         return ""
     text = "\n".join(f"{Path(k).name} {v}" for k, v in sorted(hashes.items()))
@@ -218,6 +226,7 @@ def _members(project, sequence: str) -> tuple[dict[int, tuple], list[str], dict]
     entries: dict[int, tuple] = {}
     queued: list[str] = []
     known: dict[str, int] = {}
+    unreadable: list[str] = []
 
     def take(job: Job, files: dict[str, str]) -> None:
         n = int((job.sequence or {}).get("entry") or 0)
@@ -229,8 +238,8 @@ def _members(project, sequence: str) -> tuple[dict[int, tuple], list[str], dict]
     for path in _runs(project, sequence):
         try:
             take(load_job_from(path / INPUTS, project.words), _files(path / INPUTS))
-        except Exception:  # noqa: BLE001 -- not part of the copy
-            continue
+        except Exception:  # noqa: BLE001 -- refused below, by name
+            unreadable.append(path.name)
     for source, still in ((project.hold, False), (project.queue, True)):
         for job_id in source.ids():
             if not job_id.startswith(prefix):
@@ -238,10 +247,18 @@ def _members(project, sequence: str) -> tuple[dict[int, tuple], list[str], dict]
             folder = source.folder(job_id)
             try:
                 take(load_job(folder, project.words), _files(folder))
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001 -- refused below, by name
+                unreadable.append(job_id)
                 continue
             if still:
                 queued.append(job_id)
+    if unreadable:
+        raise QueueError(
+            f"{sequence} cannot be restarted: "
+            + ", ".join(unreadable)
+            + " cannot be read (a job.yaml with problems, or a file that is "
+            "not text); fix or remove it first"
+        )
     return entries, queued, known
 
 
@@ -291,4 +308,30 @@ def restart(project, sequence: str) -> list[str]:
             project.park(job_id)
         except QueueError:
             pass  # taken by a runner meanwhile: it runs
+    _retarget_needs(project, sequence, {old: ids[n] for old, n in known.items()})
     return made
+
+
+def _retarget_needs(project, sequence: str, renamed: dict[str, str]) -> None:
+    """Point studies outside a restarted sequence that need one of its
+    studies at the new copy: the old one is on hold now and would keep
+    them waiting."""
+    prefix = (f"{sequence}-", *(f"{new.split('-', 1)[0]}-" for new in renamed.values()))
+    for source in (project.queue, project.hold):
+        for job_id in source.ids():
+            if job_id.startswith(prefix):
+                continue
+            try:
+                job = load_job(source.folder(job_id), project.words)
+            except Exception:  # noqa: BLE001 -- its own check reports it
+                continue
+            needs = [renamed.get(n, n) for n in job.needs]
+            if needs == job.needs:
+                continue
+            job.needs = needs
+            try:
+                source.write_file(
+                    job_id, JOB_FILE, dump_yaml(job.to_raw(project.words))
+                )
+            except QueueError:
+                pass  # taken by a runner meanwhile

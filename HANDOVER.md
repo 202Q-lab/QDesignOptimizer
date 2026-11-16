@@ -129,6 +129,15 @@ into the docs.
    queued/held files, needs remapped, the old rest parked). GUI:
    `Bridge._check_code` reloads per poll on change; the `code-seen`
    store clears the pre-figures.
+   After review: `run` always opens projects in worker processes
+   (`isolate=True`), so a reload really re-imports the adapter; the
+   runner records the hash it loaded, not the files as they are now. A
+   reload that fails makes the runner wait (until the files change
+   again; STOP ends it) and the GUI say so once. A running study (in
+   `completed/`, result `running`) is pending for `wait` and `needs`.
+   Restart refuses when a member cannot be read, and points studies
+   outside the sequence that needed one of its studies at the new copy.
+   Leases are written only into a folder that still exists.
    **Poll cost (2026-11-16)**: the GUI's 2 s snapshot keeps each queued
    or held study's row (parsed job.yaml, problems, warnings) with its
    files' modification times (`Bridge._row`), re-reading only changed

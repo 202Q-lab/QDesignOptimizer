@@ -15,6 +15,7 @@ copies and the GUI's change detection all skip it.
 
 from __future__ import annotations
 
+import json
 import os
 import time
 from pathlib import Path
@@ -65,10 +66,30 @@ def take_lease(folder: Path, by: str, seconds: float = LEASE_S) -> None:
         if held and held.get("by") != by:
             raise LeaseHeld(f"being edited by {describe(held)}")
         since = held.get("since") if held else st.now()
-        st.write_json(
-            folder / LEASE_FILE,
+        _write_in(
+            folder,
             {"by": by, "since": since, "until": time.time() + seconds},
         )
+
+
+def _write_in(folder: Path, data: dict) -> None:
+    """Write the lease file into ``folder`` -- only if it is still there.
+    (``state.write_json`` would make the folder anew, and a runner that
+    just took the study could not put it back next to that.)
+
+    Raises:
+        FileNotFoundError: If the folder is gone.
+    """
+    tmp = folder / f".{LEASE_FILE}.tmp"
+    tmp.write_text(json.dumps(data), encoding="utf-8")  # no folder: raises
+    for attempt in range(40):
+        try:
+            os.replace(tmp, folder / LEASE_FILE)
+            return
+        except PermissionError:  # a reader has it open this instant
+            if attempt == 39:
+                raise
+            time.sleep(0.05)
 
 
 def release_lease(folder: Path, by: str) -> None:

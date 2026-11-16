@@ -373,6 +373,8 @@ class Bridge:
             raise GuiError(
                 f"{key} is {exc}: Edit is blocked until they are done"
             ) from exc
+        except st.LockHeld as exc:
+            raise GuiError("busy a moment; press Edit again") from exc
         except OSError as exc:
             raise GuiError(f"{key} is no longer there") from exc
         if not self._editing or self._editing[0] != key:
@@ -494,7 +496,12 @@ class Bridge:
         first = next(iter(workspace.projects.values()))
         words = first.words
         catalogs = {name: p.backend.catalog() for name, p in workspace.projects.items()}
-        versions = {name: code_version(p) for name, p in workspace.projects.items()}
+        versions = {}
+        for name, p in workspace.projects.items():
+            try:
+                versions[name] = code_version(p)
+            except Exception:  # noqa: BLE001 -- no tag rather than no page
+                versions[name] = ""
         held_for: dict[tuple[str, str], str] = {}
 
         def code_hold(name: str, project, job) -> str:
@@ -738,15 +745,20 @@ class Bridge:
             if before is None or before == now:
                 continue
             hook = getattr(project.backend, "reload", None)
-            if hook is not None:
-                try:
+            files = ", ".join(changed_files(before, now))
+            try:
+                if hook is not None:
                     hook()
-                except Exception:  # noqa: BLE001 -- shown, next poll tries
-                    self._code_seen[name] = before
-                    continue
+            except Exception as exc:  # noqa: BLE001 -- shown; tried again
+                # once the files change again, not every poll.
+                self._code_note = (
+                    f"{files} changed but does not load "
+                    f"({type(exc).__name__}: {exc})"
+                )
+                self._code_rev += 1
+                continue
             self._forget()
             self._code_rev += 1
-            files = ", ".join(changed_files(before, now))
             self._code_note = (
                 f"{files} changed: reloaded at {time.strftime('%H:%M:%S')}"
                 + ("" if self.workspace.single else f" ({name})")
@@ -1033,16 +1045,17 @@ class Bridge:
 
     def move(self, job_id: str, delta: int) -> None:
         """Move a queued study up (-1) or down (+1)."""
-        ids = self.workspace.ids()
-        if job_id not in ids:
-            raise GuiError(f"{job_id} is no longer queued")
-        j = ids.index(job_id) + delta
-        if not 0 <= j < len(ids):
-            raise GuiError("already at the end")
-        try:  # read and written under one lock: a move from elsewhere stays
-            self.workspace.move(job_id, to=j + 1)
-        except QueueError as exc:
-            raise GuiError(str(exc)) from exc
+        with st.order_guard():  # read and written under one lock
+            ids = self.workspace.ids()
+            if job_id not in ids:
+                raise GuiError(f"{job_id} is no longer queued")
+            j = ids.index(job_id) + delta
+            if not 0 <= j < len(ids):
+                raise GuiError("already at the end")
+            try:
+                self.workspace.move(job_id, to=j + 1)
+            except QueueError as exc:
+                raise GuiError(str(exc)) from exc
 
     def remove(self, job_id: str) -> str:
         """Take a study out of the queue or off hold (moved to

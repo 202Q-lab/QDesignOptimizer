@@ -68,6 +68,7 @@ from .code_change import (
     code_version,
     hold_reason,
     sequence_of,
+    version_of,
 )
 from .job import JobError, load_job, parse_completed
 from .lease import describe, read_lease
@@ -102,6 +103,7 @@ class Runner:
         self._passed: set[tuple[str, str]] = set()  # reasons said once
         self._waiting = ""  # what it waits for, as last said
         self._code: dict[str, dict[str, str]] = {}  # code loaded, per project
+        self._broken: dict[str, dict[str, str]] = {}  # code that did not load
         # The study being handled (set per study by _loop).
         self.project = next(iter(self.workspace.projects.values()))
 
@@ -418,23 +420,38 @@ class Runner:
         )
         return None, bool(edited)
 
-    def _reload_if_changed(self, project) -> None:
+    def _reload_if_changed(self, project) -> bool:
         """Reload a project's code before its next study if it changed
-        since it was loaded."""
+        since it was loaded. False if it does not load: nothing of that
+        project may run until it does (``self.state.message`` says why);
+        it is tried again once the files change again."""
         name = self.workspace.name_of(project)
         now = code_hashes(project)
         before = self._code.setdefault(name, now)
         if now == before:
-            return
+            return True
+        if self._broken.get(name) == now:
+            return False
         hook = getattr(project.backend, "reload", None)
-        if hook is not None:
-            hook()
+        try:
+            if hook is not None:
+                hook()
+        except Exception as exc:  # noqa: BLE001 -- a typo must not end the runner
+            self._broken[name] = now
+            self.state.message = (
+                f"{name}: the changed code does not load "
+                f"({type(exc).__name__}: {exc}); waiting until it is fixed"
+            )
+            log.error(self.state.message)
+            return False
+        self._broken.pop(name, None)
         self._code[name] = now
         log.info(
             "%s: the code changed (%s); reloaded",
             name,
             ", ".join(changed_files(before, now)),
         )
+        return True
 
     def _say_once(self, key: str, text: str) -> None:
         """Log why a study was passed over, once per reason."""
@@ -477,7 +494,12 @@ class Runner:
                 self._waiting = ""
                 self.state.message = ""
             self.project, job_id = self.workspace.locate(key)
-            self._reload_if_changed(self.project)
+            if not self._reload_if_changed(self.project):
+                if self.state.message != self._waiting:
+                    self._waiting = self.state.message
+                    self.state.save(out)
+                time.sleep(WAIT_S)
+                continue
             shown = key
             # Claim first, check second: from here on the GUI cannot
             # edit the folder, so the study that runs is the one checked.
@@ -538,7 +560,7 @@ class Runner:
             self.workspace.name_of(self.project), folder.name
         )
         self.state.save(out)
-        version = code_version(self.project)
+        version = version_of(self._code.get(self.workspace.name_of(self.project), {}))
         record = {
             "id": job_id,
             self.backend.words.task: job.task,

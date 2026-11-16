@@ -1204,7 +1204,7 @@ def details_problems(snap: dict, selected: dict | None) -> Any:
     if row is None:
         return html.Div(
             (
-                "No longer in the queue (it may have started)."
+                "No longer in the queue: it started, or was put on hold " "or removed."
                 if kind == "queue"
                 else "No longer on hold (queued or removed)."
             ),
