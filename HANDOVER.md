@@ -97,13 +97,16 @@ into the docs.
    `Bridge.keep_editing`); `Bridge.begin_edit` refuses another's lease;
    `_write` refuses a save over a live lease or files changed since Edit
    (`_check_not_overtaken`). CLI `write` takes a 60 s lease around one
-   file. The runner (`Runner._next`) passes over a study with a live
-   lease and comes back to it, unless its job.yaml says
-   `needed_by_next: true`: then it waits (`WAIT_S`), running nothing
-   past it; with only leased studies left it waits too; STOP ends a wait.
-   `add_sequence` sets `needed_by_next` on every entry that writes back
-   (`save`) and is not the last, unless the entry says otherwise; the GUI
-   form has a "needed by the next study" box.
+   file. **Needs**: a study lists the ids it needs (`job.needs`);
+   `Project.need_state` says done / queued / hold / failed / missing (a
+   successful run of the id or of a requeued `<id>_rN`). `Runner._next`
+   starts the first study neither leased nor with unmet needs; with none,
+   it waits (`WAIT_S`) if something is leased, else finishes with a
+   message naming what waits for what. Missing or failed needs are a
+   problem (`Project._problems`); queued or held ones are not. A
+   sequence entry's `needs` are entry numbers; default: the earlier
+   entries with `save`. GUI: the "needs" field and a "waits for" tag
+   (`_waits_for`, read every poll, outside the row cache).
    **Poll cost (2026-11-16)**: the GUI's 2 s snapshot keeps each queued
    or held study's row (parsed job.yaml, problems, warnings) with its
    files' modification times (`Bridge._row`), re-reading only changed

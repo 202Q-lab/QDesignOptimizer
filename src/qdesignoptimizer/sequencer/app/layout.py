@@ -469,6 +469,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
                             html.Span(row["id"], className="qs-small"),
                             *_campaign_tag(row.get("campaign")),
                             *_editing_tag(row),
+                            *_waits_tag(row),
                         ],
                         id={"type": "qrow", "index": row["id"]},
                         className="qs-pick",
@@ -566,6 +567,7 @@ def held_table(snap: dict, selected: dict | None) -> Any:
                             ),
                             *_campaign_tag(row.get("campaign")),
                             *_editing_tag(row),
+                            *_waits_tag(row),
                         ],
                         id={"type": "hrow", "index": row["id"]},
                         className="qs-pick",
@@ -670,6 +672,21 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
     return html.Table(
         className="qs-table", children=[html.Thead(head), html.Tbody(body)]
     )
+
+
+def _waits_tag(row: dict) -> list:
+    """The studies it needs that have not run successfully yet."""
+    if not row.get("waits_for"):
+        return []
+    return [
+        html.Br(),
+        html.Span(
+            f"waits for {row['waits_for']}",
+            className="qs-tag qs-tag-waits",
+            title="it runs once these have run successfully; the studies "
+            "after it move up meanwhile",
+        ),
+    ]
 
 
 def _editing_tag(row: dict) -> list:
@@ -1010,25 +1027,17 @@ def _job_form(job: dict, keys=(), campaigns=None, disabled: bool = False) -> Any
                         value=["save"] if job.get("save") else [],
                         inline=True,
                     ),
-                    html.Span(
-                        dcc.Checklist(
-                            id={"type": "jf", "name": "needed_by_next"},
-                            options=[
-                                {
-                                    "label": " needed by the next study",
-                                    "value": "needed",
-                                    "disabled": disabled,
-                                }
-                            ],
-                            value=["needed"] if job.get("needed_by_next") else [],
-                            inline=True,
-                        ),
-                        title="the study after it uses what this one writes "
-                        "back: while this one is being edited the runner "
-                        "waits for it, instead of running the next ones "
-                        "first",
-                    ),
                 ],
+            ),
+            field(
+                "needs (ids of studies that must have run first)",
+                dcc.Input(
+                    id={"type": "jf", "name": "needs"},
+                    value=", ".join(job.get("needs") or []),
+                    placeholder="none: it can run whenever its turn comes",
+                    style={"width": "100%"},
+                    disabled=disabled,
+                ),
             ),
             field(
                 "notes",
@@ -1130,6 +1139,18 @@ def details_problems(snap: dict, selected: dict | None) -> Any:
                 className="qs-warning",
             )
         )
+    if row.get("waits_for") and not row.get("problems"):
+        parts.append(
+            html.Div(
+                [
+                    html.B("Waits for "),
+                    row["waits_for"],
+                    ": it runs once they have run successfully; the studies "
+                    "after it move up meanwhile.",
+                ],
+                className="qs-warning",
+            )
+        )
     if row.get("problems"):
         parts.append(
             html.Div(
@@ -1159,7 +1180,7 @@ def job_fields(job: dict, keys=()) -> dict:
         "checks": ", ".join(job.get("checks") or []),
         "on_failure": job.get("on_failure", "abort"),
         "save": ["save"] if job.get("save") else [],
-        "needed_by_next": ["needed"] if job.get("needed_by_next") else [],
+        "needs": ", ".join(job.get("needs") or []),
         "notes": job.get("notes", ""),
         "campaign": job.get("campaign") or None,
     }

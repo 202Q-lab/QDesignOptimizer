@@ -47,7 +47,7 @@ _KEYS = {
     "checks",
     "save",
     "on_failure",
-    "needed_by_next",
+    "needs",
     "notes",
     "created",
     "generated_by",
@@ -77,10 +77,10 @@ class Job:
     checks: list[str] = field(default_factory=list)
     save: bool = False
     on_failure: str = "abort"
-    #: The study after it needs its result (a value it writes back): the
-    #: runner waits for it while it is being edited instead of skipping
-    #: it and running the next one first.
-    needed_by_next: bool = False
+    #: Ids of studies (same project) that must have run successfully
+    #: before this one starts -- it uses what they write back. Until
+    #: then the runner passes it over and runs the ones after it.
+    needs: list[str] = field(default_factory=list)
     notes: str = ""
     sequence: dict = field(default_factory=dict)
     #: The campaign it belongs to (``tuneup_chip/q1_readout``), "" for none.
@@ -106,8 +106,8 @@ class Job:
         out["checks"] = list(self.checks)
         out["save"] = bool(self.save)
         out["on_failure"] = self.on_failure
-        if self.needed_by_next:
-            out["needed_by_next"] = True
+        if self.needs:
+            out["needs"] = list(self.needs)
         out["notes"] = self.notes
         if self.created:
             out["created"] = self.created
@@ -184,10 +184,14 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
     if not isinstance(save, bool):
         problems.append(f"save must be true or false, not {save!r}")
         save = False
-    needed_by_next = raw.get("needed_by_next", False)
-    if not isinstance(needed_by_next, bool):
-        problems.append(f"needed_by_next must be true or false, not {needed_by_next!r}")
-        needed_by_next = False
+    needs = raw.get("needs") or []
+    if isinstance(needs, str):
+        needs = [needs]
+    if not isinstance(needs, list) or not all(isinstance(n, str) for n in needs):
+        problems.append(f"needs must be a list of study ids, not {needs!r}")
+        needs = []
+    if job_id in needs:
+        problems.append("a study cannot need itself")
     on_failure = raw.get("on_failure", "abort")
     if on_failure not in ON_FAILURE:
         problems.append(
@@ -211,7 +215,7 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
         checks=[str(c) for c in checks],
         save=save,
         on_failure=on_failure,
-        needed_by_next=needed_by_next,
+        needs=[str(n) for n in needs],
         notes=str(raw.get("notes") or ""),
         sequence=dict(sequence),
         campaign=campaign.replace("\\", "/").strip("/"),

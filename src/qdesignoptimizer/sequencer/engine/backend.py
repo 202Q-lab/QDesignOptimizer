@@ -70,9 +70,9 @@ class SequenceEntry:
     save: bool | None = None
     on_failure: str | None = None
     notes: str = ""
-    #: None: needed by the next study when it writes back (``save``) and
-    #: is not the sequence's last.
-    needed_by_next: bool | None = None
+    #: The earlier entries (1-based) whose results it needs. None: every
+    #: earlier entry that writes back (``save``).
+    needs: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True)

@@ -313,13 +313,19 @@ its next one.
   the GUI closes): the other side is refused, and the GUI tags the study
   "being edited by claude". A GUI save also checks that nothing changed
   the study since you pressed Edit, and refuses if something did.
-- The runner passes over a study being edited and runs the next one,
-  coming back to it once the edit is done -- unless the study is
-  *needed by the next study* (`needed_by_next: true` in its `job.yaml`,
-  the box of that name in the GUI): then it waits for the edit, running
-  nothing past it. A study sequence marks this itself on every study
-  that writes back and has studies after it (an entry can say
-  `needed_by_next: false`).
+- **What a study needs.** A study that uses what another one writes
+  back lists it: `needs: [<id>, ...]` in its `job.yaml` (the *needs*
+  field in the GUI, `add <study> --needs <id>` on the command line). The
+  runner starts the first study that may start; one whose needs have
+  not all run successfully (a requeued copy, `<id>_r2`, counts) is
+  passed over and the studies after it move up. So is one being edited;
+  it runs once the edit is done. With nothing left that may start but
+  something being edited, the runner waits for it; with nothing at all,
+  it finishes and says which study waits for what (a need on hold, or
+  failed). The queue tags such a study "waits for ...".
+- A study sequence fills `needs` in itself: each study needs the
+  earlier ones of its sequence that write back. An entry can say
+  otherwise by number: `needs: [1]`, or `needs: []` for none.
 - Read the results in `out/completed/<id>_<start>/` and the store's
   `design_variables.meta.json`.
 

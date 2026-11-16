@@ -2,6 +2,7 @@
 
     python -m qdesignoptimizer.sequencer <sequencer.py> list
     python -m qdesignoptimizer.sequencer <sequencer.py> add <study> [--settings JSON] [--campaign KEY]
+        [--needs ID ...] (studies that must have run successfully first)
     python -m qdesignoptimizer.sequencer <sequencer.py> sequence <file.yaml or key> [--campaign KEY]
     python -m qdesignoptimizer.sequencer <sequencer.py> campaign list
     python -m qdesignoptimizer.sequencer <sequencer.py> campaign new <key> [--question TEXT] [--shared]
@@ -69,6 +70,14 @@ def main(argv: list[str] | None = None) -> int:
     p_add.add_argument("task")
     p_add.add_argument("--settings", default="{}")
     p_add.add_argument("--campaign", default="", help="queue it in this campaign")
+    p_add.add_argument(
+        "--needs",
+        action="append",
+        default=[],
+        metavar="ID",
+        help="a study that must have run successfully first (repeatable); "
+        "until then the studies after it move up",
+    )
     p_sequence = sub.add_parser("sequence", help="queue every study of one")
     p_sequence.add_argument("sequence")
     p_sequence.add_argument(
@@ -148,6 +157,7 @@ def _command(args, workspace: Workspace) -> int:
                 json.loads(args.settings),
                 campaign=args.campaign,
                 hold=args.hold,
+                needs=args.needs,
             )
             if args.hold:
                 print(f"on hold: {workspace.key(workspace.name_of(project), job_id)}")

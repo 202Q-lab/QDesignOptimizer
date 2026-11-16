@@ -15,6 +15,7 @@ adapter's code. ``add_sequence`` queues every study of one.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ from .job import (
     completed_name,
     is_custom,
     load_job,
+    parse_completed,
     slug_name,
 )
 from .loading import load_backend
@@ -224,11 +226,46 @@ class Project:
         except Exception as exc:  # noqa: BLE001 -- reported as a problem
             return [f"cannot be checked: {type(exc).__name__}: {exc}"]
 
+    def need_state(self, need: str) -> str:
+        """Where a needed study stands: ``done`` (a successful run, of it
+        or of a requeued copy ``<id>_rN``), ``queued``, ``hold``,
+        ``failed`` (its runs all failed, none queued again) or
+        ``missing``."""
+        same = re.compile(re.escape(need) + r"(_r\d+)?$")
+        runs = [
+            p for p in self.queue.completed() if same.match(parse_completed(p.name)[0])
+        ]
+        if any(st.result_of(p).get("status") == st.DONE for p in runs):
+            return "done"
+        if any(same.match(i) for i in self.queue.ids()) or any(
+            same.match(i) for i in self.queue.claimed_ids()
+        ):
+            return "queued"
+        if any(same.match(i) for i in self.hold.ids()):
+            return "hold"
+        return "failed" if runs else "missing"
+
+    def unmet_needs(self, job: Job) -> dict[str, str]:
+        """The studies ``job`` needs that have not run successfully yet,
+        with where each stands (``need_state``)."""
+        out = {}
+        for need in job.needs:
+            where = self.need_state(need)
+            if where != "done":
+                out[need] = where
+        return out
+
     def _problems(self, folder: Path, deep: bool) -> list[str]:
         try:
             job = load_job(folder, self.words)
         except JobError as exc:
             return exc.problems
+        for need, where in self.unmet_needs(job).items():
+            # Queued or on hold: it can still run first. Not so these.
+            if where == "missing":
+                return [f"needs {need}, which is not queued, on hold or completed"]
+            if where == "failed":
+                return [f"needs {need}, whose runs failed; requeue it"]
         catalog = self.backend.catalog()
         problems = []
         if catalog.task(job.task) is None and not is_custom(job.task):
@@ -362,10 +399,12 @@ class Project:
         queue: FolderQueue | None = None,
         campaign: str = "",
         hold: bool = False,
+        needs: list[str] | None = None,
     ) -> str:
         """Generate one study and queue it. Returns its id.
 
         Args:
+            needs: Ids of studies it needs to have run first.
             queue: Where to put it; the project's own queue (or its hold
                 folder, with ``hold``) by default.
             campaign: The campaign it belongs to, "" for none.
@@ -408,6 +447,7 @@ class Project:
             campaign=campaign,
             created=st.now(),
             generated_by=generated_by,
+            needs=list(needs or []),
         )
         queue.add(job, files, self.words, position)
         return job_id
@@ -529,12 +569,20 @@ class Project:
                     checks=list(entry.checks or []),
                     save=bool(entry.save),
                     on_failure=entry.on_failure or "abort",
-                    # A study that writes back feeds the ones after it.
-                    needed_by_next=(
-                        entry.needed_by_next
-                        if entry.needed_by_next is not None
-                        else bool(entry.save) and n < len(spec.entries)
-                    ),
+                    # What it uses: by default every earlier study of the
+                    # sequence that writes back.
+                    needs=[
+                        ids[k - 1]
+                        for k in (
+                            entry.needs
+                            if entry.needs is not None
+                            else [
+                                k
+                                for k, e in enumerate(spec.entries[: n - 1], 1)
+                                if e.save
+                            ]
+                        )
+                    ],
                     notes=entry.notes,
                     sequence={"id": sequence_id, "name": spec.key, "entry": n},
                     campaign=campaign,

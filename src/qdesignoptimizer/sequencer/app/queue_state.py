@@ -522,6 +522,7 @@ class Bridge:
                     "problems": problems,
                     "warnings": warnings,
                     "editing": editing,
+                    "waits_for": _waits_for(project, job),
                 }
             )
         held = []
@@ -559,6 +560,7 @@ class Bridge:
                         "campaign": job.campaign,
                         "problems": problems,
                         "editing": editing,
+                        "waits_for": _waits_for(project, job),
                     }
                 )
         # Studies no longer queued or held: nothing to keep for them.
@@ -1633,6 +1635,19 @@ class Bridge:
 #: own files are unchanged: what it depends on outside its folder (the
 #: templates, a campaign, the store) is checked again this often.
 ROW_RECHECK_S = 30.0
+
+
+def _waits_for(project, job) -> str:
+    """The studies ``job`` needs that have not run successfully, with
+    where each stands (``r1_frequency (queued)``); "" for none. Read each
+    poll: it changes as other studies run, not as this one's files do."""
+    if not job.needs:
+        return ""
+    try:
+        unmet = project.unmet_needs(job)
+    except Exception:  # noqa: BLE001 -- a tag never breaks the page
+        return ""
+    return ", ".join(f"{n} ({w})" for n, w in unmet.items())
 
 
 #: Who the GUI is in a study's lease (``engine/lease.py``).

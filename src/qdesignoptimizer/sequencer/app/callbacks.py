@@ -572,7 +572,9 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 ],
                 "on_failure": form.get("on_failure") or "abort",
                 "save": bool(form.get("save")),
-                "needed_by_next": bool(form.get("needed_by_next")),
+                "needs": [
+                    n.strip() for n in (form.get("needs") or "").split(",") if n.strip()
+                ],
                 "notes": form.get("notes") or "",
                 "campaign": form.get("campaign") or "",
             }

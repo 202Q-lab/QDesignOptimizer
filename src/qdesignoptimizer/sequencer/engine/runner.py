@@ -25,12 +25,19 @@ The queue is re-read before every study, so an edit, a reorder or a new
 study made in the GUI while the runner works takes effect for every
 study not yet started. ``STOP`` ends it between studies.
 
-A study someone is editing (a live lease, ``lease.py``: open in Edit
-mode in the GUI, or being written from the command line) is skipped:
-the runner goes on with the next one and comes back to it once the edit
-is done. Unless it is ``needed_by_next`` -- the study after it needs
-what it writes back -- then the runner waits for it, running nothing
-past it. With nothing left but studies being edited, it waits too.
+The first study that may start runs; the others move up past one that
+may not yet:
+
+* one someone is editing (a live lease, ``lease.py``: open in Edit mode
+  in the GUI, or being written from the command line) -- it runs once
+  the edit is done;
+* one whose ``needs`` (studies it uses the results of) have not all run
+  successfully -- it runs once they have.
+
+With nothing that may start but something being edited, the runner
+waits for the edit. With nothing that may start and nothing being
+edited -- every study left needs one that is on hold, failed or gone --
+it finishes and says which wait for what.
 
 A runner runs a workspace: one project, or several sharing one order
 (``workspace``). It holds the machine lock (one runner per user at a
@@ -78,7 +85,7 @@ class Runner:
         self.state = st.RunnerState()
         self._locks: list[st.RunnerLock] = []
         self._handler: logging.Handler | None = None
-        self._passed: set[str] = set()  # said once: passed over while edited
+        self._passed: set[tuple[str, str]] = set()  # reasons said once
         self._waiting = ""  # what it waits for, as last said
         # The study being handled (set per study by _loop).
         self.project = next(iter(self.workspace.projects.values()))
@@ -347,37 +354,40 @@ class Runner:
 
     # -- loop ------------------------------------------------------------
 
-    def _next(self, keys: list[str]) -> str | None:
-        """The first queued study that may start now: one not being
-        edited, or None (``self.state.message`` says what it waits for).
-
-        A study being edited is passed over, unless it is needed by the
-        next study: then nothing after it may start either."""
+    def _next(self, keys: list[str]) -> tuple[str | None, bool]:
+        """The first queued study that may start now (None if none), and
+        whether to wait for one (something is being edited); with None,
+        ``self.state.message`` says what holds them back."""
+        edited, waiting = [], []
         for key in keys:
             project, job_id = self.workspace.locate(key)
             folder = project.queue.folder(job_id)
             lease = read_lease(folder)
-            if lease is None:
-                return key
+            if lease is not None:
+                edited.append(f"{key} (being edited by {describe(lease)})")
+                self._say_once(key, f"{key} is being edited by {describe(lease)}")
+                continue
             try:
-                needed = load_job(folder, project.words).needed_by_next
+                unmet = project.unmet_needs(load_job(folder, project.words))
             except JobError:
-                needed = False  # its own check stops it once it is free
-            if needed:
-                self.state.message = (
-                    f"waiting for {key}: being edited by {describe(lease)}, "
-                    f"and the study after it needs it"
-                )
-                return None
-            if key not in self._passed:
-                self._passed.add(key)
-                log.info(
-                    "%s is being edited by %s: running the next study first",
-                    key,
-                    describe(lease),
-                )
-        self.state.message = "waiting: every queued study is being edited"
-        return None
+                unmet = {}  # its own check stops it
+            if unmet:
+                why = ", ".join(f"{n} ({w})" for n, w in unmet.items())
+                waiting.append(f"{key} needs {why}")
+                self._say_once(key, f"{key} waits for {why}")
+                continue
+            return key, False
+        self.state.message = "; ".join(
+            (["waiting for edits: " + ", ".join(edited)] if edited else [])
+            + (["waiting for what they need: " + "; ".join(waiting)] if waiting else [])
+        )
+        return None, bool(edited)
+
+    def _say_once(self, key: str, text: str) -> None:
+        """Log why a study was passed over, once per reason."""
+        if (key, text) not in self._passed:
+            self._passed.add((key, text))
+            log.info("%s: running the next study first", text)
 
     def _loop(self) -> None:
         out = self.workspace.state_dir
@@ -391,7 +401,12 @@ class Runner:
             keys = self.workspace.ids()
             if not keys:
                 return
-            key = self._next(keys)
+            key, wait = self._next(keys)
+            if key is None and not wait:
+                # Every study left needs one that will not run here (on
+                # hold, failed, gone): done, saying which wait for what.
+                log.info(self.state.message)
+                return
             if key is None:
                 # Said once per wait, in runner.json, the log and the GUI.
                 if self.state.message != self._waiting:
