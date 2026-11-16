@@ -45,6 +45,7 @@ def page() -> html.Div:
             # edits: the warning asks to stay or discard them.
             dcc.Store(id="pending-select"),
             dcc.Store(id="message"),
+            dcc.Store(id="code-seen"),
             # The project picked last (the picker's connect entry puts it
             # back).
             dcc.Store(id="project-last"),
@@ -488,6 +489,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
                             *_by_tag(row),
                             *_editing_tag(row),
                             *_waits_tag(row),
+                            *_code_tag(row),
                         ],
                         id={"type": "qrow", "index": row["id"]},
                         className="qs-pick",
@@ -725,6 +727,20 @@ def _by_tag(row: dict) -> list:
             f"by {row['added_by']}",
             className="qs-tag qs-tag-by",
             title=row.get("why") or "no reason given",
+        ),
+    ]
+
+
+def _code_tag(row: dict) -> list:
+    """A study of a sequence held because the code changed under it."""
+    if not row.get("code_hold"):
+        return []
+    return [
+        html.Br(),
+        html.Span(
+            "code changed: continue or restart?",
+            className="qs-tag qs-tag-code",
+            title=row["code_hold"],
         ),
     ]
 
@@ -1203,6 +1219,33 @@ def details_problems(snap: dict, selected: dict | None) -> Any:
                     row["editing"],
                     ": Edit is blocked until they are done; what you see "
                     "updates as they save.",
+                ],
+                className="qs-warning",
+            )
+        )
+    if row.get("code_hold"):
+        sequence = row.get("sequence_key") or "the sequence"
+        parts.append(
+            html.Div(
+                [
+                    html.B("The code changed "),
+                    f"since {sequence} began, so the rest of it waits "
+                    "(the studies after it move up meanwhile). ",
+                    html.Button(
+                        f"Continue {sequence} on the new code",
+                        id="btn-code-continue",
+                        className="qs-btn qs-btn-small",
+                        title="the rest of it runs on the code there is now",
+                    ),
+                    " ",
+                    html.Button(
+                        f"Restart {sequence}",
+                        id="btn-code-restart",
+                        className="qs-btn qs-btn-small",
+                        title="queue the whole sequence again as a new one, "
+                        "to run on the new code from its start; the rest of "
+                        "this one goes on hold, its results stay",
+                    ),
                 ],
                 className="qs-warning",
             )

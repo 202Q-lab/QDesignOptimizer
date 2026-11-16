@@ -1,11 +1,15 @@
 """Command line.
 
+    python -m qdesignoptimizer.sequencer guide     (how an agent works the queue)
     python -m qdesignoptimizer.sequencer <sequencer.py> list
     python -m qdesignoptimizer.sequencer <sequencer.py> add <study> [--settings JSON] [--campaign KEY]
         [--needs ID ...] (studies that must have run successfully first)
         [--by NAME] [--why TEXT] (who queues it and why; the GUI shows both)
     python -m qdesignoptimizer.sequencer <sequencer.py> sequence <file.yaml or key> [--campaign KEY]
         [--by NAME] [--why TEXT]
+    python -m qdesignoptimizer.sequencer <sequencer.py> decide [<sNN> continue|restart]
+        (a study sequence half run when the project's code changed waits
+        for this; without arguments, lists those that wait)
     python -m qdesignoptimizer.sequencer <sequencer.py> wait <id> [<id> ...] [--timeout S]
         (until each has run; prints its result and folder. Exit 0 all done,
         1 one failed or is on hold, 2 one is unknown, 3 timed out)
@@ -47,6 +51,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from . import state as st
+from .code_change import CONTINUE, RESTART, decide, waiting
 from .lease import LeaseHeld, release_lease, take_lease
 from .loading import BackendError
 from .queue import QueueError
@@ -61,6 +66,11 @@ _AGENT = os.environ.get("QDO_SEQUENCER_AGENT", "the command line")
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point for ``python -m qdesignoptimizer.sequencer``."""
+    args_in = sys.argv[1:] if argv is None else list(argv)
+    if args_in == ["guide"]:
+        # No project: the guide is the package's, for any project.
+        sys.stdout.write(guide_text())
+        return 0
     parser = argparse.ArgumentParser(prog="python -m qdesignoptimizer.sequencer")
     parser.add_argument(
         "project", help="the project's sequencer.py (its adapter) or folder"
@@ -100,6 +110,12 @@ def main(argv: list[str] | None = None) -> int:
             "$QDO_SEQUENCER_AGENT or 'the command line')",
         )
         p.add_argument("--why", default="", help="why it is queued")
+    p_decide = sub.add_parser(
+        "decide",
+        help="continue or restart a study sequence held for a code change",
+    )
+    p_decide.add_argument("sequence", nargs="?", default="")
+    p_decide.add_argument("choice", nargs="?", choices=[CONTINUE, RESTART])
     p_wait = sub.add_parser(
         "wait", help="wait until studies have run; print where their results are"
     )
@@ -155,7 +171,7 @@ def main(argv: list[str] | None = None) -> int:
         help="who is editing, as the GUI shows it (default: "
         "$QDO_SEQUENCER_AGENT or 'the command line')",
     )
-    args = parser.parse_args(argv)
+    args = parser.parse_args(args_in)
 
     try:
         workspace = open_workspace([args.project, *args.more])
@@ -273,6 +289,8 @@ def _command(args, workspace: Workspace) -> int:
             return _write(args, workspace)
         if args.command == "wait":
             return _wait(args, workspace)
+        if args.command == "decide":
+            return _decide(args, workspace)
         if args.command == "move":
             order = workspace.move(
                 args.id,
@@ -413,6 +431,53 @@ def _write(args, workspace: Workspace) -> int:
             print(f"  - {problem}")
         return 2
     return 0
+
+
+def _decide(args, workspace: Workspace) -> int:
+    """List the sequences held for a code change, or decide one."""
+    held = {
+        workspace.key(name, sequence): (project, sequence, ids)
+        for name, project in workspace.projects.items()
+        for sequence, ids in waiting(project).items()
+    }
+    if not args.sequence:
+        if not held:
+            print("no study sequence waits for a decision")
+        for key, (_, _, ids) in held.items():
+            print(f"{key}: the code changed since it began; {len(ids)} to run")
+        return 0
+    if not args.choice:
+        print(f"say {CONTINUE} or {RESTART}", file=sys.stderr)
+        return 2
+    found = [v for k, v in held.items() if args.sequence in (k, v[1])]
+    if len(found) != 1:
+        print(
+            (
+                f"{args.sequence} does not wait for a decision"
+                if not found
+                else f"{args.sequence} is ambiguous: name it <project>/{args.sequence}"
+            ),
+            file=sys.stderr,
+        )
+        return 1
+    project, sequence, _ = found[0]
+    made = decide(project, sequence, args.choice)
+    if made:
+        keys = workspace.added(project, made)
+        print(
+            f"restarted {sequence} as {project.job(made[0]).sequence.get('id')}: "
+            f"{', '.join(keys)}; the rest of {sequence} is on hold"
+        )
+    else:
+        print(f"{sequence} continues on the new code")
+    return 0
+
+
+def guide_text() -> str:
+    """The agent guide that ships with the package (``AGENT_GUIDE.md``)."""
+    return (Path(__file__).resolve().parent.parent / "AGENT_GUIDE.md").read_text(
+        encoding="utf-8"
+    )
 
 
 def _wait(args, workspace: Workspace) -> int:

@@ -133,6 +133,14 @@ class FakeBackend(SwitchableStore):
     def settings_keys(self) -> set[str]:
         return {"seconds"}
 
+    def code_files(self) -> list[Path]:
+        """``code.py`` in the project, when there is one (tests)."""
+        path = self.root / "code.py"
+        return [path] if path.exists() else []
+
+    def reload(self) -> None:
+        self.calls.append(("reload", ""))
+
     def check_names(self) -> set[str]:
         return {"converged"}
 

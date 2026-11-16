@@ -59,6 +59,7 @@ _KEYS = {
     "campaign",
     "requeued_from",
     "requeued_as",
+    "restarted_from",
 }
 
 
@@ -127,7 +128,7 @@ class Job:
             out["created"] = self.created
         if self.generated_by:
             out["generated_by"] = self.generated_by
-        for key in ("requeued_from", "requeued_as"):
+        for key in ("requeued_from", "requeued_as", "restarted_from"):
             if self.raw.get(key):
                 out[key] = self.raw[key]
         return out

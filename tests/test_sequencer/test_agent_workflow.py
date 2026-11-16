@@ -170,3 +170,10 @@ def test_the_sections_show_their_counts_and_link_to_each_other(project):
     )
     assert (queue, hold, completed) == ("Queue (1)", "On hold (2)", "Completed (0)")
     assert "#title-hold" in json.dumps(jump, default=str)
+
+
+def test_the_guide_ships_with_the_package(capsys):
+    assert cli.main(["guide"]) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("# Working the simulation sequencer as an agent")
+    assert "wait <id>" in out and "--why" in out

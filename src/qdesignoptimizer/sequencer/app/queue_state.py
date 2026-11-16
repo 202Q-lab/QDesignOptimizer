@@ -26,6 +26,16 @@ import yaml
 from ..engine import campaign as cp
 from ..engine import state as st
 from ..engine.campaign import problems_of as campaign_problems
+from ..engine.code_change import (
+    CONTINUE,
+    RESTART,
+    changed_files,
+    code_hashes,
+    code_version,
+    decide,
+    hold_reason,
+    sequence_of,
+)
 from ..engine.job import (
     JOB_FILE,
     JobError,
@@ -127,6 +137,11 @@ class Bridge:
         # times when Edit was pressed (or after our own last save): a
         # save finding them changed was overtaken by someone else.
         self._editing: tuple[str, tuple] | None = None
+        # The code each project was last seen with; a change reloads it
+        # (``_check_code``) and says so once.
+        self._code_seen: dict[str, dict[str, str]] = {}
+        self._code_note = ""
+        self._code_rev = 0
         self._lost_lease = ""  # the study whose lease was taken from us
         # The campaigns, with the README files they were read from.
         self._campaigns: tuple[tuple, list[dict]] | None = None
@@ -475,9 +490,24 @@ class Bridge:
                 "connected": [],
             }
         workspace = self.workspace
+        self._check_code()
         first = next(iter(workspace.projects.values()))
         words = first.words
         catalogs = {name: p.backend.catalog() for name, p in workspace.projects.items()}
+        versions = {name: code_version(p) for name, p in workspace.projects.items()}
+        held_for: dict[tuple[str, str], str] = {}
+
+        def code_hold(name: str, project, job) -> str:
+            key = (name, sequence_of(job))
+            if not key[1]:
+                return ""
+            if key not in held_for:
+                try:
+                    held_for[key] = hold_reason(project, job, versions[name])
+                except Exception:  # noqa: BLE001 -- a tag never breaks the page
+                    held_for[key] = ""
+            return held_for[key]
+
         rows = []
         for n, key in enumerate(workspace.ids(), 1):
             project, job_id = workspace.locate(key)
@@ -525,6 +555,12 @@ class Bridge:
                     "warnings": warnings,
                     "editing": editing,
                     "waits_for": _waits_for(project, job),
+                    "code_hold": code_hold(name, project, job),
+                    "sequence_key": (
+                        workspace.key(name, sequence_of(job))
+                        if sequence_of(job)
+                        else ""
+                    ),
                 }
             )
         held = []
@@ -684,7 +720,62 @@ class Bridge:
             },
             "catalog": catalog_rows,
             "campaigns": self.campaigns(),
+            "code": {"rev": self._code_rev, "note": self._code_note},
         }
+
+    # -- code changes ----------------------------------------------------
+
+    def _check_code(self) -> None:
+        """Reload a project whose code changed since the last poll (the
+        catalog, the design the pictures and checks use), and say so."""
+        for name, project in self.workspace.projects.items():
+            try:
+                now = code_hashes(project)
+            except OSError:
+                continue
+            before = self._code_seen.get(name)
+            self._code_seen[name] = now
+            if before is None or before == now:
+                continue
+            hook = getattr(project.backend, "reload", None)
+            if hook is not None:
+                try:
+                    hook()
+                except Exception:  # noqa: BLE001 -- shown, next poll tries
+                    self._code_seen[name] = before
+                    continue
+            self._forget()
+            self._code_rev += 1
+            files = ", ".join(changed_files(before, now))
+            self._code_note = (
+                f"{files} changed: reloaded at {time.strftime('%H:%M:%S')}"
+                + ("" if self.workspace.single else f" ({name})")
+            )
+
+    def decide_code(self, key: str, choice: str) -> str:
+        """Continue or restart the study sequence of a study held for a
+        code change. Returns what happened."""
+        project, local = self._study(key)
+        try:
+            job = load_job(project.queue.folder(local), project.words)
+        except JobError as exc:
+            raise GuiError("; ".join(exc.problems)) from exc
+        sequence = sequence_of(job)
+        if not sequence or choice not in (CONTINUE, RESTART):
+            raise GuiError("nothing to decide for this study")
+        try:
+            made = decide(project, sequence, choice)
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
+        self._forget()
+        if not made:
+            return f"{sequence} continues on the new code"
+        self.workspace.added(project, made)
+        new = project.job(made[0]).sequence.get("id")
+        return (
+            f"{sequence} restarts as {new} ({len(made)} studies, at the end of "
+            f"the queue); the rest of {sequence} is on hold"
+        )
 
     # -- campaigns -------------------------------------------------------
 

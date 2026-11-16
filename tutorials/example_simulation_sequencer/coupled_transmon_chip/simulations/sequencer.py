@@ -100,6 +100,17 @@ class CoupledTransmonProject:
             self.design_variables_file,
         ]
 
+    def code_files(self) -> list:
+        """The chip's code: a change reloads it before the next study,
+        and a study sequence half run on the old code waits for you to
+        continue or restart it."""
+        return [
+            CHIP / "design.py",
+            CHIP / "names.py",
+            ROOT / "parameter_targets.py",
+            Path(__file__),
+        ]
+
     def design(self, variables=None):
         """The chip, built with ``variables`` (the store when None).
 

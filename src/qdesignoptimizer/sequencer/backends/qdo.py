@@ -406,6 +406,26 @@ class QDOBackend(SwitchableStore):
     def check_names(self) -> set[str]:
         return {"converged", "mode_identity"}
 
+    def code_files(self) -> list[str]:
+        """The project's code, whose change reloads it and holds a half
+        run study sequence for a decision (``engine/code_change.py``):
+        the project's ``code_files()`` if it has one, else the Python
+        files among its ``design_files()`` and the file of its adapter
+        class (``sequencer.py``)."""
+        hook = getattr(self.project, "code_files", None)
+        if hook is not None:
+            return sorted({str(Path(p).resolve()) for p in hook()})
+        files = [
+            p
+            for p in getattr(self.project, "design_files", lambda: [])()
+            if str(p).endswith(".py")
+        ]
+        try:
+            files.append(inspect.getfile(type(self.project)))
+        except TypeError:
+            pass
+        return sorted({str(Path(p).resolve()) for p in files})
+
     def reload(self) -> None:
         """Read every template again and call the project's own
         ``reload`` hook, for the GUI's "Reload templates"."""

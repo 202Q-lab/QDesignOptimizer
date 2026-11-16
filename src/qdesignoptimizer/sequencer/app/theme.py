@@ -123,6 +123,7 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-jump a { color: inherit; }
 .qs-section > summary { cursor: pointer; list-style: revert; margin-top: 14px; }
 .qs-section > summary > h3 { display: inline; }
+.qs-tag-code { background: #fff8e1 !important; color: #8d6e00 !important; }
 .qs-tag-waits { background: #e3f2fd !important; color: #0d47a1 !important; }
 .qs-tag-editing { background: #fff3e0 !important; color: #e65100 !important; }
 .qs-tag { display: inline-block; border-radius: 4px; padding: 0 6px;

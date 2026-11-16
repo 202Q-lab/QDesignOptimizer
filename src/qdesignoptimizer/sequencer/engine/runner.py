@@ -34,6 +34,13 @@ may not yet:
 * one whose ``needs`` (studies it uses the results of) have not all run
   successfully -- it runs once they have.
 
+* one of a study sequence that ran in part on older code of its project
+  -- it runs once someone says to continue it on the new code or restart
+  it (``code_change.py``).
+
+Before each study the runner reloads the project's code if it changed
+(``code_files()``), and records the version it ran with.
+
 With nothing that may start but something being edited, the runner
 waits for the edit. With nothing that may start and nothing being
 edited -- every study left needs one that is on hold, failed or gone --
@@ -55,6 +62,13 @@ from pathlib import Path
 
 from . import state as st
 from .backend import StepResult
+from .code_change import (
+    changed_files,
+    code_hashes,
+    code_version,
+    hold_reason,
+    sequence_of,
+)
 from .job import JobError, load_job, parse_completed
 from .lease import describe, read_lease
 from .project import Project
@@ -87,6 +101,7 @@ class Runner:
         self._handler: logging.Handler | None = None
         self._passed: set[tuple[str, str]] = set()  # reasons said once
         self._waiting = ""  # what it waits for, as last said
+        self._code: dict[str, dict[str, str]] = {}  # code loaded, per project
         # The study being handled (set per study by _loop).
         self.project = next(iter(self.workspace.projects.values()))
 
@@ -358,7 +373,8 @@ class Runner:
         """The first queued study that may start now (None if none), and
         whether to wait for one (something is being edited); with None,
         ``self.state.message`` says what holds them back."""
-        edited, waiting = [], []
+        edited, waiting, undecided = [], [], {}
+        versions: dict[str, str] = {}
         for key in keys:
             project, job_id = self.workspace.locate(key)
             folder = project.queue.folder(job_id)
@@ -368,20 +384,57 @@ class Runner:
                 self._say_once(key, f"{key} is being edited by {describe(lease)}")
                 continue
             try:
-                unmet = project.unmet_needs(load_job(folder, project.words))
+                job = load_job(folder, project.words)
             except JobError:
-                unmet = {}  # its own check stops it
+                return key, False  # its own check stops it
+            unmet = project.unmet_needs(job)
             if unmet:
                 why = ", ".join(f"{n} ({w})" for n, w in unmet.items())
                 waiting.append(f"{key} needs {why}")
                 self._say_once(key, f"{key} waits for {why}")
                 continue
+            name = self.workspace.name_of(project)
+            if name not in versions:
+                versions[name] = code_version(project)
+            held = hold_reason(project, job, versions[name])
+            if held:
+                sequence = self.workspace.key(name, sequence_of(job))
+                undecided[sequence] = held
+                self._say_once(key, f"{key} waits: {held}")
+                continue
             return key, False
         self.state.message = "; ".join(
             (["waiting for edits: " + ", ".join(edited)] if edited else [])
             + (["waiting for what they need: " + "; ".join(waiting)] if waiting else [])
+            + (
+                [
+                    "waiting for a decision (the code changed): "
+                    + ", ".join(undecided)
+                    + " -- continue or restart each"
+                ]
+                if undecided
+                else []
+            )
         )
         return None, bool(edited)
+
+    def _reload_if_changed(self, project) -> None:
+        """Reload a project's code before its next study if it changed
+        since it was loaded."""
+        name = self.workspace.name_of(project)
+        now = code_hashes(project)
+        before = self._code.setdefault(name, now)
+        if now == before:
+            return
+        hook = getattr(project.backend, "reload", None)
+        if hook is not None:
+            hook()
+        self._code[name] = now
+        log.info(
+            "%s: the code changed (%s); reloaded",
+            name,
+            ", ".join(changed_files(before, now)),
+        )
 
     def _say_once(self, key: str, text: str) -> None:
         """Log why a study was passed over, once per reason."""
@@ -393,6 +446,11 @@ class Runner:
         out = self.workspace.state_dir
         self._passed = set()
         self._waiting = ""
+        # The code each project was loaded with: a change reloads it.
+        self._code = {
+            name: code_hashes(project)
+            for name, project in self.workspace.projects.items()
+        }
         while True:
             if st.stop_requested(out):
                 self.state.status = st.STOPPED
@@ -419,6 +477,7 @@ class Runner:
                 self._waiting = ""
                 self.state.message = ""
             self.project, job_id = self.workspace.locate(key)
+            self._reload_if_changed(self.project)
             shown = key
             # Claim first, check second: from here on the GUI cannot
             # edit the folder, so the study that runs is the one checked.
@@ -479,12 +538,14 @@ class Runner:
             self.workspace.name_of(self.project), folder.name
         )
         self.state.save(out)
+        version = code_version(self.project)
         record = {
             "id": job_id,
             self.backend.words.task: job.task,
             "subject": job.subject,
             **({"campaign": job.campaign} if job.campaign else {}),
             **({"added_by": job.added_by} if job.added_by else {}),
+            **({"code": version} if version else {}),
             "status": st.RUNNING,
             "started": st.now(),
             "finished": "",

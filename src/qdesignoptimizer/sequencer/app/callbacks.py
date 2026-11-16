@@ -1068,6 +1068,44 @@ def register_preview_callbacks(app, bridge) -> None:
 
     @app.callback(
         Output("message", "data", allow_duplicate=True),
+        Input("btn-code-continue", "n_clicks"),
+        Input("btn-code-restart", "n_clicks"),
+        State("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _decide_code(go_on, restart, selected):
+        """Continue or restart the selected study's sequence."""
+        if not (go_on or restart) or not selected:
+            return no_update
+        choice = "restart" if ctx.triggered_id == "btn-code-restart" else "continue"
+        try:
+            return _msg(bridge.decide_code(selected["key"], choice))
+        except GuiError as exc:
+            return _msg(str(exc), False)
+
+    @app.callback(
+        Output("code-seen", "data"),
+        Output("preview-view", "children", allow_duplicate=True),
+        Input("snapshot", "data"),
+        State("code-seen", "data"),
+        prevent_initial_call=True,
+    )
+    def _code_changed(snap, seen):
+        """A reload makes the pictures on show out of date: say so."""
+        code = (snap or {}).get("code") or {}
+        rev = code.get("rev", 0)
+        if rev == seen:
+            raise PreventUpdate
+        if seen is None:
+            return rev, no_update
+        return rev, html.Div(
+            f"{code.get('note', 'The code changed')}. The pictures drawn "
+            "before are gone; press Pre-figures to draw them again.",
+            className="qs-warning",
+        )
+
+    @app.callback(
+        Output("message", "data", allow_duplicate=True),
         Input("btn-open-folder", "n_clicks"),
         State("selected", "data"),
         prevent_initial_call=True,

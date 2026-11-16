@@ -115,7 +115,20 @@ into the docs.
    latest run. **A set of projects opened the first time** takes the
    order of the most recently written set sharing a project
    (`Workspace._inherit_order`, via each state folder's `projects.json`).
-   Agent instructions: `tutorials/example_simulation_sequencer/CLAUDE.md`.
+   Agent instructions: `sequencer/AGENT_GUIDE.md`, printed by `python -m
+   qdesignoptimizer.sequencer guide` (`cli.main`, before the project
+   argument is parsed); a project's `CLAUDE.md` points to it.
+   **Code changes** (`engine/code_change.py`): the backend's
+   `code_files()` are hashed (content, cached by stat; files changed in
+   the last 2 s always re-read); `result.json` records `code`. The runner
+   reloads a project before a study when its hashes changed
+   (`_reload_if_changed`) and passes over a study whose sequence ran on
+   other code (`hold_reason`) until `out/code_decisions.json` says
+   continue for the current version, or the sequence was restarted
+   (`restart`: a new `sNN` copied from the last run's `inputs/` or the
+   queued/held files, needs remapped, the old rest parked). GUI:
+   `Bridge._check_code` reloads per poll on change; the `code-seen`
+   store clears the pre-figures.
    **Poll cost (2026-11-16)**: the GUI's 2 s snapshot keeps each queued
    or held study's row (parsed job.yaml, problems, warnings) with its
    files' modification times (`Bridge._row`), re-reading only changed

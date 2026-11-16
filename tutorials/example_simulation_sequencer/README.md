@@ -299,8 +299,10 @@ queue and edits studies from a terminal. The GUI shows what it does
 within a poll (2 s); a runner already going picks up new studies before
 its next one.
 
-The steps an agent should follow are in [`CLAUDE.md`](CLAUDE.md); copy
-it into your own chip project.
+The steps an agent should follow ship with the package: `python -m
+qdesignoptimizer.sequencer guide` prints them. A chip project's own
+`CLAUDE.md` points to it and adds that project's rules; this tutorial's
+[`CLAUDE.md`](CLAUDE.md) is an example to copy.
 
 - Add: `add <study>` / `sequence <name>` (straight into the queue; with
   `--hold` on hold). `--by claude` (or `QDO_SEQUENCER_AGENT=claude`) and
@@ -331,6 +333,19 @@ it into your own chip project.
 - A study sequence fills `needs` in itself: each study needs the
   earlier ones of its sequence that write back. An entry can say
   otherwise by number: `needs: [1]`, or `needs: []` for none.
+- **When the code changes.** The project names its code
+  (`code_files()` in `sequencer.py`; by default the `.py` files among
+  `design_files()` and `sequencer.py` itself). Before each study the
+  runner reloads it if it changed, and every run records the version it
+  used (`code` in `result.json`); the GUI reloads too, and clears
+  pre-figures drawn with the old code. A study on its own just runs on
+  the new code. A study sequence that ran in part on the old code waits
+  -- the rest of the queue moves up -- until you choose, in the GUI
+  (its studies are tagged "code changed: continue or restart?") or with
+  `decide <sNN> continue|restart`: continue it on the new code, or
+  restart it: the whole sequence is queued again as a new sequence
+  (`s08`, same name, each study noting `restarted_from: s07`) and the
+  rest of the old one goes on hold; its results stay.
 - Wait: `wait <id> ...` returns once each has run and prints its
   status, folder, outputs and what it wrote back (exit 0 done, 1 failed
   or on hold, 2 unknown, 3 `--timeout`). An agent runs it in the
