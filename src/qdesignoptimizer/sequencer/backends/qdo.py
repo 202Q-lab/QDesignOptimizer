@@ -137,11 +137,6 @@ Two forms:
                    v['<design variable>'] (+ - * / **, abs, sqrt, exp,
                    log, log10, min, max, pi, e)"""
 
-_PARAMS_HEADER = """\
-Parameter targets for this study only. Leave a target out and the
-project's value (parameter_targets.py) is used. When the study starts
-this file is filled in with every target that ran."""
-
 
 class QDOProject(Protocol):
     """How a design project plugs in: its adapter (``sequencer.py``).
@@ -1747,20 +1742,6 @@ def _deviation_line(
             text = f"{name} {dev * 100:+.1f}%"
         parts.append(text + ("" if ok else " (off)"))
     return ", ".join(parts)
-
-
-def param_targets_template() -> str:
-    """The text of an empty ``parameter_targets.yaml``."""
-    return dump_yaml({}, _PARAMS_HEADER)
-
-
-def partial_template(name: str) -> str | None:
-    """An empty optional file, for the GUI's "Create" button."""
-    if name == PARAMS:
-        return param_targets_template()
-    if name == VARIABLES:
-        return "{}\n"
-    return None
 
 
 def _targets_by_variable(qf, entries) -> dict[str, list]:

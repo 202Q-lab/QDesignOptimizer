@@ -117,7 +117,6 @@ class Bridge:
             if isinstance(ref, list)
             else ([str(ref)] if ref else [])
         )
-        self.ref = self.refs[0] if self.refs else ""
         if project is not None:
             workspace = Workspace.of(project)
         self._workspace = workspace
@@ -210,7 +209,6 @@ class Bridge:
             self._workspace.close()
         self._workspace = new
         self.refs = list(refs)
-        self.ref = self.refs[0] if self.refs else ""
         self._forget()
         if self.remember is not None:
             self.remember.parent.mkdir(parents=True, exist_ok=True)
@@ -633,7 +631,12 @@ class Bridge:
         for project, path in workspace.completed(25):
             res = st.result_of(path)
             status = res.get("status", "?")
-            if status in (st.RUNNING, st.COMMITTING) and not alive:
+            if (
+                status in (st.RUNNING, st.COMMITTING)
+                and not alive
+                # A runner of another set of projects may be running it.
+                and not st.lock_held(user_home())
+            ):
                 # Cut off with its runner; the next runner records it
                 # failed. Until then say so, not "running".
                 status = "interrupted"
@@ -1336,26 +1339,6 @@ class Bridge:
             f"takes these when its modes fit, and any study can add them "
             f"from its Opt targets tab"
         )
-
-    def create_optional(self, job_id: str, name: str) -> None:
-        """Write an empty optional file (only what you add then counts)."""
-        project, _ = self._study(job_id)
-        spec = next(
-            (s for s in project.backend.files() if s.name == name and s.optional),
-            None,
-        )
-        if spec is None:
-            raise GuiError(f"{name} is not an optional file")
-        text = (
-            "{}\n"
-            if name.endswith(".json")
-            else dump_yaml(
-                {},
-                f"{spec.label} for this study only. Add entries; the rest "
-                f"come from the project when it starts.",
-            )
-        )
-        self._write(job_id, name, text)
 
     def delete_optional(self, job_id: str, name: str) -> None:
         """Delete an optional file, so all of it comes from the project."""

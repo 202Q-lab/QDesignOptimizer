@@ -36,7 +36,7 @@ from .job import (
     slug_name,
 )
 from .loading import load_backend
-from .queue import HOLD, FolderQueue, QueueError, _rename
+from .queue import HOLD, FolderQueue, QueueError, _rename, started_key
 from .sequence import (
     SequenceError,
     check_sequence_key,
@@ -246,7 +246,7 @@ class Project:
                 for p in self.queue.completed()
                 if same.match(parse_completed(p.name)[0])
             ),
-            key=_started,
+            key=started_key,
         )
 
     def pending_state(self, job_id: str) -> str:
@@ -261,7 +261,8 @@ class Project:
         ):
             return "queued"
         if any(
-            st.result_of(p).get("status") in (st.RUNNING, st.COMMITTING)
+            # {}: just moved there, result not written yet
+            st.result_of(p).get("status", st.RUNNING) in (st.RUNNING, st.COMMITTING)
             for p in self.runs_of(job_id)
         ):
             return "running"
@@ -417,9 +418,6 @@ class Project:
         checks: list[str] | None = None,
         save: bool | None = None,
         on_failure: str | None = None,
-        notes: str = "",
-        sequence: dict | None = None,
-        position: int | None = None,
         queue: FolderQueue | None = None,
         campaign: str = "",
         hold: bool = False,
@@ -451,13 +449,7 @@ class Project:
             raise QueueError(
                 f"generating {task} failed: {type(exc).__name__}: {exc}"
             ) from exc
-        tag = sequence or {}
-        job_id = queue.new_id(
-            task,
-            tag.get("id", ""),
-            int(tag.get("entry", 0)),
-            tag.get("name", ""),
-        )
+        job_id = queue.new_id(task)
         job = Job(
             id=job_id,
             task=task,
@@ -469,8 +461,6 @@ class Project:
             checks=list(checks if checks is not None else []),
             save=bool(save) if save is not None else False,
             on_failure=on_failure or "abort",
-            notes=notes,
-            sequence=dict(tag),
             campaign=campaign,
             created=st.now(),
             generated_by=generated_by,
@@ -478,7 +468,7 @@ class Project:
             added_by=added_by,
             why=why,
         )
-        queue.add(job, files, self.words, position)
+        queue.add(job, files, self.words)
         return job_id
 
     def add_blank(self, study: str = "", hold: bool = True, campaign: str = "") -> str:
@@ -585,55 +575,60 @@ class Project:
                     f"{spec.key}: generating {entry.task} failed: "
                     f"{type(exc).__name__}: {exc}"
                 ) from exc
-        ids: list[str] = []
-        try:
-            sequence_id = self._next_sequence_id()
-            for n, (entry, (files, by)) in enumerate(zip(spec.entries, generated), 1):
-                spec_t = catalog.task(entry.task)
-                assert spec_t is not None  # unknown tasks were refused above
-                job = Job(
-                    id=self.queue.new_id(entry.task, sequence_id, n, spec.key),
-                    task=entry.task,
-                    subject=spec_t.subject,
-                    settings={
-                        **self.backend.default_settings(entry.task),
-                        **entry.settings,
-                    },
-                    checks=list(entry.checks or []),
-                    save=bool(entry.save),
-                    on_failure=entry.on_failure or "abort",
-                    # What it uses: by default every earlier study of the
-                    # sequence that writes back.
-                    needs=[
-                        ids[k - 1]
-                        for k in (
-                            entry.needs
-                            if entry.needs is not None
-                            else [
-                                k
-                                for k, e in enumerate(spec.entries[: n - 1], 1)
-                                if e.save
-                            ]
-                        )
-                    ],
-                    notes=entry.notes,
-                    added_by=added_by,
-                    why=why,
-                    sequence={"id": sequence_id, "name": spec.key, "entry": n},
-                    campaign=campaign,
-                    created=st.now(),
-                    generated_by=by,
-                )
-                self.queue.add(job, files, self.words)
-                ids.append(job.id)
-        except BaseException:
-            # All or nothing: take back what was queued (to removed/).
-            for job_id in ids:
-                try:
-                    self.queue.remove(job_id)
-                except QueueError:
-                    pass  # claimed by a runner meanwhile; it runs
-            raise
+        # Id and folders under one lock: a sequence queued elsewhere at
+        # the same moment (GUI and agent) never gets the same sNN.
+        with st.order_guard():
+            ids: list[str] = []
+            try:
+                sequence_id = self._next_sequence_id()
+                for n, (entry, (files, by)) in enumerate(
+                    zip(spec.entries, generated), 1
+                ):
+                    spec_t = catalog.task(entry.task)
+                    assert spec_t is not None  # unknown tasks were refused above
+                    job = Job(
+                        id=self.queue.new_id(entry.task, sequence_id, spec.key),
+                        task=entry.task,
+                        subject=spec_t.subject,
+                        settings={
+                            **self.backend.default_settings(entry.task),
+                            **entry.settings,
+                        },
+                        checks=list(entry.checks or []),
+                        save=bool(entry.save),
+                        on_failure=entry.on_failure or "abort",
+                        # What it uses: by default every earlier study of the
+                        # sequence that writes back.
+                        needs=[
+                            ids[k - 1]
+                            for k in (
+                                entry.needs
+                                if entry.needs is not None
+                                else [
+                                    k
+                                    for k, e in enumerate(spec.entries[: n - 1], 1)
+                                    if e.save
+                                ]
+                            )
+                        ],
+                        notes=entry.notes,
+                        added_by=added_by,
+                        why=why,
+                        sequence={"id": sequence_id, "name": spec.key, "entry": n},
+                        campaign=campaign,
+                        created=st.now(),
+                        generated_by=by,
+                    )
+                    self.queue.add(job, files, self.words)
+                    ids.append(job.id)
+            except BaseException:
+                # All or nothing: take back what was queued (to removed/).
+                for job_id in ids:
+                    try:
+                        self.queue.remove(job_id)
+                    except QueueError:
+                        pass  # claimed by a runner meanwhile; it runs
+                raise
         return ids
 
     # -- study sequence templates ----------------------------------------
@@ -798,14 +793,3 @@ def open_project(ref: str | Path) -> Project:
         return Project(load_backend(f"{target}:{factory}", Path.cwd()))
     path = Path(target).resolve()
     return Project(load_backend(f"{path.name}:{factory}", path.parent))
-
-
-def _started(folder: Path) -> tuple:
-    """Sort key of a completed folder: its start time (from its name),
-    then when its result was last written -- a study and its requeued
-    copy can start in the same second."""
-    try:
-        written = (folder / st.RESULT_FILE).stat().st_mtime_ns
-    except OSError:
-        written = 0
-    return parse_completed(folder.name)[1], written

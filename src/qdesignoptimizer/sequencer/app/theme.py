@@ -4,13 +4,9 @@ from __future__ import annotations
 
 #: Status -> (text colour, background). One colour per meaning.
 STATUS_COLORS = {
-    "queued": ("#37474f", "#eceff1"),
     "running": ("#0d47a1", "#bbdefb"),
     "done": ("#1b5e20", "#c8e6c9"),
     "failed": ("#b71c1c", "#ffcdd2"),
-    "skipped": ("#546e7a", "#f5f5f5"),
-    "blocked": ("#546e7a", "#e0e0e0"),
-    "stale": ("#e65100", "#ffe0b2"),
     "interrupted": ("#e65100", "#ffe0b2"),
     "committing": ("#0d47a1", "#bbdefb"),
 }
@@ -22,13 +18,10 @@ RUN_COLORS = {
     "stopped": "#546e7a",
     "aborted": "#b71c1c",
     "error": "#b71c1c",
-    "held": "#e65100",
     "stopped unexpectedly": "#b71c1c",
 }
 
-ACCENT = "#1565c0"
 MUTED = "#607d8b"
-BORDER = "#cfd8dc"
 SELECTED_BG = "#e3f2fd"
 
 CSS = """
@@ -43,7 +36,6 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-navhead { display: flex; justify-content: space-between;
               align-items: center; margin: 10px 0 4px;
               border-bottom: 1px solid #eceff1; padding-bottom: 2px; }
-.qs-btn-small { padding: 1px 8px; font-size: 12px; }
 .qs-title { font-size: 20px; font-weight: 600; }
 .qs-new-buttons { display: flex; flex-direction: column; gap: 6px;
                   align-items: flex-start; margin: 8px 0 12px;
@@ -100,8 +92,6 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
   .qs-splitter { display: none; }
   .qs-area { overflow: visible; }
 }
-.qs-card { background: white; border: 1px solid #cfd8dc;
-           border-radius: 8px; padding: 12px; overflow-x: auto; }
 .qs-seqrow { border-bottom: 1px solid #eceff1; padding: 4px 0; }
 .qs-table { width: 100%; border-collapse: collapse; }
 .qs-table th { text-align: left; font-weight: 500; color: #607d8b;
@@ -130,8 +120,6 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
           font-size: 11px; background: #ede7f6; color: #4527a0;
           white-space: nowrap; }
 .qs-btn-small { padding: 2px 8px; font-size: 12px; }
-.qs-editor { width: 100%; height: 360px; font-family: Consolas, monospace;
-             font-size: 12px; }
 .qs-file { max-height: 420px; }
 .qs-tabs { margin-top: 10px; }
 .qs-row[draggable="true"] { cursor: grab; }

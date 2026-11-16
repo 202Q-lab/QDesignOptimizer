@@ -211,13 +211,11 @@ class FolderQueue:
         self,
         task: str,
         sequence: str = "",
-        entry: int = 0,
         sequence_name: str = "",
     ) -> str:
         """A fresh id for a study of ``task``: in a study sequence
         ``s<NN>-<sequence>-<study>``, else ``x-<hex>-<study>``. The
         same study twice in one study sequence gets ``_2``."""
-        del entry  # the run order is order.json's, not the id's
         taken = self.taken()
         if sequence:
             tag = sequence_tag(sequence_name)
@@ -511,6 +509,18 @@ class FolderQueue:
         }
         self.add(old, files, words)
         return new_id
+
+
+def started_key(folder: Path) -> tuple:
+    """Sort key of a completed folder: its start time (from its name),
+    then when its result was last written -- two studies (of different
+    projects, or a study and its requeued copy) can start in the same
+    second."""
+    try:
+        written = (folder / st.RESULT_FILE).stat().st_mtime_ns
+    except OSError:
+        written = 0
+    return parse_completed(folder.name)[1], written
 
 
 def load_job_from(folder: Path, words) -> Job:

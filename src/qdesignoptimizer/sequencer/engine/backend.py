@@ -32,11 +32,6 @@ class Words:
     store: str = "store"
     live: str = "live"
 
-    def title(self, word: str) -> str:
-        """``self.<word>`` with its first letter capitalised."""
-        text = getattr(self, word)
-        return text[:1].upper() + text[1:]
-
 
 @dataclass(frozen=True)
 class TaskSpec:

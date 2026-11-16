@@ -34,10 +34,18 @@ _RUNNER_LOG = "_qdo_sequencer_runner_log"
 #: with something long (a deep check builds the design), the last answer
 #: for the same arguments is returned instead of waiting.
 _POLLED = {"catalog_with_problems", "check_folder"}
-#: Read once when the worker starts; they do not change.
 #: Plain attributes sent across once, when the worker starts (a backend
 #: without one sends None). Everything else is a method, called remotely.
-_STATIC = ("name", "words", "out_dir", "sequence_dir")
+_STATIC = (
+    "name",
+    "words",
+    "out_dir",
+    "sequence_dir",
+    # Properties (QDOBackend's): not methods, so sent once like these.
+    "path_limit",
+    "solver_files",
+    "path_limit_note",
+)
 _AUTH_ENV = "QDO_SEQUENCER_WORKER_KEY"
 
 
@@ -175,7 +183,12 @@ class RemoteBackend:
         return value
 
     def _call(self, name: str, *args, **kwargs) -> Any:
-        polled = name in _POLLED
+        polled = name in _POLLED and not (
+            # A deep check is asked for after a save: an old answer for the
+            # same folder would be about the files before it.
+            kwargs.get("deep")
+            or (name == "check_folder" and len(args) > 2 and args[2])
+        )
         key = (name, repr(args), repr(sorted(kwargs.items())))
         if polled and key in self._last:
             if not self._lock.acquire(blocking=False):

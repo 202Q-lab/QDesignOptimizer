@@ -55,15 +55,6 @@ def _mm(value: Any) -> float:
     return float(match.group(1)) * _UNITS_MM.get(match.group(2), 1.0)
 
 
-def study_components(ministudy) -> list[str]:
-    """Every component a MiniStudy simulates, its chained studies'
-    included, in order, once each."""
-    names = _names(ministudy)
-    for chained in getattr(ministudy, "capacitance_matrix_studies", None) or []:
-        names += _names(chained)
-    return list(dict.fromkeys(names))
-
-
 def _names(study) -> list[str]:
     names = getattr(study, "qiskit_component_names", []) or []
     return list(dict.fromkeys(str(n) for n in names))

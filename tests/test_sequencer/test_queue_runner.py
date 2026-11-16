@@ -661,15 +661,6 @@ def test_park_and_unpark_refuse_what_is_not_there(project):
         project.park(job_id)
 
 
-def test_the_old_hold_flag_is_a_problem_not_a_silent_run(project):
-    job_id = project.add("A.calibrate")
-    path = project.queue.folder(job_id) / "job.yaml"
-    path.write_text(path.read_text("utf-8") + "hold: true\n", "utf-8")
-    assert any("park" in p for p in project.problems(job_id))
-    assert Runner(project).run().status == st.ERROR
-    assert project.queue.ids() == [job_id]
-
-
 def test_cli_park_and_unpark(tmp_path, capsys):
     catalog = tmp_path / "sequencer.py"
     catalog.write_text(
@@ -719,11 +710,3 @@ def test_a_name_sort_groups_a_sequence(project):
         "s01-full_A-a_measure",
     ]
     assert ids[2].startswith("x-") and ids[2].endswith("-b_measure")
-
-
-def test_hold_false_is_left_alone(project):
-    """Review round 4: only a set flag needs taking out."""
-    job_id = project.add("A.calibrate")
-    path = project.queue.folder(job_id) / "job.yaml"
-    path.write_text(path.read_text("utf-8") + "hold: false\n", "utf-8")
-    assert project.problems(job_id) == []

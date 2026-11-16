@@ -240,3 +240,110 @@ def test_the_gui_does_not_retry_code_that_does_not_load(project):
     assert note.startswith("code.py changed but does not load (SyntaxError")
     bridge.snapshot()
     assert len(tries) == 1
+
+
+# -- independent review (2026-11-16) ------------------------------------------
+
+
+def test_two_sequences_queued_at_once_get_their_own_ids(project):
+    import threading
+
+    task = project.backend.catalog().tasks[0].key
+    spec = SequenceSpec("tune", "Tune", (SequenceEntry(task), SequenceEntry(task)))
+    made, errors = [], []
+
+    def queue():
+        try:
+            made.append(project.add_sequence(spec))
+        except Exception as exc:  # noqa: BLE001 -- reported below
+            errors.append(exc)
+
+    threads = [threading.Thread(target=queue) for _ in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(30)
+    assert errors == []
+    prefixes = {ids[0].split("-")[0] for ids in made}
+    assert len(prefixes) == 4  # s01..s04, none shared
+
+
+def test_an_edit_begun_after_the_study_was_picked_is_waited_for(project):
+    import threading
+    import time
+
+    from qdesignoptimizer.sequencer.engine.lease import release_lease, take_lease
+
+    task = project.backend.catalog().tasks[0].key
+    first, second = project.add(task), project.add(task)
+    run = project.backend.run
+
+    def run_and_edit(folder, job):
+        result = run(folder, job)
+        if job.id == first:
+            _change_code(project)  # so the runner reloads before the next
+        return result
+
+    def reload():  # slow reload: meanwhile the user presses Edit
+        take_lease(project.queue.folder(second), "you (GUI)", seconds=60)
+
+    project.backend.run = run_and_edit
+    project.backend.reload = reload
+    done = []
+    thread = threading.Thread(target=lambda: done.append(Runner(project).run()))
+    thread.start()
+    deadline = time.monotonic() + 10
+    while "waiting for edits" not in st.RunnerState.load(project.out).message:
+        assert time.monotonic() < deadline
+        time.sleep(0.02)
+    assert project.queue.ids() == [second]  # put back, not run
+    release_lease(project.queue.folder(second), "you (GUI)")
+    thread.join(10)
+    assert done[0].status == st.FINISHED
+    assert project.queue.ids() == []
+
+
+def test_one_project_with_broken_code_does_not_hold_the_others(tmp_path, monkeypatch):
+    import threading
+    import time
+
+    from qdesignoptimizer.sequencer.engine.workspace import Workspace
+
+    monkeypatch.setattr(cc, "FILES_KEPT_S", 0.0)
+    a, b = make_project(tmp_path / "a"), make_project(tmp_path / "b")
+    (a.root / "code.py").write_text("V = 1\n", "utf-8")
+    task = a.backend.catalog().tasks[0].key
+    a1, a2 = a.add(task), a.add(task)
+    b1 = b.add(task)
+    run = a.backend.run
+
+    def run_and_break(folder, job):
+        result = run(folder, job)
+        (a.root / "code.py").write_text("V = (\n", "utf-8")
+        return result
+
+    def reload():
+        raise SyntaxError("'(' was never closed")
+
+    a.backend.run = run_and_break
+    a.backend.reload = reload
+    workspace = Workspace([a, b])
+    workspace.move(f"a/{a2}", to=2)  # a1, a2, then b1
+    done = []
+    thread = threading.Thread(target=lambda: done.append(Runner(workspace).run()))
+    thread.start()
+    deadline = time.monotonic() + 10
+    while b.queue.ids():
+        assert time.monotonic() < deadline, "b's study never ran"
+        time.sleep(0.02)
+    assert a.queue.ids() == [a2] and b1
+    st.request_stop(workspace.state_dir)
+    thread.join(10)
+    assert done[0].status == st.STOPPED
+    assert a1
+
+
+def test_a_study_just_moved_to_completed_is_running(project):
+    job_id = project.add(project.backend.catalog().tasks[0].key)
+    project.queue.start(project.queue.claim(job_id), job_id)  # no result yet
+    assert project.pending_state(job_id) == "running"

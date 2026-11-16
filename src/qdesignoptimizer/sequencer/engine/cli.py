@@ -58,7 +58,7 @@ from .queue import QueueError
 from .runner import Runner, RunRefused, check_queue, configure_console_logging
 from .sequence import SequenceError, load_sequence
 from .worker import WorkerError
-from .workspace import Workspace, open_workspace
+from .workspace import Workspace, open_workspace, user_home
 
 #: Who a command line is, in the GUI: an agent sets QDO_SEQUENCER_AGENT.
 _AGENT = os.environ.get("QDO_SEQUENCER_AGENT", "the command line")
@@ -284,7 +284,15 @@ def _command(args, workspace: Workspace) -> int:
         if args.command == "stop":
             runner = st.RunnerState.load(state_dir)
             if not runner.alive(state_dir):
-                print("no runner is going")
+                print(
+                    "no runner of these projects is going"
+                    + (
+                        "; a runner of another set of projects is: stop it "
+                        "where it was started"
+                        if st.lock_held(user_home())
+                        else ""
+                    )
+                )
                 return 1
             st.request_stop(state_dir)
             print(f"stop requested; {runner.current or 'the study'} " f"finishes first")
@@ -520,7 +528,11 @@ def _wait(args, workspace: Workspace) -> int:
             print("waiting for " + ", ".join(pending), flush=True)
             first = False
         state = workspace.state_dir
-        if not said_runner and not st.RunnerState.load(state).alive(state):
+        if (
+            not said_runner
+            and not st.RunnerState.load(state).alive(state)
+            and not st.lock_held(user_home())
+        ):
             print("(no runner is going: waiting for one to start)", flush=True)
             said_runner = True
         if deadline is not None and time.monotonic() >= deadline:

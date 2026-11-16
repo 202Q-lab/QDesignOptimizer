@@ -32,7 +32,7 @@ from typing import Any
 
 from . import state as st
 from .job import JOB_FILE, Job, dump_yaml, load_job, parse_completed
-from .queue import INPUTS, QueueError, load_job_from
+from .queue import INPUTS, QueueError, load_job_from, started_key
 
 DECISIONS_FILE = "code_decisions.json"
 CONTINUE, RESTART = "continue", "restart"
@@ -119,16 +119,8 @@ def _runs(project, sequence: str) -> list[Path]:
             for p in project.queue.completed()
             if parse_completed(p.name)[0].startswith(prefix)
         ),
-        key=_started,
+        key=started_key,
     )
-
-
-def _started(folder: Path) -> tuple:
-    try:
-        written = (folder / st.RESULT_FILE).stat().st_mtime_ns
-    except OSError:
-        written = 0
-    return parse_completed(folder.name)[1], written
 
 
 def ran_with(project, sequence: str) -> set[str]:
@@ -273,36 +265,37 @@ def restart(project, sequence: str) -> list[str]:
     entries, queued, known = _members(project, sequence)
     if not entries:
         raise QueueError(f"{sequence} has no studies to restart")
-    new_sequence = project.queue.next_sequence_id()
-    taken = project.queue.taken()
-    ids: dict[int, str] = {}
-    for n, (job, _) in sorted(entries.items()):
-        base = project.queue.new_id(
-            job.task, new_sequence, n, (job.sequence or {}).get("name", "")
-        )
-        new, k = base, 2
-        while new in taken or new in ids.values():
-            new, k = f"{base}_{k}", k + 1
-        ids[n] = new
-    made: list[str] = []
-    try:
-        for n, (job, files) in sorted(entries.items()):
-            job.id = ids[n]
-            job.sequence = {**(job.sequence or {}), "id": new_sequence}
-            job.needs = [ids.get(known.get(i, 0), i) for i in job.needs]
-            job.created = st.now()
-            for key in ("requeued_from", "requeued_as"):
-                job.raw.pop(key, None)
-            job.raw["restarted_from"] = sequence
-            project.queue.add(job, files, project.words)
-            made.append(job.id)
-    except BaseException:
-        for job_id in made:
-            try:
-                project.queue.remove(job_id)
-            except QueueError:
-                pass
-        raise
+    with st.order_guard():  # no other sequence gets the same sNN meanwhile
+        new_sequence = project.queue.next_sequence_id()
+        taken = project.queue.taken()
+        ids: dict[int, str] = {}
+        for n, (job, _) in sorted(entries.items()):
+            base = project.queue.new_id(
+                job.task, new_sequence, (job.sequence or {}).get("name", "")
+            )
+            new, k = base, 2
+            while new in taken or new in ids.values():
+                new, k = f"{base}_{k}", k + 1
+            ids[n] = new
+        made: list[str] = []
+        try:
+            for n, (job, files) in sorted(entries.items()):
+                job.id = ids[n]
+                job.sequence = {**(job.sequence or {}), "id": new_sequence}
+                job.needs = [ids.get(known.get(i, 0), i) for i in job.needs]
+                job.created = st.now()
+                for key in ("requeued_from", "requeued_as"):
+                    job.raw.pop(key, None)
+                job.raw["restarted_from"] = sequence
+                project.queue.add(job, files, project.words)
+                made.append(job.id)
+        except BaseException:
+            for job_id in made:
+                try:
+                    project.queue.remove(job_id)
+                except QueueError:
+                    pass
+            raise
     for job_id in queued:
         try:
             project.park(job_id)

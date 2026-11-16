@@ -145,9 +145,7 @@ class RunnerState:
     """``runner.json``."""
 
     status: str = IDLE
-    mode: str = ""
     pid: int = 0
-    pid_started: float = 0.0
     started: str = ""
     finished: str = ""
     current: str = ""
@@ -346,18 +344,6 @@ def file_lock(path: Path, wait: float = 60.0):
             _unlock(handle)
     finally:
         handle.close()
-
-
-def process_started(pid: int) -> float:
-    """When a process started (epoch seconds), 0.0 if unknown."""
-    try:
-        import psutil
-    except ImportError:
-        return 0.0
-    try:
-        return psutil.Process(pid).create_time()
-    except Exception:  # noqa: BLE001 -- no such process, access denied
-        return 0.0
 
 
 def _jsonable(value: Any) -> Any:

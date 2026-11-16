@@ -46,7 +46,7 @@ def test_edit_files_and_study_fields(bridge):
         bridge.save_file(job_id, "task.yaml", "value: [")
     assert "cannot run" in bridge.save_file(job_id, "task.yaml", "colour: 1\n")
     bridge.save_file(job_id, "task.yaml", "value: 2.5\n")
-    bridge.create_optional(job_id, "design_variables.json")
+    bridge.save_file(job_id, "design_variables.json", "{}\n")
     assert bridge.details("queue", job_id)["files"][1]["text"] == "{}\n"
     bridge.delete_optional(job_id, "design_variables.json")
     assert bridge.save_job(job_id, {"save": True, "on_failure": "continue"}) == "saved"

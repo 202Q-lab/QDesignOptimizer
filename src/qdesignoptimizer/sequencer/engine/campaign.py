@@ -129,10 +129,10 @@ def problems_of(project_root: Path, key: str) -> list[str]:
     return []
 
 
-def campaigns(project_root: Path, store_name: str = "") -> list[CampaignInfo]:
+def campaigns(project_root: Path) -> list[CampaignInfo]:
     """Every campaign of a project, parents before their sub-campaigns,
-    by key. ``own_store`` says whether it holds a ``store_name`` (False
-    without one)."""
+    by key. ``own_store`` is left False: the project knows its store's
+    name and fills it in (``Project.campaigns``)."""
     top = root_of(project_root)
     if not top.is_dir():
         return []
@@ -151,7 +151,7 @@ def campaigns(project_root: Path, store_name: str = "") -> list[CampaignInfo]:
                 key=key,
                 title=_title(readme) or key,
                 folder=folder,
-                own_store=bool(store_name) and (folder / store_name).is_file(),
+                own_store=False,
             )
         )
     return sorted(found, key=lambda c: c.key.split("/"))

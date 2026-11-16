@@ -158,9 +158,7 @@ class Runner:
             st.clear_stop(out)
             self.state = st.RunnerState(
                 status=st.BUSY,
-                mode="live",
                 pid=os.getpid(),
-                pid_started=st.process_started(os.getpid()),
                 started=st.now(),
             )
             self.state.save(out)
@@ -375,10 +373,16 @@ class Runner:
         """The first queued study that may start now (None if none), and
         whether to wait for one (something is being edited); with None,
         ``self.state.message`` says what holds them back."""
-        edited, waiting, undecided = [], [], {}
+        edited, waiting, undecided, broken = [], [], {}, []
         versions: dict[str, str] = {}
         for key in keys:
             project, job_id = self.workspace.locate(key)
+            name = self.workspace.name_of(project)
+            if name in self._broken and code_hashes(project) == self._broken[name]:
+                # Its code does not load; the other projects go on.
+                if name not in broken:
+                    broken.append(name)
+                continue
             folder = project.queue.folder(job_id)
             lease = read_lease(folder)
             if lease is not None:
@@ -395,7 +399,6 @@ class Runner:
                 waiting.append(f"{key} needs {why}")
                 self._say_once(key, f"{key} waits for {why}")
                 continue
-            name = self.workspace.name_of(project)
             if name not in versions:
                 versions[name] = code_version(project)
             held = hold_reason(project, job, versions[name])
@@ -406,7 +409,8 @@ class Runner:
                 continue
             return key, False
         self.state.message = "; ".join(
-            (["waiting for edits: " + ", ".join(edited)] if edited else [])
+            (["waiting for code that loads: " + ", ".join(broken)] if broken else [])
+            + (["waiting for edits: " + ", ".join(edited)] if edited else [])
             + (["waiting for what they need: " + "; ".join(waiting)] if waiting else [])
             + (
                 [
@@ -418,7 +422,7 @@ class Runner:
                 else []
             )
         )
-        return None, bool(edited)
+        return None, bool(edited or broken)
 
     def _reload_if_changed(self, project) -> bool:
         """Reload a project's code before its next study if it changed
@@ -520,6 +524,11 @@ class Runner:
                 )
                 log.error(self.state.message)
                 return
+            if read_lease(claimed) is not None:
+                # Edit was pressed (or an agent began writing) after it was
+                # picked: it goes back, and runs once the edit is done.
+                self.queue.release(claimed, job_id)
+                continue
             try:
                 problems = self.project.problems(job_id, deep=True, folder=claimed)
                 if problems:
@@ -532,7 +541,17 @@ class Runner:
                     log.error(self.state.message)
                     return
                 job = load_job(claimed, self.project.words)
-                folder = self.queue.start(claimed, job_id)
+                try:
+                    folder = self.queue.start(claimed, job_id)
+                except PermissionError as exc:
+                    self.queue.release(claimed, job_id)
+                    self.state.status = st.ERROR
+                    self.state.message = (
+                        f"{shown} could not be started: a file of it is held "
+                        f"open ({exc}); close it and start again"
+                    )
+                    log.error(self.state.message)
+                    return
             except BaseException:
                 # Whatever went wrong between claim and start -- even a
                 # Ctrl+C -- the study goes back to the queue rather than

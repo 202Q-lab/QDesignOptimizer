@@ -36,9 +36,8 @@ from pathlib import Path
 from typing import Iterable
 
 from . import state as st
-from .job import parse_completed
 from .project import Project, open_project
-from .queue import QueueError, keep_listed
+from .queue import QueueError, keep_listed, started_key
 
 ADAPTER = "sequencer.py"
 #: In a set of projects' state folder: ``{name: its out/ folder}``, so a
@@ -372,15 +371,12 @@ class Workspace:
             for project in self.projects.values()
             for path in project.queue.completed(limit)
         ]
-        runs.sort(key=lambda r: _started(r[1]), reverse=True)
+        runs.sort(key=lambda r: started_key(r[1]), reverse=True)
         return runs[:limit] if limit else runs
 
     def close(self) -> None:
         """End the projects' worker processes, if any."""
-        for project in self.projects.values():
-            closer = getattr(project.backend, "close", None)
-            if closer is not None and _is_remote(project.backend):
-                closer()
+        _close_workers(self.projects.values())
 
 
 def workspace_dir(outs: list[Path]) -> Path:
@@ -392,16 +388,11 @@ def workspace_dir(outs: list[Path]) -> Path:
     return user_home() / "workspaces" / f"{names}-{digest[:8]}"
 
 
-def _started(folder: Path) -> tuple:
-    """Sort key: the study's start time (from its folder name), then
-    when its result was last written -- two studies of different
-    projects can start in the same second."""
-    stamp = parse_completed(folder.name)[1]
-    try:
-        written = (folder / st.RESULT_FILE).stat().st_mtime_ns
-    except OSError:
-        written = 0
-    return stamp, written
+def _close_workers(projects) -> None:
+    """End the worker process of each project that has one."""
+    for project in projects:
+        if _is_remote(project.backend):
+            project.backend.close()
 
 
 def _is_remote(backend) -> bool:
@@ -441,9 +432,6 @@ def open_workspace(
             else:
                 projects.append(open_project(ref))
     except BaseException:
-        for project in projects:  # the workers already started
-            closer = getattr(project.backend, "close", None)
-            if closer is not None and _is_remote(project.backend):
-                closer()
+        _close_workers(projects)  # the workers already started
         raise
     return Workspace(projects, refs)
