@@ -127,7 +127,8 @@ def _queue_area() -> Any:
                     ),
                 ],
             ),
-            html.H3("Queue", className="qs-h"),
+            html.Div(id="queue-jump", className="qs-jump"),
+            html.H3("Queue", id="title-queue", className="qs-h"),
             html.Div(id="queue-table"),
             html.Div(
                 className="qs-bar",
@@ -147,15 +148,31 @@ def _queue_area() -> Any:
                     html.Button("Add to queue", id="btn-add", className="qs-btn"),
                 ],
             ),
-            html.H3("On hold", className="qs-h", style={"marginTop": "14px"}),
-            html.Div(
-                "Not in the run order: the runner skips these until you queue "
-                "them (▶).",
-                className="qs-small",
+            html.Details(
+                open=True,
+                className="qs-section",
+                children=[
+                    html.Summary(
+                        html.H3("On hold", id="title-hold", className="qs-h"),
+                    ),
+                    html.Div(
+                        "Not in the run order: the runner skips these until "
+                        "you queue them (▶).",
+                        className="qs-small",
+                    ),
+                    html.Div(id="held-table"),
+                ],
             ),
-            html.Div(id="held-table"),
-            html.H3("Completed", className="qs-h", style={"marginTop": "14px"}),
-            html.Div(id="completed-table"),
+            html.Details(
+                open=True,
+                className="qs-section",
+                children=[
+                    html.Summary(
+                        html.H3("Completed", id="title-completed", className="qs-h"),
+                    ),
+                    html.Div(id="completed-table"),
+                ],
+            ),
             html.H4("Runner log", style={"margin": "14px 0 4px"}),
             html.Pre(id="log", className="qs-pre"),
         ],
@@ -468,6 +485,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
                             html.Br(),
                             html.Span(row["id"], className="qs-small"),
                             *_campaign_tag(row.get("campaign")),
+                            *_by_tag(row),
                             *_editing_tag(row),
                             *_waits_tag(row),
                         ],
@@ -566,6 +584,7 @@ def held_table(snap: dict, selected: dict | None) -> Any:
                                 row["id"].rsplit("/", 1)[-1], className="qs-small"
                             ),
                             *_campaign_tag(row.get("campaign")),
+                            *_by_tag(row),
                             *_editing_tag(row),
                             *_waits_tag(row),
                         ],
@@ -634,6 +653,7 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
                                 className="qs-small",
                             ),
                             *_campaign_tag(row.get("campaign")),
+                            *_by_tag(row),
                         ],
                         id={"type": "crow", "index": row["name"]},
                         className="qs-pick",
@@ -672,6 +692,41 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
     return html.Table(
         className="qs-table", children=[html.Thead(head), html.Tbody(body)]
     )
+
+
+def section_titles(snap: dict) -> tuple:
+    """The Queue, On hold and Completed titles with their counts, and
+    the line of links to them at the top of the shared queue."""
+    counts = (
+        len(snap.get("rows") or []),
+        len(snap.get("held") or []),
+        len(snap.get("completed") or []),
+    )
+    titles = (
+        f"Queue ({counts[0]})",
+        f"On hold ({counts[1]})",
+        f"Completed ({counts[2]})",
+    )
+    jump: list[Any] = []
+    for title, target in zip(titles, ("title-queue", "title-hold", "title-completed")):
+        if jump:
+            jump.append(" \u00b7 ")
+        jump.append(html.A(title, href=f"#{target}"))
+    return (*titles, jump)
+
+
+def _by_tag(row: dict) -> list:
+    """Who queued it from outside the GUI, with why on hover."""
+    if not row.get("added_by"):
+        return []
+    return [
+        html.Br(),
+        html.Span(
+            f"by {row['added_by']}",
+            className="qs-tag qs-tag-by",
+            title=row.get("why") or "no reason given",
+        ),
+    ]
 
 
 def _waits_tag(row: dict) -> list:
@@ -797,6 +852,19 @@ def details(data: dict | None, words: dict, editing: bool = False) -> Any:
             f"{task_word} {job.get(task_word, job.get('task', ''))}"
             f"  --  {job.get('generated_by', '')}",
             className="qs-muted",
+        ),
+        *(
+            [
+                html.Div(
+                    [
+                        html.B(f"Added by {job['added_by']}"),
+                        f": {job['why']}" if job.get("why") else " (no reason given)",
+                    ],
+                    className="qs-by",
+                )
+            ]
+            if job.get("added_by")
+            else []
         ),
     ]
     parts = [_mode_bar(data, editable), *head]

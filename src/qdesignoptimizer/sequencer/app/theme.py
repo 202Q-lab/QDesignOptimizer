@@ -116,6 +116,13 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-pick { cursor: pointer; }
 .qs-pick:hover { color: #1565c0; }
 .qs-small { font-size: 12px; color: #607d8b; }
+.qs-tag-by { background: #f3e5f5 !important; color: #6a1b9a !important; }
+.qs-by { margin: 4px 0; padding: 4px 8px; background: #f3e5f5; color: #4a148c;
+  border-radius: 4px; font-size: 13px; }
+.qs-jump { font-size: 13px; margin: 6px 0 2px; }
+.qs-jump a { color: inherit; }
+.qs-section > summary { cursor: pointer; list-style: revert; margin-top: 14px; }
+.qs-section > summary > h3 { display: inline; }
 .qs-tag-waits { background: #e3f2fd !important; color: #0d47a1 !important; }
 .qs-tag-editing { background: #fff3e0 !important; color: #e65100 !important; }
 .qs-tag { display: inline-block; border-radius: 4px; padding: 0 6px;

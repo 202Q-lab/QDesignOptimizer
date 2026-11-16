@@ -64,6 +64,16 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         return no_update if snap == old else snap
 
     @app.callback(
+        Output("title-queue", "children"),
+        Output("title-hold", "children"),
+        Output("title-completed", "children"),
+        Output("queue-jump", "children"),
+        Input("snapshot", "data"),
+    )
+    def _section_titles(snap):
+        return layout.section_titles(snap or {})
+
+    @app.callback(
         Output("queue-table", "children"),
         Output("held-table", "children"),
         Output("completed-table", "children"),

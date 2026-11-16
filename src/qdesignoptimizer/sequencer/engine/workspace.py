@@ -41,6 +41,9 @@ from .project import Project, open_project
 from .queue import QueueError, keep_listed
 
 ADAPTER = "sequencer.py"
+#: In a set of projects' state folder: ``{name: its out/ folder}``, so a
+#: later set sharing some of them can take over its order.
+PROJECTS_FILE = "projects.json"
 _SKIP = {"out", ".git", "__pycache__", ".ipynb_checkpoints", "node_modules"}
 
 
@@ -133,6 +136,58 @@ class Workspace:
             )
         self.state_dir = Path(state_dir)
         self.order_file = self.state_dir / "order.json"
+        if not self.single:
+            self._remember_projects()
+            self._inherit_order()
+
+    def _remember_projects(self) -> None:
+        """Note which out/ folder each name here is (``PROJECTS_FILE``)."""
+        known = {name: str(p.out.resolve()) for name, p in self.projects.items()}
+        path = self.state_dir / PROJECTS_FILE
+        try:
+            if st.read_json(path) != known:
+                st.write_json(path, known)
+        except OSError:
+            pass  # only a later set's starting order needs it
+
+    def _inherit_order(self) -> None:
+        """A set of projects opened for the first time (one connected or
+        disconnected) starts from the order of the set last reordered
+        that shares projects with it: those studies keep their places,
+        and the new project's come after them (``ids``)."""
+        if self.order_file.exists():
+            return
+        mine = {str(p.out.resolve()).lower(): name for name, p in self.projects.items()}
+        best: tuple[int, list, dict] | None = None
+        for folder in (user_home() / "workspaces").glob("*"):
+            order = folder / "order.json"
+            if folder == self.state_dir or not order.is_file():
+                continue
+            names = st.read_json(folder / PROJECTS_FILE)
+            listed = st.read_json(order)
+            if not isinstance(names, dict) or not isinstance(listed, list):
+                continue
+            rename = {
+                old: mine[str(out).lower()]
+                for old, out in names.items()
+                if str(out).lower() in mine
+            }
+            if not rename:
+                continue
+            stamp = order.stat().st_mtime_ns
+            if best is None or stamp > best[0]:
+                best = (stamp, listed, rename)
+        if best is None:
+            return
+        _, listed, rename = best
+        keys = []
+        for key in listed:
+            name, _, local = str(key).partition("/")
+            if name in rename and local:
+                keys.append(f"{rename[name]}/{local}")
+        with st.order_guard():
+            if not self.order_file.exists():
+                st.write_json(self.order_file, keys)
 
     @classmethod
     def of(cls, project: Project, ref: str = "") -> Workspace:

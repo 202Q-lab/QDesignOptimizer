@@ -3,7 +3,12 @@
     python -m qdesignoptimizer.sequencer <sequencer.py> list
     python -m qdesignoptimizer.sequencer <sequencer.py> add <study> [--settings JSON] [--campaign KEY]
         [--needs ID ...] (studies that must have run successfully first)
+        [--by NAME] [--why TEXT] (who queues it and why; the GUI shows both)
     python -m qdesignoptimizer.sequencer <sequencer.py> sequence <file.yaml or key> [--campaign KEY]
+        [--by NAME] [--why TEXT]
+    python -m qdesignoptimizer.sequencer <sequencer.py> wait <id> [<id> ...] [--timeout S]
+        (until each has run; prints its result and folder. Exit 0 all done,
+        1 one failed or is on hold, 2 one is unknown, 3 timed out)
     python -m qdesignoptimizer.sequencer <sequencer.py> campaign list
     python -m qdesignoptimizer.sequencer <sequencer.py> campaign new <key> [--question TEXT] [--shared]
     python -m qdesignoptimizer.sequencer <sequencer.py> campaign promote <key> [<name> ...]
@@ -37,6 +42,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -48,6 +54,9 @@ from .runner import Runner, RunRefused, check_queue, configure_console_logging
 from .sequence import SequenceError, load_sequence
 from .worker import WorkerError
 from .workspace import Workspace, open_workspace
+
+#: Who a command line is, in the GUI: an agent sets QDO_SEQUENCER_AGENT.
+_AGENT = os.environ.get("QDO_SEQUENCER_AGENT", "the command line")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -83,6 +92,22 @@ def main(argv: list[str] | None = None) -> int:
     p_sequence.add_argument(
         "--campaign", default=None, help="queue them in this campaign"
     )
+    for p in (p_add, p_sequence):
+        p.add_argument(
+            "--by",
+            default=_AGENT,
+            help="who queues it, as the GUI shows it (default: "
+            "$QDO_SEQUENCER_AGENT or 'the command line')",
+        )
+        p.add_argument("--why", default="", help="why it is queued")
+    p_wait = sub.add_parser(
+        "wait", help="wait until studies have run; print where their results are"
+    )
+    p_wait.add_argument("ids", nargs="+")
+    p_wait.add_argument(
+        "--timeout", type=float, default=None, help="give up after S seconds (exit 3)"
+    )
+    p_wait.add_argument("--every", type=float, default=5.0, help=argparse.SUPPRESS)
     p_camp = sub.add_parser("campaign", help="list, make or promote campaigns")
     p_camp.add_argument("action", choices=["list", "new", "promote"])
     p_camp.add_argument("key", nargs="?", default="")
@@ -126,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
     p_write.add_argument("--from", dest="source", help="read it here (else stdin)")
     p_write.add_argument(
         "--by",
-        default=os.environ.get("QDO_SEQUENCER_AGENT", "the command line"),
+        default=_AGENT,
         help="who is editing, as the GUI shows it (default: "
         "$QDO_SEQUENCER_AGENT or 'the command line')",
     )
@@ -158,6 +183,8 @@ def _command(args, workspace: Workspace) -> int:
                 campaign=args.campaign,
                 hold=args.hold,
                 needs=args.needs,
+                added_by=args.by,
+                why=args.why,
             )
             if args.hold:
                 print(f"on hold: {workspace.key(workspace.name_of(project), job_id)}")
@@ -183,7 +210,9 @@ def _command(args, workspace: Workspace) -> int:
                 spec = found
             if args.campaign is not None:
                 spec = replace(spec, campaign=args.campaign)
-            ids = workspace.added(project, project.add_sequence(spec))
+            ids = workspace.added(
+                project, project.add_sequence(spec, added_by=args.by, why=args.why)
+            )
             print(f"queued {len(ids)} {words.task}(s): {', '.join(ids)}")
             return 0
         if args.command == "campaign":
@@ -242,6 +271,8 @@ def _command(args, workspace: Workspace) -> int:
             return 0
         if args.command == "write":
             return _write(args, workspace)
+        if args.command == "wait":
+            return _wait(args, workspace)
         if args.command == "move":
             order = workspace.move(
                 args.id,
@@ -382,6 +413,87 @@ def _write(args, workspace: Workspace) -> int:
             print(f"  - {problem}")
         return 2
     return 0
+
+
+def _wait(args, workspace: Workspace) -> int:
+    """Wait until each study has run -- neither it nor a requeued copy
+    is queued any more -- and print its latest run as it lands."""
+    pending = {key: _locate_any(workspace, key) for key in args.ids}
+    deadline = None if args.timeout is None else time.monotonic() + args.timeout
+    worst = 0
+    said_runner = False
+    first = True
+    while pending:
+        for key, (project, local) in list(pending.items()):
+            where = project.pending_state(local)
+            if where == "queued":
+                continue
+            del pending[key]
+            if where == "hold":
+                print(f"{key}: on hold; nothing runs it until it is queued", flush=True)
+                worst = max(worst, 1)
+                continue
+            runs = project.runs_of(local)
+            if not runs:
+                print(f"{key}: not queued, on hold or completed", flush=True)
+                worst = 2
+                continue
+            if not _print_run(workspace, project, runs[-1]):
+                worst = max(worst, 1)
+        if not pending:
+            break
+        if first:
+            print("waiting for " + ", ".join(pending), flush=True)
+            first = False
+        state = workspace.state_dir
+        if not said_runner and not st.RunnerState.load(state).alive(state):
+            print("(no runner is going: waiting for one to start)", flush=True)
+            said_runner = True
+        if deadline is not None and time.monotonic() >= deadline:
+            print(f"timed out; still queued: {', '.join(pending)}", flush=True)
+            return 3
+        time.sleep(args.every)
+    return worst
+
+
+def _print_run(workspace: Workspace, project, folder: Path) -> bool:
+    """Print one run's result and where it is; whether it succeeded."""
+    result = st.result_of(folder)
+    status = result.get("status", "?")
+    print(f"{status} {workspace.key(workspace.name_of(project), folder.name)}")
+    print(f"  folder: {folder.resolve()}")
+    for label, key in (
+        ("message", "message"),
+        ("outputs", "outputs"),
+        ("wrote back", "committed"),
+        ("checks", "checks"),
+        ("files", "files"),
+    ):
+        value = result.get(key)
+        if value:
+            shown = value if isinstance(value, str) else json.dumps(value)
+            print(f"  {label}: {shown}")
+    sys.stdout.flush()
+    return status == st.DONE
+
+
+def _locate_any(workspace: Workspace, key: str):
+    """The project and id of a study wherever it is (queued, on hold,
+    completed); a bare id with several projects open must be in one."""
+    if "/" in key or workspace.single:
+        return workspace.locate(key)
+    found = [
+        (project, key)
+        for project in workspace.projects.values()
+        if project.pending_state(key) or project.runs_of(key)
+    ]
+    if len(found) != 1:
+        raise QueueError(
+            f"{key!r}: name the project as <project>/{key}"
+            if found
+            else f"{key!r} is in none of the open projects"
+        )
+    return found[0]
 
 
 def _locate_held(workspace: Workspace, key: str):

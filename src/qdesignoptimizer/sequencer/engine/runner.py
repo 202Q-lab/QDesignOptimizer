@@ -484,6 +484,7 @@ class Runner:
             self.backend.words.task: job.task,
             "subject": job.subject,
             **({"campaign": job.campaign} if job.campaign else {}),
+            **({"added_by": job.added_by} if job.added_by else {}),
             "status": st.RUNNING,
             "started": st.now(),
             "finished": "",

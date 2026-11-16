@@ -299,8 +299,13 @@ queue and edits studies from a terminal. The GUI shows what it does
 within a poll (2 s); a runner already going picks up new studies before
 its next one.
 
+The steps an agent should follow are in [`CLAUDE.md`](CLAUDE.md); copy
+it into your own chip project.
+
 - Add: `add <study>` / `sequence <name>` (straight into the queue; with
-  `--hold` on hold).
+  `--hold` on hold). `--by claude` (or `QDO_SEQUENCER_AGENT=claude`) and
+  `--why "..."` say who queued it and why: the GUI tags the study
+  "by claude", with the reason on hover and in the study editor.
 - Reorder: `move <id> --first`, `--last`, `--to 3`, `--before <id>`,
   `--after <id>`. Every order write, from the GUI or the command line,
   is made under one machine-wide lock, so two moves never undo each
@@ -326,11 +331,17 @@ its next one.
 - A study sequence fills `needs` in itself: each study needs the
   earlier ones of its sequence that write back. An entry can say
   otherwise by number: `needs: [1]`, or `needs: []` for none.
+- Wait: `wait <id> ...` returns once each has run and prints its
+  status, folder, outputs and what it wrote back (exit 0 done, 1 failed
+  or on hold, 2 unknown, 3 `--timeout`). An agent runs it in the
+  background and is told when it exits.
 - Read the results in `out/completed/<id>_<start>/` and the store's
   `design_variables.meta.json`.
 
 With several projects open in the GUI, give the agent the same set
 (`<project> -p <other> ...`), so its studies join the shared order.
+Connecting another project keeps that order: the new project's studies
+come after it.
 
 ## Where things are kept
 

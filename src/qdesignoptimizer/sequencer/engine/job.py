@@ -15,6 +15,8 @@ study it is, where it belongs and how the queue treats it. Example::
     save: true                       # write tuned values back on success
     on_failure: continue             # abort (default) or continue
     notes: ""
+    added_by: claude                 # who queued it ("" for the GUI)
+    why: "kappa off by 20 %: refit the coupler first"
     created: "2026-11-11 10:00:00"
     generated_by: ministudies/ATS1_eigenmode.yaml
 
@@ -49,6 +51,8 @@ _KEYS = {
     "on_failure",
     "needs",
     "notes",
+    "added_by",
+    "why",
     "created",
     "generated_by",
     "sequence",
@@ -82,6 +86,12 @@ class Job:
     #: then the runner passes it over and runs the ones after it.
     needs: list[str] = field(default_factory=list)
     notes: str = ""
+    #: Who queued it from outside the GUI (``--by``: an agent's name,
+    #: "the command line"); "" for a study made in the GUI.
+    added_by: str = ""
+    #: Why it was queued: the reasoning behind it, for the person who
+    #: reviews the queue.
+    why: str = ""
     sequence: dict = field(default_factory=dict)
     #: The campaign it belongs to (``tuneup_chip/q1_readout``), "" for none.
     campaign: str = ""
@@ -109,6 +119,10 @@ class Job:
         if self.needs:
             out["needs"] = list(self.needs)
         out["notes"] = self.notes
+        if self.added_by:
+            out["added_by"] = self.added_by
+        if self.why:
+            out["why"] = self.why
         if self.created:
             out["created"] = self.created
         if self.generated_by:
@@ -169,7 +183,7 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
     if not isinstance(checks, list) or not all(isinstance(c, str) for c in checks):
         problems.append(f"checks must be a list of names, not {checks!r}")
         checks = []
-    for key in ("notes", "created", "generated_by"):
+    for key in ("notes", "created", "generated_by", "added_by", "why"):
         if raw.get(key) is not None and not isinstance(raw.get(key), str):
             problems.append(f"{key} must be text")
     if raw.get("hold"):
@@ -217,6 +231,8 @@ def _parse_job(raw: Any, words: Words, folder_id: str) -> Job:
         on_failure=on_failure,
         needs=[str(n) for n in needs],
         notes=str(raw.get("notes") or ""),
+        added_by=str(raw.get("added_by") or ""),
+        why=str(raw.get("why") or ""),
         sequence=dict(sequence),
         campaign=campaign.replace("\\", "/").strip("/"),
         created=str(raw.get("created") or ""),

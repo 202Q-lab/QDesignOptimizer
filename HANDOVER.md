@@ -107,6 +107,15 @@ into the docs.
    sequence entry's `needs` are entry numbers; default: the earlier
    entries with `save`. GUI: the "needs" field and a "waits for" tag
    (`_waits_for`, read every poll, outside the row cache).
+   **Who and why**: `job.added_by` / `job.why` (`add`/`sequence --by
+   --why`, default `$QDO_SEQUENCER_AGENT`); GUI studies leave them empty.
+   The runner copies `added_by` into result.json for the completed list.
+   **wait** (`cli._wait`): polls `Project.pending_state` / `runs_of`
+   until neither the id nor an `_rN` copy is queued, then prints the
+   latest run. **A set of projects opened the first time** takes the
+   order of the most recently written set sharing a project
+   (`Workspace._inherit_order`, via each state folder's `projects.json`).
+   Agent instructions: `tutorials/example_simulation_sequencer/CLAUDE.md`.
    **Poll cost (2026-11-16)**: the GUI's 2 s snapshot keeps each queued
    or held study's row (parsed job.yaml, problems, warnings) with its
    files' modification times (`Bridge._row`), re-reading only changed

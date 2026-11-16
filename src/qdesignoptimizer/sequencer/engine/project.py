@@ -231,19 +231,35 @@ class Project:
         or of a requeued copy ``<id>_rN``), ``queued``, ``hold``,
         ``failed`` (its runs all failed, none queued again) or
         ``missing``."""
-        same = re.compile(re.escape(need) + r"(_r\d+)?$")
-        runs = [
-            p for p in self.queue.completed() if same.match(parse_completed(p.name)[0])
-        ]
+        runs = self.runs_of(need)
         if any(st.result_of(p).get("status") == st.DONE for p in runs):
             return "done"
+        return self.pending_state(need) or ("failed" if runs else "missing")
+
+    def runs_of(self, job_id: str) -> list[Path]:
+        """The completed folders of a study and of its requeued copies
+        (``<id>_rN``), oldest start first."""
+        same = re.compile(re.escape(job_id) + r"(_r\d+)?$")
+        return sorted(
+            (
+                p
+                for p in self.queue.completed()
+                if same.match(parse_completed(p.name)[0])
+            ),
+            key=_started,
+        )
+
+    def pending_state(self, job_id: str) -> str:
+        """``queued`` (or running) or ``hold`` when the study or a
+        requeued copy of it is still to run; "" when none is."""
+        same = re.compile(re.escape(job_id) + r"(_r\d+)?$")
         if any(same.match(i) for i in self.queue.ids()) or any(
             same.match(i) for i in self.queue.claimed_ids()
         ):
             return "queued"
         if any(same.match(i) for i in self.hold.ids()):
             return "hold"
-        return "failed" if runs else "missing"
+        return ""
 
     def unmet_needs(self, job: Job) -> dict[str, str]:
         """The studies ``job`` needs that have not run successfully yet,
@@ -400,11 +416,14 @@ class Project:
         campaign: str = "",
         hold: bool = False,
         needs: list[str] | None = None,
+        added_by: str = "",
+        why: str = "",
     ) -> str:
         """Generate one study and queue it. Returns its id.
 
         Args:
             needs: Ids of studies it needs to have run first.
+            added_by: Who queued it ("" for the GUI); ``why``: the reason.
             queue: Where to put it; the project's own queue (or its hold
                 folder, with ``hold``) by default.
             campaign: The campaign it belongs to, "" for none.
@@ -448,6 +467,8 @@ class Project:
             created=st.now(),
             generated_by=generated_by,
             needs=list(needs or []),
+            added_by=added_by,
+            why=why,
         )
         queue.add(job, files, self.words, position)
         return job_id
@@ -532,8 +553,12 @@ class Project:
                 scratch.remove(job_id)
         return found
 
-    def add_sequence(self, spec: SequenceSpec) -> list[str]:
+    def add_sequence(
+        self, spec: SequenceSpec, added_by: str = "", why: str = ""
+    ) -> list[str]:
         """Queue every study of a study sequence under a fresh study sequence id.
+
+        ``added_by`` and ``why`` go on each of its studies (``add``).
 
         All studies are made before any is queued, so one failing
         half-way leaves the queue as it was.
@@ -584,6 +609,8 @@ class Project:
                         )
                     ],
                     notes=entry.notes,
+                    added_by=added_by,
+                    why=why,
                     sequence={"id": sequence_id, "name": spec.key, "entry": n},
                     campaign=campaign,
                     created=st.now(),
@@ -763,3 +790,14 @@ def open_project(ref: str | Path) -> Project:
         return Project(load_backend(f"{target}:{factory}", Path.cwd()))
     path = Path(target).resolve()
     return Project(load_backend(f"{path.name}:{factory}", path.parent))
+
+
+def _started(folder: Path) -> tuple:
+    """Sort key of a completed folder: its start time (from its name),
+    then when its result was last written -- a study and its requeued
+    copy can start in the same second."""
+    try:
+        written = (folder / st.RESULT_FILE).stat().st_mtime_ns
+    except OSError:
+        written = 0
+    return parse_completed(folder.name)[1], written

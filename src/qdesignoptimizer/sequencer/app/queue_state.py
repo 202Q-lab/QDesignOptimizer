@@ -518,6 +518,8 @@ class Bridge:
                     "settings": ", ".join(f"{k} {v}" for k, v in job.settings.items()),
                     "save": job.save,
                     "notes": job.notes,
+                    "added_by": job.added_by,
+                    "why": job.why,
                     "campaign": job.campaign,
                     "problems": problems,
                     "warnings": warnings,
@@ -557,6 +559,8 @@ class Bridge:
                             f"{k} {v}" for k, v in job.settings.items()
                         ),
                         "notes": job.notes,
+                        "added_by": job.added_by,
+                        "why": job.why,
                         "campaign": job.campaign,
                         "problems": problems,
                         "editing": editing,
@@ -602,6 +606,7 @@ class Bridge:
                     "message": res.get("message", ""),
                     "committed": res.get("committed", {}),
                     "campaign": res.get("campaign", ""),
+                    "added_by": res.get("added_by", ""),
                 }
             )
         problems = []

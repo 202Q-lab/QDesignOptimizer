@@ -82,7 +82,8 @@ def test_a_study_being_edited_is_passed_over_then_run(project):
     _wait_for(lambda: len(_ran(project)) == 2)  # b and c, not a
     assert _ran(project) == [b, c]
     assert project.queue.ids() == [a]
-    assert "waiting for edits" in st.RunnerState.load(project.out).message
+    # Written once the runner has looked again, a moment after c.
+    _wait_for(lambda: "waiting for edits" in st.RunnerState.load(project.out).message)
     release_lease(project.queue.folder(a), "you (GUI)")
     thread.join(10)
     assert done and done[0].status == st.FINISHED
