@@ -25,6 +25,13 @@ The queue is re-read before every study, so an edit, a reorder or a new
 study made in the GUI while the runner works takes effect for every
 study not yet started. ``STOP`` ends it between studies.
 
+A study someone is editing (a live lease, ``lease.py``: open in Edit
+mode in the GUI, or being written from the command line) is skipped:
+the runner goes on with the next one and comes back to it once the edit
+is done. Unless it is ``needed_by_next`` -- the study after it needs
+what it writes back -- then the runner waits for it, running nothing
+past it. With nothing left but studies being edited, it waits too.
+
 A runner runs a workspace: one project, or several sharing one order
 (``workspace``). It holds the machine lock (one runner per user at a
 time: two never solve at once), the lock of its state folder and the
@@ -36,16 +43,21 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 
 from . import state as st
 from .backend import StepResult
-from .job import load_job, parse_completed
+from .job import JobError, load_job, parse_completed
+from .lease import describe, read_lease
 from .project import Project
 from .queue import INPUTS, QueueError, load_job_from
 from .workspace import Workspace, user_home
 
 log = logging.getLogger("qdesignoptimizer.sequencer.run")
+
+#: Seconds between looks while every study it could start is being edited.
+WAIT_S = 2.0
 
 
 class RunRefused(RuntimeError):
@@ -66,6 +78,8 @@ class Runner:
         self.state = st.RunnerState()
         self._locks: list[st.RunnerLock] = []
         self._handler: logging.Handler | None = None
+        self._passed: set[str] = set()  # said once: passed over while edited
+        self._waiting = ""  # what it waits for, as last said
         # The study being handled (set per study by _loop).
         self.project = next(iter(self.workspace.projects.values()))
 
@@ -333,8 +347,42 @@ class Runner:
 
     # -- loop ------------------------------------------------------------
 
+    def _next(self, keys: list[str]) -> str | None:
+        """The first queued study that may start now: one not being
+        edited, or None (``self.state.message`` says what it waits for).
+
+        A study being edited is passed over, unless it is needed by the
+        next study: then nothing after it may start either."""
+        for key in keys:
+            project, job_id = self.workspace.locate(key)
+            folder = project.queue.folder(job_id)
+            lease = read_lease(folder)
+            if lease is None:
+                return key
+            try:
+                needed = load_job(folder, project.words).needed_by_next
+            except JobError:
+                needed = False  # its own check stops it once it is free
+            if needed:
+                self.state.message = (
+                    f"waiting for {key}: being edited by {describe(lease)}, "
+                    f"and the study after it needs it"
+                )
+                return None
+            if key not in self._passed:
+                self._passed.add(key)
+                log.info(
+                    "%s is being edited by %s: running the next study first",
+                    key,
+                    describe(lease),
+                )
+        self.state.message = "waiting: every queued study is being edited"
+        return None
+
     def _loop(self) -> None:
         out = self.workspace.state_dir
+        self._passed = set()
+        self._waiting = ""
         while True:
             if st.stop_requested(out):
                 self.state.status = st.STOPPED
@@ -343,8 +391,20 @@ class Runner:
             keys = self.workspace.ids()
             if not keys:
                 return
-            self.project, job_id = self.workspace.locate(keys[0])
-            shown = keys[0]
+            key = self._next(keys)
+            if key is None:
+                # Said once per wait, in runner.json, the log and the GUI.
+                if self.state.message != self._waiting:
+                    self._waiting = self.state.message
+                    log.info(self.state.message)
+                    self.state.save(out)
+                time.sleep(WAIT_S)
+                continue
+            if self._waiting:
+                self._waiting = ""
+                self.state.message = ""
+            self.project, job_id = self.workspace.locate(key)
+            shown = key
             # Claim first, check second: from here on the GUI cannot
             # edit the folder, so the study that runs is the one checked.
             try:

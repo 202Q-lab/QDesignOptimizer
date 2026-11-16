@@ -529,6 +529,12 @@ class Project:
                     checks=list(entry.checks or []),
                     save=bool(entry.save),
                     on_failure=entry.on_failure or "abort",
+                    # A study that writes back feeds the ones after it.
+                    needed_by_next=(
+                        entry.needed_by_next
+                        if entry.needed_by_next is not None
+                        else bool(entry.save) and n < len(spec.entries)
+                    ),
                     notes=entry.notes,
                     sequence={"id": sequence_id, "name": spec.key, "entry": n},
                     campaign=campaign,

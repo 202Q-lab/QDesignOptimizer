@@ -45,7 +45,7 @@ _TOP = {
     "notes",
     "campaign",
 }
-_ENTRY = {"settings", "checks", "save", "on_failure", "notes"}
+_ENTRY = {"settings", "checks", "save", "on_failure", "notes", "needed_by_next"}
 
 
 class SequenceError(ValueError):
@@ -133,6 +133,9 @@ def parse_sequence(
         save = merged.get("save")
         if save is not None and not isinstance(save, bool):
             problems.append(f"entry {n}: save must be true or false")
+        needed = merged.get("needed_by_next")
+        if needed is not None and not isinstance(needed, bool):
+            problems.append(f"entry {n}: needed_by_next must be true or false")
         checks = merged.get("checks")
         if isinstance(checks, str):
             # One name, not its letters: tuple("mode_identity") would
@@ -151,6 +154,7 @@ def parse_sequence(
                 save=save,
                 on_failure=on_failure,
                 notes=str(merged.get("notes") or ""),
+                needed_by_next=needed,
             )
         )
     if not entries:

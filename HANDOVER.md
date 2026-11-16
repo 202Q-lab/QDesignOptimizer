@@ -97,8 +97,13 @@ into the docs.
    `Bridge.keep_editing`); `Bridge.begin_edit` refuses another's lease;
    `_write` refuses a save over a live lease or files changed since Edit
    (`_check_not_overtaken`). CLI `write` takes a 60 s lease around one
-   file. The runner does not look at leases yet: it can start a study
-   that is open in Edit mode, as before.
+   file. The runner (`Runner._next`) passes over a study with a live
+   lease and comes back to it, unless its job.yaml says
+   `needed_by_next: true`: then it waits (`WAIT_S`), running nothing
+   past it; with only leased studies left it waits too; STOP ends a wait.
+   `add_sequence` sets `needed_by_next` on every entry that writes back
+   (`save`) and is not the last, unless the entry says otherwise; the GUI
+   form has a "needed by the next study" box.
    **Poll cost (2026-11-16)**: the GUI's 2 s snapshot keeps each queued
    or held study's row (parsed job.yaml, problems, warnings) with its
    files' modification times (`Bridge._row`), re-reading only changed

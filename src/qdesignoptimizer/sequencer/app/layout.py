@@ -1010,6 +1010,24 @@ def _job_form(job: dict, keys=(), campaigns=None, disabled: bool = False) -> Any
                         value=["save"] if job.get("save") else [],
                         inline=True,
                     ),
+                    html.Span(
+                        dcc.Checklist(
+                            id={"type": "jf", "name": "needed_by_next"},
+                            options=[
+                                {
+                                    "label": " needed by the next study",
+                                    "value": "needed",
+                                    "disabled": disabled,
+                                }
+                            ],
+                            value=["needed"] if job.get("needed_by_next") else [],
+                            inline=True,
+                        ),
+                        title="the study after it uses what this one writes "
+                        "back: while this one is being edited the runner "
+                        "waits for it, instead of running the next ones "
+                        "first",
+                    ),
                 ],
             ),
             field(
@@ -1141,6 +1159,7 @@ def job_fields(job: dict, keys=()) -> dict:
         "checks": ", ".join(job.get("checks") or []),
         "on_failure": job.get("on_failure", "abort"),
         "save": ["save"] if job.get("save") else [],
+        "needed_by_next": ["needed"] if job.get("needed_by_next") else [],
         "notes": job.get("notes", ""),
         "campaign": job.get("campaign") or None,
     }

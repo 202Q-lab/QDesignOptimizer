@@ -313,6 +313,13 @@ its next one.
   the GUI closes): the other side is refused, and the GUI tags the study
   "being edited by claude". A GUI save also checks that nothing changed
   the study since you pressed Edit, and refuses if something did.
+- The runner passes over a study being edited and runs the next one,
+  coming back to it once the edit is done -- unless the study is
+  *needed by the next study* (`needed_by_next: true` in its `job.yaml`,
+  the box of that name in the GUI): then it waits for the edit, running
+  nothing past it. A study sequence marks this itself on every study
+  that writes back and has studies after it (an entry can say
+  `needed_by_next: false`).
 - Read the results in `out/completed/<id>_<start>/` and the store's
   `design_variables.meta.json`.
 
