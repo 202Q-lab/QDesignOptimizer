@@ -237,3 +237,57 @@ def test_the_edit_bar_s_queue_button_is_not_the_row_s(project):
     walk(layout.details(bridge.details("hold", key), {}, True))
     assert len(ids) == len(set(ids)), ids
     assert ("unpark-bar", key) in ids and ("unpark", key) in ids
+
+
+# -- the review of the fixes above -----------------------------------------
+
+
+def test_a_tab_cannot_park_or_remove_another_tab_s_edit(project):
+    study = project.add(_task(project))
+    bridge = Bridge(project=project)
+    bridge.begin_edit("queue", study, "tab-a")
+    for act in (bridge.park, bridge.remove):
+        with pytest.raises(GuiError, match="another tab or window"):
+            act(study, "tab-b")
+    assert project.queue.ids() == [study]
+    bridge.park(study, "tab-a")  # its own edit: it may
+    assert project.hold.ids() == [study]
+
+
+def test_a_busy_lease_lock_refuses_a_move_with_a_queue_error(project, monkeypatch):
+    from contextlib import contextmanager
+
+    from qdesignoptimizer.sequencer.engine import project as project_module
+
+    study = project.add(_task(project))
+
+    @contextmanager
+    def busy():
+        raise st.LockHeld("lease.lock held for 10 s")
+        yield  # pylint: disable=unreachable
+
+    monkeypatch.setattr(project_module, "lease_guard", busy)
+    with pytest.raises(QueueError, match="busy a moment"):
+        project.park(study, holder="")
+    assert project.queue.ids() == [study]
+
+
+def test_values_already_in_the_store_are_not_a_landed_write_back(project):
+    project.add(_task(project), save=True, on_failure="continue")
+    Runner(project).run()  # writes its values
+    project.queue.requeue(project.queue.completed()[0], project.words)
+
+    def die(updates, campaign=""):
+        raise EOFError("the worker went away")
+
+    project.commit = die
+    Runner(project).run()  # the same values, never written this time
+    rerun = max(project.queue.completed(), key=cc.started_key)
+    assert st.result_of(rerun)["status"] == st.FAILED
+
+
+def test_unreadable_text_over_an_expression_is_kept_as_text():
+    from qdesignoptimizer.sequencer.app.forms import parse
+
+    assert parse("6.5", "=p['f'] / 1e9") == 6.5
+    assert parse("[TBD", "=p['f'] / 1e9") == "[TBD"

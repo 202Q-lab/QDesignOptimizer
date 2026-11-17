@@ -341,7 +341,7 @@ def _retarget_needs(project, sequence: str, renamed: dict[str, str]) -> list[str
             folder = source.folder(job_id)
             try:
                 take_lease(folder, f"the restart of {sequence}", 30.0, holder)
-            except LeaseHeld:
+            except (LeaseHeld, st.LockHeld):  # being edited, or busy
                 skipped.append(job_id)
                 continue
             except OSError:

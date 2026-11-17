@@ -407,14 +407,22 @@ class Project:
         if holder is None:
             self._move_unchecked(source, dest, job_id, position)
             return
-        with lease_guard():  # no one takes the lease between check and move
-            try:
-                check_free(folder, holder)
-            except LeaseHeld as exc:
-                raise QueueError(
-                    f"{job_id} is {exc}: it stays where it is until they are done"
-                ) from exc
-            self._move_unchecked(source, dest, job_id, position)
+        try:
+            with lease_guard():  # no one takes the lease between check and move
+                try:
+                    check_free(folder, holder)
+                except LeaseHeld as exc:
+                    raise QueueError(
+                        f"{job_id} is {exc}: it stays where it is until they "
+                        f"are done"
+                    ) from exc
+                self._move_unchecked(source, dest, job_id, position)
+        except st.LockHeld as exc:
+            if isinstance(exc, QueueError):
+                raise
+            raise QueueError(
+                f"busy a moment ({exc}); {job_id} was not moved, try again"
+            ) from exc
 
     def _move_unchecked(self, source: FolderQueue, dest: FolderQueue, job_id, position):
         dest.queue_dir.mkdir(parents=True, exist_ok=True)

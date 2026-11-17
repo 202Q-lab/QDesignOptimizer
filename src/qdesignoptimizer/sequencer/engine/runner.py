@@ -226,13 +226,19 @@ class Runner:
             self._release_locks()
         return self.state
 
-    def _landed(self, job, updates: dict) -> bool:
-        """Whether every value of a write-back is in the study's store."""
+    def _landed(self, job, updates: dict, before: dict) -> bool:
+        """Whether a write-back is in the study's store: every value is
+        there and one was not before (values already there say nothing
+        about whether this one wrote)."""
         try:
             store = self.project.store_values(job.campaign)
         except Exception:  # noqa: BLE001 -- unknown: not written
             return False
-        return bool(updates) and all(store.get(k) == v for k, v in updates.items())
+        return (
+            bool(updates)
+            and all(store.get(k) == v for k, v in updates.items())
+            and any(before.get(k) != v for k, v in updates.items())
+        )
 
     def _settle_cut_off(self) -> list[str]:
         """Close every study a dead runner left unfinished.
@@ -671,7 +677,7 @@ class Runner:
                         shown,
                     )
                 except Exception as exc:  # noqa: BLE001
-                    if self._landed(job, result.updates):
+                    if self._landed(job, result.updates, before):
                         # Written, then the call failed (the worker died
                         # after the file was replaced): as when a runner
                         # stopped there, the store says what happened.

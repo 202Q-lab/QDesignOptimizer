@@ -435,10 +435,11 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Input({"type": "act", "action": ALL, "index": ALL}, "n_clicks"),
         State("rev", "data"),
         State("selected", "data"),
+        State("tab-id", "data"),
         *_EDIT_STATES,
         prevent_initial_call=True,
     )
-    def _act(_clicks, rev, selected, *edits):
+    def _act(_clicks, rev, selected, tab, *edits):
         if not _clicked():
             return no_update, no_update, no_update
         job_id, action = ctx.triggered_id["index"], ctx.triggered_id["action"]
@@ -462,14 +463,14 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 )
         try:
             if action == "remove":
-                text = bridge.remove(job_id)
+                text = bridge.remove(job_id, tab or "")
                 follow = None if shown else no_update
             elif action == "park":
-                text = bridge.park(job_id)
+                text = bridge.park(job_id, tab or "")
                 if shown:
                     follow = {"kind": "hold", "key": bridge.hold_key_of(job_id)}
             elif action == "unpark":
-                text = bridge.unpark(job_id)
+                text = bridge.unpark(job_id, tab or "")
                 if shown:
                     follow = {"kind": "queue", "key": _queued_key(text)}
             else:

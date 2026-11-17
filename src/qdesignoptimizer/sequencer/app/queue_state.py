@@ -51,6 +51,7 @@ from ..engine.job import (
 from ..engine.lease import (
     LEASE_FILE,
     LeaseHeld,
+    check_free,
     describe,
     holder_of,
     lease_guard,
@@ -413,6 +414,7 @@ class Bridge:
             ):
                 self.end_edit(tab)
                 return ""
+            self._prune_lapsed(tab)
             key = selected["key"]
             try:
                 self._study_folder(selected["kind"], key)
@@ -431,6 +433,23 @@ class Bridge:
                 return str(exc)
             self._lost_lease.pop(tab, None)
             return ""
+
+    def _prune_lapsed(self, tab: str) -> None:
+        """Forget other tabs' edits whose lease lapsed: the tab was
+        closed or reloaded (a live one renews it every poll)."""
+        for key, (owner, _) in list(self._editing.items()):
+            if owner == tab:
+                continue
+            lease = None
+            for kind in ("queue", "hold"):
+                try:
+                    lease = read_lease(self._study_folder(kind, key)[1])
+                except GuiError:
+                    continue
+                break
+            if lease is None or holder_of(lease) != self._holder(owner):
+                self._editing.pop(key, None)
+                self._lost_lease.pop(owner, None)
 
     def end_edit(self, tab: str = "") -> None:
         """Tab ``tab`` is done editing (or opened another study): drop
@@ -1101,9 +1120,10 @@ class Bridge:
         except QueueError as exc:
             raise GuiError(str(exc)) from exc
 
-    def remove(self, job_id: str) -> str:
+    def remove(self, job_id: str, tab: str = "") -> str:
         """Take a study out of the queue or off hold (moved to
-        out/removed/)."""
+        out/removed/), asked from browser tab ``tab``: refused while
+        anyone else -- another tab too -- edits it."""
         try:
             if _split_hold(job_id) is not None:
                 project, local = self._study(job_id)
@@ -1111,13 +1131,13 @@ class Bridge:
                 project, local = self.workspace.locate(job_id)
             folder = project.queue.folder(local)
             with lease_guard():  # no one starts editing it meanwhile
-                lease = read_lease(folder)
-                if lease and holder_of(lease) != self._mine(job_id):
-                    raise GuiError(
-                        f"{job_id} is being edited by {_who(lease)}: it stays "
-                        f"until they are done"
-                    )
+                check_free(folder, self._holder(tab))
                 project.queue.remove(local)  # kept in out/removed/
+        except LeaseHeld as exc:
+            raise GuiError(
+                f"{job_id} is being edited by {_who(exc.lease)}: it stays "
+                f"until they are done"
+            ) from exc
         except (QueueError, st.LockHeld, OSError) as exc:
             raise GuiError(str(exc)) from exc
         with self._edit_lock:
@@ -1150,13 +1170,14 @@ class Bridge:
         shown = ", ".join(p.relative_to(root).as_posix() for p in paths)
         return f"saved {shown}; it is in the Add menu"
 
-    def park(self, job_id: str) -> str:
-        """Put a queued study on hold: out of the run order."""
+    def park(self, job_id: str, tab: str = "") -> str:
+        """Put a queued study on hold: out of the run order. ``tab`` as
+        for ``remove``."""
         try:
             project, local = self.workspace.locate(job_id)
-            project.park(local, holder=self._mine(job_id))
+            project.park(local, holder=self._holder(tab))
         except (QueueError, st.LockHeld, OSError) as exc:
-            raise GuiError(str(exc)) from exc
+            raise GuiError(_said(exc)) from exc
         with self._edit_lock:  # its lease was dropped as it moved
             self._editing.pop(job_id, None)
         self._forget(job_id)
@@ -1167,16 +1188,17 @@ class Bridge:
         head, _, local = str(key).rpartition("/")
         return f"{head}/{HOLD_MARK}/{local}" if head else f"{HOLD_MARK}/{local}"
 
-    def unpark(self, key: str) -> str:
-        """Move a study on hold to the end of the queue."""
+    def unpark(self, key: str, tab: str = "") -> str:
+        """Move a study on hold to the end of the queue. ``tab`` as for
+        ``remove``."""
         if _split_hold(key) is None:
             raise GuiError(f"{key} is not on hold")
         scoped, local = self._study(key)
         project = scoped._project  # pylint: disable=protected-access
         try:
-            project.unpark(local, holder=self._mine(key))
+            project.unpark(local, holder=self._holder(tab))
         except (QueueError, st.LockHeld, OSError) as exc:
-            raise GuiError(str(exc)) from exc
+            raise GuiError(_said(exc)) from exc
         with self._edit_lock:
             self._editing.pop(key, None)
         self._forget(key)
@@ -1799,6 +1821,15 @@ def _waits_for(project, job) -> str:
 
 #: Who the GUI is in a study's lease (``engine/lease.py``).
 GUI_EDITOR = "you (GUI)"
+
+
+def _said(exc: Exception) -> str:
+    """A refused move as the GUI says it: an edit lease held by another
+    tab of this GUI is not "you" without saying where."""
+    cause = exc.__cause__
+    if isinstance(cause, LeaseHeld) and cause.lease:
+        return str(exc).replace(describe(cause.lease), _who(cause.lease), 1)
+    return str(exc)
 
 
 def _who(lease: dict) -> str:
