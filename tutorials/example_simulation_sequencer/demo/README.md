@@ -174,11 +174,11 @@ an agent would; with the GUI open, watch both show up there. `write`
 is refused while that study is open in Edit mode in the GUI:
 
 ```bash
-python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo move s04-tune_R1_file-r1_linewidth --first
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo move s004-tune_R1_file-r1_linewidth --first
 ```
 
 ```bash
-python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo write s04-tune_R1_file-r1_linewidth job.yaml --from my_job.yaml --by claude
+python -m qdesignoptimizer.sequencer tutorials/example_simulation_sequencer/demo/chip_qdo write s004-tune_R1_file-r1_linewidth job.yaml --from my_job.yaml --by claude
 ```
 
 ## Campaigns

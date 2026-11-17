@@ -91,11 +91,11 @@ def test_a_half_run_sequence_waits_and_the_rest_moves_up(project):
     _change_code(project)
     final = Runner(project).run()
     assert final.status == st.FINISHED
-    assert "waiting for a decision (the code changed): s01" in final.message
+    assert "waiting for a decision (the code changed): s001" in final.message
     assert project.queue.ids() == ids[1:]  # alone ran, the sequence waits
     assert any(alone in p.name for p in project.queue.completed())
     rows = {r["id"]: r for r in Bridge(project=project).snapshot()["rows"]}
-    assert "the code changed since s01 began" in rows[ids[1]]["code_hold"]
+    assert "the code changed since s001 began" in rows[ids[1]]["code_hold"]
     assert "code changed: continue or restart?" in str(
         layout.queue_table({"rows": list(rows.values())}, {})
     )
@@ -105,14 +105,15 @@ def test_continue_runs_the_rest_on_the_new_code(project, capsys):
     ids = _half_run_sequence(project)
     _change_code(project)
     assert cli.main([str(project.root / "sequencer.py"), "decide"]) == 0
-    assert "s01: the code changed since it began; 2 to run" in capsys.readouterr().out
+    assert "s001: the code changed since it began; 2 to run" in capsys.readouterr().out
     assert (
-        cli.main([str(project.root / "sequencer.py"), "decide", "s01", "continue"]) == 0
+        cli.main([str(project.root / "sequencer.py"), "decide", "s001", "continue"])
+        == 0
     )
     assert Runner(project).run().status == st.FINISHED
     assert project.queue.ids() == []
     assert all(any(i in p.name for p in project.queue.completed()) for i in ids)
-    # Nothing of s01 is left to hold when the code changes again.
+    # Nothing of s001 is left to hold when the code changes again.
     _change_code(project, "VERSION = 3\n")
     assert cc.waiting(project) == {}
 
@@ -122,20 +123,20 @@ def test_restart_queues_the_sequence_again_and_holds_the_rest(project):
     outside = project.add(project.backend.catalog().tasks[0].key, needs=[ids[2]])
     _change_code(project)
     message = Bridge(project=project).decide_code(ids[1], "restart")
-    # A study outside it that needed s01's third now needs s02's.
+    # A study outside it that needed s001's third now needs s002's.
     assert (
         project.job(outside).needs
-        == [i for i in project.queue.ids() if i.startswith("s02-")][2:3]
+        == [i for i in project.queue.ids() if i.startswith("s002-")][2:3]
     )
     project.queue.remove(outside)
-    assert "s01 restarts as s02 (3 studies" in message
+    assert "s001 restarts as s002 (3 studies" in message
     queued = project.queue.ids()
-    assert len(queued) == 3 and all(i.startswith("s02-") for i in queued)
+    assert len(queued) == 3 and all(i.startswith("s002-") for i in queued)
     assert sorted(project.hold.ids()) == sorted(ids[1:])
     jobs = [project.job(i) for i in queued]
-    assert [j.raw.get("restarted_from") for j in jobs] == ["s01"] * 3
+    assert [j.raw.get("restarted_from") for j in jobs] == ["s001"] * 3
     assert [j.sequence["entry"] for j in jobs] == [1, 2, 3]
-    # Its needs point at the new studies, not at s01's.
+    # Its needs point at the new studies, not at s001's.
     assert jobs[1].needs == [queued[0]]
     assert jobs[2].needs == [queued[0], queued[1]]
     assert Runner(project).run().status == st.FINISHED
@@ -221,7 +222,7 @@ def test_restart_refuses_when_a_study_cannot_be_read(project):
     (project.queue.folder(ids[2]) / "job.yaml").write_text("id: [\n", "utf-8")
     _change_code(project)
     with pytest.raises(Exception, match="cannot be restarted"):
-        cc.decide(project, "s01", "restart")
+        cc.decide(project, "s001", "restart")
     assert project.queue.ids() == ids[1:]  # nothing moved
 
 
@@ -265,7 +266,7 @@ def test_two_sequences_queued_at_once_get_their_own_ids(project):
         thread.join(30)
     assert errors == []
     prefixes = {ids[0].split("-")[0] for ids in made}
-    assert len(prefixes) == 4  # s01..s04, none shared
+    assert len(prefixes) == 4  # s001..s004, none shared
 
 
 def test_an_edit_begun_after_the_study_was_picked_is_waited_for(project):

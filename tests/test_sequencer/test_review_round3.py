@@ -105,14 +105,14 @@ def test_project_names_do_not_depend_on_opening_order(tmp_path):
 
 
 def test_a_rerun_after_out_is_deleted_is_recorded_again(tmp_path):
-    """Ids restart at s01 once out/ is gone; the meta record must not
+    """Ids restart at s001 once out/ is gone; the meta record must not
     take the new run for the old one."""
     from qdesignoptimizer.sequencer.backends._store import read_meta, record_writes
 
     store = tmp_path / "design_variables.json"
     store.write_text('{"L": "1 um"}', encoding="utf-8")
-    old = {"study": "s01-x-a", "folder": "out/completed/s01-x-a_2026-01-01T00-00-00"}
-    new = {"study": "s01-x-a", "folder": "out/completed/s01-x-a_2026-02-01T00-00-00"}
+    old = {"study": "s001-x-a", "folder": "out/completed/s001-x-a_2026-01-01T00-00-00"}
+    new = {"study": "s001-x-a", "folder": "out/completed/s001-x-a_2026-02-01T00-00-00"}
     record_writes(store, {"L": "2 um"}, {"L": "1 um"}, old)
     record_writes(store, {"L": "2 um"}, {"L": "1 um"}, old)  # a recovery
     assert len(read_meta(store)["L"]["history"]) == 1

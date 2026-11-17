@@ -44,13 +44,13 @@ def test_add_writes_a_self_contained_folder(project):
 def test_a_sequence_is_tagged_and_numbered(project):
     spec = project.backend.catalog().sequence("full_A")
     ids = project.add_sequence(spec)
-    assert ids == ["s01-full_A-a_calibrate", "s01-full_A-a_measure"]
+    assert ids == ["s001-full_A-a_calibrate", "s001-full_A-a_measure"]
     assert project.job(ids[0]).sequence == {
-        "id": "s01",
+        "id": "s001",
         "name": "full_A",
         "entry": 1,
     }
-    assert project.add_sequence(spec)[0].startswith("s02-full_A-")
+    assert project.add_sequence(spec)[0].startswith("s002-full_A-")
 
 
 def test_order_and_remove(project):
@@ -378,7 +378,7 @@ def test_ids_are_not_reused_after_a_remove(project):
     spec = project.backend.catalog().sequence("full_A")
     for job_id in project.add_sequence(spec):
         project.queue.remove(job_id)
-    assert project.add_sequence(spec)[0].startswith("s02-")
+    assert project.add_sequence(spec)[0].startswith("s002-")
 
 
 def test_the_lock_is_the_os_lock_not_the_file(project):
@@ -683,8 +683,8 @@ def test_cli_park_and_unpark(tmp_path, capsys):
 
 def test_completed_names_are_read(project):
     stamp = "2026-11-12T09-00-02"
-    assert parse_completed(f"s01-tune_ATS1-ats1_kappa_{stamp}") == (
-        "s01-tune_ATS1-ats1_kappa",
+    assert parse_completed(f"s001-tune_ATS1-ats1_kappa_{stamp}") == (
+        "s001-tune_ATS1-ats1_kappa",
         stamp,
     )
     # a task whose name ends in "failed" is not confused with the suffix
@@ -706,7 +706,17 @@ def test_a_name_sort_groups_a_sequence(project):
     names = sorted(p.name for p in project.queue.completed())
     ids = [parse_completed(n)[0] for n in names]
     assert ids[:2] == [
-        "s01-full_A-a_calibrate",
-        "s01-full_A-a_measure",
+        "s001-full_A-a_calibrate",
+        "s001-full_A-a_measure",
     ]
     assert ids[2].startswith("x-") and ids[2].endswith("-b_measure")
+
+
+def test_sequence_ids_go_on_past_older_and_wider_numbers(project, tmp_path):
+    """Two-digit ids of older queues and numbers past 999 are read as
+    numbers: the next id is one past the highest."""
+    for old in ("s07-x-a", "s99-x-b"):
+        (project.queue.out / "queue" / old).mkdir(parents=True)
+    assert project.queue.next_sequence_id() == "s100"
+    (project.queue.out / "queue" / "s1000-x-c").mkdir()
+    assert project.queue.next_sequence_id() == "s1001"

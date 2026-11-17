@@ -344,7 +344,7 @@ qdesignoptimizer.sequencer guide` prints them. A chip project's own
   (its studies are tagged "code changed: continue or restart?") or with
   `decide <sNN> continue|restart`: continue it on the new code, or
   restart it: the whole sequence is queued again as a new sequence
-  (`s08`, same name, each study noting `restarted_from: s07`) and the
+  (`s008`, same name, each study noting `restarted_from: s007`) and the
   rest of the old one goes on hold; its results stay.
 - Wait: `wait <id> ...` returns once each has run and prints its
   status, folder, outputs and what it wrote back (exit 0 done, 1 failed

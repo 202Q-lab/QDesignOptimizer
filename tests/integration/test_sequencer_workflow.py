@@ -107,7 +107,7 @@ def test_a_study_and_a_sequence_move_through_the_queue_into_the_store(chip):
     spec = project.backend.catalog().sequence("tune_Q1")
     sequence = project.add_sequence(spec)
     assert project.queue.ids() == [single, *sequence]
-    assert [i.split("-", 2)[:2] for i in sequence] == [["s01", "tune_Q1"]] * 3
+    assert [i.split("-", 2)[:2] for i in sequence] == [["s001", "tune_Q1"]] * 3
     for job_id in [single, *sequence]:
         folder = project.queue.folder(job_id)
         assert {"job.yaml", "ministudy.yaml", "opt_targets.yaml"} <= {
@@ -116,7 +116,7 @@ def test_a_study_and_a_sequence_move_through_the_queue_into_the_store(chip):
         assert project.problems(job_id, deep=True) == []
     assert project.job(sequence[2]).settings == {"iterations": 4}
     assert project.job(sequence[0]).sequence == {
-        "id": "s01",
+        "id": "s001",
         "name": "tune_Q1",
         "entry": 1,
     }
@@ -159,7 +159,7 @@ def test_a_study_and_a_sequence_move_through_the_queue_into_the_store(chip):
     for name, (job_id, value) in last_writer.items():
         assert store[name] == value
         assert meta[name]["latest"]["study"] == job_id
-    assert meta[KAPPA_VARIABLE]["latest"]["sequence"] == "s01"
+    assert meta[KAPPA_VARIABLE]["latest"]["sequence"] == "s001"
 
     # -- and the simulator was asked for both kinds of study --------------
     kinds = {event for event, _ in session.events}

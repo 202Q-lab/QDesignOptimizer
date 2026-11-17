@@ -72,7 +72,7 @@ def test_a_recovered_write_back_keeps_its_sequence(project):
     )
     Runner(project).run()
     latest = read_meta(project.backend.store_path)["A_value"]["latest"]
-    assert latest["recovered"] is True and latest["sequence"] == "s01"
+    assert latest["recovered"] is True and latest["sequence"] == "s001"
     assert latest["previous"] == 0.0
 
 

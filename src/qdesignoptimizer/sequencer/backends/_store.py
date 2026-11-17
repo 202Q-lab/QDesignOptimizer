@@ -172,7 +172,7 @@ def record_writes(
     The same run (same study folder, which carries its start time)
     writing the same value again is not a second write (a recovered
     write-back already recorded) and is skipped. Ids alone are not
-    enough: they restart at s01 once ``out/`` is deleted. A damaged
+    enough: they restart at s001 once ``out/`` is deleted. A damaged
     record (a git merge conflict in it) is set aside as
     ``<name>.damaged-<time>.json`` and a fresh one started, so recording
     does not stop for good.

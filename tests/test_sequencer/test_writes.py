@@ -61,7 +61,7 @@ def test_a_sequence_write_names_its_sequence(project):
     project.add_sequence(spec)
     Runner(project).run()
     latest = read_meta(project.backend.store_path)["A_value"]["latest"]
-    assert latest["sequence"] == "s01"
+    assert latest["sequence"] == "s001"
     assert latest["sequence_name"] == "full_A"
 
 

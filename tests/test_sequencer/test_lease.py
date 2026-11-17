@@ -188,7 +188,7 @@ def test_the_command_line_writes_a_held_study_and_reports_problems(
 def test_a_lease_is_not_written_into_a_folder_that_is_gone(tmp_path):
     from qdesignoptimizer.sequencer.engine import lease as lease_module
 
-    gone = tmp_path / "queue" / "s01-x"
+    gone = tmp_path / "queue" / "s001-x"
     with pytest.raises(FileNotFoundError):
         lease_module._write_in(gone, {"by": "claude"})
     assert not gone.exists()  # not made anew next to a claimed study

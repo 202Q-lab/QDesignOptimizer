@@ -13,11 +13,11 @@ hash of the files' contents).
 
   - **continue**: the rest runs on the new code;
   - **restart**: the rest goes on hold, and the whole sequence is queued
-    again as a new one (``s08`` for ``s07``; same name, same files, each
-    study noting ``restarted_from: s07``), to run on the new code from
-    its start. The runs of ``s07`` stay, as the record of the old code.
+    again as a new one (``s008`` for ``s007``; same name, same files, each
+    study noting ``restarted_from: s007``), to run on the new code from
+    its start. The runs of ``s007`` stay, as the record of the old code.
 
-The decisions are kept in ``out/code_decisions.json``: ``{s07: {choice,
+The decisions are kept in ``out/code_decisions.json``: ``{s007: {choice,
 code, at}}``. A "continue" holds for the code it was given for: another
 change asks again.
 """
@@ -106,7 +106,7 @@ def changed_files(before: dict[str, str], after: dict[str, str]) -> list[str]:
 
 
 def sequence_of(job: Job) -> str:
-    """The study sequence a study belongs to (``s07``), "" for none."""
+    """The study sequence a study belongs to (``s007``), "" for none."""
     return str((job.sequence or {}).get("id") or "")
 
 

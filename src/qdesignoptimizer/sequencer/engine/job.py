@@ -5,10 +5,10 @@ values it ran with). This file is the part the engine reads: which
 study it is, where it belongs and how the queue treats it. Example::
 
     version: 1
-    id: s07-revalidate-ats1_eigenmode
+    id: s007-revalidate-ats1_eigenmode
     study: ATS1.eigenmode            # the study key (or ``task:``)
     subsystem: ATS1                  # (or ``subject:``)
-    sequence: {id: s07, name: revalidate, entry: 3}
+    sequence: {id: s007, name: revalidate, entry: 3}
     campaign: tuneup_chip/q1_readout # reads and writes that campaign's store
     settings: {iterations: 2}
     checks: [mode_identity]
@@ -328,7 +328,7 @@ _COMPLETED = re.compile(rf"^(?P<id>.+)_(?P<stamp>{_STAMP})$")
 
 
 def completed_name(job_id: str, stamp: str) -> str:
-    """``<id>_<start>``, e.g. ``s01-tune_ATS1-ats1_kappa_2026-11-11T
+    """``<id>_<start>``, e.g. ``s001-tune_ATS1-ats1_kappa_2026-11-11T
     14-02-33``: a name sort groups each study sequence's studies."""
     return f"{job_id}_{stamp}"
 

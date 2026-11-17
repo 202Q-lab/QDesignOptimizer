@@ -10,7 +10,7 @@
         resolved/ (as filled in from the project, before the solve),
         result.json, and whatever the solve wrote
 
-An id is ``s07-tune_ATS1-ats1_eigenmode`` (study sequence s07, called
+An id is ``s007-tune_ATS1-ats1_eigenmode`` (study sequence s007, called
 tune_ATS1; the study) or ``x-a7f3-ats1_eigenmode`` (queued on its
 own). A completed folder is the id, then its start time, so sorting
 ``completed/`` by name in Explorer groups each study sequence's studies, with
@@ -199,13 +199,17 @@ class FolderQueue:
         return ids
 
     def next_sequence_id(self) -> str:
-        """``s<NN>``, one past the highest in queue/ and completed/."""
+        """``s<NNN>``, one past the highest in queue/ and completed/.
+
+        Three digits so that ids sort as text up to s999 (``ls``, ``dir``);
+        past that, and for the two-digit ids of older queues, the number
+        is read as a number."""
         highest = 0
         for job_id in self.taken():
             match = _SEQUENCE.match(job_id)
             if match:
                 highest = max(highest, int(match.group(1)))
-        return f"s{highest + 1:02d}"
+        return f"s{highest + 1:03d}"
 
     def new_id(
         self,
