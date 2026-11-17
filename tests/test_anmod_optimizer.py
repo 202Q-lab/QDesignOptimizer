@@ -127,3 +127,24 @@ def test_invalid_independent_target_raises():
         ANModOptimizer.group_targets(
             [_linear_target("a", "x", WIDE, independent_target=1.5)]
         )
+
+
+@pytest.mark.parametrize(
+    "x, constraint",
+    [
+        ("4961 um", {"larger_than": "5um", "smaller_than": "15000um"}),
+        ("-4961 um", {"larger_than": "-15000um", "smaller_than": "-5um"}),
+    ],
+)
+def test_a_small_remaining_error_on_a_large_variable_is_closed(x, constraint):
+    # 0.2 % short, on a variable of thousands of um with wide bounds: in raw
+    # units L-BFGS-B stopped here without moving (a resonator 12 MHz low).
+    updated, minimization = _optimize(
+        [_linear_target("a", "x", constraint)],
+        {"a_to_a_nonlin": 0.998},
+        {"a_to_a_nonlin": 1.0},
+        {"x": x},
+    )
+    value = float(updated["x"].split()[0])
+    assert value == pytest.approx(float(x.split()[0]) / 0.998, rel=1e-7)
+    assert minimization[0]["final_cost"] == pytest.approx(0, abs=1e-12)
