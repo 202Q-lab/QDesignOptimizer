@@ -489,7 +489,8 @@ def data_to_target(entry: dict):
                 f"{', '.join(sorted(ENTRY_KEYS))}), not {sorted(extra)}"
             )
         fn = resolve_ref(entry["helper"], "helper")
-        return fn(**decode(entry.get("args") or {}))
+        # ``1e-3`` is a string to YAML; a number to the helper.
+        return fn(**decode(exponent_floats(entry.get("args") or {})))
     allowed = set(_TARGET_FIELDS) | {"prop_to"} | ENTRY_KEYS
     extra = set(entry) - allowed
     if extra:

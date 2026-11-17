@@ -343,7 +343,8 @@ def test_a_skeleton_is_in_the_catalog_and_queues_filled_in(tiny):
     files = _files(project, job_id)
     study = yaml.safe_load(files["ministudy.yaml"])
     assert study["args"]["qiskit_component_names"] == ["res_x"]
-    assert study["args"]["delta_f"] == pytest.approx(1e6 / 1e9)
+    # Filled in when it starts, from the targets it then runs with.
+    assert study["args"]["delta_f"] == "=p['resonator_x_kappa'] / 1e9"
     assert study["extra"]["grounded_pins"] == [["res_x", "end"]]
     targets = {
         t["name"]: t for t in yaml.safe_load(files["opt_targets.yaml"])["targets"]
@@ -656,3 +657,66 @@ def test_pre_figures_build_the_chip_with_the_values_it_would_fetch(tiny, monkeyp
     assert built[-1] == {LENGTH: "5000um", WIDTH: "10um", "design_var_gap": "7um"}
     assert "it would fetch now" in picture["caption"]
     assert "design_var_gap" in picture["caption"]
+
+
+def test_a_campaign_study_is_filled_in_from_its_campaign_s_store(tiny, monkeypatch):
+    """A template's ``=v[...]`` reads the values the study will run
+    with: its campaign's, not the project's (2026-11-17)."""
+    from qdesignoptimizer.sequencer.backends import qdo as qdo_module
+
+    _, project = tiny
+    project.new_campaign("wide", "", own_store=True)
+    store = project.campaign_store("wide")
+    values = json.loads(store.read_text("utf-8"))
+    store.write_text(json.dumps({**values, WIDTH: "20um"}), "utf-8")
+    seen = []
+    real = qdo_module.render
+
+    def render(template, targets, p, v, given, **kwargs):
+        seen.append(dict(v))
+        return real(template, targets, p, v, given, **kwargs)
+
+    monkeypatch.setattr(qdo_module, "render", render)
+    project.add("X.freq", campaign="wide")
+    project.add("X.freq")
+    assert [s[WIDTH] for s in seen] == ["20um", "10um"]
+
+
+def test_helper_arguments_read_exponent_numbers():
+    """``1e-3`` is text to YAML; a helper is given the number."""
+    from qdesignoptimizer.sequencer.backends import qdo_files as qf
+
+    target = qf.data_to_target(
+        {
+            "name": "f",
+            "helper": "qdesignoptimizer.utils.optimization_targets:"
+            "get_opt_target_res_freq_via_length",
+            "args": {
+                "resonator": "resonator_x",
+                "design_var_constraint": {"larger_than": "1e-3", "smaller_than": "2um"},
+            },
+        }
+    )
+    assert target.design_var_constraint == {"larger_than": 1e-3, "smaller_than": "2um"}
+
+
+def test_a_template_s_expression_uses_the_targets_as_the_study_starts(tiny):
+    """A ministudy's ``=`` value is filled in when the study starts: a
+    target changed while it waited is the one used (2026-11-17)."""
+    qdo_project, project = tiny
+    _skeletons(qdo_project)
+    project.add("X.res", save=True)
+    real = qdo_project.parameter_targets
+
+    def changed():
+        return {**real(), "resonator_x_kappa": 2e6}
+
+    qdo_project.parameter_targets = changed  # after queueing, before the run
+    Runner(project).run()
+    (study, *_), *_ = qdo_project.solved
+    assert study.delta_f == pytest.approx(2e6 / 1e9)
+    (folder,) = project.queue.completed()
+    ran = yaml.safe_load((folder / "ministudy.yaml").read_text("utf-8"))
+    queued = yaml.safe_load((folder / "inputs" / "ministudy.yaml").read_text("utf-8"))
+    assert ran["args"]["delta_f"] == pytest.approx(2e-3)
+    assert queued["args"]["delta_f"] == "=p['resonator_x_kappa'] / 1e9"

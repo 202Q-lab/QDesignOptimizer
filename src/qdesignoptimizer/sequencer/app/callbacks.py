@@ -155,6 +155,10 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         the connected folders and leaves the project as it was."""
         names = [p["value"] for p in (snap or {}).get("projects") or []]
         shown, hidden = {"display": "block"}, {"display": "none"}
+        if (snap or {}).get("error") and ctx.triggered_id == "snapshot":
+            # A poll that could not read the projects says nothing about
+            # which are connected: the one picked stays picked.
+            return no_update, no_update, no_update
         if ctx.triggered_id == "btn-connect-close":
             return no_update, no_update, hidden
         if project == layout.CONNECT:
@@ -227,10 +231,11 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         *_EDIT_STATES,
         State("pending-select", "data"),
         State("selected", "data"),
+        State("tab-id", "data"),
         prevent_initial_call=True,
     )
     def _select(*args):
-        project, *edits, pending, current = args[12:]
+        project, *edits, pending, current, tab = args[12:]
         del pending  # asked again whenever the edits are still there
         if not _clicked():
             return no_update, no_update, no_update, no_update, no_update
@@ -255,7 +260,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             target = {**current, "edit": trig["index"] == "edit"}
             if target["edit"]:
                 try:  # the lease: refused while someone else edits it
-                    bridge.begin_edit(current["kind"], current["key"])
+                    bridge.begin_edit(current["kind"], current["key"], tab or "")
                 except GuiError as exc:
                     return no_update, None, _msg(str(exc), False), no_update, ""
                 return target, None, no_update, {"display": "none"}, ""
@@ -323,12 +328,14 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Output("message", "data", allow_duplicate=True),
         Input("poll", "n_intervals"),
         Input("selected", "data"),
+        State("tab-id", "data"),
         prevent_initial_call=True,
     )
-    def _keep_editing(_n, selected):
-        """Renew the lease of the study in Edit mode (so an agent leaves
-        it alone), or drop it once it is no longer edited here."""
-        why = bridge.keep_editing(selected)
+    def _keep_editing(_n, selected, tab):
+        """Renew this tab's lease of the study in Edit mode (so an agent
+        or another tab leaves it alone), or drop it once it is no longer
+        edited in this tab."""
+        why = bridge.keep_editing(selected, tab or "")
         return _msg(why, False) if why else no_update
 
     @app.callback(
@@ -435,6 +442,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         if not _clicked():
             return no_update, no_update, no_update
         job_id, action = ctx.triggered_id["index"], ctx.triggered_id["action"]
+        if action == "unpark-bar":  # the edit bar's ▶: the row's has "unpark"
+            action = "unpark"
         shown = (selected or {}).get("key") == job_id
         follow = no_update
         if shown and action in ("park", "unpark"):
@@ -566,9 +575,15 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         State({"type": "jf", "name": ALL}, "id"),
         State("details-orig", "data"),
         State("rev", "data"),
+        State({"type": "ff", "file": ALL, "path": ALL}, "value"),
+        State({"type": "ff", "file": ALL, "path": ALL}, "id"),
+        State({"type": "fo", "file": ALL, "key": ALL, "part": ALL}, "value"),
+        State({"type": "fo", "file": ALL, "key": ALL, "part": ALL}, "id"),
         prevent_initial_call=True,
     )
-    def _save_job(n, selected, values, ids, orig, rev):
+    def _save_job(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        n, selected, values, ids, orig, rev, ff, ff_ids, fo, fo_ids
+    ):
         if not n or not selected or selected.get("kind") not in ("queue", "hold"):
             return no_update, no_update, no_update, no_update
         form = {i["name"]: v for i, v in zip(ids, values)}
@@ -594,8 +609,17 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         before = ((orig or {}).get("job") or {}).get("campaign") or ""
         if fields["campaign"] != before:
             # Another campaign, other design variables: the study is
-            # drawn again, so its tabs show that campaign's values.
-            return (rev or 0) + 1, _msg(text), no_update, dict(selected)
+            # drawn again, so its tabs show that campaign's values --
+            # unless another tab has edits, which the redraw would drop.
+            dirty = _unsaved(
+                form_layout.current_values(ff, ff_ids, fo, fo_ids), [], [], orig
+            )
+            if not dirty:
+                return (rev or 0) + 1, _msg(text), no_update, dict(selected)
+            text += (
+                f"; {', '.join(dirty)} still show the old campaign's values: "
+                f"save them, then open the study again to see the new ones"
+            )
         orig = dict(orig or {})
         orig["job"] = form
         return (rev or 0) + 1, _msg(text), orig, no_update

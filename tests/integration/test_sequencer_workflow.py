@@ -7,6 +7,10 @@ pyEPR and Q3D replaced by the recording fakes of ``fake_ansys``. Studies
 and a study sequence are queued and run by the real runner, and the test
 follows them through ``out/queue`` and ``out/completed`` and into the
 store. Nothing is written outside ``tmp_path``.
+
+The fake answers with the relations the targets assume (``fake_ansys``),
+so this checks what the sequencer does with a study, not whether a
+target's physics is right.
 """
 
 from __future__ import annotations

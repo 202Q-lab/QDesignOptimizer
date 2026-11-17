@@ -226,6 +226,14 @@ class Runner:
             self._release_locks()
         return self.state
 
+    def _landed(self, job, updates: dict) -> bool:
+        """Whether every value of a write-back is in the study's store."""
+        try:
+            store = self.project.store_values(job.campaign)
+        except Exception:  # noqa: BLE001 -- unknown: not written
+            return False
+        return bool(updates) and all(store.get(k) == v for k, v in updates.items())
+
     def _settle_cut_off(self) -> list[str]:
         """Close every study a dead runner left unfinished.
 
@@ -589,6 +597,9 @@ class Runner:
             **({"code": version} if version else {}),
             "status": st.RUNNING,
             "started": st.now(),
+            # The same instant without the local-time ambiguity of the
+            # hour daylight saving time repeats (sorting runs).
+            "started_at": time.time(),
             "finished": "",
             "pid": os.getpid(),
             "outputs": {},
@@ -660,8 +671,26 @@ class Runner:
                         shown,
                     )
                 except Exception as exc:  # noqa: BLE001
-                    log.exception("%s: write-back failed", shown)
-                    failures.append(f"write-back failed: {type(exc).__name__}: {exc}")
+                    if self._landed(job, result.updates):
+                        # Written, then the call failed (the worker died
+                        # after the file was replaced): as when a runner
+                        # stopped there, the store says what happened.
+                        record["committed"] = dict(result.updates)
+                        log.warning(
+                            "%s: the write-back raised (%s: %s) after the "
+                            "values were written; recorded as written",
+                            shown,
+                            type(exc).__name__,
+                            exc,
+                        )
+                        self._note_commit(
+                            dict(result.updates), before, job, folder, shown
+                        )
+                    else:
+                        log.exception("%s: write-back failed", shown)
+                        failures.append(
+                            f"write-back failed: {type(exc).__name__}: {exc}"
+                        )
 
         ok = not failures
         record["status"] = st.DONE if ok else st.FAILED

@@ -52,7 +52,8 @@ def test_simulator_calls_and_results_match_snapshot(name, run_example):
     "name", [case.name for case in EXAMPLE_CASES if case.converges]
 )
 def test_optimization_reaches_targets(name, run_example):
-    """With a well-behaved simulator every example must converge to its targets."""
+    """With a simulator that follows the targets' own relations, every example
+    must converge to its targets (which checks the loop, not the relations)."""
     run = run_example(name)
     errors = relative_errors_to_targets(run.analysis, run.optimization_results)
     assert errors, "the example has no optimization targets"

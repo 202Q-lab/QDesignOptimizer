@@ -15,7 +15,7 @@ queue, the runner and the GUI without Ansys:
 | File | What it shows |
 | --- | --- |
 | `ministudies/frequency.yaml` | a MiniStudy and nothing else. `{subject}` makes it one study per resonator of the adapter's `subjects`: `R1.frequency`, `R2.frequency` |
-| `ministudies/linewidth.yaml` | a chained `ResonatorDecayIntoWaveguideStudy`; its `mode_freq_GHz` is `"=p['resonator_{subject}_freq'] / 1e9"`, read from `parameter_targets.py` when queued |
+| `ministudies/linewidth.yaml` | a chained `ResonatorDecayIntoWaveguideStudy`; its `mode_freq_GHz` is `"=p['resonator_{subject}_freq'] / 1e9"`, read from `parameter_targets.py` when the study starts |
 | `opt_targets/resonators.yaml` | the project's opt targets, each with a `name` (unique in the project, over however many files) and a `tolerance` |
 | `study_sequences/tune_all.yaml` | a study sequence as a file: four chained studies, `defaults` for all of them, one entry with its own settings and notes, `on_failure`, `why_ordered` |
 | `simulations/sequencer.py` | the adapter; its `study_sequences()` builds `tune_R1`, `tune_R2` in code |

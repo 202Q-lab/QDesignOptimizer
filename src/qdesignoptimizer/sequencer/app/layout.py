@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Any
 
 from dash import dcc, html
@@ -30,6 +31,9 @@ def page() -> html.Div:
         id="page-root",
         className="qs-page",
         children=[
+            # This browser tab (new on every page load): its edit lease
+            # is its own, so another tab never drops or overrides it.
+            dcc.Store(id="tab-id", data=uuid.uuid4().hex[:12]),
             dcc.Store(id="snapshot"),
             # What the editor shows: {"kind": "queue"|"hold"|"completed"|
             # "campaign"|"sequence"|"template"|"new-study"|"new-template"|
@@ -1041,7 +1045,9 @@ def _mode_bar(data: dict, editing: bool) -> Any:
         buttons.append(
             html.Button(
                 "Add to queue ▶",
-                id={"type": "act", "action": "unpark", "index": key},
+                # Not "unpark": the study's row has that id, and two
+                # components with one id leave the row's ▶ dead.
+                id={"type": "act", "action": "unpark-bar", "index": key},
                 className="qs-btn qs-btn-primary",
                 n_clicks=0,
                 title="move it to the end of the queue (save your edits first)",
@@ -1217,8 +1223,9 @@ def details_problems(snap: dict, selected: dict | None) -> Any:
                 [
                     html.B("Being edited by "),
                     row["editing"],
-                    ": Edit is blocked until they are done; what you see "
-                    "updates as they save.",
+                    ": Edit is blocked until they are done. What you see is "
+                    "as it was when you opened it: open the study again "
+                    "to see their changes.",
                 ],
                 className="qs-warning",
             )

@@ -305,9 +305,9 @@ class SwitchableStore:
         if campaign is None:
             yield
             return
-        if "_store_local" not in self.__dict__:
-            self.__dict__["_store_local"] = threading.local()
-        local = self.__dict__["_store_local"]
+        # setdefault, not a test and a set: two threads arriving at once
+        # must get the same one, or one's choice of store is lost.
+        local = self.__dict__.setdefault("_store_local", threading.local())
         previous = getattr(local, "path", None)
         local.path = self.store_for(campaign) if campaign else None
         try:

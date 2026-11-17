@@ -15,6 +15,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from collections import deque
 from dataclasses import replace
@@ -34,6 +35,7 @@ from ..engine.code_change import (
     code_version,
     decide,
     hold_reason,
+    not_repointed,
     sequence_of,
 )
 from ..engine.job import (
@@ -50,6 +52,8 @@ from ..engine.lease import (
     LEASE_FILE,
     LeaseHeld,
     describe,
+    holder_of,
+    lease_guard,
     read_lease,
     release_lease,
     take_lease,
@@ -132,16 +136,20 @@ class Bridge:
         # campaign, the store) are rechecked every ROW_RECHECK_S, and at
         # once after anything done here that changes them.
         self._rows: dict[str, tuple[tuple, float, Any, list[str], list[str]]] = {}
-        # The study open in Edit mode here, with its files' modification
-        # times when Edit was pressed (or after our own last save): a
-        # save finding them changed was overtaken by someone else.
-        self._editing: tuple[str, tuple] | None = None
+        # The studies open in Edit mode here: {key: (browser tab, its
+        # files' modification times when Edit was pressed, or after our
+        # own last save)}. A save finding them changed was overtaken by
+        # someone else. Each tab holds its own lease, so one tab never
+        # drops another's, and two tabs never edit one study.
+        self._editing: dict[str, tuple[str, tuple]] = {}
+        self._edit_lock = threading.RLock()
         # The code each project was last seen with; a change reloads it
         # (``_check_code``) and says so once.
         self._code_seen: dict[str, dict[str, str]] = {}
         self._code_note = ""
         self._code_rev = 0
-        self._lost_lease = ""  # the study whose lease was taken from us
+        # {tab: the study whose lease was taken from it}: said once.
+        self._lost_lease: dict[str, str] = {}
         # The campaigns, with the README files they were read from.
         self._campaigns: tuple[tuple, list[dict]] | None = None
 
@@ -354,88 +362,114 @@ class Bridge:
 
     # -- who edits a study ----------------------------------------------
 
-    def begin_edit(self, kind: str, key: str) -> None:
-        """Edit pressed: take the study's lease, and note its files as
-        they are now (``_check_not_overtaken``).
+    @staticmethod
+    def _holder(tab: str) -> str:
+        """The lease holder of one browser tab of this GUI."""
+        return f"gui#{os.getpid()}#{tab}"
+
+    def _mine(self, key: str) -> str:
+        """The lease holder editing ``key`` here ("" when no tab is)."""
+        kept = self._editing.get(key)
+        return self._holder(kept[0]) if kept else ""
+
+    def begin_edit(self, kind: str, key: str, tab: str = "") -> None:
+        """Edit pressed in browser tab ``tab``: take the study's lease
+        for that tab, and note its files as they are now
+        (``_check_not_overtaken``).
 
         Raises:
-            GuiError: If someone else (an agent at the command line) is
-                editing it.
+            GuiError: If someone else (an agent at the command line, or
+                another tab) is editing it.
         """
         _, folder = self._study_folder(kind, key)
-        if self._editing and self._editing[0] != key:
-            self.end_edit()
-        try:
-            take_lease(folder, GUI_EDITOR)
-        except LeaseHeld as exc:
-            raise GuiError(
-                f"{key} is {exc}: Edit is blocked until they are done"
-            ) from exc
-        except st.LockHeld as exc:
-            raise GuiError("busy a moment; press Edit again") from exc
-        except OSError as exc:
-            raise GuiError(f"{key} is no longer there") from exc
-        if not self._editing or self._editing[0] != key:
-            self._editing = (key, _folder_scan(folder)[0])
+        with self._edit_lock:
+            for other, (owner, _) in list(self._editing.items()):
+                if owner == tab and other != key:
+                    self._end(other)  # one study per tab
+            try:
+                take_lease(folder, GUI_EDITOR, holder=self._holder(tab))
+            except LeaseHeld as exc:
+                raise GuiError(
+                    f"{key} is being edited by {_who(exc.lease)}: Edit is "
+                    f"blocked until they are done"
+                ) from exc
+            except st.LockHeld as exc:
+                raise GuiError("busy a moment; press Edit again") from exc
+            except OSError as exc:
+                raise GuiError(f"{key} is no longer there") from exc
+            kept = self._editing.get(key)
+            if not kept or kept[0] != tab:
+                self._editing[key] = (tab, _folder_scan(folder)[0])
 
-    def keep_editing(self, selected: dict | None) -> str:
-        """Every poll: renew the lease of the study open in Edit mode, or
-        drop it once the study is no longer edited here. Returns why
-        editing cannot go on ("" when it can)."""
+    def keep_editing(self, selected: dict | None, tab: str = "") -> str:
+        """Every poll of tab ``tab``: renew the lease of the study it has
+        open in Edit mode, or drop its lease once it edits none. Returns
+        why editing cannot go on ("" when it can)."""
         selected = selected or {}
-        if not selected.get("edit") or selected.get("kind") not in ("queue", "hold"):
-            self.end_edit()
-            return ""
-        key = selected["key"]
-        try:
-            self._study_folder(selected["kind"], key)
-        except GuiError:
-            # Gone (the runner took it, or it moved): the pane says so.
-            if self._editing and self._editing[0] == key:
-                self._editing = None
-            return ""
-        try:
-            self.begin_edit(selected["kind"], key)
-        except GuiError as exc:
-            # Someone took it while ours lapsed: say so once, not every poll.
-            if self._lost_lease == key:
+        with self._edit_lock:
+            if not selected.get("edit") or selected.get("kind") not in (
+                "queue",
+                "hold",
+            ):
+                self.end_edit(tab)
                 return ""
-            self._lost_lease = key
-            return str(exc)
-        self._lost_lease = ""
-        return ""
+            key = selected["key"]
+            try:
+                self._study_folder(selected["kind"], key)
+            except GuiError:
+                # Gone (the runner took it, or it moved): the pane says so.
+                if (self._editing.get(key) or ("",))[0] == tab:
+                    self._editing.pop(key, None)
+                return ""
+            try:
+                self.begin_edit(selected["kind"], key, tab)
+            except GuiError as exc:
+                # Someone took it while ours lapsed: say so once.
+                if self._lost_lease.get(tab) == key:
+                    return ""
+                self._lost_lease[tab] = key
+                return str(exc)
+            self._lost_lease.pop(tab, None)
+            return ""
 
-    def end_edit(self) -> None:
-        """Done editing (or another study opened): drop our lease."""
-        if self._editing is None:
-            return
-        key = self._editing[0]
-        self._editing = None
+    def end_edit(self, tab: str = "") -> None:
+        """Tab ``tab`` is done editing (or opened another study): drop
+        its lease. Another tab's stays."""
+        with self._edit_lock:
+            for key, (owner, _) in list(self._editing.items()):
+                if owner == tab:
+                    self._end(key)
+
+    def _end(self, key: str) -> None:
+        owner = self._editing.pop(key)[0]
         for kind in ("hold", "queue"):
             try:
                 _, folder = self._study_folder(kind, key)
             except GuiError:
                 continue
-            release_lease(folder, GUI_EDITOR)
+            release_lease(folder, self._holder(owner))
 
     def _check_not_overtaken(self, key: str, folder: Path) -> None:
-        """Refuse a save over someone else's edit: their lease is live,
-        or the files changed since Edit was pressed here."""
+        """Refuse a save over someone else's edit: their lease is live
+        (an agent's, or another tab's), or the files changed since Edit
+        was pressed here."""
         lease = read_lease(folder)
-        if lease and lease.get("by") != GUI_EDITOR:
-            raise GuiError(f"{key} is being edited by {describe(lease)}; nothing saved")
-        if self._editing and self._editing[0] == key:
-            if _folder_scan(folder)[0] != self._editing[1]:
-                raise GuiError(
-                    f"{key} was changed outside the GUI since you pressed "
-                    f"Edit; nothing saved. Press Done editing, then Edit, "
-                    f"to see it as it is now (copy your change first)"
-                )
+        kept = self._editing.get(key)
+        if lease and holder_of(lease) != self._mine(key):
+            raise GuiError(f"{key} is being edited by {_who(lease)}; nothing saved")
+        if kept and _folder_scan(folder)[0] != kept[1]:
+            raise GuiError(
+                f"{key} was changed outside the GUI since you pressed "
+                f"Edit; nothing saved. Press Done editing, then Edit, "
+                f"to see it as it is now (copy your change first)"
+            )
 
     def _saved(self, key: str, folder: Path) -> None:
         """Our own save: the files as they are now are the ones we know."""
-        if self._editing and self._editing[0] == key:
-            self._editing = (key, _folder_scan(folder)[0])
+        with self._edit_lock:
+            kept = self._editing.get(key)
+            if kept:
+                self._editing[key] = (kept[0], _folder_scan(folder)[0])
 
     def _taken(self, key: str) -> bool:
         """Whether a study just written is no longer queued: the runner
@@ -611,7 +645,7 @@ class Bridge:
         # Studies no longer queued or held: nothing to keep for them.
         shown: set[Any] = {r["id"] for r in rows} | {h["id"] for h in held}
         for gone in set(self._rows) - shown:
-            del self._rows[gone]
+            self._rows.pop(gone, None)  # another poll may have pruned it
         out = workspace.state_dir
         runner = st.RunnerState.load(out)
         alive = runner.alive(out)
@@ -787,9 +821,16 @@ class Bridge:
             return f"{sequence} continues on the new code"
         self.workspace.added(project, made)
         new = project.job(made[0]).sequence.get("id")
+        left = not_repointed(project, sequence)
         return (
             f"{sequence} restarts as {new} ({len(made)} studies, at the end of "
             f"the queue); the rest of {sequence} is on hold"
+            + (
+                f". Still needing {sequence}'s studies (being edited then): "
+                f"{', '.join(left)}; point their needs at {new}'s"
+                if left
+                else ""
+            )
         )
 
     # -- campaigns -------------------------------------------------------
@@ -1048,17 +1089,17 @@ class Bridge:
 
     def move(self, job_id: str, delta: int) -> None:
         """Move a queued study up (-1) or down (+1)."""
-        with st.order_guard():  # read and written under one lock
-            ids = self.workspace.ids()
-            if job_id not in ids:
-                raise GuiError(f"{job_id} is no longer queued")
-            j = ids.index(job_id) + delta
-            if not 0 <= j < len(ids):
-                raise GuiError("already at the end")
-            try:
+        try:
+            with st.order_guard():  # read and written under one lock
+                ids = self.workspace.ids()
+                if job_id not in ids:
+                    raise GuiError(f"{job_id} is no longer queued")
+                j = ids.index(job_id) + delta
+                if not 0 <= j < len(ids):
+                    raise GuiError("already at the end")
                 self.workspace.move(job_id, to=j + 1)
-            except QueueError as exc:
-                raise GuiError(str(exc)) from exc
+        except QueueError as exc:
+            raise GuiError(str(exc)) from exc
 
     def remove(self, job_id: str) -> str:
         """Take a study out of the queue or off hold (moved to
@@ -1068,9 +1109,19 @@ class Bridge:
                 project, local = self._study(job_id)
             else:
                 project, local = self.workspace.locate(job_id)
-            project.queue.remove(local)  # kept in out/removed/
-        except (QueueError, OSError) as exc:
+            folder = project.queue.folder(local)
+            with lease_guard():  # no one starts editing it meanwhile
+                lease = read_lease(folder)
+                if lease and holder_of(lease) != self._mine(job_id):
+                    raise GuiError(
+                        f"{job_id} is being edited by {_who(lease)}: it stays "
+                        f"until they are done"
+                    )
+                project.queue.remove(local)  # kept in out/removed/
+        except (QueueError, st.LockHeld, OSError) as exc:
             raise GuiError(str(exc)) from exc
+        with self._edit_lock:
+            self._editing.pop(job_id, None)
         return f"removed {job_id}"
 
     def save_as_template(self, kind: str, key: str, name: str) -> str:
@@ -1103,9 +1154,11 @@ class Bridge:
         """Put a queued study on hold: out of the run order."""
         try:
             project, local = self.workspace.locate(job_id)
-            project.park(local)
-        except (QueueError, OSError) as exc:
+            project.park(local, holder=self._mine(job_id))
+        except (QueueError, st.LockHeld, OSError) as exc:
             raise GuiError(str(exc)) from exc
+        with self._edit_lock:  # its lease was dropped as it moved
+            self._editing.pop(job_id, None)
         self._forget(job_id)
         return f"{job_id} is on hold; the runner skips it until it is queued again"
 
@@ -1121,9 +1174,11 @@ class Bridge:
         scoped, local = self._study(key)
         project = scoped._project  # pylint: disable=protected-access
         try:
-            project.unpark(local)
-        except (QueueError, OSError) as exc:
+            project.unpark(local, holder=self._mine(key))
+        except (QueueError, st.LockHeld, OSError) as exc:
             raise GuiError(str(exc)) from exc
+        with self._edit_lock:
+            self._editing.pop(key, None)
         self._forget(key)
         queued = self.workspace.added(project, [local])[0]
         return f"queued {queued}" + _warned(project, [local])
@@ -1744,6 +1799,15 @@ def _waits_for(project, job) -> str:
 
 #: Who the GUI is in a study's lease (``engine/lease.py``).
 GUI_EDITOR = "you (GUI)"
+
+
+def _who(lease: dict) -> str:
+    """Who holds a lease, as the GUI says it: another tab of the GUI is
+    not "you" without saying where."""
+    text = describe(lease)
+    if lease.get("by") == GUI_EDITOR:
+        text = text.replace(GUI_EDITOR, "you (GUI) in another tab or window", 1)
+    return text
 
 
 def _folder_scan(folder: Path) -> tuple[tuple, bool]:

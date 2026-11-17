@@ -83,13 +83,26 @@ def build_app(
         suppress_callback_exceptions=True,
     )
     app.index_string = _INDEX
-    app.layout = layout.page()
+    # A function: each page load gets its own tab id (layout.page).
+    app.layout = layout.page
     register_callbacks(app, bridge)
     register_template_callbacks(app, bridge)
     register_preview_callbacks(app, bridge)
     register_editor_callbacks(app, bridge)
     app.qdo_bridge = bridge  # type: ignore[attr-defined]
     return app
+
+
+def _gone(ref: str) -> bool:
+    """Whether a remembered project is no longer there: a folder or file
+    (``file.py:factory`` too) that does not exist. A dotted module name
+    is not a path, and is left to load (or say why it does not)."""
+    text = str(ref)
+    if ".py:" in text:
+        text = text.split(".py:", 1)[0] + ".py"
+    elif not (text.endswith(".py") or "/" in text or "\\" in text):
+        return False
+    return not Path(text).exists()
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -116,7 +129,7 @@ def main(argv: list[str] | None = None) -> None:
             refs.append(given)
     # Gone since last time (moved, deleted): not opened, not forgotten
     # silently either -- the console says so.
-    missing = [r for r in refs if not Path(r.split(".py:", 1)[0]).exists()]
+    missing = [r for r in refs if _gone(r)]
     for ref in missing:
         print(f"not connected (not there any more): {ref}")
     refs = [r for r in refs if r not in missing]

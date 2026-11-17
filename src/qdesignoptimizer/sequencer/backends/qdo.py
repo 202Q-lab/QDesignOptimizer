@@ -94,7 +94,10 @@ from .qdo_templates import (
     Template,
     TemplateError,
     discover_templates,
+    evaluate,
+    has_expressions,
     load_targets,
+    put_back,
     render,
     template_files,
     write_ministudy,
@@ -122,7 +125,8 @@ The study runs from this file, not from the template: edit freely.
 The solver settings (nbr_passes, delta_f, mesh) are set here; the
 queue entry (job.yaml) has none.
 The template's "=..." values (a capacitance study's mode_freq_GHz, for
-one) were filled in from the project when this file was written."""
+one) are filled in when the study starts, from the parameter targets and
+design variables it runs with; type a number to fix one."""
 
 _TARGETS_HEADER = """\
 OptTargets for {task}, generated {when}:
@@ -436,11 +440,14 @@ class QDOBackend(SwitchableStore):
 
     # -- generating ------------------------------------------------------
 
-    def generate(self, task: str) -> tuple[dict[str, str], str]:
+    def generate(self, task: str, campaign: str = "") -> tuple[dict[str, str], str]:
+        """A study's files from its template; ``=v[...]`` read the
+        store of ``campaign`` ("" for the project's)."""
         template = self.templates().get(task)
         if template is None:
             raise KeyError(f"no template {task!r}")
-        return self._generate_from_template(task, template)
+        with self.store_of(campaign):
+            return self._generate_from_template(task, template)
 
     def ministudy(self, task: str):
         """The ``MiniStudy`` a template makes now, filled in exactly as
@@ -449,7 +456,7 @@ class QDOBackend(SwitchableStore):
         from . import qdo_files as qf
 
         files, _ = self.generate(task)
-        return qf.load_object(yaml.safe_load(files[MINISTUDY]))
+        return self._load_study(yaml.safe_load(files[MINISTUDY]))
 
     def _generate_from_template(
         self, task: str, template: Template
@@ -460,15 +467,20 @@ class QDOBackend(SwitchableStore):
         does not make a study is refused when it is queued."""
         from . import qdo_files as qf
 
+        p, v = self.project.parameter_targets(), self.store_values()
         ministudy, candidates = render(
             template,
             self.project_targets(),
-            self.project.parameter_targets(),
-            self.store_values(),
+            p,
+            v,
             self.template_values(),
+            keep_expressions=True,
         )
-        built = qf.load_object(ministudy)
-        study = qf.to_file_data(built)
+        # Built with the values of now, to refuse a template that does
+        # not make a study; written with its "=" expressions, filled in
+        # when the study starts (resolve_inputs).
+        built = qf.load_object(evaluate(ministudy, p, v, "ministudy"))
+        study = put_back(qf.to_file_data(built), ministudy)
         entries = study_targets(
             built,
             candidates,
@@ -763,9 +775,7 @@ class QDOBackend(SwitchableStore):
                 "geometry as the project's design stands now (its design() "
                 "takes no values, so this study's are not applied)"
             )
-        study = qf.load_object(
-            yaml.safe_load((Path(folder) / MINISTUDY).read_text("utf-8"))
-        )
+        study = self._study_in(Path(folder))
         hook = getattr(self.project, "bridge_settings", None)
         out = []
         for picture in qdo_preview.pictures(design, study, bonds=hook):
@@ -844,7 +854,11 @@ class QDOBackend(SwitchableStore):
         problems = []
         study = None
         try:
-            study = qf.load_object(texts[MINISTUDY])
+            study = self._load_study(
+                texts[MINISTUDY],
+                {**self.project.parameter_targets(), **(params or {})},
+                {**self.store_values(), **variables},
+            )
             if not hasattr(study, "qiskit_component_names"):
                 problems.append(f"{MINISTUDY} does not build a MiniStudy")
                 study = None
@@ -986,7 +1000,7 @@ class QDOBackend(SwitchableStore):
         from . import qdo_preview
 
         folder = Path(folder)
-        study = qf.load_object(yaml.safe_load((folder / MINISTUDY).read_text("utf-8")))
+        study = self._study_in(folder)
         runs = qdo_preview.runs(study)
         simulation = {
             "kind": (
@@ -1235,16 +1249,60 @@ class QDOBackend(SwitchableStore):
             ),
             encoding="utf-8",
         )
+        # The MiniStudy's "=" values, from what it runs with: a target
+        # changed while it waited is the one used (inputs/ keeps them).
+        study = yaml.safe_load((folder / MINISTUDY).read_text("utf-8"))
+        if has_expressions(study):
+            (folder / MINISTUDY).write_text(
+                dump_yaml(
+                    evaluate(study, full_params, full_vars, "ministudy"),
+                    'MiniStudy as it ran: its "=" values filled in at start '
+                    "(inputs/ has them as queued).",
+                ),
+                encoding="utf-8",
+            )
 
     def before_step(self, job) -> None:
         self.project.before_step()
+
+    def _load_study(self, data: dict, p: dict | None = None, v: dict | None = None):
+        """A MiniStudy from its file data, ``=`` values filled in from
+        ``p`` and ``v`` (the project's parameter targets and the store of
+        the call's campaign when not given)."""
+        from . import qdo_files as qf
+
+        if has_expressions(data):
+            data = evaluate(
+                data,
+                self.project.parameter_targets() if p is None else p,
+                self.store_values() if v is None else v,
+                "ministudy",
+            )
+        return qf.load_object(data)
+
+    def _study_in(self, folder: Path):
+        """The MiniStudy of a study folder, ``=`` values filled in as it
+        would run now: with its own overrides of the targets and design
+        variables (in a completed folder, the values it ran with)."""
+        ignored: list[str] = []
+        return self._load_study(
+            yaml.safe_load((folder / MINISTUDY).read_text("utf-8")),
+            {
+                **self.project.parameter_targets(),
+                **self._partial(folder / PARAMS, ignored, json_file=False),
+            },
+            {
+                **self.store_values(),
+                **self._partial(folder / VARIABLES, ignored, json_file=True),
+            },
+        )
 
     @uses_job_store
     def run(self, folder: Path, job) -> StepResult:
         from . import qdo_files as qf
 
         folder = Path(folder)
-        study = qf.load_object(yaml.safe_load((folder / MINISTUDY).read_text("utf-8")))
+        study = self._study_in(folder)  # filled in at start: plain values
         entries = yaml.safe_load((folder / TARGETS).read_text("utf-8"))["targets"]
         targets = qf.build_targets(entries)
         variables = json.loads((folder / VARIABLES).read_text("utf-8"))
@@ -1381,7 +1439,7 @@ class QDOBackend(SwitchableStore):
         from . import qdo_files as qf
 
         folder = Path(folder)
-        study = qf.load_object(yaml.safe_load((folder / MINISTUDY).read_text("utf-8")))
+        study = self._study_in(folder)
         targets = qf.build_targets(
             yaml.safe_load((folder / TARGETS).read_text("utf-8"))["targets"]
         )

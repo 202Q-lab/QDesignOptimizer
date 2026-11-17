@@ -52,17 +52,21 @@ from the project rather than be typed into every template: an adapter
 with a ``template_values()`` hook supplies ``{name: value}`` to every
 template (a subsystem's own values win), e.g. ``{tee_ATS1}``.
 
-Two kinds of filling, both done when a study is queued, so the queued
-files hold plain values:
+Two kinds of filling:
 
-* ``{name}`` in any string value: the subsystem's values, plus
-  ``{subject}`` (its key). In a ministudy an unknown name is refused; an
-  opt target that needs a name the study does not set is not for that
-  study.
+* ``{name}`` in any string value, when the study is queued: the
+  subsystem's values, plus ``{subject}`` (its key). In a ministudy an
+  unknown name is refused; an opt target that needs a name the study
+  does not set is not for that study.
 * a string starting with ``=``: an expression (the ``prop_to``
-  evaluator) of ``p`` -- the project's parameter targets -- and ``v`` --
-  its design variables, as they stand when the study is queued, e.g.
-  ``mode_freq_GHz: "=p['resonator_ATS{n}_freq'] / 1e9"``.
+  evaluator) of ``p`` -- the parameter targets -- and ``v`` -- the design
+  variables, e.g. ``mode_freq_GHz: "=p['resonator_ATS{n}_freq'] / 1e9"``.
+  In an opt target it is filled in when the study is queued. In a
+  ministudy it stays in the queued file and is filled in when the study
+  starts, from the values it runs with (the project's, its campaign's
+  store, and its own overrides): a target changed while it waits is the
+  one it uses. The completed folder holds the value used; ``inputs/``
+  the expression.
 """
 
 from __future__ import annotations
@@ -299,26 +303,89 @@ def load_targets(targets_dir: Path) -> tuple[list[dict], list[str]]:
     return entries, problems
 
 
-def fill(value: Any, values: dict, p: dict, v: dict, where: str = "") -> Any:
-    """Fill placeholders and expressions, all the way down.
+def fill(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    value: Any,
+    values: dict,
+    p: dict,
+    v: dict,
+    where: str = "",
+    expressions: bool = True,
+) -> Any:
+    """Fill placeholders and (``expressions``) expressions, all the way
+    down. Without, an ``=`` string keeps its expression, placeholders
+    filled.
 
     Raises:
         MissingValue: For a placeholder ``values`` does not set.
         TemplateError: For a bad expression.
     """
     if isinstance(value, dict):
-        return {k: fill(x, values, p, v, f"{where}.{k}") for k, x in value.items()}
+        return {
+            k: fill(x, values, p, v, f"{where}.{k}", expressions)
+            for k, x in value.items()
+        }
     if isinstance(value, list):
-        return [fill(x, values, p, v, f"{where}[{i}]") for i, x in enumerate(value)]
+        return [
+            fill(x, values, p, v, f"{where}[{i}]", expressions)
+            for i, x in enumerate(value)
+        ]
     if not isinstance(value, str):
         return value
     text = _placeholders(value, values, where)
-    if text.startswith("="):
-        try:
-            return Expression(text[1:])(p, value_numbers(v))
-        except (ExpressionError, ArithmeticError, ValueError) as exc:
-            raise TemplateError(f"{where}: {text!r}: {exc}") from exc
+    if text.startswith("=") and expressions:
+        return _evaluate(text, p, v, where)
     return text
+
+
+def evaluate(value: Any, p: dict, v: dict, where: str = "") -> Any:
+    """Fill in the ``=`` expressions of a study's data, all the way down
+    (nothing else changes).
+
+    Raises:
+        TemplateError: For a bad expression.
+    """
+    if isinstance(value, dict):
+        return {k: evaluate(x, p, v, f"{where}.{k}") for k, x in value.items()}
+    if isinstance(value, list):
+        return [evaluate(x, p, v, f"{where}[{i}]") for i, x in enumerate(value)]
+    if isinstance(value, str) and value.startswith("="):
+        return _evaluate(value, p, v, where)
+    return value
+
+
+def has_expressions(value: Any) -> bool:
+    """Whether a study's data holds an ``=`` expression anywhere."""
+    if isinstance(value, dict):
+        return any(has_expressions(x) for x in value.values())
+    if isinstance(value, list):
+        return any(has_expressions(x) for x in value)
+    return isinstance(value, str) and value.startswith("=")
+
+
+def put_back(data: Any, template: Any) -> Any:
+    """``data`` (a study as written from its rebuilt object) with the
+    template's ``=`` expressions where the template had them: the queued
+    file keeps them, to be filled in at start."""
+    if isinstance(template, str) and template.startswith("="):
+        return template
+    if isinstance(data, dict) and isinstance(template, dict):
+        return {
+            k: put_back(x, template[k]) if k in template else x for k, x in data.items()
+        }
+    if (
+        isinstance(data, list)
+        and isinstance(template, list)
+        and len(data) == len(template)
+    ):
+        return [put_back(x, t) for x, t in zip(data, template)]
+    return data
+
+
+def _evaluate(text: str, p: dict, v: dict, where: str) -> Any:
+    try:
+        return Expression(text[1:])(p, value_numbers(v))
+    except (ExpressionError, ArithmeticError, ValueError) as exc:
+        raise TemplateError(f"{where}: {text!r}: {exc}") from exc
 
 
 _WITH_UNIT = re.compile(
@@ -372,12 +439,13 @@ def _placeholders(text: str, values: dict, where: str) -> str:
     return text.format(**values)
 
 
-def render(
+def render(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     template: Template,
     targets: list[dict],
     p: dict,
     v: dict,
     project_values=None,
+    keep_expressions: bool = False,
 ) -> tuple[dict, list]:
     """The ministudy data for one subsystem, and every project opt
     target that can be filled in with its values (which of them fit the
@@ -388,6 +456,8 @@ def render(
         project_values: Named values the project supplies to every
             template (``QDOProject.template_values``); a subsystem's own
             values, then ``{subject}``, take precedence.
+        keep_expressions: Leave the ministudy's ``=`` expressions in
+            (filled in at start); the targets' are filled in.
 
     Raises:
         TemplateError: If the ministudy cannot be read or filled, or a
@@ -396,7 +466,14 @@ def render(
     values = {**(project_values or {}), **template.values}
     if template.subject:
         values["subject"] = template.subject
-    ministudy = fill(_read(template.ministudy_file), values, p, v, "ministudy")
+    ministudy = fill(
+        _read(template.ministudy_file),
+        values,
+        p,
+        v,
+        "ministudy",
+        expressions=not keep_expressions,
+    )
     filled = []
     for entry in targets:
         try:

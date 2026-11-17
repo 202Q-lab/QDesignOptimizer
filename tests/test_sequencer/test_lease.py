@@ -119,7 +119,7 @@ def test_a_lease_taken_from_the_gui_is_said_once(project, study):
     folder = project.queue.folder(study)
     editing = {"kind": "queue", "key": study, "edit": True}
     bridge.keep_editing(editing)
-    release_lease(folder, GUI_EDITOR)  # ours lapsed ...
+    release_lease(folder, bridge._holder(""))  # ours lapsed ...
     take_lease(folder, "claude")  # ... and the agent took it
     assert "being edited by claude" in bridge.keep_editing(editing)
     assert bridge.keep_editing(editing) == ""

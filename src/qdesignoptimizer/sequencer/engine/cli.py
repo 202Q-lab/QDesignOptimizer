@@ -51,7 +51,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from . import state as st
-from .code_change import CONTINUE, RESTART, decide, waiting
+from .code_change import CONTINUE, RESTART, decide, not_repointed, waiting
 from .lease import LeaseHeld, release_lease, take_lease
 from .loading import BackendError
 from .queue import QueueError
@@ -299,7 +299,7 @@ def _command(args, workspace: Workspace) -> int:
             return 0
         if args.command == "park":
             project, job_id = workspace.locate(args.id)
-            project.park(job_id)
+            project.park(job_id, holder="")  # refused while someone edits it
             print(f"{args.id}: on hold")
             return 0
         if args.command == "write":
@@ -320,7 +320,7 @@ def _command(args, workspace: Workspace) -> int:
             return 0
         if args.command == "unpark":
             project, job_id = _locate_held(workspace, args.id)
-            project.unpark(job_id)
+            project.unpark(job_id, holder="")
             print(f"queued {workspace.added(project, [job_id])[0]}")
             return 0
         project, folder = workspace.locate(args.folder)
@@ -429,17 +429,22 @@ def _write(args, workspace: Workspace) -> int:
         if args.source
         else sys.stdin.read()
     )
+    # This command's own: two agents with the same name keep each other
+    # out too.
+    holder = f"{args.by}#{os.getpid()}"
     try:
-        take_lease(folder, args.by, seconds=60.0)
+        take_lease(folder, args.by, seconds=60.0, holder=holder)
     except LeaseHeld as exc:
         print(f"{args.id} is {exc}; nothing written", file=sys.stderr)
         return 1
+    except st.LockHeld as exc:
+        raise QueueError(f"busy a moment ({exc}); nothing written, try again") from exc
     except FileNotFoundError as exc:
         raise QueueError(f"{args.id} moved meanwhile; nothing written") from exc
     try:
         queue.write_file(job_id, args.file, text)
     finally:
-        release_lease(folder, args.by)
+        release_lease(folder, holder)
     problems = project.problems(job_id, folder=folder)
     print(f"wrote {args.file} of {args.id}")
     if problems:
@@ -485,6 +490,12 @@ def _decide(args, workspace: Workspace) -> int:
             f"restarted {sequence} as {project.job(made[0]).sequence.get('id')}: "
             f"{', '.join(keys)}; the rest of {sequence} is on hold"
         )
+        left = not_repointed(project, sequence)
+        if left:
+            print(
+                f"still needing {sequence}'s studies (they were being edited): "
+                f"{', '.join(left)}; point their needs at the new ones"
+            )
     else:
         print(f"{sequence} continues on the new code")
     return 0

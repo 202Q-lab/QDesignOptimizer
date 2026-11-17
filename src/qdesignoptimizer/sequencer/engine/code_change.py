@@ -25,6 +25,7 @@ change asks again.
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import time
 from pathlib import Path
@@ -32,6 +33,7 @@ from typing import Any
 
 from . import state as st
 from .job import JOB_FILE, Job, dump_yaml, load_job, parse_completed
+from .lease import LeaseHeld, release_lease, take_lease
 from .queue import INPUTS, QueueError, load_job_from, started_key
 
 DECISIONS_FILE = "code_decisions.json"
@@ -193,8 +195,10 @@ def decide(project, sequence: str, choice: str) -> list[str]:
     record: dict[str, Any] = {"choice": choice, "code": current, "at": st.now()}
     made: list[str] = []
     if choice == RESTART:
-        made = restart(project, sequence)
+        made, skipped = restart(project, sequence)
         record["as"] = sequence_of(project.job(made[0])) if made else ""
+        if skipped:
+            record["not_repointed"] = skipped
     with st.order_guard():
         found = decisions(project)
         found[sequence] = record
@@ -254,9 +258,17 @@ def _members(project, sequence: str) -> tuple[dict[int, tuple], list[str], dict]
     return entries, queued, known
 
 
-def restart(project, sequence: str) -> list[str]:
+def not_repointed(project, sequence: str) -> list[str]:
+    """The studies outside a restarted sequence still needing its old
+    studies: they were being edited when it restarted."""
+    return list((decisions(project).get(sequence) or {}).get("not_repointed") or [])
+
+
+def restart(project, sequence: str) -> tuple[list[str], list[str]]:
     """Queue a sequence again from its start as a new sequence, and put
-    what is left of the old one on hold. Returns the new ids.
+    what is left of the old one on hold. Returns the new ids, and the
+    studies outside it whose needs could not be pointed at them (being
+    edited meanwhile).
 
     Raises:
         QueueError: If the sequence has no studies, or one cannot be
@@ -301,14 +313,20 @@ def restart(project, sequence: str) -> list[str]:
             project.park(job_id)
         except QueueError:
             pass  # taken by a runner meanwhile: it runs
-    _retarget_needs(project, sequence, {old: ids[n] for old, n in known.items()})
-    return made
+    skipped = _retarget_needs(
+        project, sequence, {old: ids[n] for old, n in known.items()}
+    )
+    return made, skipped
 
 
-def _retarget_needs(project, sequence: str, renamed: dict[str, str]) -> None:
+def _retarget_needs(project, sequence: str, renamed: dict[str, str]) -> list[str]:
     """Point studies outside a restarted sequence that need one of its
     studies at the new copy: the old one is on hold now and would keep
-    them waiting."""
+    them waiting. Each is written under a lease, so an editor's save
+    never puts the old id back; those being edited are left as they are
+    and returned."""
+    skipped: list[str] = []
+    holder = f"restart#{os.getpid()}"
     prefix = (f"{sequence}-", *(f"{new.split('-', 1)[0]}-" for new in renamed.values()))
     for source in (project.queue, project.hold):
         for job_id in source.ids():
@@ -318,13 +336,24 @@ def _retarget_needs(project, sequence: str, renamed: dict[str, str]) -> None:
                 job = load_job(source.folder(job_id), project.words)
             except Exception:  # noqa: BLE001 -- its own check reports it
                 continue
-            needs = [renamed.get(n, n) for n in job.needs]
-            if needs == job.needs:
+            if not any(n in renamed for n in job.needs):
                 continue
-            job.needs = needs
+            folder = source.folder(job_id)
             try:
+                take_lease(folder, f"the restart of {sequence}", 30.0, holder)
+            except LeaseHeld:
+                skipped.append(job_id)
+                continue
+            except OSError:
+                continue  # taken by a runner meanwhile
+            try:
+                job = load_job(folder, project.words)  # as it is now
+                job.needs = [renamed.get(n, n) for n in job.needs]
                 source.write_file(
                     job_id, JOB_FILE, dump_yaml(job.to_raw(project.words))
                 )
-            except QueueError:
-                pass  # taken by a runner meanwhile
+            except Exception:  # noqa: BLE001 -- taken meanwhile, or unreadable
+                pass
+            finally:
+                release_lease(folder, holder)
+    return skipped

@@ -47,7 +47,11 @@ def order_guard():
     in-process ``ORDER_LOCK`` and, on the outermost entry, a machine-wide
     file lock, so the GUI, a command line call (an agent reordering or
     adding) and another GUI never interleave their read and write.
-    Re-entrant within a thread."""
+    Re-entrant within a thread.
+
+    Raises:
+        QueueBusy: If another process holds the file lock for 30 s.
+    """
     global _order_depth  # pylint: disable=global-statement
     with ORDER_LOCK:
         if _order_depth:
@@ -59,12 +63,20 @@ def order_guard():
             return
         from .workspace import user_home  # pylint: disable=import-outside-toplevel
 
-        with file_lock(user_home() / "locks" / "order.lock", wait=30.0):
+        try:
+            lock = file_lock(user_home() / "locks" / "order.lock", wait=30.0)
+            lock.__enter__()  # pylint: disable=unnecessary-dunder-call
+        except LockHeld as exc:
+            raise QueueBusy(
+                "the queue is busy: another program has held its lock for "
+                "30 s; nothing was changed, try again"
+            ) from exc
+        try:
             _order_depth = 1
-            try:
-                yield
-            finally:
-                _order_depth = 0
+            yield
+        finally:
+            _order_depth = 0
+            lock.__exit__(None, None, None)
 
 
 #: Study statuses (``queued`` is never written: a folder in queue/ is).
@@ -216,6 +228,14 @@ def clear_stop(out_dir: Path) -> None:
 
 class LockHeld(RuntimeError):
     """Another live process holds the runner lock."""
+
+
+class QueueError(RuntimeError):
+    """A queue operation was refused, with the reason."""
+
+
+class QueueBusy(QueueError, LockHeld):
+    """The queue's lock stayed held by another process: nothing done."""
 
 
 class RunnerLock:

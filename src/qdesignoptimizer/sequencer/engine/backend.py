@@ -188,9 +188,11 @@ class Backend(Protocol):
     def default_settings(self, task: str) -> dict[str, Any]:
         """The settings a new study of this task starts with."""
 
-    def generate(self, task: str) -> tuple[dict[str, str], str]:
+    def generate(self, task: str, campaign: str = "") -> tuple[dict[str, str], str]:
         """Make a study's files: ``({file name: text}, generated_by)``.
-        May import QDO; must not start Ansys."""
+        May import QDO; must not start Ansys. ``campaign``: the campaign
+        the study is for (its store's values); only passed when there is
+        one, so a backend without campaigns may leave it out."""
 
     def check_folder(self, folder: Path, job, deep: bool) -> list[str]:
         """Problems with a study's files. ``deep`` rebuilds the objects

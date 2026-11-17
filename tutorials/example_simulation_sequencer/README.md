@@ -124,8 +124,11 @@ args:
 - `{n}` makes the file a family: one study per subsystem that sets `n`
   (`Q1.resonator_kappa`, `Q2.resonator_kappa`).
 - A string starting with `=` is an expression of `p` (the parameter
-  targets) and `v` (the design variables), evaluated when the study is
-  queued.
+  targets) and `v` (the design variables). In a MiniStudy it stays in
+  the queued file and is evaluated when the study starts, with the
+  values the study runs with, so a target changed while it waits is the
+  one used. The completed folder holds the value; `inputs/` the
+  expression. Type a number over it to fix the value instead.
 - A file without placeholders named `<subsystem>_<rest>.yaml` is the one
   study `<subsystem>.<rest>`: `Q1_qubit_resonator.yaml` is
   `Q1.qubit_resonator`. It is written out in full because its
@@ -318,14 +321,20 @@ qdesignoptimizer.sequencer guide` prints them. A chip project's own
   Edit mode on that study in the GUI, the study holds a lease
   (`.editing.json` in its folder, renewed every poll, gone 15 s after
   the GUI closes): the other side is refused, and the GUI tags the study
-  "being edited by claude". A GUI save also checks that nothing changed
-  the study since you pressed Edit, and refuses if something did.
+  "being edited by claude". Each browser tab and each command holds its
+  own lease, so a second tab, or a second agent with the same name, is
+  kept out too. Park, Remove and queueing a held study wait for someone
+  else's edit as well. A GUI save also checks that nothing changed the
+  study since you pressed Edit, and refuses if something did.
 - **What a study needs.** A study that uses what another one writes
   back lists it: `needs: [<id>, ...]` in its `job.yaml` (the *needs*
   field in the GUI, `add <study> --needs <id>` on the command line). The
   runner starts the first study that may start; one whose needs have
   not all run successfully (a requeued copy, `<id>_r2`, counts) is
-  passed over and the studies after it move up. So is one being edited;
+  passed over. A need that is queued again, or on hold, is waited for
+  even if an earlier run of it succeeded: the study runs on its new
+  result, not the old one. A study passed over stays where it is, and
+  the studies after it move up. So is one being edited;
   it runs once the edit is done. With nothing left that may start but
   something being edited, the runner waits for it; with nothing at all,
   it finishes and says which study waits for what (a need on hold, or
@@ -370,3 +379,58 @@ come after it.
 - Machine-wide state (the runner lock, a multi-project queue order):
   `%LOCALAPPDATA%\qdo_sequencer\`, or the folder `QDO_SEQUENCER_HOME`
   names. Safe to delete while no runner is going.
+
+## Known limits
+
+- Edits are saved one file at a time. A change spread over two files
+  (the MiniStudy, then the opt targets) can be cut by the runner taking
+  the study in between; the GUI then says the second save came too
+  late.
+- Write-backs and `campaign promote` hold a machine-wide lock on the
+  store, so they never drop each other's values. A hand edit of the
+  store in a text editor is not covered, and a value a study tunes
+  overwrites a hand edit of the same value.
+- Template `=` expressions drop units without converting them: keep the
+  variables that one expression combines in one unit.
+- Capacitance targets are matched to studies by qiskit-metal's
+  conductor names (`<part>_<component>`). Without the built design, a
+  component whose name ends another's can be mistaken for it (QDO then
+  only warns).
+- The deviation shown for a `_freq` target, when a project's
+  `converged` hook reports it, is read as Hz (the hook's contract).
+- Projects open in one process share their `code_modules` allowance:
+  a study file of one may name a module the other allows. Both are your
+  own code.
+- The tests run the whole queue against a fake Ansys. They show that
+  studies are made, run, checked and written back correctly; they do
+  not show that the physics of a target is right, since the fake
+  answers with the same relations the targets assume.
+
+## Open questions
+
+- **A reusable `solve`.** A base class doing QDO's loop (build the chip,
+  `DesignAnalysis`, `optimize_target` for each iteration), so that an
+  adapter is paths, subsystems and a meshing map, about 20 lines
+  instead of about 190. Open sub-questions: a `stop_when_converged`
+  setting (stop once every target is within tolerance), an
+  `after_iteration` hook for mode checks, and whether to recover from
+  Ansys dropping out.
+
+## Notes on readout linewidth (kappa)
+
+Kappa sets how the readout resonator passes noise to the qubit, so a
+wrong value has consequences:
+
+- Purcell T1 goes as kappa (g/Delta)^2. The tutorial's targets give a
+  few tens of microseconds without a Purcell filter.
+- Dephasing from thermal photons goes as
+  n_th kappa (2chi)^2 / (kappa^2 + (2chi)^2), largest at kappa = 2chi,
+  which is also where readout SNR is best.
+- Photon noise has a bandwidth of about kappa, so a small kappa can make
+  it look like 1/f noise in echo or CPMG.
+
+In QDO the eigenmode kappa (f/Q) counts every port and loss in the
+model; the capacitance decay study counts only the named waveguide. A
+disagreement between the two can be real leakage. Check whether QDO's
+`nonlin` chi is the full or the half dispersive shift (pyEPR's is
+believed to be the full one) before using these numbers.

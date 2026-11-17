@@ -8,7 +8,10 @@ the integration tests compare against stored snapshots.
 
 The fakes answer with numbers from :class:`FakePhysics`, a deterministic model
 derived from the example's own ``OptTarget`` relations, so the optimizer has to
-actually converge for the examples to pass. The fakes deliberately implement only
+actually converge for the examples to pass. Since the model follows the same
+relations the optimizer assumes, these tests check the plumbing and the
+optimizer's loop, not the physics: a target with a wrong exponent or sign would
+still converge here. The fakes deliberately implement only
 the simulator API currently used; a new call into Ansys/pyEPR raises
 ``AttributeError`` so the change cannot slip through unnoticed.
 """

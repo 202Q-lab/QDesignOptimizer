@@ -304,6 +304,12 @@ def parse(raw: Any, original: Any, label: str = "value") -> Any:
         return bool(raw)
     text = "" if raw is None else str(raw).strip()
     if isinstance(original, str):
+        if original.startswith("=") and text and not text.startswith("="):
+            # An expression filled in at start, replaced by a value:
+            # a number is a number.
+            value = _yaml(text, label)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return value
         return str(raw if raw is not None else "")
     if original is None:
         if not text:

@@ -35,6 +35,7 @@ from .job import (
     parse_completed,
     slug_name,
 )
+from .lease import LeaseHeld, check_free, drop_lease, lease_guard
 from .loading import load_backend
 from .queue import HOLD, FolderQueue, QueueError, _rename, started_key
 from .sequence import (
@@ -227,14 +228,18 @@ class Project:
             return [f"cannot be checked: {type(exc).__name__}: {exc}"]
 
     def need_state(self, need: str) -> str:
-        """Where a needed study stands: ``done`` (a successful run, of it
-        or of a requeued copy ``<id>_rN``), ``queued``, ``running``,
-        ``hold``, ``failed`` (its runs all failed, none queued again) or
-        ``missing``."""
+        """Where a needed study stands: ``queued``, ``running`` or
+        ``hold`` while it or a requeued copy ``<id>_rN`` is still to run
+        -- even if an earlier run succeeded: a study requeued to run again
+        is needed as it will be, not as it was -- else ``done`` (a
+        successful run), ``failed`` (its runs all failed) or ``missing``."""
+        pending = self.pending_state(need)
+        if pending:
+            return pending
         runs = self.runs_of(need)
         if any(st.result_of(p).get("status") == st.DONE for p in runs):
             return "done"
-        return self.pending_state(need) or ("failed" if runs else "missing")
+        return "failed" if runs else "missing"
 
     def runs_of(self, job_id: str) -> list[Path]:
         """The completed folders of a study and of its requeued copies
@@ -367,33 +372,55 @@ class Project:
         queue.queue_dir = queue.hold_dir
         return queue
 
-    def park(self, job_id: str) -> None:
+    def park(self, job_id: str, holder: str | None = None) -> None:
         """Move a queued study on hold: out of the run order, files and
         all, until ``unpark``.
 
-        Raises:
-            QueueError: If it is not queued (or the runner just took it).
-        """
-        self._move(self.queue, self.hold, job_id, None)
+        Args:
+            holder: Who asks (their lease, "" for none): refused while
+                someone else edits the study. None: moved regardless.
 
-    def unpark(self, job_id: str, position: int | None = None) -> None:
+        Raises:
+            QueueError: If it is not queued (or the runner just took it),
+                or someone else is editing it.
+        """
+        self._move(self.queue, self.hold, job_id, None, holder)
+
+    def unpark(
+        self, job_id: str, position: int | None = None, holder: str | None = None
+    ) -> None:
         """Move a study on hold into the queue, at ``position`` (the end
-        when None).
+        when None). ``holder`` as for ``park``.
 
         Raises:
-            QueueError: If it is not on hold.
+            QueueError: If it is not on hold, or someone else edits it.
         """
-        self._move(self.hold, self.queue, job_id, position)
+        self._move(self.hold, self.queue, job_id, position, holder)
 
-    def _move(self, source: FolderQueue, dest: FolderQueue, job_id, position):
+    def _move(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        self, source: FolderQueue, dest: FolderQueue, job_id, position, holder=None
+    ):
         folder = source.folder(job_id)
         if not folder.is_dir():
             where = "on hold" if source.queue_dir == self.out / HOLD else "queued"
             raise QueueError(f"{job_id} is not {where}")
+        if holder is None:
+            self._move_unchecked(source, dest, job_id, position)
+            return
+        with lease_guard():  # no one takes the lease between check and move
+            try:
+                check_free(folder, holder)
+            except LeaseHeld as exc:
+                raise QueueError(
+                    f"{job_id} is {exc}: it stays where it is until they are done"
+                ) from exc
+            self._move_unchecked(source, dest, job_id, position)
+
+    def _move_unchecked(self, source: FolderQueue, dest: FolderQueue, job_id, position):
         dest.queue_dir.mkdir(parents=True, exist_ok=True)
         with st.order_guard():
             try:
-                _rename(folder, dest.folder(job_id))
+                _rename(source.folder(job_id), dest.folder(job_id))
             except FileNotFoundError as exc:
                 # Claimed by the runner between the check and the rename.
                 raise QueueError(
@@ -410,6 +437,9 @@ class Project:
             order.insert(len(order) if position is None else position, job_id)
             dest.write_order(order)
             source.write_order([i for i in source.ids() if i != job_id])
+        # A lease came along: it was for where the study was (its editor
+        # follows the key, which changed), and would block it for 15 s.
+        drop_lease(dest.folder(job_id))
 
     def add(
         self,
@@ -444,7 +474,7 @@ class Project:
         if spec is None:
             raise QueueError(f"no {self.words.task} {task!r}")
         try:
-            files, generated_by = self.backend.generate(task)
+            files, generated_by = _generate(self.backend, task, campaign)
         except Exception as exc:  # noqa: BLE001 -- reported to the user
             raise QueueError(
                 f"generating {task} failed: {type(exc).__name__}: {exc}"
@@ -567,9 +597,13 @@ class Project:
         if missing:
             raise QueueError(f"{spec.key}: unknown {self.words.task}(s) " f"{missing}")
         generated = []
+        # Asked before the order lock: a backend in a worker may be busy
+        # with a slow check, and the lock would keep every other add,
+        # move and park waiting meanwhile.
+        defaults = [self.backend.default_settings(e.task) for e in spec.entries]
         for entry in spec.entries:
             try:
-                generated.append(self.backend.generate(entry.task))
+                generated.append(_generate(self.backend, entry.task, campaign))
             except Exception as exc:  # noqa: BLE001
                 raise QueueError(
                     f"{spec.key}: generating {entry.task} failed: "
@@ -581,8 +615,8 @@ class Project:
             ids: list[str] = []
             try:
                 sequence_id = self._next_sequence_id()
-                for n, (entry, (files, by)) in enumerate(
-                    zip(spec.entries, generated), 1
+                for n, (entry, (files, by), default) in enumerate(
+                    zip(spec.entries, generated, defaults), 1
                 ):
                     spec_t = catalog.task(entry.task)
                     assert spec_t is not None  # unknown tasks were refused above
@@ -590,10 +624,7 @@ class Project:
                         id=self.queue.new_id(entry.task, sequence_id, spec.key),
                         task=entry.task,
                         subject=spec_t.subject,
-                        settings={
-                            **self.backend.default_settings(entry.task),
-                            **entry.settings,
-                        },
+                        settings={**default, **entry.settings},
                         checks=list(entry.checks or []),
                         save=bool(entry.save),
                         on_failure=entry.on_failure or "abort",
@@ -793,3 +824,12 @@ def open_project(ref: str | Path) -> Project:
         return Project(load_backend(f"{target}:{factory}", Path.cwd()))
     path = Path(target).resolve()
     return Project(load_backend(f"{path.name}:{factory}", path.parent))
+
+
+def _generate(backend, task: str, campaign: str) -> tuple[dict[str, str], str]:
+    """A backend's files for a new study: for a campaign's study with
+    that campaign's values (a template's ``=v[...]``), when the backend
+    takes one."""
+    if campaign:
+        return backend.generate(task, campaign=campaign)
+    return backend.generate(task)

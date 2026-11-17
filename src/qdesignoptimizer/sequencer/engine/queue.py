@@ -56,8 +56,8 @@ CLAIMED = ".claimed-"
 _SEQUENCE = re.compile(r"^s(\d+)-")
 
 
-class QueueError(RuntimeError):
-    """A queue operation was refused, with the reason."""
+# Defined in state (its order lock raises one when busy); kept here too.
+QueueError = st.QueueError
 
 
 def _rename(source: Path, dest: Path, tries: int = 50) -> None:
@@ -516,15 +516,36 @@ class FolderQueue:
 
 
 def started_key(folder: Path) -> tuple:
-    """Sort key of a completed folder: its start time (from its name),
-    then when its result was last written -- two studies (of different
-    projects, or a study and its requeued copy) can start in the same
-    second."""
+    """Sort key of a completed folder: its start time (from its name, as
+    an instant), then when its result was last written -- two studies (of
+    different projects, or a study and its requeued copy) can start in
+    the same second."""
     try:
         written = (folder / st.RESULT_FILE).stat().st_mtime_ns
     except OSError:
         written = 0
-    return parse_completed(folder.name)[1], written
+    stamp = parse_completed(folder.name)[1]
+    return _start_instant(folder, stamp), stamp, written
+
+
+def _start_instant(folder: Path, stamp: str) -> float:
+    """The epoch time of a folder's start stamp (local time). In the hour
+    that daylight saving time repeats a stamp is two instants: the run's
+    own ``started_at`` then says which."""
+    try:
+        when = time.strptime(stamp[:19], "%Y-%m-%dT%H-%M-%S")
+    except ValueError:
+        return 0.0
+    winter = time.mktime((*when[:8], 0))
+    summer = time.mktime((*when[:8], 1))
+    if (
+        winter != summer
+        and time.localtime(winter)[:6] == when[:6] == time.localtime(summer)[:6]
+    ):
+        at = st.result_of(folder).get("started_at")
+        if isinstance(at, (int, float)):
+            return float(at)
+    return time.mktime((*when[:8], -1))
 
 
 def load_job_from(folder: Path, words) -> Job:

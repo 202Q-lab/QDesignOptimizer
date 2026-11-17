@@ -21,12 +21,24 @@ import math
 import operator
 from typing import Any, Callable, Mapping
 
+
+def _power(base: float, exponent: float) -> float:
+    """``base ** exponent``, refused where it is not a real number."""
+    value = base**exponent
+    if isinstance(value, complex):
+        raise ValueError(
+            f"{base:g} ** {exponent:g} is not a real number (a negative base "
+            "to a fractional power)"
+        )
+    return value
+
+
 _BIN = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,
     ast.Div: operator.truediv,
-    ast.Pow: operator.pow,
+    ast.Pow: _power,
     ast.Mod: operator.mod,
 }
 _UNARY = {ast.USub: operator.neg, ast.UAdd: operator.pos}

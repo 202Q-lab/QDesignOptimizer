@@ -147,7 +147,8 @@ class FakeBackend(SwitchableStore):
     def default_settings(self, task: str) -> dict:
         return {}
 
-    def generate(self, task: str) -> tuple[dict[str, str], str]:
+    def generate(self, task: str, campaign: str = "") -> tuple[dict[str, str], str]:
+        del campaign  # its files have no values to fill in
         self.calls.append(("generate", task))
         body = {"value": 1.0, "fail": False, "converged": True, "step": 0.0}
         return (
