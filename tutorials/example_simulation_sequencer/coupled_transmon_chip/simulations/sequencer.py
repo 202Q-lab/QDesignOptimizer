@@ -15,7 +15,9 @@ the sequencer needs to queue and run studies of it:
 
 ``design_variables.json`` next to this folder is the project's store: the
 studies read their design variables from it and write the tuned ones
-back. It starts as a copy of the tutorial chip's file; delete it to start
+back. It starts as a copy of the tutorial chip's file, with the junction
+inductances and resonator lengths estimated from the parameter targets
+(``qdesignoptimizer.estimation.initial_design``); delete it to start
 over.
 
 A design folder is not a package: its modules import each other by bare
@@ -23,7 +25,7 @@ name, so this folder and the tutorial chip's go on the import path here.
 """
 
 import importlib
-import shutil
+import json
 import sys
 from pathlib import Path
 
@@ -73,7 +75,48 @@ class CoupledTransmonProject:
 
     def __init__(self):
         if not self.design_variables_file.exists():
-            shutil.copy(CHIP / "design_variables.json", self.design_variables_file)
+            self.design_variables_file.write_text(
+                json.dumps(self.initial_design_variables(), indent=4) + "\n",
+                encoding="utf-8",
+            )
+
+    def initial_design_variables(self) -> dict:
+        """The store a new project starts with: the tutorial chip's
+        values, with first estimates from the parameter targets for
+
+        * each qubit's junction inductance: the transmon with the targeted
+          frequency and anharmonicity;
+        * each readout resonator's length: a half-wave CPW on silicon (it
+          is open at the tee and at the qubit's claw). The claw's
+          capacitance makes it electrically longer, so the real one comes
+          out shorter -- in HFSS about 8.3 mm for 6 GHz, against 10.0 mm
+          estimated -- which the first study corrects.
+
+        The rest (pad widths, coupling lengths) depend on the geometry
+        and keep the chip's values."""
+        import names as n
+
+        from qdesignoptimizer.estimation.initial_design import (
+            resonator_length_for_frequency,
+            transmon_inductance_for_frequency,
+        )
+        from qdesignoptimizer.utils.names_parameters import FREQ, param, param_nonlin
+
+        values = json.loads((CHIP / "design_variables.json").read_text("utf-8"))
+        targets = self.parameter_targets()
+        for qubit, resonator in (
+            (n.QUBIT_1, n.RESONATOR_1),
+            (n.QUBIT_2, n.RESONATOR_2),
+        ):
+            lj = transmon_inductance_for_frequency(
+                targets[param(qubit, FREQ)], targets[param_nonlin(qubit, qubit)]
+            )
+            length = resonator_length_for_frequency(
+                targets[param(resonator, FREQ)], "lambda_2"
+            )
+            values[n.design_var_lj(qubit)] = f"{lj * 1e9:.2f} nH"
+            values[n.design_var_length(resonator)] = f"{length * 1e6:.0f} um"
+        return values
 
     # -- what a study's job.yaml may set -------------------------------------
 

@@ -77,10 +77,18 @@ def test_the_tutorial_project_queues_its_sequence_and_checks_clean(tmp_path):
         assert eigenmode["Q1_resonator_kappa_eigenmode"] is True
         assert eigenmode["Q1_resonator_kappa"] is False
         assert eigenmode["Q1_chi"] is True
-        # The store starts as a copy of the tutorial chip's.
-        assert project.backend.store_values() == yaml.safe_load(
-            (_CHIP / "design_variables.json").read_text("utf-8")
-        )
+        # The store starts as the tutorial chip's, with the junctions and
+        # resonators estimated from the targets (4 GHz at 210 MHz, a
+        # half-wave resonator at 6 GHz on silicon).
+        store = project.backend.store_values()
+        chip = yaml.safe_load((_CHIP / "design_variables.json").read_text("utf-8"))
+        estimated = {
+            "design_var_lj_qubit_1": "15.49 nH",
+            "design_var_lj_qubit_2": "9.67 nH",
+            "design_var_length_resonator_1": "10013 um",
+            "design_var_length_resonator_2": "8583 um",
+        }
+        assert store == {**chip, **estimated}
     finally:
         workspace.close()
 

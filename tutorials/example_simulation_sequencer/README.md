@@ -70,7 +70,10 @@ coupled_transmon_chip/
 │   └── charge_line.yaml
 ├── study_sequences/tune_Q1.yaml        a named sequence of studies
 ├── parameter_targets.py          PARAM_TARGETS, as in every QDO project
-└── design_variables.json         the store (made on first use, git-ignored)
+└── design_variables.json         the store (made on first use, git-ignored:
+                                  the chip's values, junction inductances
+                                  and resonator lengths estimated from
+                                  the targets)
 ```
 
 ### The adapter: `simulations/sequencer.py`
