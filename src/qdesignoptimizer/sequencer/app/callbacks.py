@@ -1326,14 +1326,20 @@ def register_pins_callbacks(app, bridge) -> None:
     def _pins_close(_selected):
         return None
 
+    app.clientside_callback(
+        layout.PINS_FILTER_JS,
+        Output("pins-components", "options"),
+        Input("pins-filter", "value"),
+        State("pins-data", "data"),
+        prevent_initial_call=True,
+    )
+
     @app.callback(
         Output("pins-sel", "data"),
-        Output("pins-components", "options"),
         Output("pins-components", "value"),
         Output("pins-table", "children"),
         Output("pins-summary", "children"),
         Input("pins-run", "value"),
-        Input("pins-filter", "value"),
         Input("pins-components", "value"),
         Input({"type": "pin-state", "pin": ALL}, "value"),
         Input({"type": "pin-ohm", "pin": ALL}, "value"),
@@ -1343,19 +1349,20 @@ def register_pins_callbacks(app, bridge) -> None:
         State("pins-sel", "data"),
         prevent_initial_call=True,
     )
-    def _pins_edit(run, text, ticked, states, ohms, state_ids, ohm_ids, data, sel):
+    def _pins_edit(run, ticked, states, ohms, state_ids, ohm_ids, data, sel):
         if not data or sel is None:
             raise PreventUpdate
         trig = ctx.triggered_id
         sel = dict(sel)
-        table = no_update
+        table = value = no_update
         if trig == "pins-run":
             sel = layout.pins_selection(data, int(run or 0))
-            table = layout.pins_table(data, sel)
+            table, value = layout.pins_table(data, sel), list(sel["components"])
         elif trig == "pins-components":
-            shown = {o["value"] for o in layout.pins_options(data, sel, text)[0]}
+            # The checklist holds every included component, shown by the
+            # filter or not: keep their order, add new ones at the end.
             ticked = list(ticked or [])
-            kept = [c for c in sel["components"] if c not in shown or c in ticked]
+            kept = [c for c in sel["components"] if c in ticked]
             sel["components"] = kept + [c for c in ticked if c not in kept]
             table = layout.pins_table(data, sel)
         elif isinstance(trig, dict):
@@ -1373,8 +1380,7 @@ def register_pins_callbacks(app, bridge) -> None:
             # is switched on or off); a typed impedance keeps its box.
             if trig.get("type") == "pin-state":
                 table = layout.pins_table(data, sel)
-        options, value = layout.pins_options(data, sel, text)
-        return sel, options, value, table, layout.pins_summary(data, sel)
+        return sel, value, table, layout.pins_summary(data, sel)
 
     @app.callback(
         Output("pins-pictures", "children"),

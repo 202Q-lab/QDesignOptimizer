@@ -385,7 +385,13 @@ def _editor_area() -> Any:
             dcc.Loading(html.Div(id="details"), type="dot", delay_show=300),
             dcc.Loading(html.Div(id="validate-view"), type="dot"),
             dcc.Loading(html.Div(id="preview-view"), type="dot"),
-            dcc.Loading(html.Div(id="pins-view"), type="dot"),
+            # The spinner is for opening the panel only: an edit inside it
+            # (a filter keystroke, a pin's end) must not blank it.
+            dcc.Loading(
+                html.Div(id="pins-view"),
+                type="dot",
+                target_components=_PINS_VIEW_ONLY,
+            ),
             html.Pre(id="inspect", className="qs-pre", style={"display": "none"}),
         ],
     )
@@ -2211,24 +2217,38 @@ def pins_selection(data: dict, run: int) -> dict:
     }
 
 
-def pins_options(data: dict, sel: dict, text: str = "") -> tuple[list, list]:
-    """The component checklist: every design component matching
-    ``text`` (in its name or class), and which of those are included."""
-    text = (text or "").strip().lower()
-    shown = [
-        c
-        for c in data.get("components") or []
-        if not text or text in c["name"].lower() or text in c["class"].lower()
-    ]
-    options = [
+#: What the panel's spinner waits for: the panel itself, not its parts.
+_PINS_VIEW_ONLY: Any = {"pins-view": "children"}
+
+#: Narrows the component checklist in the browser, as one types: no
+#: round trip to the server. The checklist's value keeps every included
+#: component, shown or not, so filtering never drops one.
+PINS_FILTER_JS = """
+function(text, data) {
+    const words = (text || "").trim().toLowerCase();
+    return ((data || {}).components || [])
+        .filter(c => !words
+            || c.name.toLowerCase().includes(words)
+            || c["class"].toLowerCase().includes(words))
+        .map(c => ({
+            label: " " + c.name + "  · " + c["class"] + " · "
+                + c.pins.length + " pin(s)",
+            value: c.name,
+        }));
+}
+"""
+
+
+def pins_options(data: dict) -> list[dict]:
+    """The component checklist: every component of the design (the
+    browser narrows it as one types, ``PINS_FILTER_JS``)."""
+    return [
         {
             "label": f" {c['name']}  · {c['class']} · {len(c['pins'])} pin(s)",
             "value": c["name"],
         }
-        for c in shown
+        for c in data.get("components") or []
     ]
-    included = set(sel.get("components") or [])
-    return options, [c["name"] for c in shown if c["name"] in included]
 
 
 def _pin_row(key: str, name: str, joined: str, state: str, ohm: Any, ports: bool):
@@ -2396,7 +2416,6 @@ def pins_view(data: dict) -> Any:
     a port, a drawing of the choice, and saving it into the study."""
     runs = data.get("runs") or []
     sel = pins_selection(data, 0)
-    options, value = pins_options(data, sel)
     return html.Div(
         [
             html.H3("Components and pins", className="qs-h"),
@@ -2431,8 +2450,8 @@ def pins_view(data: dict) -> Any:
             ),
             dcc.Checklist(
                 id="pins-components",
-                options=options,
-                value=value,
+                options=pins_options(data),
+                value=list(sel["components"]),
                 className="qs-checklist",
                 labelStyle={"display": "block"},
                 style={
