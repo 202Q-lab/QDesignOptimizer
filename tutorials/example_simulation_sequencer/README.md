@@ -284,6 +284,30 @@ ran from (`inputs/` as queued, `resolved/` as run), `result.json`,
 `study.log`, `convergence.png`, a picture of what it simulated, and QDO's
 own `.npy` and `_design_variables.json`.
 
+### What a study simulates
+
+Open a queued study in the GUI:
+
+- **Generate pre-figures** draws each solver run as it is saved: only
+  that run's components, with the airbridges the solver adds.
+- **Components and pins** lists every component of the built chip, with
+  its class and pins. For each run of the study (the HFSS eigenmode
+  model, then each chained capacitance study):
+  - Tick the components the run includes. A filter box narrows the list
+    by name or class.
+  - Set each loose pin to **short**, **open** or **port**. Short is the
+    default: qiskit-metal runs the trace into ground. Open cuts an
+    endcap. Port is a lumped port, 50 Ohm unless you change it, and HFSS
+    only. A pin joined to another included component is a connection
+    inside the model, so it has no choice.
+  - **Draw** shows the choice before it is saved, in two pictures. The
+    first is the included components over the rest of the chip in grey,
+    with every pin marked. The second is the whole chip, with every
+    component named.
+  - **Save to the study** writes `qiskit_component_names`, `open_pins`
+    and `port_list` into the study's `ministudy.yaml`, then checks it as
+    any edit is checked.
+
 Before the first Ansys run:
 
 - `Q1.resonator_kappa` (capacitance) has been run in Ansys 2022 R2
@@ -296,6 +320,35 @@ Before the first Ansys run:
 - Ansys refuses a project path longer than 259 characters; queueing
   warns when a study's folder gets close. Keep the repository near the
   root of a drive.
+
+### Reports
+
+**Report ...** under Completed (or `report` on the command line) makes
+a report of chosen completed studies; by default the latest run of each
+study, and you can tick any others to compare:
+
+- **brief**: one line per study, how many targets it had and its
+  worst miss, and whether it wrote its values back;
+- **full**: per study what it was (task, campaign, sequence, settings,
+  who queued it and why), every target per iteration, its design
+  variables from first to final, and its checks;
+- **a table for Notion**: one row per qubit, with its simulated
+  frequency, anharmonicity, readout resonator, linewidth and dispersive
+  shift, and its designed Lj and Ej. Copy it as Markdown (Notion makes a
+  table of it) or tab-separated (a spreadsheet, a Notion database).
+
+The table's last columns are for fabrication. Give each junction as it
+was made, as Ej (`12.5 GHz`), its normal resistance Rn (`8.1 kOhm`,
+converted by Ambegaokar-Baratoff with aluminium's gap; set `gap_ueV` to
+change it) or Lj (`14 nH`). The table then estimates each qubit's
+frequency with that junction, rescaling the simulated one:
+`f01' = (f01 + α) · sqrt(Ej' / Ej) − α`. What you give is kept in the
+project's `fabrication.yaml`, so every report after uses it:
+
+    python -m qdesignoptimizer.sequencer <project> report --fab qubit_1=8.1kOhm --show table
+
+Every report is also written to `out/reports/<when>/`: `report_brief.md`,
+`report.md`, `table.md` and `table.tsv`.
 
 ### Working next to an agent
 
@@ -379,6 +432,8 @@ come after it.
   store is a generated copy.
 - Campaigns: `<project>/campaigns/`, each with its README and, if it
   has one, its own store and metadata. Commit them: they are the lab log.
+- Reports: `<project>/out/reports/`; what fabrication gave:
+  `<project>/fabrication.yaml` (commit it).
 - Machine-wide state (the runner lock, a multi-project queue order):
   `%LOCALAPPDATA%\qdo_sequencer\`, or the folder `QDO_SEQUENCER_HOME`
   names. Safe to delete while no runner is going.

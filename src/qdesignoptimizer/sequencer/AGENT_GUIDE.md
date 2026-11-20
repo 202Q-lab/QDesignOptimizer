@@ -46,6 +46,7 @@ for.
 | Run a completed study again | `requeue <completed folder name>` |
 | Wait for results | `wait <id> [<id> ...] [--timeout S]` |
 | Sequences waiting because the code changed | `decide` (lists them) |
+| A report of completed studies (brief, full, Notion table) | `report [<id> ...] [--show brief\|full\|table\|tsv]` |
 
 `write` says afterwards whether the study can still run (exit 2 and the
 problems if not). Fix them before moving on.
@@ -93,6 +94,11 @@ A completed study is `out/completed/<id>_<start time>/`:
 The store is `design_variables.json`; `design_variables.meta.json` says
 which study wrote each value and when. A campaign's study writes its
 campaign's store instead (`campaigns/<name>/`).
+
+`report` summarizes chosen runs (default: the latest of each study)
+and writes them to `out/reports/`; its table has a row per qubit with
+columns for the fabricated junction. Do not change `fabrication.yaml`
+(`--fab`) unless the person gives you the values.
 
 When you report back, name the studies by id, quote the numbers from
 `result.json`, and say what you would queue next and why. Queue it only

@@ -85,6 +85,35 @@ def main(argv: list[str] | None = None) -> int:
     )
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("list", help="the queue and the latest completed")
+    p_report = sub.add_parser(
+        "report",
+        help="a report of completed studies (brief, full, and a table "
+        "for Notion), written to out/reports/",
+    )
+    p_report.add_argument(
+        "studies",
+        nargs="*",
+        help="completed runs (folder names) or study ids (their latest "
+        "run); default: the latest run of every study",
+    )
+    p_report.add_argument(
+        "--all", action="store_true", help="every completed run, not the latest"
+    )
+    p_report.add_argument(
+        "--show",
+        choices=("brief", "full", "table", "tsv", "none"),
+        default="brief",
+        help="what to print (all of it is written to files either way)",
+    )
+    p_report.add_argument(
+        "--fab",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="what fabrication gave, kept in fabrication.yaml: e.g. "
+        "qubit_1=8.1kOhm, qubit_2=12.5GHz or 14nH; NAME= removes one "
+        "(repeatable)",
+    )
     p_add = sub.add_parser("add", help="queue one study")
     p_add.add_argument("task")
     p_add.add_argument("--settings", default="{}")
@@ -197,6 +226,8 @@ def _command(args, workspace: Workspace) -> int:
     try:
         if args.command == "list":
             return _list(workspace)
+        if args.command == "report":
+            return _report(args, workspace)
         if args.command == "add":
             project, task = workspace.locate_task(args.task)
             job_id = project.add(
@@ -408,6 +439,66 @@ def _shown(project, path: Path | None) -> str:
         return Path(path).resolve().relative_to(project.root.resolve()).as_posix()
     except ValueError:
         return str(path)
+
+
+def _report(args, workspace: Workspace) -> int:
+    """``report``: the chosen runs, written to ``out/reports/<now>/``;
+    one of them printed."""
+    from . import report as rp
+
+    first = next(iter(workspace.projects.values()))
+    fabrication = rp.load_fabrication(first)
+    if args.fab:
+        for item in args.fab:
+            name, sep, value = item.partition("=")
+            if not sep or not name.strip():
+                print(f"--fab {item!r}: give NAME=VALUE", file=sys.stderr)
+                return 2
+            fabrication[name.strip()] = value.strip()
+        rp.save_fabrication(first, fabrication)
+        fabrication = rp.load_fabrication(first)
+    runs = rp.completed_runs(workspace)
+    try:
+        if args.studies:
+            keys = rp.resolve(workspace, args.studies)
+        elif args.all:
+            keys = [r["key"] for r in runs]
+        else:
+            keys = rp.default_selection(runs)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    if not keys:
+        print("no completed studies to report on", file=sys.stderr)
+        return 1
+    chosen = rp.collect(workspace, keys)
+    made = rp.table(chosen, fabrication)
+    folder = rp.write(first, chosen, made)
+    if args.show == "brief":
+        shown = rp.brief(chosen, made)
+    elif args.show == "full":
+        shown = rp.full(chosen, made)
+    elif args.show == "none":
+        shown = ""
+    elif not made:
+        shown = "no table for these studies\n"
+    elif args.show == "table":
+        shown = rp.markdown_table(made["columns"], made["rows"]) + "\n"
+    else:
+        shown = rp.tsv_table(made["columns"], made["rows"]) + "\n"
+    _print_utf8(shown)
+    print(f"written to {folder}", file=sys.stderr)
+    return 0
+
+
+def _print_utf8(text: str) -> None:
+    """Print text with Greek letters and arrows on any console."""
+    stream = sys.stdout
+    try:
+        stream.write(text)
+    except UnicodeEncodeError:
+        stream.buffer.write(text.encode("utf-8"))  # type: ignore[union-attr]
+        stream.flush()
 
 
 def _write(args, workspace: Workspace) -> int:

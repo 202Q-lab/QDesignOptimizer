@@ -1639,6 +1639,59 @@ class Bridge:
             raise GuiError(renamed + str(exc)) from exc
         return f"{renamed}saved {_relative(target, path)}"
 
+    # -- reports --------------------------------------------------------
+
+    def report_view(self, project: str = "") -> dict[str, Any]:
+        """The report pane: every completed run to choose from (the
+        latest of each study chosen), and what fabrication gave."""
+        from ..engine import report as rp
+
+        runs = rp.completed_runs(self.workspace)
+        target = self._project_for(project)
+        fabrication = rp.load_fabrication(target)
+        return {
+            "runs": runs,
+            "chosen": rp.default_selection(runs),
+            "fabrication": "\n".join(f"{k}: {v}" for k, v in fabrication.items()),
+            "fabrication_file": str(rp.fabrication_path(target)),
+        }
+
+    def make_report(
+        self, keys: list[str], fabrication_text: str, project: str = ""
+    ) -> dict[str, Any]:
+        """Report on the runs ``keys``, with what fabrication gave (kept in
+        the project's ``fabrication.yaml``): ``{"brief", "full",
+        "table_md", "table_tsv", "folder"}``.
+
+        Raises:
+            GuiError: For no run chosen, or a fabrication line that does
+                not read.
+        """
+        from ..engine import report as rp
+
+        if not keys:
+            raise GuiError("choose at least one completed study")
+        target = self._project_for(project)
+        try:
+            fabrication = rp.parse_fabrication(fabrication_text)
+            chosen = rp.collect(self.workspace, list(keys))
+        except (ValueError, QueueError) as exc:
+            raise GuiError(str(exc)) from exc
+        if fabrication != rp.load_fabrication(target):
+            rp.save_fabrication(target, fabrication)
+        made = rp.table(chosen, rp.load_fabrication(target))
+        folder = rp.write(target, chosen, made)
+        return {
+            "brief": rp.brief(chosen, made),
+            "full": rp.full(chosen, made),
+            "table_md": (
+                rp.markdown_table(made["columns"], made["rows"]) if made else ""
+            ),
+            "table_tsv": rp.tsv_table(made["columns"], made["rows"]) if made else "",
+            "notes": (made or {}).get("notes") or [],
+            "folder": str(folder),
+        }
+
     def campaign_view(self, key: str, project: str = "") -> dict[str, Any]:
         """A campaign for the editor: its README, the store its studies
         use, and how many studies of it are queued, on hold or done."""
@@ -1695,6 +1748,63 @@ class Bridge:
             return hook(folder, campaign=campaign or None)
         except Exception as exc:  # noqa: BLE001 -- shown to the user
             raise GuiError(f"cannot draw it: {type(exc).__name__}: {exc}") from exc
+
+    def _queued_folder(self, key: str):
+        """A queued or held study's project, folder and campaign."""
+        project, local = self._study(key)
+        folder = project.queue.folder(local)
+        if not folder.is_dir():
+            raise GuiError(f"{key} is no longer queued")
+        try:
+            campaign = load_job(folder, project.words).campaign or ""
+        except (JobError, OSError):
+            campaign = ""
+        return project, folder, campaign or None
+
+    def pin_view(self, key: str) -> dict[str, Any]:
+        """What a queued study can include: the design's components and
+        pins, and the study's runs as they are (``QDOBackend.pin_map``)."""
+        project, folder, campaign = self._queued_folder(key)
+        hook = getattr(project.backend, "pin_map", None)
+        if hook is None:
+            raise GuiError("this backend cannot list its design's components")
+        try:
+            return hook(folder, campaign=campaign)
+        except Exception as exc:  # noqa: BLE001 -- shown to the user
+            raise GuiError(
+                f"cannot build the design: {type(exc).__name__}: {exc}"
+            ) from exc
+
+    def pin_pictures(
+        self, key: str, run: int, components: list[str], states: dict
+    ) -> list[dict[str, Any]]:
+        """Pictures of a choice of components and pin ends, not saved."""
+        project, folder, campaign = self._queued_folder(key)
+        hook = getattr(project.backend, "pin_preview", None)
+        if hook is None:
+            raise GuiError("this backend cannot draw its studies")
+        try:
+            return hook(folder, run, components, states, campaign=campaign)
+        except Exception as exc:  # noqa: BLE001 -- shown to the user
+            raise GuiError(f"cannot draw it: {type(exc).__name__}: {exc}") from exc
+
+    def save_pins(self, key: str, run: int, components: list[str], states: dict) -> str:
+        """Write one run's components, open pins and ports into the
+        study's ``ministudy.yaml`` (then checked, as any save)."""
+        project, folder, _ = self._queued_folder(key)
+        hook = getattr(project.backend, "pin_apply", None)
+        if hook is None:
+            raise GuiError("this backend cannot set components and pins")
+        if not components:
+            raise GuiError("not saved: include at least one component")
+        try:
+            name, data = hook(folder, run, components, states)
+        except ValueError as exc:
+            raise GuiError(f"not saved: {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 -- shown to the user
+            raise GuiError(f"not saved: {type(exc).__name__}: {exc}") from exc
+        old = (folder / name).read_text(encoding="utf-8")
+        return self.save_file(key, name, _render(name, data, old))
 
     def validate(self, key: str) -> list[str]:
         """Everything that would stop a queued or held study, checked as

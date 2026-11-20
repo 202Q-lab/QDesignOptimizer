@@ -748,9 +748,134 @@ class QDOBackend(SwitchableStore):
             ValueError: If the project cannot build its design, or the
                 study's design variables do not read.
         """
-        from . import qdo_files as qf
         from . import qdo_preview
 
+        design, where = self._design_for(folder, campaign)
+        study = self._study_in(Path(folder))
+        hook = getattr(self.project, "bridge_settings", None)
+        out = []
+        for picture in qdo_preview.pictures(design, study, bonds=hook):
+            note = qdo_preview.unbridged_note(design, picture["components"])
+            picture["caption"] = "; ".join(
+                n
+                for n in (
+                    picture["caption"],
+                    note,
+                    where,
+                )
+                if n
+            )
+            out.append(picture)
+        return out
+
+    def pin_map(self, folder: Path, campaign: str | None = None) -> dict[str, Any]:
+        """What one can include in a study: every component of the
+        design (its class and pins, and what each pin is joined to), and
+        the study's runs with the components and pin ends each has now --
+        see ``qdo_pins``. The design is built as ``preview`` builds it.
+
+        Raises:
+            ValueError: As ``preview``.
+        """
+        from . import qdo_pins
+
+        design, where = self._design_for(folder, campaign)
+        data = yaml.safe_load((Path(folder) / MINISTUDY).read_text("utf-8")) or {}
+        return {
+            "components": qdo_pins.inventory(design),
+            "runs": qdo_pins.runs(data),
+            "where": where,
+        }
+
+    def pin_preview(
+        self,
+        folder: Path,
+        run: int,
+        components: list[str],
+        states: dict[str, list],
+        campaign: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Pictures of a choice not saved yet: run ``run`` of the study
+        with ``components`` and pin ends ``states`` -- the components
+        with the rest of the chip in grey and their pins marked, then
+        the whole chip, every component named.
+
+        Raises:
+            ValueError: As ``preview``, or for a run not in the study.
+        """
+        from . import qdo_pins, qdo_preview
+
+        design, where = self._design_for(folder, campaign)
+        data = yaml.safe_load((Path(folder) / MINISTUDY).read_text("utf-8")) or {}
+        runs = qdo_pins.runs(data)
+        if not 0 <= run < len(runs):
+            raise ValueError("that run is no longer in the ministudy")
+        solver = runs[run]["solver"]
+        study = self._study_in(Path(folder))
+        hook = getattr(self.project, "bridge_settings", None)
+        pins = qdo_pins.markers(design, components, states)
+        common = {
+            "names": components,
+            "solver": solver,
+            "bonds": hook(solver) if hook else None,
+            "context": True,
+            "pins": pins,
+        }
+        close = qdo_preview.render(
+            design, study, title=f"{runs[run]['title']}: as chosen", **common
+        )
+        whole = qdo_preview.render(
+            design,
+            study,
+            title="the whole chip: included in blue",
+            whole=True,
+            labels=True,
+            **common,
+        )
+        close["title"], whole["title"] = "Included, pins marked", "Whole chip"
+        for picture in (close, whole):
+            picture["caption"] = f"{picture['caption']}; {where} (not saved yet)"
+        return [close, whole]
+
+    def pin_apply(
+        self,
+        folder: Path,
+        run: int,
+        components: list[str],
+        states: dict[str, list],
+    ) -> tuple[str, dict]:
+        """The study's ``ministudy.yaml`` data with run ``run``'s
+        components, open pins and ports set (``qdo_pins.apply``), and
+        the file's name; the caller writes it.
+
+        Raises:
+            ValueError: For a run not in the file or not a plain list
+                there, or a choice ``qdo_pins.apply`` refuses.
+        """
+        from . import qdo_pins
+
+        data = yaml.safe_load((Path(folder) / MINISTUDY).read_text("utf-8")) or {}
+        runs = qdo_pins.runs(data)
+        if not 0 <= run < len(runs):
+            raise ValueError("that run is no longer in the ministudy; reopen it")
+        if not runs[run]["editable"]:
+            raise ValueError(runs[run]["note"])
+        # A pin joined to another included component is inside the model:
+        # whatever it was set to before, it is no end and is not listed.
+        design = self.built_design()
+        if design is not None:
+            states = qdo_pins.loose_states(
+                qdo_pins.inventory(design), components, states
+            )
+        return MINISTUDY, qdo_pins.apply(data, runs[run]["path"], components, states)
+
+    def _design_for(self, folder: Path, campaign: str | None = None):
+        """The chip a study would build now, and a line saying so.
+
+        Raises:
+            ValueError: If the project cannot build its design, or the
+                study's design variables do not read.
+        """
         build = getattr(self.project, "design", None)
         if build is None:
             raise ValueError(
@@ -775,22 +900,9 @@ class QDOBackend(SwitchableStore):
                 "geometry as the project's design stands now (its design() "
                 "takes no values, so this study's are not applied)"
             )
-        study = self._study_in(Path(folder))
-        hook = getattr(self.project, "bridge_settings", None)
-        out = []
-        for picture in qdo_preview.pictures(design, study, bonds=hook):
-            note = qdo_preview.unbridged_note(design, picture["components"])
-            picture["caption"] = "; ".join(
-                n
-                for n in (
-                    picture["caption"],
-                    note,
-                    where,
-                )
-                if n
-            )
-            out.append(picture)
-        return out
+        if design is None:
+            raise ValueError("the project's design() built nothing")
+        return design, where
 
     def _name_problems(self, study) -> list[str]:
         """Components and pins a study names that the design lacks.
@@ -1435,6 +1547,26 @@ class QDOBackend(SwitchableStore):
         return CheckResult(False, f"no check named {name!r}")
 
     @uses_job_store
+    # -- reports (engine.report) -------------------------------------------
+
+    def report_targets(self, folder: Path) -> list[dict]:
+        """A completed study's targets per iteration."""
+        from . import qdo_report
+
+        return qdo_report.targets(folder)
+
+    def report_value(self, parameter: str, value: Any) -> str:
+        """A parameter's value with its unit."""
+        from . import qdo_report
+
+        return qdo_report.value(parameter, value)
+
+    def report_table(self, runs: list[dict], fabrication: dict) -> dict:
+        """A row per qubit: simulated, and as fabricated."""
+        from . import qdo_report
+
+        return qdo_report.table(runs, fabrication)
+
     def describe(self, folder: Path, job) -> dict[str, Any]:
         from . import qdo_files as qf
 
@@ -1493,12 +1625,7 @@ def study_parameters(study) -> dict[str, str]:
     listed: which ones exist depends on the Ansys conductor names (see
     ``measures_capacitance``).
     """
-    from qdesignoptimizer.utils.names_parameters import (
-        FREQ,
-        KAPPA,
-        param,
-        param_nonlin,
-    )
+    from qdesignoptimizer.utils.names_parameters import FREQ, KAPPA, param, param_nonlin
 
     out: dict[str, str] = {}
     if not getattr(study, "run_capacitance_studies_only", False):

@@ -175,6 +175,18 @@ def _queue_area() -> Any:
                     html.Summary(
                         html.H3("Completed", id="title-completed", className="qs-h"),
                     ),
+                    html.Div(
+                        className="qs-bar",
+                        children=[
+                            html.Button(
+                                "Report ...",
+                                id="btn-open-report",
+                                className="qs-btn qs-btn-small",
+                                title="a brief and a full report of chosen "
+                                "studies, and a table to paste into Notion",
+                            ),
+                        ],
+                    ),
                     html.Div(id="completed-table"),
                 ],
             ),
@@ -373,6 +385,7 @@ def _editor_area() -> Any:
             dcc.Loading(html.Div(id="details"), type="dot", delay_show=300),
             dcc.Loading(html.Div(id="validate-view"), type="dot"),
             dcc.Loading(html.Div(id="preview-view"), type="dot"),
+            dcc.Loading(html.Div(id="pins-view"), type="dot"),
             html.Pre(id="inspect", className="qs-pre", style={"display": "none"}),
         ],
     )
@@ -969,6 +982,17 @@ def details(data: dict | None, words: dict, editing: bool = False) -> Any:
             "seconds)",
         )
     )
+    if can_edit:
+        buttons.append(
+            html.Button(
+                "Components and pins",
+                id="btn-pins",
+                className="qs-btn",
+                title="list the design's components: tick what each run of "
+                "this study simulates, set each loose pin short, open or a "
+                "port, draw it on the chip and save it into ministudy.yaml",
+            )
+        )
     task = str(job.get(words.get("task", "task"), job.get("task", "")))
     suggestion = "_".join(reversed(task.split(".", 1))).lower()
     buttons += [
@@ -1646,6 +1670,163 @@ def new_study_view(
     )
 
 
+def report_view(data: dict) -> Any:
+    """Report: choose the completed studies, say what fabrication gave,
+    and make a brief or full report with a table for Notion."""
+    runs = data.get("runs") or []
+    options = [
+        {
+            "label": f" {r['id']} · {r['status']} · {r['started'][:16]}"
+            + (f" · {r['project']}" if len({x["project"] for x in runs}) > 1 else ""),
+            "value": r["key"],
+        }
+        for r in runs
+    ]
+    return html.Div(
+        [
+            html.H3("Report", className="qs-h"),
+            html.Div(
+                "The latest run of every study is chosen; tick others to "
+                "compare. Each report is also written to out/reports/.",
+                className="qs-small",
+            ),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.Button(
+                        "Latest of each",
+                        id={"type": "report-pick", "index": "latest"},
+                        className="qs-btn qs-btn-small",
+                    ),
+                    html.Button(
+                        "All",
+                        id={"type": "report-pick", "index": "all"},
+                        className="qs-btn qs-btn-small",
+                    ),
+                    html.Button(
+                        "None",
+                        id={"type": "report-pick", "index": "none"},
+                        className="qs-btn qs-btn-small",
+                    ),
+                ],
+            ),
+            dcc.Store(id="report-latest", data=data.get("chosen") or []),
+            (
+                dcc.Checklist(
+                    id="report-runs",
+                    options=options,
+                    value=data.get("chosen") or [],
+                    className="qs-checklist",
+                    labelStyle={"display": "block"},
+                )
+                if options
+                else html.Div("Nothing has run yet.", className="qs-muted")
+            ),
+            html.H4("Fabrication", style={"margin": "12px 0 4px"}),
+            html.Div(
+                "One line per qubit: its junction as made -- Ej (GHz), the "
+                "normal resistance Rn (kOhm) or Lj (nH); the unit says which. "
+                "The table then estimates each qubit's frequency with it. "
+                f"Kept in {data.get('fabrication_file', 'fabrication.yaml')}.",
+                className="qs-small",
+            ),
+            dcc.Textarea(
+                id="report-fab",
+                value=data.get("fabrication") or "",
+                placeholder="qubit_1: 8.1 kOhm\nqubit_2: 12.5 GHz",
+                className="qs-input",
+                style={"width": "100%", "height": "70px", "fontFamily": "monospace"},
+            ),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    dcc.RadioItems(
+                        id="report-kind",
+                        options=[
+                            {"label": " brief", "value": "brief"},
+                            {"label": " full", "value": "full"},
+                        ],
+                        value="brief",
+                        inline=True,
+                    ),
+                    html.Button(
+                        "Make report",
+                        id="btn-make-report",
+                        className="qs-btn qs-btn-primary",
+                    ),
+                ],
+            ),
+            html.Div(id="report-out"),
+        ]
+    )
+
+
+def report_output(made: dict, kind: str) -> Any:
+    """A made report: the table to copy, then the report itself."""
+    parts: list[Any] = [
+        html.Div(f"Written to {made.get('folder', '')}", className="qs-small")
+    ]
+    if made.get("table_md"):
+        parts += [
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.B("Table for Notion"),
+                    html.Span(
+                        [
+                            dcc.Clipboard(
+                                content=made["table_md"],
+                                title="copy as Markdown: Notion makes a table of it",
+                                style={"display": "inline-block", "cursor": "pointer"},
+                            ),
+                            " Markdown",
+                        ],
+                        className="qs-small",
+                    ),
+                    html.Span(
+                        [
+                            dcc.Clipboard(
+                                content=made["table_tsv"],
+                                title="copy tab-separated: for a spreadsheet "
+                                "or a Notion database",
+                                style={"display": "inline-block", "cursor": "pointer"},
+                            ),
+                            " tab-separated",
+                        ],
+                        className="qs-small",
+                    ),
+                ],
+            ),
+            html.Pre(
+                made["table_md"],
+                className="qs-pre",
+                style={"overflowX": "auto", "whiteSpace": "pre"},
+            ),
+        ]
+    text = made.get("full" if kind == "full" else "brief", "")
+    parts += [
+        html.Div(
+            className="qs-bar",
+            children=[
+                html.B("Full report" if kind == "full" else "Brief report"),
+                html.Span(
+                    [
+                        dcc.Clipboard(
+                            content=text,
+                            title="copy the report as Markdown",
+                            style={"display": "inline-block", "cursor": "pointer"},
+                        ),
+                        " Markdown",
+                    ],
+                    className="qs-small",
+                ),
+            ],
+        ),
+        dcc.Markdown(text, className="qs-report"),
+    ]
+    return html.Div(parts)
+
+
 def new_campaign_view() -> Any:
     """+ New campaign: its name (parent/name for a sub-campaign), its
     question, and whether it keeps its own design variables."""
@@ -2008,3 +2189,273 @@ def seq_state(fields: dict, rows: list[dict]) -> dict:
             for r in rows
         ],
     }
+
+
+# -- components and pins of a queued study ----------------------------------
+
+PIN_CHOICES = [
+    {"label": " short", "value": "short"},
+    {"label": " open", "value": "open"},
+    {"label": " port", "value": "port"},
+]
+
+
+def pins_selection(data: dict, run: int) -> dict:
+    """The choice a run starts from: what its file has now."""
+    runs = data.get("runs") or []
+    found = runs[run] if 0 <= run < len(runs) else {}
+    return {
+        "run": run,
+        "components": list(found.get("components") or []),
+        "states": dict(found.get("states") or {}),
+    }
+
+
+def pins_options(data: dict, sel: dict, text: str = "") -> tuple[list, list]:
+    """The component checklist: every design component matching
+    ``text`` (in its name or class), and which of those are included."""
+    text = (text or "").strip().lower()
+    shown = [
+        c
+        for c in data.get("components") or []
+        if not text or text in c["name"].lower() or text in c["class"].lower()
+    ]
+    options = [
+        {
+            "label": f" {c['name']}  · {c['class']} · {len(c['pins'])} pin(s)",
+            "value": c["name"],
+        }
+        for c in shown
+    ]
+    included = set(sel.get("components") or [])
+    return options, [c["name"] for c in shown if c["name"] in included]
+
+
+def _pin_row(key: str, name: str, joined: str, state: str, ohm: Any, ports: bool):
+    choices = [
+        {**c, "disabled": c["value"] == "port" and not ports} for c in PIN_CHOICES
+    ]
+    return html.Tr(
+        [
+            html.Td(name, style={"paddingLeft": "18px"}),
+            html.Td(
+                (
+                    f"joined to {joined} (not included: it ends here)"
+                    if joined
+                    else "loose"
+                ),
+                className="qs-small",
+            ),
+            html.Td(
+                dcc.RadioItems(
+                    id={"type": "pin-state", "pin": key},
+                    options=choices,
+                    value=state,
+                    inline=True,
+                    inputStyle={"marginLeft": "8px"},
+                )
+            ),
+            html.Td(
+                [
+                    dcc.Input(
+                        id={"type": "pin-ohm", "pin": key},
+                        type="number",
+                        value=ohm,
+                        min=0,
+                        debounce=True,
+                        disabled=state != "port",
+                        style={"width": "64px"},
+                    ),
+                    html.Span(" Ohm", className="qs-small"),
+                ]
+            ),
+        ]
+    )
+
+
+def pins_table(data: dict, sel: dict) -> Any:
+    """Every pin of every included component, each with how it ends."""
+    runs = data.get("runs") or []
+    run = runs[sel.get("run", 0)] if runs else {}
+    by_name = {c["name"]: c for c in data.get("components") or []}
+    chosen = list(sel.get("components") or [])
+    included = set(chosen)
+    states = sel.get("states") or {}
+    rows: list[Any] = []
+    for name in chosen:
+        component = by_name.get(name)
+        if component is None:
+            rows.append(
+                html.Tr(
+                    html.Td(
+                        f"{name}: not in the design (the run would fail on it)",
+                        colSpan=4,
+                        className="qs-problems",
+                    )
+                )
+            )
+            continue
+        rows.append(
+            html.Tr(
+                html.Td(
+                    [
+                        html.B(name),
+                        html.Span(f"  {component['class']}", className="qs-small"),
+                    ],
+                    colSpan=4,
+                    style={"paddingTop": "10px"},
+                )
+            )
+        )
+        if not component["pins"]:
+            rows.append(html.Tr(html.Td("no pins", colSpan=4, className="qs-small")))
+        for pin in component["pins"]:
+            key = f"{name}/{pin['name']}"
+            joined = pin.get("joined") or ""
+            if joined and joined in included:
+                rows.append(
+                    html.Tr(
+                        [
+                            html.Td(pin["name"], style={"paddingLeft": "18px"}),
+                            html.Td(f"joined to {joined}", className="qs-small"),
+                            html.Td(
+                                "a connection inside the model",
+                                className="qs-small",
+                                colSpan=2,
+                            ),
+                        ]
+                    )
+                )
+                continue
+            given = list(states.get(key) or [])
+            state = given[0] if given else "short"
+            ohm = given[1] if len(given) > 1 else 50
+            rows.append(
+                _pin_row(key, pin["name"], joined, state, ohm, bool(run.get("ports")))
+            )
+    if not rows:
+        return html.Div(
+            "Tick components above to set their pins.", className="qs-muted"
+        )
+    return html.Table(html.Tbody(rows), className="qs-table")
+
+
+def pins_live(data: dict, sel: dict) -> dict:
+    """The pin ends that count: of included components, and not joined
+    to another included one (that pin is inside the model). The others
+    are kept in the choice, so ticking a component back restores them."""
+    included = set(sel.get("components") or [])
+    joined = {
+        f"{c['name']}/{p['name']}": p.get("joined") or ""
+        for c in data.get("components") or []
+        for p in c["pins"]
+    }
+    return {
+        k: v
+        for k, v in (sel.get("states") or {}).items()
+        if k.split("/")[0] in included and joined.get(k, "") not in included
+    }
+
+
+def pins_summary(data: dict, sel: dict) -> Any:
+    """What the run includes, in two lines, and its notes."""
+    runs = data.get("runs") or []
+    run = runs[sel.get("run", 0)] if runs else {}
+    chosen = sel.get("components") or []
+    states = pins_live(data, sel)
+    opened = sorted(k for k, v in states.items() if v[0] == "open")
+    ports = sorted(
+        f"{k} ({v[1] if len(v) > 1 else 50} Ohm)"
+        for k, v in states.items()
+        if v[0] == "port"
+    )
+    parts: list[Any] = [
+        html.Div(
+            f"{len(chosen)} included: {', '.join(chosen) or 'none'}",
+            className="qs-small",
+        ),
+        html.Div(
+            f"open: {', '.join(opened) or 'none'} · ports: "
+            f"{', '.join(ports) or 'none'} · every other loose pin is "
+            "shorted to ground",
+            className="qs-small",
+        ),
+    ]
+    if run.get("note"):
+        parts.append(html.Div(run["note"], className="qs-problems"))
+    if run and not run.get("ports"):
+        parts.append(
+            html.Div("A capacitance study takes no ports.", className="qs-small")
+        )
+    return html.Div(parts)
+
+
+def pins_view(data: dict) -> Any:
+    """Components and pins: the design's components to tick for one run
+    of the study, each included component's pins to set short, open or
+    a port, a drawing of the choice, and saving it into the study."""
+    runs = data.get("runs") or []
+    sel = pins_selection(data, 0)
+    options, value = pins_options(data, sel)
+    return html.Div(
+        [
+            html.H3("Components and pins", className="qs-h"),
+            html.Div(
+                f"{len(data.get('components') or [])} components in the design, "
+                f"{data.get('where', '')}. Tick what the run simulates and how "
+                "each loose pin ends; Draw shows the choice on the chip, Save "
+                "writes it into ministudy.yaml.",
+                className="qs-small",
+            ),
+            dcc.Store(id="pins-data", data=data),
+            dcc.Store(id="pins-sel", data=sel),
+            html.Div(
+                dcc.RadioItems(
+                    id="pins-run",
+                    options=[
+                        {"label": f" {r['title']}", "value": i}
+                        for i, r in enumerate(runs)
+                    ],
+                    value=0,
+                    inline=True,
+                    inputStyle={"marginLeft": "10px"},
+                ),
+                style={"margin": "6px 0"} if len(runs) > 1 else {"display": "none"},
+            ),
+            html.Div(id="pins-summary", children=pins_summary(data, sel)),
+            dcc.Input(
+                id="pins-filter",
+                placeholder="filter components by name or class",
+                className="qs-input",
+                style={"width": "100%", "margin": "6px 0"},
+            ),
+            dcc.Checklist(
+                id="pins-components",
+                options=options,
+                value=value,
+                className="qs-checklist",
+                labelStyle={"display": "block"},
+                style={
+                    "maxHeight": "260px",
+                    "overflowY": "auto",
+                    "border": "1px solid #eceff1",
+                    "padding": "4px",
+                },
+            ),
+            html.H4("Pins", style={"margin": "12px 0 4px"}),
+            html.Div(id="pins-table", children=pins_table(data, sel)),
+            html.Div(
+                className="qs-bar",
+                children=[
+                    html.Button("Draw", id="btn-pins-draw", className="qs-btn"),
+                    html.Button(
+                        "Save to the study",
+                        id="btn-pins-save",
+                        className="qs-btn qs-btn-primary",
+                    ),
+                ],
+            ),
+            dcc.Loading(html.Div(id="pins-pictures"), type="dot"),
+        ],
+        style={"marginTop": "12px"},
+    )

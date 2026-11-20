@@ -37,6 +37,15 @@ from typing import Any, Iterable
 
 #: Colours: metal, etched gap, junction, airbridge.
 METAL, GAP, JUNCTION, BRIDGE = "#2a78d6", "#e9eef4", "#d62728", "#eb6834"
+#: The rest of the chip, drawn behind a study's components (``context``).
+OTHER_METAL, OTHER_GAP = "#c4cad3", "#f4f6f9"
+#: How a pin ends (``qdo_pins``): marker, colour, label.
+PIN_STYLE = {
+    "short": ("x", "#37474f", "short (default)"),
+    "open": ("o", "#2e7d32", "open"),
+    "port": ("D", "#8e24aa", "port"),
+    "joined": (".", "#90a4ae", "joined"),
+}
 
 
 _UNITS_MM = {"nm": 1e-6, "um": 1e-3, "mm": 1.0, "cm": 10.0, "m": 1e3}
@@ -216,6 +225,10 @@ def render(
     names: list[str] | None = None,
     solver: str = "",
     bonds: tuple | None = None,
+    context: bool = False,
+    whole: bool = False,
+    labels: bool = False,
+    pins: list[dict] | None = None,
 ) -> dict[str, Any]:
     """One run's picture, as a base64 PNG with a caption.
 
@@ -226,6 +239,11 @@ def render(
             own bridges (``custom_bridges``).
         bonds: ``(size, threshold, offset, label)`` to draw in place of
             ``bond_settings``'s: what the project's solve really uses.
+        context: Draw the rest of the chip in grey behind them.
+        whole: Show the whole chip, not just them (with ``context``).
+        labels: Name each component at its centre (the included ones
+            in bold).
+        pins: Pins to mark, ``qdo_pins.markers``'s dicts.
 
     Returns:
         ``{"png": <base64>, "caption": str, "components": [...],
@@ -253,11 +271,13 @@ def render(
             return table.iloc[0:0] if table is not None else None
         return table[table["component"].isin(ids)]
 
-    shapes = []  # (geometry, colour, z)
+    shapes = []  # (geometry, colour, z, own)
     poly, path, junction = rows("poly"), rows("path"), rows("junction")
-    for table, is_path in ((poly, False), (path, True)):
+    centres: dict[Any, list] = {}  # component id -> bounds, for labels
+
+    def add(table, is_path, own):
         if table is None:
-            continue
+            return
         for _, row in table.iterrows():
             geometry = row["geometry"]
             if is_path:
@@ -265,7 +285,32 @@ def render(
                     float(row["width"]) / 2, cap_style=2, join_style=2
                 )
             gap = bool(row.get("subtract", False))
-            shapes.append((geometry, GAP if gap else METAL, 1 if gap else 2))
+            if own:
+                colour, z = (GAP, 1) if gap else (METAL, 2)
+            else:
+                colour, z = (OTHER_GAP, 0.2) if gap else (OTHER_METAL, 0.4)
+            shapes.append((geometry, colour, z, own))
+            if labels and not geometry.is_empty:
+                b = geometry.bounds
+                old = centres.get(row["component"])
+                centres[row["component"]] = (
+                    list(b)
+                    if old is None
+                    else [
+                        min(old[0], b[0]),
+                        min(old[1], b[1]),
+                        max(old[2], b[2]),
+                        max(old[3], b[3]),
+                    ]
+                )
+
+    add(poly, False, True)
+    add(path, True, True)
+    if context:
+        for kind, is_path in (("poly", False), ("path", True)):
+            table = tables.get(kind)
+            if table is not None and not table.empty:
+                add(table[~table["component"].isin(ids)], is_path, False)
 
     bridged = []
     if path is not None and "hfss_wire_bonds" in path:
@@ -317,7 +362,7 @@ def render(
 
     fig, ax = plt.subplots(figsize=(9, 7), dpi=130)
     bounds = None
-    for geometry, colour, z in sorted(shapes, key=lambda s: s[2]):
+    for geometry, colour, z, own in sorted(shapes, key=lambda s: s[2]):
         for part in getattr(geometry, "geoms", [geometry]):
             if part.is_empty:
                 continue
@@ -326,6 +371,8 @@ def render(
             for hole in part.interiors:
                 hx, hy = hole.xy
                 ax.fill(hx, hy, color="white", linewidth=0, zorder=z)
+            if not (own or whole):
+                continue
             b = part.bounds
             if bounds is None:
                 bounds = b
@@ -358,6 +405,47 @@ def render(
             markersize=2.5,
             zorder=5,
         )
+    if labels:
+        names_by_id = {c.id: str(n) for n, c in design.components.items()}
+        for cid, (x0, y0, x1, y1) in centres.items():
+            own = cid in ids
+            ax.text(
+                (x0 + x1) / 2,
+                (y0 + y1) / 2,
+                names_by_id.get(cid, str(cid)),
+                fontsize=6 if own else 5,
+                fontweight="bold" if own else "normal",
+                color="#0d3c78" if own else "#5f6b7a",
+                ha="center",
+                va="center",
+                zorder=7,
+                clip_on=True,
+            )
+    marked: dict[str, int] = {}
+    for pin in pins or []:
+        marker, colour, _ = PIN_STYLE.get(pin["state"], PIN_STYLE["short"])
+        marked[pin["state"]] = marked.get(pin["state"], 0) + 1
+        ax.plot(
+            pin["x"],
+            pin["y"],
+            marker,
+            color=colour,
+            markersize=7 if pin["state"] != "joined" else 5,
+            markeredgewidth=1.8,
+            fillstyle="none" if pin["state"] == "open" else "full",
+            zorder=8,
+        )
+        if pin["state"] != "joined":
+            ax.annotate(
+                f"{pin['component']}/{pin['pin']}",
+                (pin["x"], pin["y"]),
+                xytext=(4, 4),
+                textcoords="offset points",
+                fontsize=6,
+                color=colour,
+                zorder=8,
+                annotation_clip=True,
+            )
     if bounds is not None:
         pad = 0.04 * max(bounds[2] - bounds[0], bounds[3] - bounds[1], 0.05)
         ax.set_xlim(bounds[0] - pad, bounds[2] + pad)
@@ -380,8 +468,23 @@ def render(
                 markersize=3,
                 label=f"airbridge ({len(bridged)})",
             ),
+        ]
+        + ([Patch(color=OTHER_METAL, label="not included")] if context else [])
+        + [
+            Line2D(
+                [],
+                [],
+                linestyle="none",
+                marker=PIN_STYLE[state][0],
+                color=PIN_STYLE[state][1],
+                fillstyle="none" if state == "open" else "full",
+                label=f"pin: {PIN_STYLE[state][2]} ({count})",
+            )
+            for state, count in sorted(marked.items())
         ],
-        loc="upper right",
+        # Beside the whole chip, so it hides none of it.
+        loc="upper left" if whole else "upper right",
+        bbox_to_anchor=(1.01, 1.0) if whole else None,
         fontsize=8,
         framealpha=0.9,
     )

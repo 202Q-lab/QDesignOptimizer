@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import yaml
 from dash import ALL, Dash, Input, Output, State, ctx, dcc, html, no_update
@@ -227,6 +228,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         Input({"type": "editmode", "index": ALL}, "n_clicks"),
         Input("btn-open-new-blank", "n_clicks"),
         Input("btn-open-new-fromtpl", "n_clicks"),
+        Input("btn-open-report", "n_clicks"),
         State("new-project", "value"),
         *_EDIT_STATES,
         State("pending-select", "data"),
@@ -235,7 +237,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         prevent_initial_call=True,
     )
     def _select(*args):
-        project, *edits, pending, current, tab = args[12:]
+        project, *edits, pending, current, tab = args[13:]
         del pending  # asked again whenever the edits are still there
         if not _clicked():
             return no_update, no_update, no_update, no_update, no_update
@@ -248,6 +250,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 "btn-open-new-template": "new-template",
                 "btn-open-new-blank": "new-blank",
                 "btn-open-new-fromtpl": "new-from-template",
+                "btn-open-report": "report",
             }.get(trig, "campaign")
             # The campaign picker: that campaign of the project worked on.
             key = f"{project or ''}::{args[8]}" if kind == "campaign" else ""
@@ -339,6 +342,49 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         return _msg(why, False) if why else no_update
 
     @app.callback(
+        Output("report-runs", "value"),
+        Input({"type": "report-pick", "index": ALL}, "n_clicks"),
+        State("report-runs", "options"),
+        State("report-latest", "data"),
+        prevent_initial_call=True,
+    )
+    def _report_pick(_clicks, options, latest):
+        """Latest of each, All or None: the report's choice of studies."""
+        if not _clicked():
+            raise PreventUpdate
+        which = ctx.triggered_id["index"]
+        if which == "all":
+            return [o["value"] for o in options or []]
+        if which == "none":
+            return []
+        return list(latest or [])
+
+    @app.callback(
+        Output("report-out", "children"),
+        Output("message", "data", allow_duplicate=True),
+        Input("btn-make-report", "n_clicks"),
+        State("report-runs", "value"),
+        State("report-fab", "value"),
+        State("report-kind", "value"),
+        State("new-project", "value"),
+        prevent_initial_call=True,
+    )
+    def _make_report(n, keys, fabrication, kind, project):
+        if not n:
+            raise PreventUpdate
+        try:
+            made = bridge.make_report(
+                list(keys or []),
+                fabrication or "",
+                "" if bridge.workspace.single else (project or ""),
+            )
+        except GuiError as exc:
+            return no_update, _msg(str(exc), False)
+        return layout.report_output(made, kind or "brief"), _msg(
+            f"report written to {made['folder']}"
+        )
+
+    @app.callback(
         Output("details-problems", "children"),
         Input("snapshot", "data"),
         Input("selected", "data"),
@@ -396,6 +442,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 )
             if kind == "new-campaign":
                 return layout.new_campaign_view(), None
+            if kind == "report":
+                return layout.report_view(bridge.report_view(project)), None
             if kind in ("sequence", "new-sequence"):
                 view = bridge.sequence_view(key, project)
                 return layout.sequence_editor(view), {
@@ -1227,6 +1275,173 @@ def register_preview_callbacks(app, bridge) -> None:
                 ),
             ]
         )
+
+
+def _pictures(pictures: list[dict]) -> Any:
+    """Pictures as tabs, each with its caption."""
+    return dcc.Tabs(
+        [
+            dcc.Tab(
+                label=data.get("title", "picture"),
+                children=html.Div(
+                    [
+                        html.Img(
+                            src="data:image/png;base64," + data["png"],
+                            style={"width": "100%", "marginTop": "8px"},
+                        ),
+                        html.Div(data.get("caption", ""), className="qs-small"),
+                    ]
+                ),
+            )
+            for data in pictures
+        ]
+    )
+
+
+def register_pins_callbacks(app, bridge) -> None:
+    """Components and pins of a queued study: list the design's
+    components, tick them per run, set each loose pin's end, draw the
+    choice and save it into the study."""
+
+    @app.callback(
+        Output("pins-view", "children", allow_duplicate=True),
+        Input("btn-pins", "n_clicks"),
+        State("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _pins_open(n, selected):
+        if not n or not selected or selected.get("kind") not in ("queue", "hold"):
+            return no_update
+        try:
+            data = bridge.pin_view(selected["key"])
+        except GuiError as exc:
+            return html.Div(str(exc), className="qs-problems")
+        return layout.pins_view(data)
+
+    @app.callback(
+        Output("pins-view", "children", allow_duplicate=True),
+        Input("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _pins_close(_selected):
+        return None
+
+    @app.callback(
+        Output("pins-sel", "data"),
+        Output("pins-components", "options"),
+        Output("pins-components", "value"),
+        Output("pins-table", "children"),
+        Output("pins-summary", "children"),
+        Input("pins-run", "value"),
+        Input("pins-filter", "value"),
+        Input("pins-components", "value"),
+        Input({"type": "pin-state", "pin": ALL}, "value"),
+        Input({"type": "pin-ohm", "pin": ALL}, "value"),
+        State({"type": "pin-state", "pin": ALL}, "id"),
+        State({"type": "pin-ohm", "pin": ALL}, "id"),
+        State("pins-data", "data"),
+        State("pins-sel", "data"),
+        prevent_initial_call=True,
+    )
+    def _pins_edit(run, text, ticked, states, ohms, state_ids, ohm_ids, data, sel):
+        if not data or sel is None:
+            raise PreventUpdate
+        trig = ctx.triggered_id
+        sel = dict(sel)
+        table = no_update
+        if trig == "pins-run":
+            sel = layout.pins_selection(data, int(run or 0))
+            table = layout.pins_table(data, sel)
+        elif trig == "pins-components":
+            shown = {o["value"] for o in layout.pins_options(data, sel, text)[0]}
+            ticked = list(ticked or [])
+            kept = [c for c in sel["components"] if c not in shown or c in ticked]
+            sel["components"] = kept + [c for c in ticked if c not in kept]
+            table = layout.pins_table(data, sel)
+        elif isinstance(trig, dict):
+            new = dict(sel.get("states") or {})
+            ohm_of = {i["pin"]: v for i, v in zip(ohm_ids or [], ohms or [])}
+            for i, state in zip(state_ids or [], states or []):
+                pin = i["pin"]
+                if state in (None, "short"):
+                    new.pop(pin, None)
+                else:
+                    ohm = ohm_of.get(pin)
+                    new[pin] = [state, ohm if ohm not in (None, "") else 50]
+            sel["states"] = new
+            # Redrawn only when a pin's state changed (the impedance box
+            # is switched on or off); a typed impedance keeps its box.
+            if trig.get("type") == "pin-state":
+                table = layout.pins_table(data, sel)
+        options, value = layout.pins_options(data, sel, text)
+        return sel, options, value, table, layout.pins_summary(data, sel)
+
+    @app.callback(
+        Output("pins-pictures", "children"),
+        Input("btn-pins-draw", "n_clicks"),
+        State("pins-sel", "data"),
+        State("pins-data", "data"),
+        State("selected", "data"),
+        prevent_initial_call=True,
+    )
+    def _pins_draw(n, sel, data, selected):
+        if not n or not sel or not selected:
+            return no_update
+        try:
+            pictures = bridge.pin_pictures(
+                selected["key"],
+                sel["run"],
+                sel["components"],
+                layout.pins_live(data or {}, sel),
+            )
+        except GuiError as exc:
+            return html.Div(str(exc), className="qs-problems")
+        return _pictures(pictures)
+
+    @app.callback(
+        Output("rev", "data", allow_duplicate=True),
+        Output("message", "data", allow_duplicate=True),
+        Output({"type": "file-pane", "name": ALL}, "children", allow_duplicate=True),
+        Output("details-orig", "data", allow_duplicate=True),
+        Input("btn-pins-save", "n_clicks"),
+        State("pins-sel", "data"),
+        State("pins-data", "data"),
+        State("selected", "data"),
+        State("details-orig", "data"),
+        State("rev", "data"),
+        prevent_initial_call=True,
+    )
+    def _pins_save(n, sel, data, selected, orig, rev):
+        panes = [no_update] * len(ctx.outputs_list[2])
+        if not n or not sel or not selected:
+            return no_update, no_update, panes, no_update
+        key, name = selected["key"], "ministudy.yaml"
+        try:
+            text = bridge.save_pins(
+                key, sel["run"], sel["components"], layout.pins_live(data or {}, sel)
+            )
+            spec = bridge.file_spec(key, name)
+        except GuiError as exc:
+            return no_update, _msg(str(exc), False), panes, no_update
+        # The ministudy's form shows what was saved; its other edits
+        # were not saved with it, so that pane alone is redrawn.
+        panes = [
+            (
+                form_layout.file_form(spec, True)
+                if out["id"]["name"] == name
+                else no_update
+            )
+            for out in ctx.outputs_list[2]
+        ]
+        orig = dict(orig or {})
+        kept = {
+            k: v
+            for k, v in (orig.get("forms") or {}).items()
+            if not k.startswith(f"{name}|")
+        }
+        kept.update(form_layout.form_values(spec, True))
+        orig["forms"] = kept
+        return (rev or 0) + 1, _msg(text, "cannot run" not in text), panes, orig
 
 
 def register_editor_callbacks(app, bridge) -> None:

@@ -14,3 +14,4 @@ Submodules
 
    qdesignoptimizer.estimation.classical_model_decay_into_charge_line
    qdesignoptimizer.estimation.initial_design
+   qdesignoptimizer.estimation.junction

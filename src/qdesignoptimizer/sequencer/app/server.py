@@ -30,6 +30,7 @@ from . import layout, theme
 from .callbacks import (
     register_callbacks,
     register_editor_callbacks,
+    register_pins_callbacks,
     register_preview_callbacks,
     register_template_callbacks,
 )
@@ -88,6 +89,7 @@ def build_app(
     register_callbacks(app, bridge)
     register_template_callbacks(app, bridge)
     register_preview_callbacks(app, bridge)
+    register_pins_callbacks(app, bridge)
     register_editor_callbacks(app, bridge)
     app.qdo_bridge = bridge  # type: ignore[attr-defined]
     return app
