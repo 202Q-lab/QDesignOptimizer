@@ -1,0 +1,2729 @@
+{
+ "optimization_results": [
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 203.56036422892385,
+      "('0', 1)": 0.9777924619327394
+     },
+     "1": {
+      "('0', 0)": 0.9777924619327394,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "100um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "400um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7500um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "12.1nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "400um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.212599999999999,
+     "1": 6.318899999999999
+    },
+    "Freq. (Hz)": {
+     "0": 4212599999.999999,
+     "1": 6318899999.999999
+    },
+    "Kappas (Hz)": {
+     "0": 100000.0,
+     "1": 1095818.4535148188
+    },
+    "Kappas (kHz)": {
+     "0": 100.0,
+     "1": 1095.8184535148189
+    },
+    "Quality Factor": {
+     "0": 42125.99999999999,
+     "1": 5766.374876907973
+    }
+   },
+   "minimization_groups": [],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4200000000.0,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 203560364.22892386,
+    "qubit_1_to_resonator_1_nonlin": 977792.4619327394,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 6300000000.0,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1095818.4535148188,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 210.00000000632522,
+      "('0', 1)": 0.9742490411783119
+     },
+     "1": {
+      "('0', 0)": 0.9742490411783119,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "96.75770875889654 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.11200866213875 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000004778 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.762269042857294 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.73402709103345 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000790459,
+     "1": 6.0179999999963485
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.7904587,
+     "1": 6017999999.996348
+    },
+    "Kappas (Hz)": {
+     "0": 99999.99999999999,
+     "1": 1000000.0000261765
+    },
+    "Kappas (kHz)": {
+     "0": 99.99999999999999,
+     "1": 1000.0000000261764
+    },
+    "Quality Factor": {
+     "0": 40120.00000790459,
+     "1": 6017.999999838818
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.7880955,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 210000000.00632522,
+    "qubit_1_to_resonator_1_nonlin": 974249.0411783119,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.99636,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0000261765,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 210.00000000090915,
+      "('0', 1)": 1.1000000009664117
+     },
+     "1": {
+      "('0', 0)": 1.1000000009664117,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273798055159 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.11200867213876 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.0000000147775 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.76226904377271 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.73402710103346 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000605291,
+     "1": 6.017999999988707
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.6052914,
+     "1": 6017999999.988707
+    },
+    "Kappas (Hz)": {
+     "0": 100000.0,
+     "1": 1000000.0000785169
+    },
+    "Kappas (kHz)": {
+     "0": 100.0,
+     "1": 1000.0000000785169
+    },
+    "Quality Factor": {
+     "0": 40120.00000605291,
+     "1": 6017.999999516192
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.6034813,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 210000000.00090915,
+    "qubit_1_to_resonator_1_nonlin": 1100000.0009664118,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.988741,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0000785169,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 209.99999999549308,
+      "('0', 1)": 1.1000000011233744
+     },
+     "1": {
+      "('0', 0)": 1.1000000011233744,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273799053855 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.1120086821377 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000024777 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.762269043769535 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.73402711103347 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000554017,
+     "1": 6.017999999981065
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.554017,
+     "1": 6017999999.981065
+    },
+    "Kappas (Hz)": {
+     "0": 100000.0,
+     "1": 1000000.0001308521
+    },
+    "Kappas (kHz)": {
+     "0": 100.0,
+     "1": 1000.0000001308521
+    },
+    "Quality Factor": {
+     "0": 40120.00000554017,
+     "1": 6017.9999991935965
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.5523605,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 209999999.99549308,
+    "qubit_1_to_resonator_1_nonlin": 1100000.0011233743,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.981122,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0001308521,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 209.99999999007701,
+      "('0', 1)": 1.1000000012801643
+     },
+     "1": {
+      "('0', 0)": 1.1000000012801643,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273800051744 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.11200869213604 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000034777 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.762269043765432 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.7340271210335 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000502879,
+     "1": 6.017999999973423
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.502879,
+     "1": 6017999999.973423
+    },
+    "Kappas (Hz)": {
+     "0": 100000.00000000001,
+     "1": 1000000.0001831843
+    },
+    "Kappas (kHz)": {
+     "0": 100.00000000000001,
+     "1": 1000.0000001831843
+    },
+    "Quality Factor": {
+     "0": 40120.000005028785,
+     "1": 6017.99999887102
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.501375,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 209999999.99007702,
+    "qubit_1_to_resonator_1_nonlin": 1100000.0012801643,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.973503,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0001831843,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 209.9999999846609,
+      "('0', 1)": 1.1000000014367812
+     },
+     "1": {
+      "('0', 0)": 1.1000000014367812,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273801048827 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.11200870213383 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000044777 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.762269043760403 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.7340271310335 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000451875,
+     "1": 6.017999999965781
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.451875,
+     "1": 6017999999.965781
+    },
+    "Kappas (Hz)": {
+     "0": 99999.99999999999,
+     "1": 1000000.0002355136
+    },
+    "Kappas (kHz)": {
+     "0": 99.99999999999999,
+     "1": 1000.0000002355135
+    },
+    "Quality Factor": {
+     "0": 40120.000004518755,
+     "1": 6017.999998548461
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.4505243,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 209999999.9846609,
+    "qubit_1_to_resonator_1_nonlin": 1100000.0014367811,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.965884,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0002355136,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 209.99999997924482,
+      "('0', 1)": 1.100000001593226
+     },
+     "1": {
+      "('0', 0)": 1.100000001593226,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273802045106 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.1120087121311 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000054777 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.76226904375445 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.7340271410335 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000401006,
+     "1": 6.017999999958138
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.4010057,
+     "1": 6017999999.958138
+    },
+    "Kappas (Hz)": {
+     "0": 99999.99999999999,
+     "1": 1000000.0002878398
+    },
+    "Kappas (kHz)": {
+     "0": 99.99999999999999,
+     "1": 1000.0000002878398
+    },
+    "Quality Factor": {
+     "0": 40120.000004010064,
+     "1": 6017.999998225919
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.3998075,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 209999999.97924483,
+    "qubit_1_to_resonator_1_nonlin": 1100000.001593226,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.958264,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0002878398,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 209.99999997382872,
+      "('0', 1)": 1.1000000017494989
+     },
+     "1": {
+      "('0', 0)": 1.1000000017494989,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273803040581 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.1120087221278 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000064777 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.762269043747576 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.7340271510335 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000350272,
+     "1": 6.017999999950496
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.350272,
+     "1": 6017999999.950497
+    },
+    "Kappas (Hz)": {
+     "0": 100000.00000000001,
+     "1": 1000000.0003401632
+    },
+    "Kappas (kHz)": {
+     "0": 100.00000000000001,
+     "1": 1000.0000003401633
+    },
+    "Quality Factor": {
+     "0": 40120.00000350272,
+     "1": 6017.999997903395
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.349225,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 209999999.97382873,
+    "qubit_1_to_resonator_1_nonlin": 1100000.0017494988,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.950645,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0003401632,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 209.99999996841262,
+      "('0', 1)": 1.1000000019056
+     },
+     "1": {
+      "('0', 0)": 1.1000000019056,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273804035253 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.112008732124 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000074777 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.762269043739783 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.7340271610335 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000299672,
+     "1": 6.017999999942855
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.2996716,
+     "1": 6017999999.942855
+    },
+    "Kappas (Hz)": {
+     "0": 99999.99999999999,
+     "1": 1000000.0003924841
+    },
+    "Kappas (kHz)": {
+     "0": 99.99999999999999,
+     "1": 1000.0000003924841
+    },
+    "Quality Factor": {
+     "0": 40120.00000299672,
+     "1": 6017.999997580885
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.298776,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 209999999.96841264,
+    "qubit_1_to_resonator_1_nonlin": 1100000.0019056,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.943027,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.0003924841,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  },
+  {
+   "capacitance_matrix": [],
+   "cross_kerrs": [
+    {
+     "0": {
+      "('0', 0)": 209.99999996299655,
+      "('0', 1)": 1.1000000020615301
+     },
+     "1": {
+      "('0', 0)": 1.1000000020615301,
+      "('0', 1)": 151.0
+     }
+    },
+    {
+     "0": {
+      "('0', 0)": 0.113,
+      "('0', 1)": 0.21300000000000002
+     }
+    }
+   ],
+   "design_variables": {
+    "cpw_gap": "6 um",
+    "cpw_width": "10 um",
+    "design_var_cj_qubit_1": "0fF",
+    "design_var_cj_qubit_2": "0fF",
+    "design_var_cl_pos_x_qubit_1": "-100um",
+    "design_var_cl_pos_x_qubit_2": "-100um",
+    "design_var_cl_pos_y_qubit_1": "-300um",
+    "design_var_cl_pos_y_qubit_2": "300um",
+    "design_var_coupl_length_qubit_1_resonator_1": "102.81273805029123 um",
+    "design_var_coupl_length_qubit_2_resonator_2": "100um",
+    "design_var_coupl_length_resonator_1_tee": "382.11200874211966 um",
+    "design_var_coupl_length_resonator_2_tee": "160um",
+    "design_var_length_coupler_1to2": "4000um",
+    "design_var_length_resonator_1": "7875.000000084777 um",
+    "design_var_length_resonator_1_capacitance": "15um",
+    "design_var_length_resonator_2": "6500um",
+    "design_var_length_resonator_2_capacitance": "15um",
+    "design_var_lj_qubit_1": "13.762269043731074 nH",
+    "design_var_lj_qubit_2": "9.1nH",
+    "design_var_width_qubit_1": "387.7340271710335 um",
+    "design_var_width_qubit_2": "400um"
+   },
+   "eig_results": {
+    "Freq. (GHz)": {
+     "0": 4.012000000249204,
+     "1": 6.017999999935213
+    },
+    "Freq. (Hz)": {
+     "0": 4012000000.2492037,
+     "1": 6017999999.935213
+    },
+    "Kappas (Hz)": {
+     "0": 99999.99999999999,
+     "1": 1000000.000444802
+    },
+    "Kappas (kHz)": {
+     "0": 99.99999999999999,
+     "1": 1000.000000444802
+    },
+    "Quality Factor": {
+     "0": 40120.000002492045,
+     "1": 6017.999997258395
+    }
+   },
+   "minimization_groups": [
+    [
+     "design_var_width_qubit_1"
+    ],
+    [
+     "design_var_length_resonator_1"
+    ],
+    [
+     "design_var_coupl_length_resonator_1_tee"
+    ],
+    [
+     "design_var_lj_qubit_1",
+     "design_var_coupl_length_qubit_1_resonator_1"
+    ]
+   ],
+   "system_optimized_params": {
+    "coupler_1to2_freq": null,
+    "prime_cpw_name_tee_1__to_second_cpw_name_tee_1__capacitance": null,
+    "qubit_1_charge_line_limited_t1": null,
+    "qubit_1_freq": 4000000000.2484593,
+    "qubit_1_in_jj_name_qubit_1__participation_ratio": 0.113,
+    "qubit_1_to_qubit_1_nonlin": 209999999.96299654,
+    "qubit_1_to_resonator_1_nonlin": 1100000.0020615302,
+    "qubit_2_freq": null,
+    "qubit_2_to_qubit_2_nonlin": null,
+    "qubit_2_to_resonator_2_nonlin": null,
+    "resonator_1_freq": 5999999999.935408,
+    "resonator_1_in_jj_name_qubit_1__participation_ratio": 0.21300000000000002,
+    "resonator_1_kappa": 1000000.000444802,
+    "resonator_1_to_resonator_1_nonlin": 151000000.0,
+    "resonator_2_freq": null,
+    "resonator_2_kappa": null
+   }
+  }
+ ],
+ "simulator_calls": [
+  [
+   "qiskit_metal.EPRanalysis",
+   {
+    "solver": "hfss"
+   }
+  ],
+  [
+   "hfss.renderer.start",
+   {}
+  ],
+  [
+   "hfss.renderer.activate_ansys_design",
+   {
+    "design_name": "get_mini_study_qb_res",
+    "solution_type": "eigenmode"
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "100um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "400um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7500um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "12.1nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "400um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "100um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "400um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7500um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "12.1nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "400um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "96.75770875889654 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200866213875 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000004778 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269042857294 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.73402709103345 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "96.75770875889654 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200866213875 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000004778 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269042857294 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.73402709103345 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273798055159 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200867213876 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.0000000147775 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.76226904377271 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.73402710103346 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273798055159 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200867213876 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.0000000147775 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.76226904377271 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.73402710103346 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273799053855 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.1120086821377 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000024777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043769535 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.73402711103347 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273799053855 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.1120086821377 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000024777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043769535 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.73402711103347 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273800051744 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200869213604 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000034777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043765432 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271210335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273800051744 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200869213604 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000034777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043765432 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271210335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273801048827 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200870213383 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000044777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043760403 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271310335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273801048827 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200870213383 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000044777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043760403 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271310335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273802045106 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.1120087121311 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000054777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.76226904375445 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271410335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273802045106 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.1120087121311 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000054777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.76226904375445 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271410335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273803040581 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.1120087221278 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000064777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043747576 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271510335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273803040581 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.1120087221278 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000064777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043747576 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271510335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273804035253 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.112008732124 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000074777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043739783 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271610335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273804035253 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.112008732124 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000074777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043739783 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271610335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ],
+  [
+   "hfss.pinfo.validate_junction_info",
+   {}
+  ],
+  [
+   "hfss.oEditor.GetModelUnits",
+   {
+    "args": []
+   }
+  ],
+  [
+   "hfss.renderer.clean_active_design",
+   {}
+  ],
+  [
+   "render_qiskit_metal",
+   {
+    "kwargs": {}
+   }
+  ],
+  [
+   "hfss.renderer.render_design",
+   {
+    "design_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273805029123 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200874211966 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000084777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043731074 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271710335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "open_pins": [],
+    "port_list": [
+     [
+      "name_tee_1_",
+      "prime_end",
+      50
+     ],
+     [
+      "name_tee_1_",
+      "prime_start",
+      50
+     ]
+    ],
+    "selection": [
+     "name_qubit_1_",
+     "name_resonator_1_",
+     "name_tee_1_"
+    ],
+    "wire_bonds": {
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um"
+    }
+   }
+  ],
+  [
+   "hfss.modeler.mesh_length",
+   {
+    "MaxLength": "5um",
+    "RefineInside": true,
+    "name": "fine_mesh",
+    "objects": [
+     "prime_cpw_name_tee_1_",
+     "second_cpw_name_tee_1_"
+    ]
+   }
+  ],
+  [
+   "hfss.eigenmode.analyze",
+   {
+    "delta_f": 0.001,
+    "dissipative": {},
+    "hfss_variables": {
+     "cpw_gap": "6 um",
+     "cpw_width": "10 um",
+     "design_var_cj_qubit_1": "0fF",
+     "design_var_cj_qubit_2": "0fF",
+     "design_var_cl_pos_x_qubit_1": "-100um",
+     "design_var_cl_pos_x_qubit_2": "-100um",
+     "design_var_cl_pos_y_qubit_1": "-300um",
+     "design_var_cl_pos_y_qubit_2": "300um",
+     "design_var_coupl_length_qubit_1_resonator_1": "102.81273805029123 um",
+     "design_var_coupl_length_qubit_2_resonator_2": "100um",
+     "design_var_coupl_length_resonator_1_tee": "382.11200874211966 um",
+     "design_var_coupl_length_resonator_2_tee": "160um",
+     "design_var_length_coupler_1to2": "4000um",
+     "design_var_length_resonator_1": "7875.000000084777 um",
+     "design_var_length_resonator_1_capacitance": "15um",
+     "design_var_length_resonator_2": "6500um",
+     "design_var_length_resonator_2_capacitance": "15um",
+     "design_var_lj_qubit_1": "13.762269043731074 nH",
+     "design_var_lj_qubit_2": "9.1nH",
+     "design_var_width_qubit_1": "387.7340271710335 um",
+     "design_var_width_qubit_2": "400um"
+    },
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    },
+    "n_modes": 2,
+    "passes": 10,
+    "renderer_options": {
+     "max_mesh_length_port": "3um",
+     "wb_offset": "0um",
+     "wb_size": 3,
+     "wb_threshold": "300um",
+     "x_buffer_width_mm": 0.5,
+     "y_buffer_width_mm": 0.5
+    },
+    "setup_name": "Resonator_setup",
+    "sweep_variable": "dummy"
+   }
+  ],
+  [
+   "hfss.eigenmode.get_frequencies",
+   {}
+  ],
+  [
+   "epr.eig_solver.clear_data",
+   {}
+  ],
+  [
+   "epr.eig_solver.get_stored_energy",
+   {
+    "no_junctions": false
+   }
+  ],
+  [
+   "epr.do_EPR_analysis",
+   {
+    "junctions": {
+     "jj_name_qubit_1_": {
+      "Cj_variable": "design_var_cj_qubit_1",
+      "Lj_variable": "design_var_lj_qubit_1",
+      "line": "JJ_Lj_name_qubit_1__rect_jj_",
+      "rect": "JJ_rect_Lj_name_qubit_1__rect_jj"
+     }
+    }
+   }
+  ],
+  [
+   "epr.QuantumAnalysis",
+   {
+    "data_filename": "fake_epr_data.npz"
+   }
+  ],
+  [
+   "epr.analyze_all_variations",
+   {
+    "cos_trunc": 8,
+    "fock_trunc": 7
+   }
+  ]
+ ]
+}

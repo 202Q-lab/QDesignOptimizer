@@ -1,0 +1,30 @@
+# Qubit 1 and its readout resonator in one eigenmode solve (HFSS + EPR):
+# qubit frequency and anharmonicity, resonator frequency and linewidth,
+# and the dispersive shift between them.
+#
+# No {placeholders} here: the junction setup is a mapping keyed by the
+# junction's name, and keys are not filled in. A file named
+# <subsystem>_<rest>.yaml is the one study <subsystem>.<rest>, so this is
+# Q1.qubit_resonator. Copy it to Q2_qubit_resonator.yaml (1 -> 2) for the
+# second pair, or use "Save as template" in the GUI.
+class: qdesignoptimizer.design_analysis_types:MiniStudy
+args:
+  qiskit_component_names: [name_qubit_1_, name_resonator_1_, name_tee_1_]
+  port_list:
+  - [name_tee_1_, prime_end, 50]
+  - [name_tee_1_, prime_start, 50]
+  open_pins: []
+  modes: [qubit_1, resonator_1]
+  jj_setup:
+    jj_name_qubit_1_:
+      rect: JJ_rect_Lj_name_qubit_1__rect_jj
+      line: JJ_Lj_name_qubit_1__rect_jj_
+      Lj_variable: design_var_lj_qubit_1
+      Cj_variable: design_var_cj_qubit_1
+  design_name: Q1_qubit_resonator
+  adjustment_rate: 1
+  build_fine_mesh: true
+  # The solver settings live here and only here: at least 15 passes for
+  # an eigenmode solve you mean to trust.
+  nbr_passes: 15
+  delta_f: 0.001

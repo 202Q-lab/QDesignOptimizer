@@ -114,12 +114,23 @@ class ANModOptimizer:
 
             return cost
 
+        # Minimized over each variable relative to its current value: in
+        # raw units (um, nH) the cost changes too little per unit for
+        # L-BFGS-B, which then stops without moving once the remaining
+        # error is below a few percent.
+        # (signed: a negative variable stays negative, its bounds flip)
+        scale = [x if x else 1.0 for x in init_design_var]
         min_result = scipy.optimize.minimize(
-            cost_function,
-            init_design_var,
+            lambda relative: cost_function([r * s for r, s in zip(relative, scale)]),
+            [1.0] * len(scale),
             tol=self.minimization_tol,
-            bounds=bounds_for_targets,
+            bounds=[
+                tuple(sorted((low / s, high / s)))
+                for (low, high), s in zip(bounds_for_targets, scale)
+            ],
         )
+        for idx, name in enumerate(design_var_names_to_minimize):
+            all_design_var_updated[name] = min_result.x[idx] * scale[idx]
 
         for idx, name in enumerate(design_var_names_to_minimize):
             if (
