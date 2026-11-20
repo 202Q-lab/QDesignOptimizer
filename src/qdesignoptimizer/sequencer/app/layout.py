@@ -6,9 +6,10 @@ import json
 import uuid
 from typing import Any
 
+import yaml
 from dash import dcc, html
 
-from . import form_layout, theme
+from . import form_layout, forms, theme
 
 #: The project picker's last entry: opens the connected folders.
 CONNECT = "__connect__"
@@ -385,13 +386,6 @@ def _editor_area() -> Any:
             dcc.Loading(html.Div(id="details"), type="dot", delay_show=300),
             dcc.Loading(html.Div(id="validate-view"), type="dot"),
             dcc.Loading(html.Div(id="preview-view"), type="dot"),
-            # The spinner is for opening the panel only: an edit inside it
-            # (a filter keystroke, a pin's end) must not blank it.
-            dcc.Loading(
-                html.Div(id="pins-view"),
-                type="dot",
-                target_components=_PINS_VIEW_ONLY,
-            ),
             html.Pre(id="inspect", className="qs-pre", style={"display": "none"}),
         ],
     )
@@ -988,17 +982,6 @@ def details(data: dict | None, words: dict, editing: bool = False) -> Any:
             "seconds)",
         )
     )
-    if can_edit:
-        buttons.append(
-            html.Button(
-                "Components and pins",
-                id="btn-pins",
-                className="qs-btn",
-                title="list the design's components: tick what each run of "
-                "this study simulates, set each loose pin short, open or a "
-                "port, draw it on the chip and save it into ministudy.yaml",
-            )
-        )
     task = str(job.get(words.get("task", "task"), job.get("task", "")))
     suggestion = "_".join(reversed(task.split(".", 1))).lower()
     buttons += [
@@ -2197,28 +2180,18 @@ def seq_state(fields: dict, rows: list[dict]) -> dict:
     }
 
 
-# -- components and pins of a queued study ----------------------------------
+# -- a study's components and pins, picked by clicking ----------------------
+#
+# A study file of several studies (``form_layout._studies``) shows one at
+# a time; the picker of that one is drawn here. It reads the study's
+# component and pin fields as they are on the page, and writes them back
+# as one clicks, so the file's own Save saves it.
 
 PIN_CHOICES = [
     {"label": " short", "value": "short"},
     {"label": " open", "value": "open"},
     {"label": " port", "value": "port"},
 ]
-
-
-def pins_selection(data: dict, run: int) -> dict:
-    """The choice a run starts from: what its file has now."""
-    runs = data.get("runs") or []
-    found = runs[run] if 0 <= run < len(runs) else {}
-    return {
-        "run": run,
-        "components": list(found.get("components") or []),
-        "states": dict(found.get("states") or {}),
-    }
-
-
-#: What the panel's spinner waits for: the panel itself, not its parts.
-_PINS_VIEW_ONLY: Any = {"pins-view": "children"}
 
 #: Narrows the component checklist in the browser, as one types: no
 #: round trip to the server. The checklist's value keeps every included
@@ -2239,7 +2212,84 @@ function(text, data) {
 """
 
 
-def pins_options(data: dict) -> list[dict]:
+def _flow(text: Any) -> list:
+    """A list field's text (``[a, b]``) as a list; [] for none."""
+    try:
+        value = yaml.safe_load(str(text or "")) if text not in (None, "") else []
+    except yaml.YAMLError:
+        return []
+    return value if isinstance(value, list) else []
+
+
+def pins_from_fields(texts: dict) -> dict:
+    """The choice a study's fields hold: ``{"components", "states"}``
+    from the texts of its ``components``, ``open`` and ``ports`` fields."""
+    states: dict[str, list] = {}
+    for entry in _flow(texts.get("open")):
+        if isinstance(entry, list) and len(entry) >= 2:
+            states[f"{entry[0]}/{entry[1]}"] = ["open", 50]
+    for entry in _flow(texts.get("ports")):
+        if isinstance(entry, list) and len(entry) >= 2:
+            ohm = entry[2] if len(entry) > 2 else 50
+            states[f"{entry[0]}/{entry[1]}"] = ["port", ohm]
+    return {
+        "components": [str(c) for c in _flow(texts.get("components"))],
+        "states": states,
+    }
+
+
+def pins_live(components: list[dict], sel: dict) -> dict:
+    """The pin ends that count: of included components, and not joined
+    to another included one (that pin is inside the model). The others
+    are kept in the choice, so ticking a component back restores them."""
+    included = set(sel.get("components") or [])
+    joined = {
+        f"{c['name']}/{p['name']}": p.get("joined") or ""
+        for c in components
+        for p in c["pins"]
+    }
+    return {
+        k: v
+        for k, v in (sel.get("states") or {}).items()
+        if k.split("/")[0] in included and joined.get(k, "") not in included
+    }
+
+
+def _ohm(value: Any) -> float | int:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 50
+    if number <= 0:
+        return 50
+    return int(number) if number.is_integer() else number
+
+
+def pins_to_fields(components: list[dict], sel: dict) -> dict:
+    """The texts of a study's ``components``, ``open`` and ``ports``
+    fields for a choice (as the form shows a list: ``[a, b]``)."""
+    live = pins_live(components, sel)
+    chosen = list(sel.get("components") or [])
+    order = {name: i for i, name in enumerate(chosen)}
+
+    def ordered(entries):
+        return sorted(entries, key=lambda e: (order.get(e[0], 0), str(e[1])))
+
+    opened, ports = [], []
+    for key, (state, *rest) in live.items():
+        component, _, pin = key.partition("/")
+        if state == "open":
+            opened.append([component, pin])
+        elif state == "port":
+            ports.append([component, pin, _ohm(rest[0] if rest else 50)])
+    return {
+        "components": forms.show(chosen),
+        "open": forms.show(ordered(opened)),
+        "ports": forms.show(ordered(ports)),
+    }
+
+
+def pins_options(components: list[dict]) -> list[dict]:
     """The component checklist: every component of the design (the
     browser narrows it as one types, ``PINS_FILTER_JS``)."""
     return [
@@ -2247,7 +2297,7 @@ def pins_options(data: dict) -> list[dict]:
             "label": f" {c['name']}  · {c['class']} · {len(c['pins'])} pin(s)",
             "value": c["name"],
         }
-        for c in data.get("components") or []
+        for c in components
     ]
 
 
@@ -2293,11 +2343,9 @@ def _pin_row(key: str, name: str, joined: str, state: str, ohm: Any, ports: bool
     )
 
 
-def pins_table(data: dict, sel: dict) -> Any:
+def pins_table(components: list[dict], sel: dict, ports: bool) -> Any:
     """Every pin of every included component, each with how it ends."""
-    runs = data.get("runs") or []
-    run = runs[sel.get("run", 0)] if runs else {}
-    by_name = {c["name"]: c for c in data.get("components") or []}
+    by_name = {c["name"]: c for c in components}
     chosen = list(sel.get("components") or [])
     included = set(chosen)
     states = sel.get("states") or {}
@@ -2350,9 +2398,7 @@ def pins_table(data: dict, sel: dict) -> Any:
             given = list(states.get(key) or [])
             state = given[0] if given else "short"
             ohm = given[1] if len(given) > 1 else 50
-            rows.append(
-                _pin_row(key, pin["name"], joined, state, ohm, bool(run.get("ports")))
-            )
+            rows.append(_pin_row(key, pin["name"], joined, state, ohm, ports))
     if not rows:
         return html.Div(
             "Tick components above to set their pins.", className="qs-muted"
@@ -2360,29 +2406,10 @@ def pins_table(data: dict, sel: dict) -> Any:
     return html.Table(html.Tbody(rows), className="qs-table")
 
 
-def pins_live(data: dict, sel: dict) -> dict:
-    """The pin ends that count: of included components, and not joined
-    to another included one (that pin is inside the model). The others
-    are kept in the choice, so ticking a component back restores them."""
-    included = set(sel.get("components") or [])
-    joined = {
-        f"{c['name']}/{p['name']}": p.get("joined") or ""
-        for c in data.get("components") or []
-        for p in c["pins"]
-    }
-    return {
-        k: v
-        for k, v in (sel.get("states") or {}).items()
-        if k.split("/")[0] in included and joined.get(k, "") not in included
-    }
-
-
-def pins_summary(data: dict, sel: dict) -> Any:
-    """What the run includes, in two lines, and its notes."""
-    runs = data.get("runs") or []
-    run = runs[sel.get("run", 0)] if runs else {}
+def pins_summary(components: list[dict], sel: dict, study: dict) -> Any:
+    """What the study includes, in two lines, and its notes."""
     chosen = sel.get("components") or []
-    states = pins_live(data, sel)
+    states = pins_live(components, sel)
     opened = sorted(k for k, v in states.items() if v[0] == "open")
     ports = sorted(
         f"{k} ({v[1] if len(v) > 1 else 50} Ohm)"
@@ -2401,47 +2428,55 @@ def pins_summary(data: dict, sel: dict) -> Any:
             className="qs-small",
         ),
     ]
-    if run.get("note"):
-        parts.append(html.Div(run["note"], className="qs-problems"))
-    if run and not run.get("ports"):
+    if study.get("note"):
+        parts.append(html.Div(study["note"], className="qs-problems"))
+    fields = study.get("fields") or {}
+    if "ports" not in fields:
         parts.append(
-            html.Div("A capacitance study takes no ports.", className="qs-small")
+            html.Div(
+                (
+                    "A capacitance study takes no ports."
+                    if study.get("solver") == "q3d"
+                    else "This study has no port_list, so no ports here."
+                ),
+                className="qs-small",
+            )
+        )
+    if "open" not in fields:
+        parts.append(
+            html.Div(
+                "This study has no open_pins: every loose pin is shorted.",
+                className="qs-small",
+            )
         )
     return html.Div(parts)
 
 
-def pins_view(data: dict) -> Any:
-    """Components and pins: the design's components to tick for one run
-    of the study, each included component's pins to set short, open or
-    a port, a drawing of the choice, and saving it into the study."""
-    runs = data.get("runs") or []
-    sel = pins_selection(data, 0)
+def study_picker(components: list[dict], study: dict, sel: dict, index: int) -> Any:
+    """One study's components (a filtered checklist) and how each loose
+    pin of them ends, Draw for its picture. ``study``: its entry of the
+    file's studies (``QDOBackend.form_studies``)."""
+    fields = study.get("fields") or {}
+    if "components" not in fields:
+        return html.Div(
+            study.get("note") or "This study has no components to pick.",
+            className="qs-muted",
+        )
+    ports = "ports" in fields
     return html.Div(
-        [
-            html.H3("Components and pins", className="qs-h"),
+        className="qs-form",
+        children=[
+            html.B("Components and pins"),
             html.Div(
-                f"{len(data.get('components') or [])} components in the design, "
-                f"{data.get('where', '')}. Tick what the run simulates and how "
-                "each loose pin ends; Draw shows the choice on the chip, Save "
-                "writes it into ministudy.yaml.",
+                f"{len(components)} components in the design. Tick what this "
+                "study simulates and how each loose pin ends; Save below saves "
+                "it with the rest.",
                 className="qs-small",
             ),
-            dcc.Store(id="pins-data", data=data),
+            dcc.Store(id="pins-data", data={"components": components}),
             dcc.Store(id="pins-sel", data=sel),
-            html.Div(
-                dcc.RadioItems(
-                    id="pins-run",
-                    options=[
-                        {"label": f" {r['title']}", "value": i}
-                        for i, r in enumerate(runs)
-                    ],
-                    value=0,
-                    inline=True,
-                    inputStyle={"marginLeft": "10px"},
-                ),
-                style={"margin": "6px 0"} if len(runs) > 1 else {"display": "none"},
-            ),
-            html.Div(id="pins-summary", children=pins_summary(data, sel)),
+            dcc.Store(id="pins-study", data={**study, "index": index}),
+            html.Div(id="pins-summary", children=pins_summary(components, sel, study)),
             dcc.Input(
                 id="pins-filter",
                 placeholder="filter components by name or class",
@@ -2450,7 +2485,7 @@ def pins_view(data: dict) -> Any:
             ),
             dcc.Checklist(
                 id="pins-components",
-                options=pins_options(data),
+                options=pins_options(components),
                 value=list(sel["components"]),
                 className="qs-checklist",
                 labelStyle={"display": "block"},
@@ -2461,20 +2496,20 @@ def pins_view(data: dict) -> Any:
                     "padding": "4px",
                 },
             ),
-            html.H4("Pins", style={"margin": "12px 0 4px"}),
-            html.Div(id="pins-table", children=pins_table(data, sel)),
+            html.Div("Pins", style={"margin": "12px 0 4px", "fontWeight": "500"}),
+            html.Div(id="pins-table", children=pins_table(components, sel, ports)),
             html.Div(
                 className="qs-bar",
                 children=[
-                    html.Button("Draw", id="btn-pins-draw", className="qs-btn"),
                     html.Button(
-                        "Save to the study",
-                        id="btn-pins-save",
-                        className="qs-btn qs-btn-primary",
-                    ),
+                        "Draw this study",
+                        id="btn-pins-draw",
+                        className="qs-btn",
+                        title="its components over the rest of the chip, pins "
+                        "marked, as now on the page (saved or not)",
+                    )
                 ],
             ),
             dcc.Loading(html.Div(id="pins-pictures"), type="dot"),
         ],
-        style={"marginTop": "12px"},
     )

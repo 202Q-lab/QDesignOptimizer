@@ -1006,6 +1006,11 @@ class Bridge:
                         if kind in ("queue", "hold")
                         else {}
                     ),
+                    "studies": (
+                        _studies(project, spec.name, data)
+                        if kind in ("queue", "hold")
+                        else []
+                    ),
                     "target_templates": (
                         _target_templates(project)
                         if kind in ("queue", "hold")
@@ -1761,15 +1766,15 @@ class Bridge:
             campaign = ""
         return project, folder, campaign or None
 
-    def pin_view(self, key: str) -> dict[str, Any]:
-        """What a queued study can include: the design's components and
-        pins, and the study's runs as they are (``QDOBackend.pin_map``)."""
-        project, folder, campaign = self._queued_folder(key)
-        hook = getattr(project.backend, "pin_map", None)
+    def pin_inventory(self, key: str) -> list[dict[str, Any]]:
+        """Every component of a study's design, with its class and pins
+        (``QDOBackend.pin_inventory``), to pick from."""
+        project, _ = self._study(key)
+        hook = getattr(project.backend, "pin_inventory", None)
         if hook is None:
             raise GuiError("this backend cannot list its design's components")
         try:
-            return hook(folder, campaign=campaign)
+            return hook()
         except Exception as exc:  # noqa: BLE001 -- shown to the user
             raise GuiError(
                 f"cannot build the design: {type(exc).__name__}: {exc}"
@@ -1787,24 +1792,6 @@ class Bridge:
             return hook(folder, run, components, states, campaign=campaign)
         except Exception as exc:  # noqa: BLE001 -- shown to the user
             raise GuiError(f"cannot draw it: {type(exc).__name__}: {exc}") from exc
-
-    def save_pins(self, key: str, run: int, components: list[str], states: dict) -> str:
-        """Write one run's components, open pins and ports into the
-        study's ``ministudy.yaml`` (then checked, as any save)."""
-        project, folder, _ = self._queued_folder(key)
-        hook = getattr(project.backend, "pin_apply", None)
-        if hook is None:
-            raise GuiError("this backend cannot set components and pins")
-        if not components:
-            raise GuiError("not saved: include at least one component")
-        try:
-            name, data = hook(folder, run, components, states)
-        except ValueError as exc:
-            raise GuiError(f"not saved: {exc}") from exc
-        except Exception as exc:  # noqa: BLE001 -- shown to the user
-            raise GuiError(f"not saved: {type(exc).__name__}: {exc}") from exc
-        old = (folder / name).read_text(encoding="utf-8")
-        return self.save_file(key, name, _render(name, data, old))
 
     def validate(self, key: str) -> list[str]:
         """Everything that would stop a queued or held study, checked as
@@ -2134,6 +2121,18 @@ def _addable(project, name: str) -> dict:
         return {forms.key(p): c for p, c in (hook(name) or {}).items()}
     except Exception:  # noqa: BLE001 -- nothing can be added then
         return {}
+
+
+def _studies(project, name: str, data) -> list:
+    """The studies a file holds, to edit one at a time
+    (``QDOBackend.form_studies``); [] when the backend has no such."""
+    hook = getattr(project.backend, "form_studies", None)
+    if hook is None or data is None:
+        return []
+    try:
+        return list(hook(name, data) or [])
+    except Exception:  # noqa: BLE001 -- the plain form is drawn then
+        return []
 
 
 def _target_templates(project) -> list | None:

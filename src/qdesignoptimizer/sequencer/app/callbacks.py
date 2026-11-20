@@ -693,6 +693,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         State({"type": "tload-choice", "file": ALL}, "id"),
         State({"type": "tsave-name", "file": ALL}, "value"),
         State({"type": "tsave-name", "file": ALL}, "id"),
+        State({"type": "study-pick", "file": ALL}, "value"),
+        State({"type": "study-pick", "file": ALL}, "id"),
         State("selected", "data"),
         State("details-orig", "data"),
         State("rev", "data"),
@@ -714,6 +716,8 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         load_ids,
         tpl_name,
         tpl_ids,
+        picks,
+        pick_ids,
         selected,
         orig,
         rev,
@@ -797,7 +801,10 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
             return no_update, _msg(str(exc), False), no_update, panes
         panes = [
             (
-                form_layout.file_form(spec, True)
+                # the study picked stays picked
+                form_layout.file_form(
+                    {**spec, "picked": picked(picks, pick_ids, file=name) or 0}, True
+                )
                 if out["id"]["name"] == name
                 else no_update
             )
@@ -1299,32 +1306,60 @@ def _pictures(pictures: list[dict]) -> Any:
 
 
 def register_pins_callbacks(app, bridge) -> None:
-    """Components and pins of a queued study: list the design's
-    components, tick them per run, set each loose pin's end, draw the
-    choice and save it into the study."""
+    """A study file of several studies, one at a time: the picked one's
+    box is shown, its components and pins are picked by clicking (which
+    writes its fields on the page), and Draw shows just that study."""
 
     @app.callback(
-        Output("pins-view", "children", allow_duplicate=True),
-        Input("btn-pins", "n_clicks"),
+        Output({"type": "study-box", "file": ALL, "index": ALL}, "style"),
+        Output({"type": "study-picker", "file": ALL, "index": ALL}, "children"),
+        Input({"type": "study-pick", "file": ALL}, "value"),
+        State({"type": "ff", "file": ALL, "path": ALL}, "value"),
+        State({"type": "ff", "file": ALL, "path": ALL}, "id"),
         State("selected", "data"),
-        prevent_initial_call=True,
     )
-    def _pins_open(n, selected):
-        if not n or not selected or selected.get("kind") not in ("queue", "hold"):
-            return no_update
-        try:
-            data = bridge.pin_view(selected["key"])
-        except GuiError as exc:
-            return html.Div(str(exc), className="qs-problems")
-        return layout.pins_view(data)
-
-    @app.callback(
-        Output("pins-view", "children", allow_duplicate=True),
-        Input("selected", "data"),
-        prevent_initial_call=True,
-    )
-    def _pins_close(_selected):
-        return None
+    def _study_pick(picks, ff, ff_ids, selected):
+        boxes, pickers = ctx.outputs_list
+        chosen = {
+            out["id"]["file"]: value
+            for out, value in zip(ctx.inputs_list[0], picks or [])
+        }
+        styles = [
+            (
+                {}
+                if chosen.get(b["id"]["file"], 0) == b["id"]["index"]
+                else {"display": "none"}
+            )
+            for b in boxes
+        ]
+        # Only the shown study's picker is drawn; it reads the fields as
+        # they are on the page, so hidden ones lose nothing.
+        children: list[Any] = [[] for _ in pickers]
+        if not selected or selected.get("kind") not in ("queue", "hold"):
+            return styles, children
+        texts = {(i["file"], i["path"]): v for i, v in zip(ff_ids or [], ff or [])}
+        for n, out in enumerate(pickers):
+            name, index = out["id"]["file"], out["id"]["index"]
+            if chosen.get(name, 0) != index:
+                continue
+            try:
+                spec = bridge.file_spec(selected["key"], name)
+                study = spec["studies"][index]
+                components = bridge.pin_inventory(selected["key"])
+            except (GuiError, IndexError, KeyError) as exc:
+                children[n] = html.Div(str(exc), className="qs-problems")
+                continue
+            fields = study.get("fields") or {}
+            sel = layout.pins_from_fields(
+                {
+                    role: texts.get((name, forms.key(path)))
+                    for role, path in fields.items()
+                }
+            )
+            children[n] = layout.study_picker(
+                components, {**study, "file": name}, sel, index
+            )
+        return styles, children
 
     app.clientside_callback(
         layout.PINS_FILTER_JS,
@@ -1336,10 +1371,9 @@ def register_pins_callbacks(app, bridge) -> None:
 
     @app.callback(
         Output("pins-sel", "data"),
-        Output("pins-components", "value"),
         Output("pins-table", "children"),
         Output("pins-summary", "children"),
-        Input("pins-run", "value"),
+        Output({"type": "ff", "file": ALL, "path": ALL}, "value", allow_duplicate=True),
         Input("pins-components", "value"),
         Input({"type": "pin-state", "pin": ALL}, "value"),
         Input({"type": "pin-ohm", "pin": ALL}, "value"),
@@ -1347,24 +1381,25 @@ def register_pins_callbacks(app, bridge) -> None:
         State({"type": "pin-ohm", "pin": ALL}, "id"),
         State("pins-data", "data"),
         State("pins-sel", "data"),
+        State("pins-study", "data"),
         prevent_initial_call=True,
     )
-    def _pins_edit(run, ticked, states, ohms, state_ids, ohm_ids, data, sel):
-        if not data or sel is None:
+    def _pins_edit(ticked, states, ohms, state_ids, ohm_ids, data, sel, study):
+        fields_out = [no_update] * len(ctx.outputs_list[3])
+        if not data or sel is None or not study:
             raise PreventUpdate
+        components = data.get("components") or []
         trig = ctx.triggered_id
         sel = dict(sel)
-        table = value = no_update
-        if trig == "pins-run":
-            sel = layout.pins_selection(data, int(run or 0))
-            table, value = layout.pins_table(data, sel), list(sel["components"])
-        elif trig == "pins-components":
+        table = no_update
+        ports = "ports" in (study.get("fields") or {})
+        if trig == "pins-components":
             # The checklist holds every included component, shown by the
             # filter or not: keep their order, add new ones at the end.
             ticked = list(ticked or [])
             kept = [c for c in sel["components"] if c in ticked]
             sel["components"] = kept + [c for c in ticked if c not in kept]
-            table = layout.pins_table(data, sel)
+            table = layout.pins_table(components, sel, ports)
         elif isinstance(trig, dict):
             new = dict(sel.get("states") or {})
             ohm_of = {i["pin"]: v for i, v in zip(ohm_ids or [], ohms or [])}
@@ -1379,75 +1414,43 @@ def register_pins_callbacks(app, bridge) -> None:
             # Redrawn only when a pin's state changed (the impedance box
             # is switched on or off); a typed impedance keeps its box.
             if trig.get("type") == "pin-state":
-                table = layout.pins_table(data, sel)
-        return sel, value, table, layout.pins_summary(data, sel)
+                table = layout.pins_table(components, sel, ports)
+        else:
+            raise PreventUpdate
+        # Into the study's own fields on the page: Save saves them.
+        texts = layout.pins_to_fields(components, sel)
+        where = {
+            forms.key(path): role for role, path in (study.get("fields") or {}).items()
+        }
+        for n, out in enumerate(ctx.outputs_list[3]):
+            ident = out["id"]
+            if ident["file"] == study.get("file") and ident["path"] in where:
+                fields_out[n] = texts[where[ident["path"]]]
+        return sel, table, layout.pins_summary(components, sel, study), fields_out
 
     @app.callback(
         Output("pins-pictures", "children"),
         Input("btn-pins-draw", "n_clicks"),
         State("pins-sel", "data"),
         State("pins-data", "data"),
+        State("pins-study", "data"),
         State("selected", "data"),
         prevent_initial_call=True,
     )
-    def _pins_draw(n, sel, data, selected):
-        if not n or not sel or not selected:
+    def _pins_draw(n, sel, data, study, selected):
+        if not n or not sel or not selected or not study:
             return no_update
+        components = (data or {}).get("components") or []
         try:
             pictures = bridge.pin_pictures(
                 selected["key"],
-                sel["run"],
+                int(study.get("index", 0)),
                 sel["components"],
-                layout.pins_live(data or {}, sel),
+                layout.pins_live(components, sel),
             )
         except GuiError as exc:
             return html.Div(str(exc), className="qs-problems")
         return _pictures(pictures)
-
-    @app.callback(
-        Output("rev", "data", allow_duplicate=True),
-        Output("message", "data", allow_duplicate=True),
-        Output({"type": "file-pane", "name": ALL}, "children", allow_duplicate=True),
-        Output("details-orig", "data", allow_duplicate=True),
-        Input("btn-pins-save", "n_clicks"),
-        State("pins-sel", "data"),
-        State("pins-data", "data"),
-        State("selected", "data"),
-        State("details-orig", "data"),
-        State("rev", "data"),
-        prevent_initial_call=True,
-    )
-    def _pins_save(n, sel, data, selected, orig, rev):
-        panes = [no_update] * len(ctx.outputs_list[2])
-        if not n or not sel or not selected:
-            return no_update, no_update, panes, no_update
-        key, name = selected["key"], "ministudy.yaml"
-        try:
-            text = bridge.save_pins(
-                key, sel["run"], sel["components"], layout.pins_live(data or {}, sel)
-            )
-            spec = bridge.file_spec(key, name)
-        except GuiError as exc:
-            return no_update, _msg(str(exc), False), panes, no_update
-        # The ministudy's form shows what was saved; its other edits
-        # were not saved with it, so that pane alone is redrawn.
-        panes = [
-            (
-                form_layout.file_form(spec, True)
-                if out["id"]["name"] == name
-                else no_update
-            )
-            for out in ctx.outputs_list[2]
-        ]
-        orig = dict(orig or {})
-        kept = {
-            k: v
-            for k, v in (orig.get("forms") or {}).items()
-            if not k.startswith(f"{name}|")
-        }
-        kept.update(form_layout.form_values(spec, True))
-        orig["forms"] = kept
-        return (rev or 0) + 1, _msg(text, "cannot run" not in text), panes, orig
 
 
 def register_editor_callbacks(app, bridge) -> None:

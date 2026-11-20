@@ -768,24 +768,63 @@ class QDOBackend(SwitchableStore):
             out.append(picture)
         return out
 
-    def pin_map(self, folder: Path, campaign: str | None = None) -> dict[str, Any]:
-        """What one can include in a study: every component of the
-        design (its class and pins, and what each pin is joined to), and
-        the study's runs with the components and pin ends each has now --
-        see ``qdo_pins``. The design is built as ``preview`` builds it.
+    def form_studies(self, name: str, data: Any) -> list[dict[str, Any]]:
+        """The studies a study file holds, edited one at a time in the
+        GUI: the MiniStudy (its HFSS eigenmode model), then each chained
+        capacitance study (``qdo_pins.runs``).
 
-        Raises:
-            ValueError: As ``preview``.
+        Each is ``title``, ``path`` (the study's object in the file),
+        ``solver``, ``note`` and ``fields``: where its components, open
+        pins and ports are in the file (``{"components" | "open" |
+        "ports": path}``, only those it has as plain lists), which the
+        GUI sets by clicking rather than typing.
         """
         from . import qdo_pins
 
-        design, where = self._design_for(folder, campaign)
-        data = yaml.safe_load((Path(folder) / MINISTUDY).read_text("utf-8")) or {}
-        return {
-            "components": qdo_pins.inventory(design),
-            "runs": qdo_pins.runs(data),
-            "where": where,
-        }
+        if name != MINISTUDY or not isinstance(data, dict):
+            return []
+        out = []
+        for run in qdo_pins.runs(data):
+            args: Any = data
+            for step in run["path"]:
+                args = args[step]
+            fields = {}
+            for role, key in (
+                ("components", "qiskit_component_names"),
+                ("open", "open_pins"),
+                ("ports", "port_list"),
+            ):
+                if key in args and run["editable"]:
+                    fields[role] = [*run["path"], key]
+            out.append(
+                {
+                    "title": run["title"],
+                    "path": run["path"][:-1],
+                    "solver": run["solver"],
+                    "note": run["note"],
+                    "fields": fields,
+                }
+            )
+        return out
+
+    def pin_inventory(self) -> list[dict[str, Any]]:
+        """Every component of the design, its class and its pins, each
+        with what it is joined to (``qdo_pins.inventory``). The design as
+        the project builds it now (kept between calls): what joins what
+        does not depend on the design variables.
+
+        Raises:
+            ValueError: If the project has no ``design()``.
+        """
+        from . import qdo_pins
+
+        design = self.built_design()
+        if design is None:
+            raise ValueError(
+                "this project has no design() hook, so there are no "
+                "components to pick from"
+            )
+        return qdo_pins.inventory(design)
 
     def pin_preview(
         self,
@@ -836,38 +875,6 @@ class QDOBackend(SwitchableStore):
         for picture in (close, whole):
             picture["caption"] = f"{picture['caption']}; {where} (not saved yet)"
         return [close, whole]
-
-    def pin_apply(
-        self,
-        folder: Path,
-        run: int,
-        components: list[str],
-        states: dict[str, list],
-    ) -> tuple[str, dict]:
-        """The study's ``ministudy.yaml`` data with run ``run``'s
-        components, open pins and ports set (``qdo_pins.apply``), and
-        the file's name; the caller writes it.
-
-        Raises:
-            ValueError: For a run not in the file or not a plain list
-                there, or a choice ``qdo_pins.apply`` refuses.
-        """
-        from . import qdo_pins
-
-        data = yaml.safe_load((Path(folder) / MINISTUDY).read_text("utf-8")) or {}
-        runs = qdo_pins.runs(data)
-        if not 0 <= run < len(runs):
-            raise ValueError("that run is no longer in the ministudy; reopen it")
-        if not runs[run]["editable"]:
-            raise ValueError(runs[run]["note"])
-        # A pin joined to another included component is inside the model:
-        # whatever it was set to before, it is no end and is not listed.
-        design = self.built_design()
-        if design is not None:
-            states = qdo_pins.loose_states(
-                qdo_pins.inventory(design), components, states
-            )
-        return MINISTUDY, qdo_pins.apply(data, runs[run]["path"], components, states)
 
     def _design_for(self, folder: Path, campaign: str | None = None):
         """The chip a study would build now, and a line saying so.

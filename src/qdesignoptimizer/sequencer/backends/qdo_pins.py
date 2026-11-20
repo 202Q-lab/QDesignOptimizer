@@ -4,7 +4,7 @@ each solver run includes, and how each of their loose pins ends.
 The design is the project's built chip (``QDOProject.design``). The
 runs are the MiniStudy's own (its HFSS eigenmode model) and each chained
 capacitance study, read straight from the queued ``ministudy.yaml`` so
-the choices can be written back at the same place (``apply``).
+the GUI can set them where they are (its form of the file).
 
 A pin of an included component ends in one of three ways:
 
@@ -22,7 +22,6 @@ Imports nothing heavy at module scope.
 
 from __future__ import annotations
 
-import copy
 from typing import Any
 
 SHORT, OPEN, PORT = "short", "open", "port"
@@ -152,91 +151,9 @@ def _run(args: dict, path: list, title: str, solver: str) -> dict[str, Any]:
             ""
             if editable
             else "its components or pins are not a plain list here (an "
-            "expression?): edit them in the form"
+            "expression?): type them in the fields as text"
         ),
     }
-
-
-def loose_states(
-    components_of_design: list[dict], components: list[str], states: dict
-) -> dict[str, list]:
-    """``states`` without the pins that are not ends of the model: those
-    of components not included, and those joined to an included one."""
-    included = set(components)
-    joined = {
-        pin_key(c["name"], p["name"]): p["joined"]
-        for c in components_of_design
-        for p in c["pins"]
-    }
-    return {
-        key: value
-        for key, value in states.items()
-        if key.partition("/")[0] in included and joined.get(key, "") not in included
-    }
-
-
-def apply(
-    data: dict, path: list, components: list[str], states: dict[str, list]
-) -> dict:
-    """``data`` (a ``ministudy.yaml``) with one run's components, open
-    pins and ports set (a copy). Only pins of included components are
-    written; a short pin is listed nowhere.
-
-    Args:
-        path: The run's ``path`` (``runs``).
-        states: ``{pin_key: [state, ohm]}``.
-
-    Raises:
-        ValueError: For a port on a run that takes none, an impedance
-            that is not a positive number, or a path not in the file.
-    """
-    out = copy.deepcopy(data)
-    args: Any = out
-    try:
-        for step in path:
-            args = args[step]
-    except (KeyError, IndexError, TypeError) as exc:
-        raise ValueError("that run is no longer in the ministudy") from exc
-    if not isinstance(args, dict):
-        raise ValueError("that run is no longer in the ministudy")
-    chosen = list(dict.fromkeys(str(c) for c in components))
-    included = set(chosen)
-    opened, ports = [], []
-    for key, (state, *rest) in states.items():
-        component, _, pin = key.partition("/")
-        if component not in included or state == SHORT:
-            continue
-        if state == OPEN:
-            opened.append([component, pin])
-        elif state == PORT:
-            ohm = _ohm(rest[0] if rest else DEFAULT_OHM, key)
-            ports.append([component, pin, ohm])
-        else:
-            raise ValueError(f"{key}: unknown pin state {state!r}")
-    takes_ports = path == ["args"] or "port_list" in args
-    if ports and not takes_ports:
-        raise ValueError(
-            "a capacitance study takes no ports: "
-            + ", ".join(f"{c}/{p}" for c, p, _ in ports)
-        )
-    order = {name: i for i, name in enumerate(chosen)}
-    opened.sort(key=lambda e: order[str(e[0])])
-    ports.sort(key=lambda e: order[str(e[0])])
-    args["qiskit_component_names"] = chosen
-    args["open_pins"] = opened
-    if takes_ports:
-        args["port_list"] = ports
-    return out
-
-
-def _ohm(value: Any, key: str) -> float | int:
-    try:
-        number = float(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"{key}: port impedance {value!r} is not a number") from exc
-    if number <= 0:
-        raise ValueError(f"{key}: port impedance must be positive")
-    return int(number) if number.is_integer() else number
 
 
 def markers(design, components: list[str], states: dict[str, list]) -> list[dict]:

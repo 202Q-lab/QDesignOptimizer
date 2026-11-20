@@ -60,18 +60,17 @@ def file_form(spec: dict, editable: bool) -> list:
         return out
     else:
         addable = spec.get("addable") if editable else {}
-        out.append(
-            _section(
-                forms.build(
-                    spec["data"],
-                    spec.get("label", ""),
-                    lists=[forms.unkey(k) for k in (addable or {})],
-                ),
-                name,
-                editable,
-                addable=addable or {},
-            )
+        root = forms.build(
+            spec["data"],
+            spec.get("label", ""),
+            lists=[forms.unkey(k) for k in (addable or {})],
         )
+        if editable and spec.get("studies"):
+            out += _studies(
+                root, spec["studies"], name, addable or {}, spec.get("picked") or 0
+            )
+        else:
+            out.append(_section(root, name, editable, addable=addable or {}))
         if editable and spec.get("target_templates") is not None:
             out.append(_target_templates(name, spec["target_templates"]))
     if editable:
@@ -129,6 +128,85 @@ def _input_value(item: forms.Field) -> Any:
     return item.value
 
 
+def _find(section: forms.Section, path: tuple) -> forms.Section | None:
+    """The section at ``path`` in a form, or None."""
+    if section.path == path:
+        return section
+    for child in section.children:
+        found = _find(child, path)
+        if found is not None:
+            return found
+    return None
+
+
+def _studies(
+    root: forms.Section, studies: list, name: str, addable: dict, picked_index=0
+) -> list:
+    """A file of several studies (a MiniStudy and its capacitance
+    studies), one at a time: which one at the top, then that study's own
+    settings. Its components and pins are picked by clicking
+    (``{"type": "study-picker", ...}``, filled by a callback), which
+    writes the fields they are in; those fields are kept, as text,
+    under it.
+
+    Every study's fields stay on the page (the others hidden), so the
+    file's Save button and its unsaved check see all of them.
+    ``picked_index``: the study shown (the first if it is gone).
+    """
+    if not 0 <= picked_index < len(studies):
+        picked_index = 0
+    own = {tuple(s["path"]) for s in studies}
+    picked = {forms.key(p) for s in studies for p in (s.get("fields") or {}).values()}
+    boxes = []
+    for index, study in enumerate(studies):
+        here = tuple(study["path"])
+        section = root if not here else _find(root, here)
+        if section is None:
+            continue
+        # A study's box holds its own settings, not the other studies.
+        body = _section(
+            section,
+            name,
+            True,
+            addable=addable,
+            skip=own - {here},
+            picked=picked,
+        )
+        boxes.append(
+            html.Div(
+                id={"type": "study-box", "file": name, "index": index},
+                style={} if index == picked_index else {"display": "none"},
+                children=[
+                    html.Div(
+                        "Reading the design's components ...",
+                        id={"type": "study-picker", "file": name, "index": index},
+                        className="qs-muted",
+                    ),
+                    body,
+                ],
+            )
+        )
+    return [
+        html.Div(
+            className="qs-bar",
+            children=[
+                html.B("Study: "),
+                dcc.RadioItems(
+                    id={"type": "study-pick", "file": name},
+                    options=[
+                        {"label": f" {s['title']}", "value": i}
+                        for i, s in enumerate(studies)
+                    ],
+                    value=picked_index,
+                    inline=True,
+                    inputStyle={"marginLeft": "12px"},
+                ),
+            ],
+        ),
+        *boxes,
+    ]
+
+
 def _field(item: forms.Field, name: str, editable: bool) -> Any:
     ident = {"type": "ff", "file": name, "path": forms.key(item.path)}
     if item.kind == "bool":
@@ -153,9 +231,20 @@ def _field(item: forms.Field, name: str, editable: bool) -> Any:
     )
 
 
-def _section(section: forms.Section, name: str, editable: bool, depth=0, addable=None):
+def _section(
+    section: forms.Section,
+    name: str,
+    editable: bool,
+    depth=0,
+    addable=None,
+    skip=frozenset(),
+    picked=frozenset(),
+):
+    """A form's section, drawn. ``skip``: paths of sections not drawn
+    (another study's); ``picked``: keys of fields set by clicking, put
+    in a closed "as text" fold."""
     addable = addable or {}
-    body = []
+    body: list[Any] = []
     if section.item and editable:
         path = forms.key(section.path)
 
@@ -185,8 +274,28 @@ def _section(section: forms.Section, name: str, editable: bool, depth=0, addable
         )
     if section.note:
         body.append(html.Div(section.note, className="qs-muted qs-small"))
-    body += [_field(f, name, editable) for f in section.fields]
-    body += [_section(c, name, editable, depth + 1, addable) for c in section.children]
+    clicked = [f for f in section.fields if forms.key(f.path) in picked]
+    if clicked:
+        body.append(
+            html.Details(
+                className="qs-sec",
+                children=[
+                    html.Summary(
+                        "components and pins as text (the picker above sets them)"
+                    ),
+                    html.Div(
+                        className="qs-sec-body",
+                        children=[_field(f, name, editable) for f in clicked],
+                    ),
+                ],
+            )
+        )
+    body += [_field(f, name, editable) for f in section.fields if f not in clicked]
+    body += [
+        _section(c, name, editable, depth + 1, addable, skip, picked)
+        for c in section.children
+        if c.path not in skip
+    ]
     choices = addable.get(forms.key(section.path))
     if editable and choices:
         path = forms.key(section.path)

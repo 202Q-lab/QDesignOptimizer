@@ -290,23 +290,25 @@ Open a queued study in the GUI:
 
 - **Generate pre-figures** draws each solver run as it is saved: only
   that run's components, with the airbridges the solver adds.
-- **Components and pins** lists every component of the built chip, with
-  its class and pins. For each run of the study (the HFSS eigenmode
-  model, then each chained capacitance study):
-  - Tick the components the run includes. A filter box narrows the list
-    by name or class.
+- The **MiniStudy** tab edits one study at a time. **Study:** at the top
+  picks the MiniStudy (its HFSS eigenmode model) or one of its chained
+  capacitance studies; below are that study's own settings. Each study
+  picks its components and pins by clicking, from every component of
+  the built chip:
+  - Tick the components the study includes. A filter box narrows the
+    list by name or class as you type.
   - Set each loose pin to **short**, **open** or **port**. Short is the
     default: qiskit-metal runs the trace into ground. Open cuts an
     endcap. Port is a lumped port, 50 Ohm unless you change it, and HFSS
     only. A pin joined to another included component is a connection
     inside the model, so it has no choice.
-  - **Draw** shows the choice before it is saved, in two pictures. The
-    first is the included components over the rest of the chip in grey,
-    with every pin marked. The second is the whole chip, with every
-    component named.
-  - **Save to the study** writes `qiskit_component_names`, `open_pins`
-    and `port_list` into the study's `ministudy.yaml`, then checks it as
-    any edit is checked.
+  - **Draw this study** shows the choice before it is saved, in two
+    pictures. The first is the study's components over the rest of the
+    chip in grey, with every pin marked. The second is the whole chip,
+    with every component named.
+  - The clicks fill in the study's `qiskit_component_names`, `open_pins`
+    and `port_list` (shown as text in a fold under the picker), and
+    **Save MiniStudy** saves them with the rest of the file.
 
 Before the first Ansys run:
 

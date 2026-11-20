@@ -1,6 +1,6 @@
 """Components and pins of a study: the design's components and how their
-pins join, a study's runs read from its ministudy, a choice written back,
-the pictures of a choice, and the GUI's bridge saving it."""
+pins join, the studies of a ministudy, a choice read from and written to
+its fields, the pictures of a choice, and the GUI's form of it."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ import yaml
 
 pytest.importorskip("qiskit_metal")
 
+from qdesignoptimizer.sequencer.app import form_layout, forms, layout  # noqa: E402
 from qdesignoptimizer.sequencer.app.queue_state import Bridge  # noqa: E402
-from qdesignoptimizer.sequencer.app.queue_state import GuiError
 from qdesignoptimizer.sequencer.backends import qdo_pins  # noqa: E402
 from qdesignoptimizer.sequencer.backends import qdo_preview
 from qdesignoptimizer.sequencer.backends.qdo import QDOBackend  # noqa: E402
@@ -102,48 +102,61 @@ def test_a_study_s_runs_are_read_from_its_ministudy():
 def test_a_list_that_is_an_expression_is_not_edited_here():
     data = {"args": {"qiskit_component_names": "=v['names']", "modes": ["m"]}}
     (run,) = qdo_pins.runs(data)
-    assert not run["editable"] and "form" in run["note"]
+    assert not run["editable"] and "as text" in run["note"]
 
 
-def test_a_choice_is_written_back_short_pins_listed_nowhere():
-    states = {
-        "line_in/end": ["port", "75"],
-        "line_in/start": ["short", 50],
-        "open_b/open": ["open", 50],
-        "line_out/end": ["open", 50],  # not included: dropped
-    }
-    out = qdo_pins.apply(MINISTUDY, ["args"], ["line_in", "open_b"], states)
-    args = out["args"]
-    assert args["qiskit_component_names"] == ["line_in", "open_b"]
-    assert args["port_list"] == [["line_in", "end", 75]]
-    assert args["open_pins"] == [["open_b", "open"]]
-    # the chained study is left as it was, and the input is not changed
-    assert (
-        args["capacitance_matrix_studies"]
-        == MINISTUDY["args"]["capacitance_matrix_studies"]
+INVENTORY = [
+    {
+        "name": "line_in",
+        "class": "RouteStraight",
+        "pins": [
+            {"name": "start", "joined": "open_a"},
+            {"name": "end", "joined": "open_b"},
+        ],
+    },
+    {
+        "name": "open_a",
+        "class": "OpenToGround",
+        "pins": [{"name": "open", "joined": "line_in"}],
+    },
+    {
+        "name": "open_b",
+        "class": "OpenToGround",
+        "pins": [{"name": "open", "joined": "line_in"}],
+    },
+]
+
+
+def test_a_choice_is_read_from_a_study_s_fields_and_written_back():
+    sel = layout.pins_from_fields(
+        {
+            "components": "[line_in, open_a]",
+            "open": "[]",
+            "ports": "[[line_in, end, 75]]",
+        }
     )
-    assert MINISTUDY["args"]["qiskit_component_names"] == ["line_in", "open_a"]
-
-
-def test_a_pin_joined_inside_the_model_is_no_end():
-    inventory = qdo_pins.inventory(_chip())
-    states = {"line_in/end": ["port", 50], "line_in/start": ["open", 50]}
-    # open_b included: line_in's end joins it, its start (open_a) does not
-    assert qdo_pins.loose_states(inventory, ["line_in", "open_b"], states) == {
-        "line_in/start": ["open", 50]
+    assert sel == {
+        "components": ["line_in", "open_a"],
+        "states": {"line_in/end": ["port", 75]},
+    }
+    sel["states"]["line_in/start"] = ["open", 50]  # joined to open_a: inside
+    sel["states"]["open_b/open"] = ["open", 50]  # open_b not included
+    assert layout.pins_to_fields(INVENTORY, sel) == {
+        "components": "[line_in, open_a]",
+        "open": "[]",
+        "ports": "[[line_in, end, 75]]",
     }
 
 
-def test_a_capacitance_study_takes_no_ports_and_impedances_are_checked():
-    path = ["args", "capacitance_matrix_studies", 0, "args"]
-    with pytest.raises(ValueError, match="no ports"):
-        qdo_pins.apply(MINISTUDY, path, ["line_out"], {"line_out/end": ["port", 50]})
-    with pytest.raises(ValueError, match="positive"):
-        qdo_pins.apply(MINISTUDY, ["args"], ["line_in"], {"line_in/end": ["port", 0]})
-    with pytest.raises(ValueError, match="no longer"):
-        qdo_pins.apply(
-            MINISTUDY, ["args", "capacitance_matrix_studies", 3, "args"], [], {}
-        )
+def test_short_pins_are_listed_nowhere_and_a_bad_impedance_is_50_ohm():
+    sel = {
+        "components": ["line_in"],
+        "states": {"line_in/end": ["port", "-3"], "line_in/start": ["open", 50]},
+    }
+    texts = layout.pins_to_fields(INVENTORY, sel)
+    assert texts["ports"] == "[[line_in, end, 50]]"
+    assert texts["open"] == "[[line_in, start]]"
+    assert layout.pins_from_fields({"components": None})["components"] == []
 
 
 def test_pins_are_marked_joined_inside_the_model_else_as_chosen():
@@ -190,34 +203,43 @@ def tiny(tmp_path):
     return project, Bridge(project=project)
 
 
-def test_the_bridge_lists_the_design_and_saves_a_choice(tiny):
+def test_a_ministudy_is_edited_one_study_at_a_time(tiny):
     project, bridge = tiny
     job_id = project.add("X.freq")
-    data = bridge.pin_view(job_id)
-    assert [c["name"] for c in data["components"]] == ["feed", "res_x"]
-    (run,) = data["runs"]
-    assert run["components"] == ["res_x"]
-    text = bridge.save_pins(
-        job_id,
-        0,
-        ["res_x", "feed"],
-        {"feed/in": ["port", 50], "res_x/end": ["open", 50]},
+    spec = bridge.file_spec(job_id, "ministudy.yaml")
+    (study,) = spec["studies"]
+    assert study["path"] == [] and study["solver"] == "hfss"
+    assert study["fields"] == {
+        "components": ["args", "qiskit_component_names"],
+        "open": ["args", "open_pins"],
+        "ports": ["args", "port_list"],
+    }
+    assert [c["name"] for c in bridge.pin_inventory(job_id)] == ["feed", "res_x"]
+    # the form: a study picker, its box, the picked fields kept as text
+    page = str(form_layout.file_form(spec, True))
+    assert "study-pick" in page and "study-box" in page and "as text" in page
+    # what the picker writes into the fields, the form's Save saves
+    texts = layout.pins_to_fields(
+        bridge.pin_inventory(job_id),
+        {
+            "components": ["res_x", "feed"],
+            "states": {"feed/in": ["port", 50], "res_x/end": ["open", 50]},
+        },
     )
-    assert text.startswith("saved ministudy.yaml")
+    edits = {forms.key(study["fields"][role]): text for role, text in texts.items()}
+    assert bridge.save_form(job_id, "ministudy.yaml", edits).startswith("saved")
     saved = yaml.safe_load(
         (project.queue.folder(job_id) / "ministudy.yaml").read_text("utf-8")
     )
     assert saved["args"]["qiskit_component_names"] == ["res_x", "feed"]
     assert saved["args"]["port_list"] == [["feed", "in", 50]]
     assert saved["args"]["open_pins"] == [["res_x", "end"]]
-    # what QDO sets after building is left alone
-    assert saved["extra"] == {"grounded_pins": [["res_x", "end"]]}
 
 
-def test_the_bridge_refuses_an_empty_choice_or_a_gone_run(tiny):
-    project, bridge = tiny
-    job_id = project.add("X.freq")
-    with pytest.raises(GuiError, match="at least one"):
-        bridge.save_pins(job_id, 0, [], {})
-    with pytest.raises(GuiError, match="no longer"):
-        bridge.save_pins(job_id, 5, ["res_x"], {})
+def test_a_capacitance_study_is_its_own_study_without_ports(tiny):
+    project, _ = tiny
+    studies = project.backend.form_studies("ministudy.yaml", MINISTUDY)
+    assert [s["solver"] for s in studies] == ["hfss", "q3d"]
+    assert studies[1]["path"] == ["args", "capacitance_matrix_studies", 0]
+    assert set(studies[1]["fields"]) == {"components", "open"}
+    assert project.backend.form_studies("opt_targets.yaml", MINISTUDY) == []
