@@ -13,7 +13,18 @@ What a backend adds, when it has these (the QDO backend does):
 * ``report_value(parameter, value)``: a value as it is read, with unit;
 * ``report_table(runs, fabrication)``: ``{"title", "columns", "rows",
   "notes"}``, a row per qubit, say, with columns for what fabrication
-  gave and what follows from it.
+  gave and what follows from it;
+* ``report_pictures(folder)``: ``[{"title", "path", "caption"}]``, the
+  pictures the full report shows of a study (QDO: the model as Ansys drew
+  it in the last iteration, and the junctions in the final GDS). The
+  written report copies them into its ``pictures/`` folder;
+* ``report_simulation(folder)``: ``{"runs": [...], "passes"}``, the
+  simulations a study ran (``HFSS eigenmode``, ``Q3D capacitance: ...``);
+* ``report_inputs(folder)``: the design variables a study started from.
+
+The last two, with the targets and what each study wrote back, make the
+full report's study flow (``flow``): which study ran which simulation to
+tune what, and which study started from the values another wrote.
 
 What fabrication gave is kept in the project's ``fabrication.yaml``
 (``{name: value}``, e.g. ``qubit_1: 8.1 kOhm``), so every report after
@@ -23,17 +34,26 @@ uses it.
 from __future__ import annotations
 
 import re
+import shutil
 import time
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+from . import flow as fl
 from . import state as st
 from .job import parse_completed
 
 FABRICATION_FILE = "fabrication.yaml"
 REPORTS = "reports"
+FLOW_PNG = "study_flow.png"
+FLOW_TEXT = (
+    "Each box is a study, in the order they ran: the simulation it ran, "
+    "then each parameter it estimated -> the design variable it tuned "
+    "(\u2713: written back to the store). An arrow carries the design "
+    "variables a study started from as the one above wrote them back."
+)
 
 _REQUEUED = re.compile(r"_r\d+$")
 
@@ -120,13 +140,10 @@ def collect(workspace, keys: list[str]) -> list[dict]:
         except (OSError, yaml.YAMLError):
             job = {}
         backend = project.backend
-        targets = []
-        hook = getattr(backend, "report_targets", None)
-        if hook is not None:
-            try:
-                targets = list(hook(folder) or [])
-            except Exception:  # noqa: BLE001 -- the report goes on without
-                targets = []
+        targets = _hook(backend, "report_targets", folder)
+        pictures = _hook(backend, "report_pictures", folder)
+        simulation = _hook_dict(backend, "report_simulation", folder)
+        ran_with = _hook_dict(backend, "report_inputs", folder)
         out.append(
             {
                 "key": key,
@@ -150,6 +167,9 @@ def collect(workspace, keys: list[str]) -> list[dict]:
                 "committed": result.get("committed") or {},
                 "checks": result.get("checks") or {},
                 "targets": targets,
+                "pictures": pictures,
+                "simulation": simulation,
+                "ran_with": ran_with,
                 "_backend": backend,
             }
         )
@@ -279,12 +299,30 @@ def brief(runs: list[dict], made: dict | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
-def full(runs: list[dict], made: dict | None = None) -> str:
+def full(
+    runs: list[dict],
+    made: dict | None = None,
+    pictures: bool = True,
+    flow: bool = True,
+    flow_image: str | None = None,
+) -> str:
     """Every study in full: what it was, every target per iteration,
-    the design variables it ran with and suggests, its checks."""
+    the design variables it ran with and suggests, its checks, and its
+    pictures (``pictures``; their paths as the runs have them).
+
+    First, with ``flow``, the study flow (``flow.graph``): as a Mermaid
+    diagram, after the picture ``flow_image`` links to when given."""
     lines = [_header(runs)]
     if made:
         lines += ["", f"## {made.get('title') or 'Table'}", "", _table_md(made)]
+    if flow and runs:
+        lines += ["", "## Study flow", "", FLOW_TEXT]
+        if flow_image:
+            lines += ["", f"![Study flow]({_link(flow_image)})"]
+        graph = fl.graph(runs)
+        lines += ["", "```mermaid", fl.mermaid(graph), "```"]
+        if graph["left_out"]:
+            lines += ["", f"*{fl.left_out_text(graph)}*"]
     for run in runs:
         lines += ["", f"## {run['id']}", ""]
         facts = [
@@ -374,16 +412,37 @@ def full(runs: list[dict], made: dict | None = None) -> str:
                 )
                 for name, c in run["checks"].items()
             ]
+        if pictures and run.get("pictures"):
+            lines += ["", "### Pictures"]
+            for picture in run["pictures"]:
+                lines += [
+                    "",
+                    f"**{picture['title']}**",
+                    "",
+                    f"![{picture['title']}]({_link(picture['path'])})",
+                ]
+                if picture.get("caption"):
+                    lines += ["", f"*{picture['caption']}*"]
     return "\n".join(lines) + "\n"
 
 
 def write(project, runs: list[dict], made: dict | None) -> Path:
-    """Write the brief and full reports and the table into
-    ``out/reports/<now>/``; the folder."""
+    """Write the brief and full reports, the study flow's picture
+    (``study_flow.png``) and the table into ``out/reports/<now>/``; the
+    folder."""
     folder = Path(project.out) / REPORTS / time.strftime("%Y-%m-%dT%H-%M-%S")
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "report_brief.md").write_text(brief(runs, made), encoding="utf-8")
-    (folder / "report.md").write_text(full(runs, made), encoding="utf-8")
+    image = None
+    if runs:
+        try:
+            image = fl.draw(fl.graph(runs), folder / FLOW_PNG).name
+        except Exception:  # noqa: BLE001 -- the Mermaid diagram stays
+            image = None
+    (folder / "report.md").write_text(
+        full(_copy_pictures(runs, folder), made, flow_image=image),
+        encoding="utf-8",
+    )
     if made:
         (folder / "table.md").write_text(_table_md(made) + "\n", encoding="utf-8")
         (folder / "table.tsv").write_text(
@@ -393,6 +452,53 @@ def write(project, runs: list[dict], made: dict | None) -> Path:
 
 
 # -- helpers ---------------------------------------------------------------
+
+
+def _hook(backend, name: str, folder: Path) -> list:
+    """A backend's optional report hook for a run folder ([] without it,
+    or when it fails: the report goes on without)."""
+    hook = getattr(backend, name, None)
+    if hook is None:
+        return []
+    try:
+        return list(hook(folder) or [])
+    except Exception:  # noqa: BLE001 -- the report goes on without
+        return []
+
+
+def _hook_dict(backend, name: str, folder: Path) -> dict:
+    """A backend's optional report hook that gives a dict ({} without
+    it, or when it fails)."""
+    hook = getattr(backend, name, None)
+    if hook is None:
+        return {}
+    try:
+        return dict(hook(folder) or {})
+    except Exception:  # noqa: BLE001 -- the report goes on without
+        return {}
+
+
+def _copy_pictures(runs: list[dict], folder: Path) -> list[dict]:
+    """The runs with their pictures copied to ``<folder>/pictures/<run>/``
+    and linked from there, so the report folder stands on its own."""
+    out = []
+    for run in runs:
+        copied = []
+        for picture in run.get("pictures") or []:
+            source = Path(picture["path"])
+            if not source.is_file():
+                continue
+            target = folder / "pictures" / Path(run["folder"]).name / source.name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+            copied.append({**picture, "path": target.relative_to(folder)})
+        out.append({**run, "pictures": copied})
+    return out
+
+
+def _link(path: Any) -> str:
+    """A Markdown link target: forward slashes, spaces escaped."""
+    return Path(path).as_posix().replace(" ", "%20")
 
 
 def _header(runs: list[dict]) -> str:

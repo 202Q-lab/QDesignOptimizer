@@ -331,9 +331,32 @@ study, and you can tick any others to compare:
 
 - **brief**: one line per study, how many targets it had and its
   worst miss, and whether it wrote its values back;
-- **full**: per study what it was (task, campaign, sequence, settings,
+- **full**: first the **study flow**, a diagram of the chosen studies
+  in the order they ran. Each box gives the simulation a study ran (HFSS
+  eigenmode, Q3D capacitance), its passes and iterations, and each
+  parameter it estimated with the design variable it tuned, how far it
+  ended from its target and whether it was written back. An arrow from
+  one study to a later one carries the design variables the later one
+  started from as the earlier one wrote them back, so the diagram shows
+  how each study builds on the ones before it. A run that a later run of
+  the same study replaced, and that no study shown started from (a
+  failed attempt run again, values overwritten before anyone used them),
+  is left out and named below the diagram. It is drawn from what the
+  studies recorded only (the values each started from, what each wrote
+  back), so the same studies always give the same diagram: as a picture
+  (`study_flow.png`) and as a Mermaid diagram, which GitHub, VS Code and
+  Notion draw. Then, per study, what it was (task, campaign, sequence, settings,
   who queued it and why), every target per iteration, its design
-  variables from first to final, and its checks;
+  variables from first to final, its checks, and its pictures:
+  - the model as Ansys drew it in the last iteration: the HFSS
+    eigenmode model and each Q3D capacitance study, seen from above (exported at a fixed
+    1600 × 1000 pixels: AEDT 2022 R2 run from a script crashes on the
+    default "window size" export, and takes the solve with it);
+  - a close-up of each Josephson junction in the final layout, a GDS
+    file of the design as it ran last (qiskit-metal's GDS renderer, with
+    the design's own GDS options). Without a junction cell for the
+    renderer to put in (its `path_filename` option), the close-up shows
+    the pads with a dashed line where the junction goes, and says so;
 - **a table for Notion**: one row per qubit, with its simulated
   frequency, anharmonicity, readout resonator, linewidth and dispersive
   shift, and its designed Lj and Ej. Copy it as Markdown (Notion makes a
@@ -350,7 +373,26 @@ project's `fabrication.yaml`, so every report after uses it:
     python -m qdesignoptimizer.sequencer <project> report --fab qubit_1=8.1kOhm --show table
 
 Every report is also written to `out/reports/<when>/`: `report_brief.md`,
-`report.md`, `table.md` and `table.tsv`.
+`report.md`, `study_flow.png`, `table.md` and `table.tsv`, with the pictures it shows
+copied to its `pictures/` folder, so you can move or send the folder as
+a whole.
+
+A study keeps what the pictures are made of in its folder under
+`out/completed/`:
+
+- `ansys/hfss_<n>.png` and `ansys/q3d_<study>_<n>.png`: the model as
+  Ansys drew it in each iteration `n`, saved right after it is drawn and
+  before it is solved. Ansys's image export fails now and then; then
+  that picture is missing and the study goes on.
+- `layout/final.gds` and `layout/jj_<component>.png`: the final layout
+  and the junction close-ups, made when the study ends. A study that ran
+  before studies kept these gets them when it is first reported on,
+  built from the design variables of its last iteration. Its Ansys
+  pictures can't be made after the fact.
+
+QDO's `DesignAnalysis` saves the Ansys pictures when given a folder,
+`ansys_pictures=...`. The sequencer gives it the study's folder, so a
+project's `solve` needs no change.
 
 ### Working next to an agent
 

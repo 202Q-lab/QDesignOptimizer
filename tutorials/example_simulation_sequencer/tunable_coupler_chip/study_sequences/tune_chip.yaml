@@ -1,0 +1,14 @@
+version: 1
+name: Tune all five modes
+why_ordered: >-
+  The notebook runs ten 17-pass iterations from the chip's start values.
+  Here a coarse solve (10 passes) takes the big first steps cheaply, and
+  the notebook's 17-pass solve then refines from where it ended.
+defaults:
+  save: true
+  on_failure: abort
+studies:
+# The coarse stage only has to bring the modes near their targets: no
+# convergence check, so its values are written back for the fine one.
+- {study: chip.five_modes_coarse, settings: {iterations: 5}, checks: []}
+- {study: chip.five_modes, settings: {iterations: 4}, checks: [converged]}

@@ -1428,10 +1428,13 @@ class QDOBackend(SwitchableStore):
         params = yaml.safe_load((folder / PARAMS).read_text("utf-8")) or {}
         with qdo_record.study_log(folder):
             kept = self._keep_pictures(folder)
-            analysis = self.project.solve(
-                study, targets, folder, dict(job.settings), variables, params
-            )
+            with qdo_record.ansys_pictures(folder / qdo_record.ANSYS):
+                analysis = self.project.solve(
+                    study, targets, folder, dict(job.settings), variables, params
+                )
             kept += self._keep_convergence(folder, analysis, targets, params)
+            kept += self._keep_layout(folder, getattr(analysis, "design", None))
+            kept += [str(p) for p in sorted((folder / qdo_record.ANSYS).glob("*.png"))]
         results = getattr(analysis, "optimization_results", []) or []
         measured = results[-1].get("system_optimized_params") or {} if results else {}
         outputs = {k: v for k, v in measured.items() if v is not None}
@@ -1472,6 +1475,17 @@ class QDOBackend(SwitchableStore):
             return qdo_record.save_pictures(folder, self.preview(folder))
         except Exception:  # noqa: BLE001 -- a picture is not the study
             log.warning("no study pictures for %s", folder.name, exc_info=True)
+            return []
+
+    def _keep_layout(self, folder: Path, design) -> list[str]:
+        """``layout/final.gds`` of the design as it ran last, and a
+        close-up of each junction from it; never fails the study."""
+        if design is None:
+            return []
+        try:
+            return qdo_record.save_layout(folder, design)
+        except Exception:  # noqa: BLE001 -- a layout is not the study
+            log.warning("no final layout for %s", folder.name, exc_info=True)
             return []
 
     def _keep_convergence(self, folder, analysis, targets, params):
@@ -1561,6 +1575,44 @@ class QDOBackend(SwitchableStore):
         from . import qdo_report
 
         return qdo_report.targets(folder)
+
+    def report_pictures(self, folder: Path) -> list[dict]:
+        """The model as Ansys drew it in the last iteration, and the
+        junctions in the final GDS. A study that ran before studies kept
+        their layout gets it now, built from its last iteration's design
+        variables."""
+        folder = Path(folder)
+        build = getattr(self.project, "design", None)
+        if (
+            build is not None
+            and not (folder / qdo_record.LAYOUT / qdo_record.FINAL_GDS).exists()
+        ):
+            variables = qdo_record.final_variables(folder)
+            if variables is not None:
+                try:
+                    design = build(variables)
+                except Exception:  # noqa: BLE001 -- the report goes on without
+                    log.warning("no design for %s", folder.name, exc_info=True)
+                else:
+                    self._keep_layout(folder, design)
+        return qdo_record.final_pictures(folder)
+
+    def report_simulation(self, folder: Path) -> dict:
+        """The simulations a completed study ran, in order, and their
+        adaptive passes (from its MiniStudy as it ran)."""
+        from . import qdo_preview
+
+        study = self._study_in(Path(folder))
+        return {
+            "runs": [r["title"] for r in qdo_preview.runs(study)],
+            "passes": _passes(study),
+        }
+
+    def report_inputs(self, folder: Path) -> dict:
+        """The design variables a completed study started from."""
+        from . import qdo_report
+
+        return qdo_report.ran_with(Path(folder))
 
     def report_value(self, parameter: str, value: Any) -> str:
         """A parameter's value with its unit."""

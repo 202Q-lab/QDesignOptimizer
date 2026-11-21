@@ -1813,6 +1813,36 @@ def report_output(made: dict, kind: str) -> Any:
         ),
         dcc.Markdown(text, className="qs-report"),
     ]
+    if kind == "full" and made.get("flow"):
+        # Above the studies, as in the written report.
+        parts[-1:-1] = [
+            html.H4("Study flow", style={"margin": "12px 0 4px"}),
+            html.Div(
+                "Each box is a study, in the order they ran: its simulation, "
+                "then each parameter it estimated -> the design variable it "
+                "tuned. An arrow carries the design variables a study "
+                "started from as the one above wrote them back.",
+                className="qs-small",
+            ),
+            html.Img(
+                src="data:image/png;base64," + made["flow"],
+                style={"maxWidth": "100%", "border": "1px solid #ddd"},
+            ),
+        ]
+    if kind == "full" and made.get("pictures"):
+        parts.append(html.H4("Pictures", style={"margin": "12px 0 4px"}))
+        for picture in made["pictures"]:
+            parts += [
+                html.Div(
+                    html.B(f"{picture['run']}: {picture['title']}"),
+                    style={"marginTop": "10px"},
+                ),
+                html.Img(
+                    src="data:image/png;base64," + picture["png"],
+                    style={"maxWidth": "100%", "border": "1px solid #ddd"},
+                ),
+                html.Div(picture.get("caption", ""), className="qs-small"),
+            ]
     return html.Div(parts)
 
 

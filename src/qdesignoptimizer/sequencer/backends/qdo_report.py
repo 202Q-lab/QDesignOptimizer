@@ -80,11 +80,11 @@ def table(runs: list[dict], fabrication: dict[str, str]) -> dict:
     for run in runs:
         outputs = run["outputs"]
         modes = sorted(k[: -len("_freq")] for k in outputs if k.endswith("_freq"))
-        ran_with = _ran_with(run["folder"])
+        started = ran_with(run["folder"])
         params = _parameter_targets(run["folder"])
         for qubit in modes:
             alpha = outputs.get(param_nonlin(qubit, qubit))
-            lj_text = _last_design(run, design_var_lj(qubit)) or ran_with.get(
+            lj_text = _last_design(run, design_var_lj(qubit)) or started.get(
                 design_var_lj(qubit)
             )
             if alpha is None or lj_text is None:
@@ -177,7 +177,9 @@ def _last_design(run: dict, var: str) -> str | None:
     return None
 
 
-def _ran_with(folder: Path) -> dict:
+def ran_with(folder: Path) -> dict:
+    """The design variables a study started from (its folder's copy of
+    the store as the study began)."""
     try:
         return json.loads((Path(folder) / "design_variables.json").read_text("utf-8"))
     except (OSError, ValueError):

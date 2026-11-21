@@ -73,7 +73,11 @@ def test_brief_and_full_reports_and_their_files(project):
     assert brief.count("\n") < full.count("\n")
     assert "**Status:** done" in full
     folder = rp.write(project, runs, None)
-    assert sorted(p.name for p in folder.iterdir()) == ["report.md", "report_brief.md"]
+    assert sorted(p.name for p in folder.iterdir()) == [
+        "report.md",
+        "report_brief.md",
+        "study_flow.png",
+    ]
 
 
 def test_fabrication_is_kept_and_read_back(project):

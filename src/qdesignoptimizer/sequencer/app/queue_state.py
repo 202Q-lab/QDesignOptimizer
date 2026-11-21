@@ -1688,7 +1688,24 @@ class Bridge:
         folder = rp.write(target, chosen, made)
         return {
             "brief": rp.brief(chosen, made),
-            "full": rp.full(chosen, made),
+            # The GUI shows the pictures itself (below the text): a
+            # Markdown image cannot load a file from disk there.
+            # The study flow too: shown as the written report's picture.
+            "full": rp.full(chosen, made, pictures=False, flow=False),
+            "flow": (
+                _png(folder / rp.FLOW_PNG) if (folder / rp.FLOW_PNG).is_file() else ""
+            ),
+            "pictures": [
+                {
+                    "run": run["id"],
+                    "title": picture["title"],
+                    "caption": picture.get("caption", ""),
+                    "png": _png(picture["path"]),
+                }
+                for run in chosen
+                for picture in run.get("pictures") or []
+                if Path(picture["path"]).is_file()
+            ],
             "table_md": (
                 rp.markdown_table(made["columns"], made["rows"]) if made else ""
             ),
@@ -2220,3 +2237,8 @@ def _warned(project, ids) -> str:
             extra = f" (and {more} more)" if more > 0 else ""
             return f" -- warning, {job_id}{extra}: {found[0]}"
     return ""
+
+
+def _png(path) -> str:
+    """A picture file as base64, for an ``<img>``'s data URL."""
+    return base64.b64encode(Path(path).read_bytes()).decode("ascii")
