@@ -39,7 +39,7 @@ def graph(runs: list[dict]) -> dict[str, Any]:
     before the runs, then the runs in the order they started; ``edges``
     as ``{"source", "target", "variables"}``, sorted; ``left_out`` the
     ids of the runs not shown (``superseded``)."""
-    ordered = sorted(runs, key=lambda r: (str(r.get("started") or ""), str(r["id"])))
+    ordered = sorted(runs, key=_order_key)
     dropped = superseded(ordered)
     left_out = [r["id"] for r in ordered if id(r) in dropped]
     ordered = [r for r in ordered if id(r) not in dropped]
@@ -628,6 +628,14 @@ def _model_picture(run: dict) -> str | None:
         ):
             return str(picture_path)
     return None
+
+
+def _order_key(run: dict) -> tuple[bool, str, str]:
+    """Runs in the order they started; one without a start time by when
+    it finished, and one with neither last (never first: it would look
+    like the source of every later study's values)."""
+    when = str(run.get("started") or run.get("finished") or "")
+    return (not when, when, str(run["id"]))
 
 
 def _num(value: Any) -> str:

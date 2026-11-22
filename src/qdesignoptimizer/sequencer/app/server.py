@@ -22,6 +22,7 @@ import logging
 import os
 from pathlib import Path
 
+import flask
 from dash import Dash
 
 from ..engine.project import Project
@@ -34,7 +35,7 @@ from .callbacks import (
     register_preview_callbacks,
     register_template_callbacks,
 )
-from .queue_state import Bridge, read_connected
+from .queue_state import REPORT_URL, Bridge, read_connected
 
 #: The connected project folders, kept for the next start.
 CONNECTED_FILE = "connected.json"
@@ -92,6 +93,14 @@ def build_app(
     register_pins_callbacks(app, bridge)
     register_editor_callbacks(app, bridge)
     app.qdo_bridge = bridge  # type: ignore[attr-defined]
+
+    @app.server.route(f"{REPORT_URL}/<token>/<path:name>")
+    def _report_file(token: str, name: str):  # the report's pictures
+        path = bridge.report_file(token, name)
+        if path is None:
+            flask.abort(404)
+        return flask.send_file(path)
+
     return app
 
 

@@ -151,6 +151,29 @@ def test_the_last_iterations_design_variables(tmp_path):
     assert qdo_record.final_variables(tmp_path) == {"a": "4 um", "b": "2 um"}
 
 
+def test_a_layout_that_cannot_be_built_is_tried_once(tmp_path):
+    from qdesignoptimizer.sequencer.backends.qdo import QDOBackend
+
+    (tmp_path / "design_variables.json").write_text(json.dumps({"a": "1 um"}))
+    results = {"optimization_results": [{"design_variables": {"a": "3 um"}}]}
+    np.save(tmp_path / "chip_20260101-000000", np.array([results]), allow_pickle=True)
+    built = []
+
+    def design(variables):
+        built.append(variables)
+        raise RuntimeError("no such component")
+
+    backend = SimpleNamespace(project=SimpleNamespace(design=design))
+    assert QDOBackend.report_pictures(backend, tmp_path) == []
+    assert QDOBackend.report_pictures(backend, tmp_path) == []
+    assert built == [{"a": "3 um"}]  # the second report did not build it
+    marker = tmp_path / qdo_record.LAYOUT / qdo_record.NO_LAYOUT
+    assert "no such component" in marker.read_text()
+    marker.unlink()
+    QDOBackend.report_pictures(backend, tmp_path)
+    assert len(built) == 2  # deleted: tried again
+
+
 def _run(folder: Path, pictures: list[dict]) -> dict:
     return {
         "key": "x-1",

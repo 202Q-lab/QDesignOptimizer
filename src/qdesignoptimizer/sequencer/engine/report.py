@@ -49,10 +49,14 @@ FABRICATION_FILE = "fabrication.yaml"
 REPORTS = "reports"
 FLOW_PNG = "study_flow.png"
 FLOW_TEXT = (
-    "Each box is a study, in the order they ran: the simulation it ran, "
-    "then each parameter it estimated -> the design variable it tuned "
-    "(\u2713: written back to the store). An arrow carries the design "
-    "variables a study started from as the one above wrote them back."
+    "Each card is a study, in the order they ran. Its header's colour is "
+    "the kind of simulation, with its runs, passes and iterations; the "
+    "picture is the model as Ansys drew it in the last iteration; the "
+    "table has each design variable it tuned, first -> final value "
+    "(\u2713: written back to the store), and the parameter it was tuned "
+    "for, with how far that ended from its target. An arrow carries the "
+    "design variables a study started from as an earlier study wrote them "
+    "back."
 )
 
 _REQUEUED = re.compile(r"_r\d+$")
@@ -488,12 +492,18 @@ def _copy_pictures(runs: list[dict], folder: Path) -> list[dict]:
             source = Path(picture["path"])
             if not source.is_file():
                 continue
-            target = folder / "pictures" / Path(run["folder"]).name / source.name
+            target = folder / copied_path(run, picture)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
             copied.append({**picture, "path": target.relative_to(folder)})
         out.append({**run, "pictures": copied})
     return out
+
+
+def copied_path(run: dict, picture: dict) -> Path:
+    """Where ``write`` puts a copy of a run's picture, relative to the
+    report's folder: ``pictures/<run folder>/<file>``."""
+    return Path("pictures") / Path(run["folder"]).name / Path(picture["path"]).name
 
 
 def _link(path: Any) -> str:

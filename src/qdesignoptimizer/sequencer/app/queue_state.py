@@ -13,6 +13,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import secrets
 import subprocess
 import sys
 import threading
@@ -64,6 +65,9 @@ from ..engine.queue import INPUTS, RESOLVED, QueueError
 from ..engine.runner import ACTIVE_FILE
 from ..engine.workspace import Workspace, find_adapters, open_workspace, user_home
 from . import forms
+
+#: Where the GUI serves a report's pictures (``Bridge.report_file``).
+REPORT_URL = "/qdo-report"
 
 #: What the page says with no project connected.
 NO_PROJECT = (
@@ -117,6 +121,9 @@ class Bridge:
         remember: Path | None = None,
     ):
         self.remember = remember
+        #: The report folders the GUI may serve files from (``report_file``),
+        #: by the token in their URL.
+        self._report_folders: dict[str, Path] = {}
         self.refs = (
             [str(r) for r in ref]
             if isinstance(ref, list)
@@ -1686,25 +1693,32 @@ class Bridge:
             rp.save_fabrication(target, fabrication)
         made = rp.table(chosen, rp.load_fabrication(target))
         folder = rp.write(target, chosen, made)
+        # The pictures are the written report's copies, loaded by the
+        # browser from their URL (``report_file``) when shown: not sent
+        # inline with the report, which they would make slow to arrive.
+        token = secrets.token_urlsafe(12)
+        self._report_folders[token] = folder
+
+        def url(relative) -> str:
+            return f"{REPORT_URL}/{token}/{Path(relative).as_posix()}"
+
         return {
             "brief": rp.brief(chosen, made),
             # The GUI shows the pictures itself (below the text): a
             # Markdown image cannot load a file from disk there.
             # The study flow too: shown as the written report's picture.
             "full": rp.full(chosen, made, pictures=False, flow=False),
-            "flow": (
-                _png(folder / rp.FLOW_PNG) if (folder / rp.FLOW_PNG).is_file() else ""
-            ),
+            "flow": url(rp.FLOW_PNG) if (folder / rp.FLOW_PNG).is_file() else "",
             "pictures": [
                 {
                     "run": run["id"],
                     "title": picture["title"],
                     "caption": picture.get("caption", ""),
-                    "png": _png(picture["path"]),
+                    "src": url(rp.copied_path(run, picture)),
                 }
                 for run in chosen
                 for picture in run.get("pictures") or []
-                if Path(picture["path"]).is_file()
+                if (folder / rp.copied_path(run, picture)).is_file()
             ],
             "table_md": (
                 rp.markdown_table(made["columns"], made["rows"]) if made else ""
@@ -1713,6 +1727,18 @@ class Bridge:
             "notes": (made or {}).get("notes") or [],
             "folder": str(folder),
         }
+
+    def report_file(self, token: str, name: str) -> Path | None:
+        """A file of a report this GUI made (``make_report``), by the
+        token in its URL and its path in the report's folder; None for
+        an unknown token or a path outside that folder."""
+        folder = self._report_folders.get(token)
+        if folder is None:
+            return None
+        path = (folder / name).resolve()
+        if not path.is_file() or not path.is_relative_to(folder.resolve()):
+            return None
+        return path
 
     def campaign_view(self, key: str, project: str = "") -> dict[str, Any]:
         """A campaign for the editor: its README, the store its studies
@@ -2237,8 +2263,3 @@ def _warned(project, ids) -> str:
             extra = f" (and {more} more)" if more > 0 else ""
             return f" -- warning, {job_id}{extra}: {found[0]}"
     return ""
-
-
-def _png(path) -> str:
-    """A picture file as base64, for an ``<img>``'s data URL."""
-    return base64.b64encode(Path(path).read_bytes()).decode("ascii")

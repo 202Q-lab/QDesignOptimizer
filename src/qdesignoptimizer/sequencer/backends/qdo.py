@@ -1583,18 +1583,26 @@ class QDOBackend(SwitchableStore):
         variables."""
         folder = Path(folder)
         build = getattr(self.project, "design", None)
+        layout = folder / qdo_record.LAYOUT
         if (
             build is not None
-            and not (folder / qdo_record.LAYOUT / qdo_record.FINAL_GDS).exists()
+            and not (layout / qdo_record.FINAL_GDS).exists()
+            # Tried before and failed: building it again would fail again,
+            # and slow every report down (delete the file to try again).
+            and not (layout / qdo_record.NO_LAYOUT).exists()
         ):
             variables = qdo_record.final_variables(folder)
             if variables is not None:
                 try:
-                    design = build(variables)
-                except Exception:  # noqa: BLE001 -- the report goes on without
-                    log.warning("no design for %s", folder.name, exc_info=True)
-                else:
-                    self._keep_layout(folder, design)
+                    qdo_record.save_layout(folder, build(variables))
+                except Exception as error:  # noqa: BLE001 -- the report goes on
+                    log.warning("no layout for %s", folder.name, exc_info=True)
+                    layout.mkdir(exist_ok=True)
+                    (layout / qdo_record.NO_LAYOUT).write_text(
+                        f"Building the final layout failed: {error!r}\n"
+                        "Delete this file for the next report to try again.\n",
+                        encoding="utf-8",
+                    )
         return qdo_record.final_pictures(folder)
 
     def report_simulation(self, folder: Path) -> dict:

@@ -34,6 +34,9 @@ STUDY_LOG = "study.log"
 ANSYS = "ansys"
 LAYOUT = "layout"
 FINAL_GDS = "final.gds"
+#: In ``layout/`` when building the final layout for a report failed:
+#: reports do not try again until it is deleted.
+NO_LAYOUT = "no_layout.txt"
 
 
 def _number(value: Any) -> float | None:

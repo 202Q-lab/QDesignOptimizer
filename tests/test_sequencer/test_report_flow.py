@@ -286,25 +286,57 @@ def test_arrows_passing_the_same_card_take_their_own_lanes(tmp_path):
     fl.draw(flow, tmp_path / "flow.png")
 
 
-def test_a_card_without_a_usable_picture_gets_the_placeholder(tmp_path):
+def test_a_card_without_a_usable_picture_gets_the_placeholder(tmp_path, monkeypatch):
     import matplotlib
 
     matplotlib.use("Agg")
+    import matplotlib.axes
     import matplotlib.pyplot as plt
     import numpy as np
 
+    model = np.ones((100, 160, 3))
+    model[40:60, 50:110] = 0.2
+    good = tmp_path / "good.png"
+    plt.imsave(good, model)
     blank = tmp_path / "blank.png"
     plt.imsave(blank, np.ones((100, 160, 3)))
     broken = tmp_path / "broken.png"
     broken.write_bytes(b"not a png")
     assert fl._crop(np.ones((100, 160, 3))) is None
 
-    runs = _chain(3)
+    runs = _chain(4)
     runs.append(_run("no_task", "2026-11-20 11:00:00", task="", targets=[]))
     flow = fl.graph(runs)
-    for node, picture in zip(
-        flow["nodes"][1:], [blank, broken, tmp_path / "missing.png"]
-    ):
+    pictures = [good, blank, broken, tmp_path / "missing.png"]
+    for node, picture in zip(flow["nodes"][1:], pictures):
         node["image"] = str(picture)
+
+    shown, placeholders = [], []
+    imshow, text = matplotlib.axes.Axes.imshow, matplotlib.axes.Axes.text
+
+    def spy_imshow(self, data, *args, **kwargs):
+        shown.append(data.shape)
+        return imshow(self, data, *args, **kwargs)
+
+    def spy_text(self, x, y, s, *args, **kwargs):
+        if str(s).startswith("no model picture"):
+            placeholders.append(s)
+        return text(self, x, y, s, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "imshow", spy_imshow)
+    monkeypatch.setattr(matplotlib.axes.Axes, "text", spy_text)
     assert fl.draw(flow, tmp_path / "flow.png").is_file()
+    # Only the good picture is drawn, cropped to the model; the blank,
+    # broken and missing ones and the run with none get the placeholder.
+    assert shown == [(26, 66, 4)]
+    assert len(placeholders) == 4
     assert flow["nodes"][-1]["subtitle"].startswith("HFSS eigenmode")
+
+
+def test_a_run_without_a_start_time_comes_last():
+    runs = _chain(3)
+    runs[0]["started"] = runs[0]["finished"] = None
+    flow = fl.graph(runs)
+    assert [n["title"] for n in flow["nodes"][1:]] == ["r01", "r02", "r00"]
+    # It ran last as far as the flow knows: no arrow leaves it.
+    assert all(e["source"] != "s3" for e in flow["edges"])

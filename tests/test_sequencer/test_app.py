@@ -310,3 +310,26 @@ def test_a_run_study_offers_only_an_edit_copy(bridge):
     key = bridge.edit_copy(name)
     assert key.startswith("@hold/") and bridge.project.hold.ids()
     assert bridge.project.queue.ids() == []  # never in the run order
+
+
+def test_a_reports_pictures_are_served_by_url_not_inline(bridge):
+    """Review 2026-11-22: the full report sent every picture inline as
+    base64, tens of MB for a long campaign."""
+    from qdesignoptimizer.sequencer.app.queue_state import REPORT_URL
+    from qdesignoptimizer.sequencer.app.server import build_app
+    from qdesignoptimizer.sequencer.engine import report as rp
+
+    bridge.add("task", "A.calibrate")
+    Runner(bridge.project).run()
+    app = build_app(project=bridge.project)
+    gui = app.qdo_bridge  # the bridge the GUI's callbacks use
+    keys = [r["key"] for r in rp.completed_runs(gui.workspace)]
+    made = gui.make_report(keys, "")
+    assert made["flow"].startswith(REPORT_URL + "/")
+    assert "base64" not in json.dumps(made)
+    client = app.server.test_client()
+    image = client.get(made["flow"])
+    assert image.status_code == 200 and image.data[:4] == b"\x89PNG"
+    token = made["flow"].split("/")[2]
+    assert client.get(f"{REPORT_URL}/{token}/../../secret.txt").status_code == 404
+    assert client.get(f"{REPORT_URL}/nope/{rp.FLOW_PNG}").status_code == 404
