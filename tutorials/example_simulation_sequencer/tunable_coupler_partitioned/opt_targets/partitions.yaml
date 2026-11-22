@@ -1,0 +1,70 @@
+# The notebook's OptTargets (get_opt_targets_2qubits_resonator_coupler
+# with every target but the resonator linewidth), split by partition as
+# its include_param_in_update splits them.
+#
+# A study takes every target whose modes are all in its MiniStudy, and
+# whose {placeholders} its subsystem sets. The placeholders are what
+# keep the partitions apart: Q1 and Q2 set {n}, so Q1.readout and
+# Q2.readout take the qubit-and-resonator targets; C sets {coupler}, so
+# only C.coupler takes the coupler's. Without them Q1.readout, which has
+# the coupler in its model, would tune the coupler too.
+#
+# tolerance: how close the last iteration must come for the "converged"
+# check -- relative, or {abs: ...} in the parameter's unit.
+targets:
+# -- Q1.readout and Q2.readout: a qubit and its readout resonator --------
+- name: "Q{n}_freq"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_qubit_freq_via_lj
+  args: {qubit: "qubit_{n}"}
+  tolerance: {abs: 20.0e+6}   # Hz
+- name: "Q{n}_anharmonicity"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_qubit_anharmonicity_via_capacitance_width
+  args:
+    qubit: "qubit_{n}"
+    design_var_constraint: {larger_than: 1um, smaller_than: 900um}
+  tolerance: 0.05
+- name: "R{n}_freq"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_freq_via_length
+  args: {resonator: "resonator_{n}"}
+  tolerance: {abs: 10.0e+6}
+- name: "Q{n}_R{n}_chi"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_qub_chi_via_coupl_length
+  args:
+    qubit: "qubit_{n}"
+    resonator: "resonator_{n}"
+    design_var_constraint: {larger_than: 1um, smaller_than: 80um}
+  tolerance: 0.1
+
+# -- C.coupler: the coupler, a transmon too ------------------------------
+# Its frequency from its junction, its anharmonicity from its
+# capacitor's length (in place of a pad width).
+- name: C_freq
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_qubit_freq_via_lj
+  args:
+    qubit: "{coupler}"
+    design_var_qubit_width: {ref: "qdesignoptimizer.utils.names_design_variables:design_var_length"}
+  tolerance: {abs: 20.0e+6}
+- name: C_anharmonicity
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_qubit_anharmonicity_via_capacitance_width
+  args:
+    qubit: "{coupler}"
+    design_var_qubit_width: {ref: "qdesignoptimizer.utils.names_design_variables:design_var_length"}
+  tolerance: 0.05
+# Coupler-qubit chi, as the notebook's optimization_targets.py has it:
+# the design variable is the qubit's distance from the coupler.
+- name: C_Q1_chi
+  target_param_type: nonlinearity
+  involved_modes: ["{coupler}", qubit_1]
+  design_var: "design_var_coupl_length_{coupler}_qubit_1"
+  design_var_constraint: {larger_than: 1um, smaller_than: 80um}
+  prop_to: "1 / v['design_var_coupl_length_{coupler}_qubit_1'] / (p['{coupler}_freq'] - p['qubit_1_freq'])"
+  independent_target: true
+  tolerance: 0.1
+- name: C_Q2_chi
+  target_param_type: nonlinearity
+  involved_modes: ["{coupler}", qubit_2]
+  design_var: "design_var_coupl_length_{coupler}_qubit_2"
+  design_var_constraint: {larger_than: 1um, smaller_than: 80um}
+  prop_to: "1 / v['design_var_coupl_length_{coupler}_qubit_2'] / (p['{coupler}_freq'] - p['qubit_2_freq'])"
+  independent_target: true
+  tolerance: 0.1

@@ -1,0 +1,28 @@
+version: 1
+name: Tune the chip partition by partition
+why_ordered: >-
+  The notebook's partitioned loop: each round solves qubit 1 with its
+  resonator, qubit 2 with its resonator, then the coupler with both
+  qubits, each a small three-mode model. The partitions tune disjoint
+  design variables, so each writes its own back and the next starts from
+  them (the notebook runs them from the same values and merges after).
+  The notebook runs eleven rounds of one iteration; here three rounds of
+  two, and only the last round has to converge.
+defaults:
+  settings: {iterations: 2}
+  save: true
+  on_failure: abort
+studies:
+# Rounds 1 and 2 only bring the modes near their targets: no convergence
+# check, so their values are written back for the next round.
+- {study: Q1.readout, checks: []}
+- {study: Q2.readout, checks: []}
+- {study: C.coupler, checks: []}
+- {study: Q1.readout, checks: []}
+- {study: Q2.readout, checks: []}
+- {study: C.coupler, checks: []}
+# Round 3: each partition must converge; one that does not leaves its
+# values unwritten, and the others still run.
+- {study: Q1.readout, checks: [converged], on_failure: continue}
+- {study: Q2.readout, checks: [converged], on_failure: continue}
+- {study: C.coupler, checks: [converged], on_failure: continue}

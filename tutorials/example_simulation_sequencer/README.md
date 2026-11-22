@@ -28,6 +28,8 @@ This folder holds two things:
 | --- | --- | --- |
 | `demo/` | no | Three tiny projects that "solve" in 5 s. Start here to see the queue, the runner and the GUI work. `demo/chip_qdo` is the full QDO path with a dummy in place of Ansys. |
 | `coupled_transmon_chip/` | yes | The chip of `examples_coupled_transmon_chip/`, set up for the sequencer: the same design, its studies as templates. |
+| `tunable_coupler_chip/` | yes | The chip of `examples_coupled_transmons_tunable_coupler_chip/`: two qubits, their resonators and a tunable coupler, all five modes in one eigenmode solve (`main_eigenmode_two_qubit_resonator.ipynb`). |
+| `tunable_coupler_partitioned/` | yes | The same chip, split as `main_eigenmode_two_qubit_resonator_partitioned.ipynb` splits it: qubit 1 with its resonator, qubit 2 with its resonator, and the coupler with both qubits, three smaller solves in rounds. Each partition tunes only its own targets. |
 
 ## Try it without Ansys
 

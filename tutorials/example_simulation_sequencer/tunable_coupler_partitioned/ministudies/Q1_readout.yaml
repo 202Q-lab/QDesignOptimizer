@@ -1,0 +1,33 @@
+# Partition "res_qb_cplr" of the notebook
+# main_eigenmode_two_qubit_resonator_partitioned.ipynb: qubit 1, its
+# readout resonator (with its tee) and the coupler, in one eigenmode
+# solve. It tunes qubit 1 and resonator 1 only (the targets with {n});
+# the coupler is in the model so qubit 1 sees it, and is tuned by
+# C.coupler. The notebook's solver settings: 15 passes, delta_f 0.001.
+#
+# Modes in order of their target frequency.
+class: qdesignoptimizer.design_analysis_types:MiniStudy
+args:
+  qiskit_component_names: [name_qubit_1_, name_resonator_1_, name_tee_1_,
+    name_coupler_1to2_]
+  port_list: []
+  open_pins: []
+  modes: [qubit_1, coupler_1to2, resonator_1]
+  jj_setup:
+    jj_name_qubit_1_:
+      rect: JJ_rect_Lj_name_qubit_1__rect_jj
+      line: JJ_Lj_name_qubit_1__rect_jj_
+      Lj_variable: design_var_lj_qubit_1
+      Cj_variable: design_var_cj_qubit_1
+    jj_name_coupler_1to2_:
+      rect: JJ_rect_Lj_name_coupler_1to2__rect_jj
+      line: JJ_Lj_name_coupler_1to2__rect_jj_
+      Lj_variable: design_var_lj_coupler_1to2
+      Cj_variable: design_var_cj_coupler_1to2
+  design_name: Q1_readout
+  adjustment_rate: 1
+  cos_trunc: 6
+  fock_trunc: 5
+  build_fine_mesh: false
+  nbr_passes: 15
+  delta_f: 0.001
