@@ -34,12 +34,24 @@ class _Modeler:
         self.fail = fail
         self.fitted = 0
         self.sizes = []
+        self.selections = []
+        # As Q3D draws one qubit: its substrate, ground plane and metal.
+        self.groups = {
+            "Solids": ["main"],
+            "Sheets": ["cross_Q1", "connector_Q1", "ground_main_plane"],
+        }
+
+    def GetObjectsInGroup(self, group):  # noqa: N802 -- Ansys's name
+        if group not in self.groups:
+            raise RuntimeError("no such group")
+        return self.groups[group]
 
     def FitAll(self):  # noqa: N802 -- Ansys's name
         self.fitted += 1
 
     def ExportModelImageToFile(self, path, width, height, params):  # noqa: N802
         self.sizes.append((width, height))
+        self.selections.append(params[params.index("Selections:=") + 1])
         if self.fail:
             raise RuntimeError("The remote procedure call failed.")
         Path(path).write_bytes(PNG)
@@ -50,9 +62,10 @@ class _Renderer:
 
     def __init__(self, fail=False):
         self.modeler = SimpleNamespace(_modeler=_Modeler(fail))
+        self.design = SimpleNamespace(chips={"main": {}})
 
 
-def test_an_ansys_picture_is_saved_with_the_whole_model_in_view(tmp_path):
+def test_an_ansys_picture_is_saved_framed_on_the_drawn_metal(tmp_path):
     renderer = _Renderer()
     path = str(tmp_path / "hfss_1.png")
     assert save_ansys_picture(renderer, path) == path
@@ -60,7 +73,16 @@ def test_an_ansys_picture_is_saved_with_the_whole_model_in_view(tmp_path):
     assert modeler.fitted == 1 and Path(path).read_bytes() == PNG
     # Never 0 x 0 (the window's size): that crashes AEDT run from a script.
     assert modeler.sizes and all(w > 0 and h > 0 for w, h in modeler.sizes)
+    # Framed on the components, not the 4 mm substrate around them.
+    assert modeler.selections == ["cross_Q1,connector_Q1"]
     assert save_ansys_picture(renderer, None) is None
+
+
+def test_a_model_of_only_the_chip_is_pictured_whole(tmp_path):
+    renderer = _Renderer()
+    renderer.modeler._modeler.groups = {"Solids": ["main"]}
+    assert save_ansys_picture(renderer, str(tmp_path / "x.png"))
+    assert renderer.modeler._modeler.selections == [""]
 
 
 def test_a_failing_ansys_export_does_not_fail_the_simulation(tmp_path):

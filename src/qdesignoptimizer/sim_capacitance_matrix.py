@@ -23,7 +23,8 @@ ANSYS_PICTURE_SIZE = (1600, 1000)
 
 
 def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
-    """Save a picture of the model as an Ansys renderer drew it, the whole model in view.
+    """Save a picture of the model as an Ansys renderer drew it, from above,
+    framed on the drawn metal (the substrate and its ground plane left out).
 
     Never raises: Ansys's image export fails now and then (a COM error), and a
     missing picture must not fail the simulation.
@@ -44,6 +45,9 @@ def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
         except Exception:  # pylint: disable=broad-exception-caught
             pass  # the view as it is, then
         width, height = ANSYS_PICTURE_SIZE
+        # Ansys frames the picture on the objects selected: the components,
+        # not the chip around them (all of it when there is nothing else).
+        selections = ",".join(_drawn_objects(renderer, modeler))
         modeler.ExportModelImageToFile(
             str(path),
             width,
@@ -51,7 +55,7 @@ def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
             [
                 "NAME:SaveImageParams",
                 "ShowAxis:=",
-                "True",
+                "False",  # drawn over the components; the corner triad stays
                 "ShowGrid:=",
                 "False",
                 "ShowRuler:=",
@@ -59,7 +63,7 @@ def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
                 "ShowRegion:=",
                 "Default",
                 "Selections:=",
-                "",
+                selections,
                 "Orientation:=",
                 "top",  # the chip seen from above
             ],
@@ -68,6 +72,23 @@ def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
         log.warning("No Ansys picture saved to %s: %s", path, error)
         return None
     return path if os.path.exists(path) else None
+
+
+def _drawn_objects(renderer, modeler) -> List[str]:
+    """The model's objects but the chips' substrates (named after the chip),
+    their ground planes (``ground_<chip>_plane``) and an air region."""
+    try:
+        chips = set(renderer.design.chips)
+    except Exception:  # pylint: disable=broad-exception-caught
+        chips = {"main"}
+    around = chips | {f"ground_{chip}_plane" for chip in chips} | {"Region"}
+    names: List[str] = []
+    for group in ("Solids", "Sheets", "Lines"):
+        try:
+            names += [str(n) for n in modeler.GetObjectsInGroup(group)]
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass  # an empty group, or none of that kind
+    return [n for n in names if n not in around]
 
 
 class CapacitanceMatrixStudy:
