@@ -68,6 +68,9 @@ from . import forms
 
 #: Where the GUI serves a report's pictures (``Bridge.report_file``).
 REPORT_URL = "/qdo-report"
+#: How many of the latest reports' pictures the GUI serves; older ones,
+#: and those from before a restart, show again by making them again.
+REPORTS_SERVED = 50
 
 #: What the page says with no project connected.
 NO_PROJECT = (
@@ -1698,6 +1701,8 @@ class Bridge:
         # inline with the report, which they would make slow to arrive.
         token = secrets.token_urlsafe(12)
         self._report_folders[token] = folder
+        while len(self._report_folders) > REPORTS_SERVED:  # the oldest go
+            del self._report_folders[next(iter(self._report_folders))]
 
         def url(relative) -> str:
             return f"{REPORT_URL}/{token}/{Path(relative).as_posix()}"

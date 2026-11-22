@@ -19,7 +19,8 @@ What a backend adds, when it has these (the QDO backend does):
   it in the last iteration, and the junctions in the final GDS). The
   written report copies them into its ``pictures/`` folder;
 * ``report_simulation(folder)``: ``{"runs": [...], "passes"}``, the
-  simulations a study ran (``HFSS eigenmode``, ``Q3D capacitance: ...``);
+  simulations a study ran (``HFSS eigenmode``, ``Q3D capacitance: ...``),
+  and ``"layout"``: why it has no final layout, when it has none;
 * ``report_inputs(folder)``: the design variables a study started from.
 
 The last two, with the targets and what each study wrote back, make the
@@ -357,6 +358,7 @@ def full(
             ("Why", run["why"]),
             ("Notes", run["notes"]),
             ("Folder", str(run["folder"])),
+            ("No final layout", (run.get("simulation") or {}).get("layout", "")),
         ]
         lines += [f"- **{name}:** {value}" for name, value in facts if value]
         if run["targets"]:
@@ -502,8 +504,14 @@ def _copy_pictures(runs: list[dict], folder: Path) -> list[dict]:
 
 def copied_path(run: dict, picture: dict) -> Path:
     """Where ``write`` puts a copy of a run's picture, relative to the
-    report's folder: ``pictures/<run folder>/<file>``."""
-    return Path("pictures") / Path(run["folder"]).name / Path(picture["path"]).name
+    report's folder: ``pictures/<run folder>/<file>``, or
+    ``<n>_<file>`` when another of the run's pictures has the same file
+    name (``n``: its place in the run's pictures)."""
+    name = Path(picture["path"]).name
+    pictures = run.get("pictures") or []
+    if sum(Path(p["path"]).name == name for p in pictures) > 1:
+        name = f"{pictures.index(picture) + 1}_{name}"
+    return Path("pictures") / Path(run["folder"]).name / name
 
 
 def _link(path: Any) -> str:

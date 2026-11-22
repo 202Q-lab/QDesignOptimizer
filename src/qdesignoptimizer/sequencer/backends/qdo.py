@@ -1597,21 +1597,35 @@ class QDOBackend(SwitchableStore):
                     qdo_record.save_layout(folder, build(variables))
                 except Exception as error:  # noqa: BLE001 -- the report goes on
                     log.warning("no layout for %s", folder.name, exc_info=True)
-                    layout.mkdir(exist_ok=True)
-                    (layout / qdo_record.NO_LAYOUT).write_text(
-                        f"Building the final layout failed: {error!r}\n"
-                        "Delete this file for the next report to try again.\n",
-                        encoding="utf-8",
-                    )
+                    try:
+                        layout.mkdir(exist_ok=True)
+                        (layout / qdo_record.NO_LAYOUT).write_text(
+                            f"Building the final layout failed: {error!r}\n"
+                            "Delete this file for the next report to try again.\n",
+                            encoding="utf-8",
+                        )
+                    except OSError:  # read-only: tried again next report
+                        log.warning("cannot write %s", layout, exc_info=True)
         return qdo_record.final_pictures(folder)
 
     def report_simulation(self, folder: Path) -> dict:
         """The simulations a completed study ran, in order, and their
-        adaptive passes (from its MiniStudy as it ran)."""
+        adaptive passes (from its MiniStudy as it ran); ``"layout"``,
+        why the report has no final layout, when building it failed."""
         from . import qdo_preview
 
+        out: dict[str, Any] = {}
+        marker = Path(folder) / qdo_record.LAYOUT / qdo_record.NO_LAYOUT
+        if marker.is_file():
+            first = marker.read_text("utf-8").splitlines()[:1]
+            out["layout"] = (
+                f"{first[0] if first else 'building it failed'} "
+                f"(delete {qdo_record.LAYOUT}/{qdo_record.NO_LAYOUT} "
+                "for the next report to try again)"
+            )
         study = self._study_in(Path(folder))
         return {
+            **out,
             "runs": [r["title"] for r in qdo_preview.runs(study)],
             "passes": _passes(study),
         }

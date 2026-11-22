@@ -333,3 +333,17 @@ def test_a_reports_pictures_are_served_by_url_not_inline(bridge):
     token = made["flow"].split("/")[2]
     assert client.get(f"{REPORT_URL}/{token}/../../secret.txt").status_code == 404
     assert client.get(f"{REPORT_URL}/nope/{rp.FLOW_PNG}").status_code == 404
+
+
+def test_the_gui_serves_only_the_latest_reports(bridge, monkeypatch):
+    from qdesignoptimizer.sequencer.app import queue_state
+    from qdesignoptimizer.sequencer.engine import report as rp
+
+    monkeypatch.setattr(queue_state, "REPORTS_SERVED", 2)
+    bridge.add("task", "A.calibrate")
+    Runner(bridge.project).run()
+    keys = [r["key"] for r in rp.completed_runs(bridge.workspace)]
+    tokens = [bridge.make_report(keys, "")["flow"].split("/")[2] for _ in range(3)]
+    assert bridge.report_file(tokens[0], rp.FLOW_PNG) is None
+    assert bridge.report_file(tokens[2], rp.FLOW_PNG) is not None
+    assert len(bridge._report_folders) == 2

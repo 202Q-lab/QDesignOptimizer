@@ -224,3 +224,59 @@ def test_the_written_report_carries_its_pictures(tmp_path):
     # The GUI shows the pictures itself, below the text.
     assert "### Pictures" not in rp.full([run], pictures=False)
     assert "### Pictures" in rp.full([run])
+
+
+def test_same_named_pictures_of_a_run_are_copied_apart(tmp_path):
+    """Review 2026-11-22: two pictures with one file name were copied to
+    one file, and both showed the second."""
+    run_folder = tmp_path / "completed" / "x-1_2026-11-20T10-00-00"
+    for sub, data in (("a", PNG), ("b", PNG + b"b")):
+        (run_folder / sub).mkdir(parents=True)
+        (run_folder / sub / "model.png").write_bytes(data)
+    pictures = [
+        {"title": "A", "path": run_folder / "a" / "model.png"},
+        {"title": "B", "path": run_folder / "b" / "model.png"},
+    ]
+    folder = rp.write(
+        SimpleNamespace(out=tmp_path / "out"), [_run(run_folder, pictures)], None
+    )
+    copies = folder / "pictures" / run_folder.name
+    assert (copies / "1_model.png").read_bytes() == PNG
+    assert (copies / "2_model.png").read_bytes() == PNG + b"b"
+
+
+def test_a_layout_marker_that_cannot_be_written_keeps_the_pictures(tmp_path):
+    """Review 2026-11-22: a failed marker write lost all the run's pictures."""
+    from qdesignoptimizer.sequencer.backends.qdo import QDOBackend
+
+    (tmp_path / "design_variables.json").write_text(json.dumps({"a": "1 um"}))
+    results = {"optimization_results": [{"design_variables": {"a": "3 um"}}]}
+    np.save(tmp_path / "chip_20260101-000000", np.array([results]), allow_pickle=True)
+    (tmp_path / qdo_record.ANSYS).mkdir()
+    (tmp_path / qdo_record.ANSYS / "hfss_1.png").write_bytes(PNG)
+    (tmp_path / qdo_record.LAYOUT).write_text("a file, so no folder fits here")
+
+    def design(variables):
+        raise RuntimeError("no such component")
+
+    backend = SimpleNamespace(project=SimpleNamespace(design=design))
+    pictures = QDOBackend.report_pictures(backend, tmp_path)
+    assert [Path(p["path"]).name for p in pictures] == ["hfss_1.png"]
+
+
+def test_the_report_says_why_a_study_has_no_final_layout(tmp_path, monkeypatch):
+    from qdesignoptimizer.sequencer.backends import qdo, qdo_preview
+
+    monkeypatch.setattr(qdo_preview, "runs", lambda study: [])
+    monkeypatch.setattr(qdo, "_passes", lambda study: {})
+    backend = SimpleNamespace(_study_in=lambda folder: None)
+    assert "layout" not in qdo.QDOBackend.report_simulation(backend, tmp_path)
+    (tmp_path / qdo_record.LAYOUT).mkdir()
+    (tmp_path / qdo_record.LAYOUT / qdo_record.NO_LAYOUT).write_text(
+        "Building the final layout failed: boom\nDelete this file.\n"
+    )
+    simulation = qdo.QDOBackend.report_simulation(backend, tmp_path)
+    assert simulation["layout"].startswith("Building the final layout failed: boom")
+    assert qdo_record.NO_LAYOUT in simulation["layout"]
+    run = {**_run(tmp_path, []), "simulation": simulation}
+    assert "**No final layout:** Building" in rp.full([run])
