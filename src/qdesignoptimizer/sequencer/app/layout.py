@@ -443,13 +443,132 @@ def runner_banner(snap: dict) -> Any:
     return html.Div(parts)
 
 
+#: The dependency column beside the queue: pixels per lane, and how far
+#: down a row its dot sits (level with the study's name).
+LANE_PX = 12
+LANE_NODE_Y = 16
+
+
+def dependency_lanes(rows: list[dict]) -> tuple[int, list[dict]]:
+    """The lines beside the queue from each study to the queued studies
+    that wait for it (``needs``): how many lanes, and per row the
+    ``segments`` ``(lane, "top" | "bottom", wrong)`` and the ``nodes``
+    ``(lane, "needed" | "waits", wrong)`` drawn in it.
+
+    A need implied by another (a sequence's study needs every one before
+    it) gets no line of its own: the chain shows it. Each line takes the
+    innermost lane free over its rows, the shorter lines first; lines
+    that only meet at a study share one, so a chain is one line.
+    ``wrong``: the study needed is queued after the one waiting for it.
+    """
+    index = {row["id"]: i for i, row in enumerate(rows)}
+    direct = [
+        [index[n] for n in row.get("needs") or [] if n in index and index[n] != j]
+        for j, row in enumerate(rows)
+    ]
+    reach: dict[int, set[int]] = {}
+
+    def ancestors(j: int, seen: frozenset = frozenset()) -> set[int]:
+        if j not in reach:
+            found: set[int] = set()
+            for i in direct[j]:
+                if i not in seen:  # a cycle is a problem the row shows
+                    found |= {i} | ancestors(i, seen | {j})
+            reach[j] = found
+        return reach[j]
+
+    edges = [
+        (i, j)
+        for j, needed in enumerate(direct)
+        for i in needed
+        if not any(i in ancestors(k) for k in needed if k != i)
+    ]
+    taken: list[list[tuple[int, int]]] = []
+    out: list[dict] = [{"segments": [], "nodes": []} for _ in rows]
+    for i, j in sorted(edges, key=lambda e: (abs(e[1] - e[0]), min(e), e)):
+        a, b = min(i, j), max(i, j)
+        for lane, used in enumerate(taken):
+            if all(b <= c or d <= a for c, d in used):
+                used.append((a, b))
+                break
+        else:
+            taken.append([(a, b)])
+            lane = len(taken) - 1
+        wrong = i > j
+        out[a]["segments"].append((lane, "bottom", wrong))
+        out[b]["segments"].append((lane, "top", wrong))
+        for r in range(a + 1, b):
+            out[r]["segments"] += [(lane, "top", wrong), (lane, "bottom", wrong)]
+        out[i]["nodes"].append((lane, "needed", wrong))
+        out[j]["nodes"].append((lane, "waits", wrong))
+    return len(taken), out
+
+
+def _lanes_cell(lanes: int, marks: dict) -> Any:
+    """A row's part of the dependency lines: a vertical line per lane,
+    a dot where it meets a study, an arrowhead into the study waiting."""
+    line, bad = theme.DEPENDENCY_COLOR, theme.STATUS_COLORS["failed"][0]
+    children = []
+    for lane, part, wrong in sorted(set(marks["segments"])):
+        children.append(
+            html.Div(
+                className="qs-lane",
+                style={
+                    "left": f"{lane * LANE_PX + LANE_PX // 2 - 1}px",
+                    **(
+                        {"top": "0", "height": f"{LANE_NODE_Y}px"}
+                        if part == "top"
+                        else {"top": f"{LANE_NODE_Y}px", "bottom": "0"}
+                    ),
+                    "background": bad if wrong else line,
+                },
+            )
+        )
+    for lane, kind, wrong in sorted(set(marks["nodes"])):
+        left = lane * LANE_PX + LANE_PX // 2
+        colour = bad if wrong else line
+        if kind == "waits":
+            children.append(
+                html.Div(
+                    className="qs-lane-arrow",
+                    style={"left": f"{left - 4}px", "borderTopColor": colour},
+                )
+            )
+        children.append(
+            html.Div(
+                className="qs-lane-node",
+                style={"left": f"{left - 4}px", "background": colour},
+            )
+        )
+    return html.Td(
+        children,
+        className="qs-lanes",
+        style={"width": f"{lanes * LANE_PX}px", "minWidth": f"{lanes * LANE_PX}px"},
+    )
+
+
 def queue_table(snap: dict, selected: dict | None) -> Any:
-    """One row per queued study, in run order; rows can be dragged."""
+    """One row per queued study, in run order; rows can be dragged.
+    Beside them, a line from each study to the ones that wait for it."""
     words = snap.get("words") or {}
     rows = snap.get("rows") or []
     multi = bool(snap.get("multi"))
+    lanes, marks = dependency_lanes(rows)
     head = html.Tr(
         [
+            *(
+                [
+                    html.Th(
+                        "",
+                        className="qs-lanes",
+                        title="a line from each study to the queued studies "
+                        "that wait for it (arrowhead); red: queued before "
+                        "the study it waits for",
+                    )
+                ]
+                if lanes
+                else []
+            ),
             html.Th("#"),
             *([html.Th("Project")] if multi else []),
             html.Th(_title(words, "sequence", "study sequence")),
@@ -464,7 +583,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
     picked = (
         (selected or {}).get("key") if (selected or {}).get("kind") == "queue" else None
     )
-    for row in rows:
+    for row, mark in zip(rows, marks):
         problems = row.get("problems") or []
         note = (
             html.Span(
@@ -483,6 +602,7 @@ def queue_table(snap: dict, selected: dict | None) -> Any:
                 draggable="true",
                 **{"data-step": row["id"]},
                 children=[
+                    *([_lanes_cell(lanes, mark)] if lanes else []),
                     html.Td(str(row["n"]), className="qs-muted"),
                     *(
                         [html.Td(row.get("project", ""), className="qs-small")]

@@ -22,6 +22,8 @@ RUN_COLORS = {
 }
 
 MUTED = "#607d8b"
+#: The lines beside the queue from a study to the ones waiting for it.
+DEPENDENCY_COLOR = "#5c6bc0"
 SELECTED_BG = "#e3f2fd"
 
 CSS = """
@@ -91,6 +93,9 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
   .qs-main { grid-template-columns: 1fr; gap: 8px; }
   .qs-splitter { display: none; }
   .qs-area { overflow: visible; }
+  /* As tall as what they hold: a long queue must not run under the
+     project area (it did, hidden behind it). */
+  .qs-left > .qs-area { flex: none; }
 }
 .qs-seqrow { border-bottom: 1px solid #eceff1; padding: 4px 0; }
 .qs-table { width: 100%; border-collapse: collapse; }
@@ -99,6 +104,15 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-table td { border-bottom: 1px solid #eceff1; padding: 6px;
                vertical-align: top; }
 .qs-row { cursor: pointer; }
+.qs-table td.qs-lanes, .qs-table th.qs-lanes { position: relative;
+    padding: 0; }
+.qs-lane { position: absolute; width: 2px; }
+.qs-lane-node { position: absolute; top: 16px; width: 8px; height: 8px;
+    margin-top: -4px; border-radius: 50%; box-sizing: border-box;
+    border: 1px solid #fff; }
+.qs-lane-arrow { position: absolute; top: 16px; margin-top: -11px;
+    width: 0; height: 0; border-left: 4px solid transparent;
+    border-right: 4px solid transparent; border-top: 6px solid; }
 .qs-row:hover { background: #f5f9ff; }
 .qs-chip { display: inline-block; border-radius: 10px; padding: 1px 9px;
            font-size: 12px; white-space: nowrap; }

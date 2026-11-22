@@ -623,6 +623,8 @@ class Bridge:
                     "warnings": warnings,
                     "editing": editing,
                     "waits_for": _waits_for(project, job),
+                    # As row ids, for the dependency lines beside the queue.
+                    "needs": [workspace.key(name, need) for need in job.needs],
                     "code_hold": code_hold(name, project, job),
                     "sequence_key": (
                         workspace.key(name, sequence_of(job))

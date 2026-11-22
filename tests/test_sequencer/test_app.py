@@ -347,3 +347,53 @@ def test_the_gui_serves_only_the_latest_reports(bridge, monkeypatch):
     assert bridge.report_file(tokens[0], rp.FLOW_PNG) is None
     assert bridge.report_file(tokens[2], rp.FLOW_PNG) is not None
     assert len(bridge._report_folders) == 2
+
+
+def _rows(needs: dict) -> list[dict]:
+    return [{"id": i, "needs": n} for i, n in needs.items()]
+
+
+def test_a_sequence_is_one_dependency_line():
+    """Each study of a sequence needs every one before it: the lines show
+    the chain only, in one lane, from each study into the next."""
+    lanes, marks = layout.dependency_lanes(
+        _rows({"a": [], "b": ["a"], "c": ["a", "b"], "d": ["a", "b", "c"]})
+    )
+    assert lanes == 1
+    assert marks[0] == {
+        "segments": [(0, "bottom", False)],
+        "nodes": [(0, "needed", False)],
+    }
+    assert sorted(marks[1]["segments"]) == [(0, "bottom", False), (0, "top", False)]
+    assert sorted(marks[1]["nodes"]) == [(0, "needed", False), (0, "waits", False)]
+    assert marks[3] == {"segments": [(0, "top", False)], "nodes": [(0, "waits", False)]}
+
+
+def test_dependency_lines_passing_a_study_take_their_own_lanes():
+    # x needs a, skipping b; b needs a: two lines leave a.
+    lanes, marks = layout.dependency_lanes(
+        _rows({"a": [], "b": ["a"], "x": ["a"], "y": []})
+    )
+    assert lanes == 2
+    assert {lane for lane, *_ in marks[1]["segments"]} == {0, 1}  # b: its end, x's line
+    assert marks[3] == {"segments": [], "nodes": []}  # y needs nothing
+
+
+def test_a_study_queued_before_what_it_needs_is_marked_and_absent_needs_skipped():
+    lanes, marks = layout.dependency_lanes(_rows({"b": ["a", "ran-already"], "a": []}))
+    assert lanes == 1
+    assert marks[0]["nodes"] == [(0, "waits", True)]
+    assert marks[1]["nodes"] == [(0, "needed", True)]
+    # No column at all when nothing in the queue waits for another.
+    assert layout.dependency_lanes(_rows({"a": [], "b": ["gone"]}))[0] == 0
+
+
+def test_the_queue_draws_its_dependency_lines(bridge):
+    bridge.add("task", "A.calibrate")
+    plain = str(layout.queue_table(bridge.snapshot(), None))
+    assert "qs-lanes" not in plain
+    snap = bridge.snapshot()
+    first = snap["rows"][0]["id"]
+    snap["rows"].append({**snap["rows"][0], "id": "later", "n": 2, "needs": [first]})
+    drawn = str(layout.queue_table(snap, None))
+    assert drawn.count("qs-lane-node") == 2 and drawn.count("qs-lane-arrow") == 1
