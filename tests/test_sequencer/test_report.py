@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import io
 import json
+from pathlib import Path
 
 import pytest
 import yaml
@@ -184,6 +185,93 @@ def test_a_mode_without_a_junction_is_not_a_qubit_row(tmp_path):
     run = _qdo_run(tmp_path)
     run["outputs"] = {"resonator_1_freq": 6e9, "resonator_1_kappa": 1e6}
     assert qdo_report.table([run], {})["rows"] == []
+
+
+def _partition_run(tmp_path, aimed: list[str]):
+    """Qubit 1 solved beside a coupler (also a junction) and a readout
+    mode named without "resonator"; ``aimed``: the targets' parameters."""
+    run = _qdo_run(tmp_path)
+    (Path(run["folder"]) / "design_variables.json").write_text(
+        json.dumps({"design_var_lj_qubit_1": "12.1nH", "design_var_lj_coupler": "4nH"}),
+        "utf-8",
+    )
+    run["outputs"] = {
+        "qubit_1_freq": 4.055e9,
+        "coupler_freq": 5.3e9,
+        "cavity_freq": 7.0e9,
+        "qubit_1_to_qubit_1_nonlin": 214e6,
+        "coupler_to_coupler_nonlin": 88e6,
+        "cavity_to_cavity_nonlin": 12.0,
+        "coupler_to_qubit_1_nonlin": 4.1e6,
+        "cavity_to_qubit_1_nonlin": 0.15e6,
+    }
+    run["targets"] = [{"parameter": p} for p in aimed]
+    return run
+
+
+def _cells(made):
+    return [dict(zip(made["columns"], row)) for row in made["rows"]]
+
+
+def test_a_run_reports_only_the_qubits_it_tunes(tmp_path):
+    run = _partition_run(
+        tmp_path, ["qubit_1_freq", "qubit_1_to_qubit_1_nonlin", "cavity_freq"]
+    )
+    (cell,) = _cells(qdo_report.table([run], {}))
+    # the coupler is in the model only to load qubit 1
+    assert cell["Qubit"] == "qubit_1"
+
+
+def test_a_cross_kerr_target_does_not_make_the_partner_tuned(tmp_path):
+    run = _partition_run(tmp_path, ["coupler_freq", "coupler_to_qubit_1_nonlin"])
+    assert [c["Qubit"] for c in _cells(qdo_report.table([run], {}))] == ["coupler"]
+
+
+def test_a_run_without_mode_targets_reports_every_qubit(tmp_path):
+    run = _partition_run(tmp_path, [])
+    cells = _cells(qdo_report.table([run], {}))
+    assert [c["Qubit"] for c in cells] == ["coupler", "qubit_1"]
+
+
+def test_the_readout_is_the_linear_mode_whatever_its_name(tmp_path):
+    run = _partition_run(tmp_path, ["qubit_1_freq"])
+    (cell,) = _cells(qdo_report.table([run], {}))
+    # the coupler couples more strongly, but it has a junction
+    assert cell["Readout"] == "cavity" and cell["χ (MHz)"] == "0.150"
+
+
+def test_without_a_linear_mode_there_is_no_readout(tmp_path):
+    run = _partition_run(tmp_path, ["coupler_freq"])
+    del run["outputs"]["cavity_freq"]
+    (cell,) = _cells(qdo_report.table([run], {}))
+    assert cell["Readout"] == cell["f_r sim (GHz)"] == cell["χ (MHz)"] == ""
+
+
+def test_a_sequence_step_names_its_study_and_step(tmp_path):
+    run = _qdo_run(tmp_path)
+    run["task"] = "Q1.readout"
+    run["sequence"] = {"id": "s001", "name": "tune", "entry": 4}
+    (cell,) = _cells(qdo_report.table([run], {}))
+    assert cell["Study"] == "Q1.readout · s001 step 4"
+    run["sequence"] = {}
+    (cell,) = _cells(qdo_report.table([run], {}))
+    assert cell["Study"] == "Q1.readout"
+
+
+def test_a_rerun_of_a_step_says_so(tmp_path):
+    run = _qdo_run(tmp_path)
+    run.update(
+        task="Q1.readout",
+        id="s001-tune-q1_readout_r2",
+        sequence={"id": "s001", "entry": 4},
+        requeued_from="s001-tune-q1_readout_2026-11-23T13-56-09_failed",
+    )
+    (cell,) = _cells(qdo_report.table([run], {}))
+    assert cell["Study"] == "Q1.readout · s001 step 4, rerun 2"
+    # a study's own name may end in _r2: only a requeued copy is a rerun
+    run["requeued_from"] = ""
+    (cell,) = _cells(qdo_report.table([run], {}))
+    assert cell["Study"] == "Q1.readout · s001 step 4"
 
 
 def test_values_read_with_their_units():

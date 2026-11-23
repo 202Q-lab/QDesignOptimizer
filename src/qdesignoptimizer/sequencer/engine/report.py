@@ -163,6 +163,7 @@ def collect(workspace, keys: list[str]) -> list[dict]:
                 "finished": result.get("finished", ""),
                 "campaign": result.get("campaign", "") or job.get("campaign", ""),
                 "sequence": (job.get("sequence") or {}),
+                "requeued_from": job.get("requeued_from") or "",
                 "settings": job.get("settings") or {},
                 "notes": job.get("notes") or "",
                 "why": job.get("why") or result.get("why", ""),
