@@ -2306,7 +2306,7 @@ version = "3.1.1"
 description = "A sane and fast Markdown parser with useful plugins and renderers"
 optional = false
 python-versions = ">=3.8"
-groups = ["docs"]
+groups = ["main", "docs"]
 markers = "python_version >= \"3.12\" or python_version == \"3.11\""
 files = [
     {file = "mistune-3.1.1-py3-none-any.whl", hash = "sha256:02106ac2aa4f66e769debbfa028509a275069dcffce0dfa578edd7b991ee700a"},
@@ -5786,4 +5786,4 @@ type = ["pytest-mypy (>=1.0.1)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "dd04b6a5ee5e60c487d6d1a5cbd4b58b5be584410f7985baa803606d14f9b1ec"
+content-hash = "b921fee3fa3d9e304f0ade7595b375ff9fd896e0a968c94fb4afd57725a0a807"

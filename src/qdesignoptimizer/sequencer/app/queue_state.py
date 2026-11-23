@@ -1733,6 +1733,15 @@ class Bridge:
             "table_tsv": rp.tsv_table(made["columns"], made["rows"]) if made else "",
             "notes": (made or {}).get("notes") or [],
             "folder": str(folder),
+            # the written PDFs, where a browser printed them
+            "pdf": {
+                kind: url(name)
+                for kind, name in (
+                    ("brief", "report_brief.pdf"),
+                    ("full", "report.pdf"),
+                )
+                if (folder / name).is_file()
+            },
         }
 
     def report_file(self, token: str, name: str) -> Path | None:

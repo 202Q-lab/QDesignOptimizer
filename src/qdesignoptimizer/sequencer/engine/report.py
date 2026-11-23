@@ -27,6 +27,9 @@ The last two, with the targets and what each study wrote back, make the
 full report's study flow (``flow``): which study ran which simulation to
 tune what, and which study started from the values another wrote.
 
+The written report is also printed to PDF (``report.pdf``,
+``report_brief.pdf``) where a Chromium browser is found: see ``pdf``.
+
 What fabrication gave is kept in the project's ``fabrication.yaml``
 (``{name: value}``, e.g. ``qubit_1: 8.1 kOhm``), so every report after
 uses it.
@@ -43,6 +46,7 @@ from typing import Any
 import yaml
 
 from . import flow as fl
+from . import pdf
 from . import state as st
 from .job import parse_completed
 
@@ -434,9 +438,9 @@ def full(
 
 
 def write(project, runs: list[dict], made: dict | None) -> Path:
-    """Write the brief and full reports, the study flow's picture
-    (``study_flow.png``) and the table into ``out/reports/<now>/``; the
-    folder."""
+    """Write the brief and full reports (Markdown, and PDF where a browser
+    prints them), the study flow's picture (``study_flow.png``) and the
+    table into ``out/reports/<now>/``; the folder."""
     folder = Path(project.out) / REPORTS / time.strftime("%Y-%m-%dT%H-%M-%S")
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "report_brief.md").write_text(brief(runs, made), encoding="utf-8")
@@ -455,6 +459,10 @@ def write(project, runs: list[dict], made: dict | None) -> Path:
         (folder / "table.tsv").write_text(
             tsv_table(made["columns"], made["rows"]) + "\n", encoding="utf-8"
         )
+    try:
+        pdf.write([folder / "report_brief.md", folder / "report.md"])
+    except Exception:  # noqa: BLE001 -- the Markdown report stands
+        pass
     return folder
 
 

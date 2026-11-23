@@ -17,6 +17,7 @@ dependencies = [
   "gdstk>=0.9",
   "geopandas>=1.0",
   "matplotlib>=3.10.8",
+  "mistune>=3.0",
   "numpy>=1.26.4,<2",
   "pandas>=2.3.3",
   "pint>=0.21.0",

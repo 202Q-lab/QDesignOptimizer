@@ -1891,6 +1891,16 @@ def report_view(data: dict) -> Any:
     )
 
 
+def _pdf_link(href: str | None) -> list[Any]:
+    """The written report's PDF, opened in a new tab ([] without one)."""
+    if not href:
+        return []
+    return [
+        " · ",
+        html.A("PDF", href=href, target="_blank", title="the report as PDF"),
+    ]
+
+
 def report_output(made: dict, kind: str) -> Any:
     """A made report: the table to copy, then the report itself."""
     parts: list[Any] = [
@@ -1947,6 +1957,11 @@ def report_output(made: dict, kind: str) -> Any:
                             style={"display": "inline-block", "cursor": "pointer"},
                         ),
                         " Markdown",
+                        *_pdf_link(
+                            (made.get("pdf") or {}).get(
+                                "full" if kind == "full" else "brief"
+                            )
+                        ),
                     ],
                     className="qs-small",
                 ),
