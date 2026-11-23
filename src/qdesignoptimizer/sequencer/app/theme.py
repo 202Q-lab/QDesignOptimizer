@@ -22,8 +22,17 @@ RUN_COLORS = {
 }
 
 MUTED = "#607d8b"
-#: The lines beside the queue from a study to the ones waiting for it.
-DEPENDENCY_COLOR = "#5c6bc0"
+#: The lines beside the queue from a study to the ones waiting for it:
+#: a colour per independent chain, in order (none of them red: red marks
+#: a study queued before what it needs).
+DEPENDENCY_COLORS = (
+    "#5c6bc0",  # indigo
+    "#00897b",  # teal
+    "#ef6c00",  # orange
+    "#8e24aa",  # purple
+    "#7cb342",  # green
+    "#6d4c41",  # brown
+)
 SELECTED_BG = "#e3f2fd"
 
 CSS = """

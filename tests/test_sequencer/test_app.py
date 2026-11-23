@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from qdesignoptimizer.sequencer.app import layout
+from qdesignoptimizer.sequencer.app import layout, theme
 from qdesignoptimizer.sequencer.app.queue_state import Bridge, GuiError
 from qdesignoptimizer.sequencer.engine import state as st
 from qdesignoptimizer.sequencer.engine.runner import Runner
@@ -353,6 +353,10 @@ def _rows(needs: dict) -> list[dict]:
     return [{"id": i, "needs": n} for i, n in needs.items()]
 
 
+FIRST, SECOND = theme.DEPENDENCY_COLORS[:2]  # the first two chains
+RED = theme.STATUS_COLORS["failed"][0]
+
+
 def test_a_sequence_is_one_dependency_line():
     """Each study of a sequence needs every one before it: the lines show
     the chain only, in one lane, from each study into the next."""
@@ -361,12 +365,12 @@ def test_a_sequence_is_one_dependency_line():
     )
     assert lanes == 1
     assert marks[0] == {
-        "segments": [(0, "bottom", False)],
-        "nodes": [(0, "needed", False)],
+        "segments": [(0, "bottom", FIRST)],
+        "nodes": [(0, "needed", FIRST)],
     }
-    assert sorted(marks[1]["segments"]) == [(0, "bottom", False), (0, "top", False)]
-    assert sorted(marks[1]["nodes"]) == [(0, "needed", False), (0, "waits", False)]
-    assert marks[3] == {"segments": [(0, "top", False)], "nodes": [(0, "waits", False)]}
+    assert sorted(marks[1]["segments"]) == [(0, "bottom", FIRST), (0, "top", FIRST)]
+    assert sorted(marks[1]["nodes"]) == [(0, "needed", FIRST), (0, "waits", FIRST)]
+    assert marks[3] == {"segments": [(0, "top", FIRST)], "nodes": [(0, "waits", FIRST)]}
 
 
 def test_dependency_lines_passing_a_study_take_their_own_lanes():
@@ -382,8 +386,8 @@ def test_dependency_lines_passing_a_study_take_their_own_lanes():
 def test_a_study_queued_before_what_it_needs_is_marked_and_absent_needs_skipped():
     lanes, marks = layout.dependency_lanes(_rows({"b": ["a", "ran-already"], "a": []}))
     assert lanes == 1
-    assert marks[0]["nodes"] == [(0, "waits", True)]
-    assert marks[1]["nodes"] == [(0, "needed", True)]
+    assert marks[0]["nodes"] == [(0, "waits", RED)]
+    assert marks[1]["nodes"] == [(0, "needed", RED)]
     # No column at all when nothing in the queue waits for another.
     assert layout.dependency_lanes(_rows({"a": [], "b": ["gone"]}))[0] == 0
 
@@ -397,3 +401,13 @@ def test_the_queue_draws_its_dependency_lines(bridge):
     snap["rows"].append({**snap["rows"][0], "id": "later", "n": 2, "needs": [first]})
     drawn = str(layout.queue_table(snap, None))
     assert drawn.count("qs-lane-node") == 2 and drawn.count("qs-lane-arrow") == 1
+
+
+def test_independent_chains_get_their_own_colours():
+    # Two sequences queued interleaved, and a study needing nothing.
+    lanes, marks = layout.dependency_lanes(
+        _rows({"a1": [], "b1": [], "a2": ["a1"], "b2": ["b1"], "z": [], "a3": ["a2"]})
+    )
+    colours = [{c for *_, c in m["nodes"]} for m in marks]
+    assert colours == [{FIRST}, {SECOND}, {FIRST}, {SECOND}, set(), {FIRST}]
+    assert lanes == 2  # the chains overlap, so they cannot share a lane

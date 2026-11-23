@@ -452,14 +452,17 @@ LANE_NODE_Y = 16
 def dependency_lanes(rows: list[dict]) -> tuple[int, list[dict]]:
     """The lines beside the queue from each study to the queued studies
     that wait for it (``needs``): how many lanes, and per row the
-    ``segments`` ``(lane, "top" | "bottom", wrong)`` and the ``nodes``
-    ``(lane, "needed" | "waits", wrong)`` drawn in it.
+    ``segments`` ``(lane, "top" | "bottom", colour)`` and the ``nodes``
+    ``(lane, "needed" | "waits", colour)`` drawn in it.
 
     A need implied by another (a sequence's study needs every one before
     it) gets no line of its own: the chain shows it. Each line takes the
     innermost lane free over its rows, the shorter lines first; lines
     that only meet at a study share one, so a chain is one line.
-    ``wrong``: the study needed is queued after the one waiting for it.
+    ``colour``: one per chain -- studies linked by needs, directly or
+    through others -- in the order they first appear
+    (``theme.DEPENDENCY_COLORS``, round again past the last), and red
+    for a line from a study queued after the one waiting for it.
     """
     index = {row["id"]: i for i, row in enumerate(rows)}
     direct = [
@@ -483,6 +486,21 @@ def dependency_lanes(rows: list[dict]) -> tuple[int, list[dict]]:
         for i in needed
         if not any(i in ancestors(k) for k in needed if k != i)
     ]
+    # The chains: the studies linked by needs, numbered from the top.
+    group = list(range(len(rows)))
+
+    def root(r: int) -> int:
+        while group[r] != r:
+            group[r] = group[group[r]]
+            r = group[r]
+        return r
+
+    for i, j in edges:
+        group[root(max(i, j))] = root(min(i, j))
+    chains: dict[int, int] = {}
+    for i, j in sorted(edges, key=min):
+        chains.setdefault(root(i), len(chains))
+    palette = theme.DEPENDENCY_COLORS
     taken: list[list[tuple[int, int]]] = []
     out: list[dict] = [{"segments": [], "nodes": []} for _ in rows]
     for i, j in sorted(edges, key=lambda e: (abs(e[1] - e[0]), min(e), e)):
@@ -494,22 +512,25 @@ def dependency_lanes(rows: list[dict]) -> tuple[int, list[dict]]:
         else:
             taken.append([(a, b)])
             lane = len(taken) - 1
-        wrong = i > j
-        out[a]["segments"].append((lane, "bottom", wrong))
-        out[b]["segments"].append((lane, "top", wrong))
+        colour = (
+            theme.STATUS_COLORS["failed"][0]
+            if i > j
+            else palette[chains[root(i)] % len(palette)]
+        )
+        out[a]["segments"].append((lane, "bottom", colour))
+        out[b]["segments"].append((lane, "top", colour))
         for r in range(a + 1, b):
-            out[r]["segments"] += [(lane, "top", wrong), (lane, "bottom", wrong)]
-        out[i]["nodes"].append((lane, "needed", wrong))
-        out[j]["nodes"].append((lane, "waits", wrong))
+            out[r]["segments"] += [(lane, "top", colour), (lane, "bottom", colour)]
+        out[i]["nodes"].append((lane, "needed", colour))
+        out[j]["nodes"].append((lane, "waits", colour))
     return len(taken), out
 
 
 def _lanes_cell(lanes: int, marks: dict) -> Any:
     """A row's part of the dependency lines: a vertical line per lane,
     a dot where it meets a study, an arrowhead into the study waiting."""
-    line, bad = theme.DEPENDENCY_COLOR, theme.STATUS_COLORS["failed"][0]
     children = []
-    for lane, part, wrong in sorted(set(marks["segments"])):
+    for lane, part, colour in sorted(set(marks["segments"])):
         children.append(
             html.Div(
                 className="qs-lane",
@@ -520,13 +541,12 @@ def _lanes_cell(lanes: int, marks: dict) -> Any:
                         if part == "top"
                         else {"top": f"{LANE_NODE_Y}px", "bottom": "0"}
                     ),
-                    "background": bad if wrong else line,
+                    "background": colour,
                 },
             )
         )
-    for lane, kind, wrong in sorted(set(marks["nodes"])):
+    for lane, kind, colour in sorted(set(marks["nodes"])):
         left = lane * LANE_PX + LANE_PX // 2
-        colour = bad if wrong else line
         if kind == "waits":
             children.append(
                 html.Div(
