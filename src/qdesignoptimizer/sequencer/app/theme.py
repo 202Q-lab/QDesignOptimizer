@@ -99,7 +99,9 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 /* Narrower than this, the areas stack and the page scrolls. */
 @media (max-width: 1100px) {
   .qs-page { height: auto; }
-  .qs-main { grid-template-columns: 1fr; gap: 8px; }
+  /* minmax(0, ...): the column is the window's width, not its widest
+     content's (a report's tables), so pictures shrink to fit. */
+  .qs-main { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .qs-splitter { display: none; }
   .qs-area { overflow: visible; }
   /* As tall as what they hold: a long queue must not run under the
@@ -152,6 +154,8 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
 .qs-pre { background: #263238; color: #eceff1; border-radius: 6px;
           padding: 8px; font-size: 12px; max-height: 260px;
           overflow: auto; white-space: pre-wrap; }
+/* A report's wide tables scroll sideways on their own, not the page. */
+.qs-report table { display: block; max-width: 100%; overflow-x: auto; }
 .qs-field { margin: 6px 0; }
 .qs-field label { display: block; font-size: 12px; color: #607d8b; }
 .qs-field textarea { width: 100%; font-family: Consolas, monospace;
