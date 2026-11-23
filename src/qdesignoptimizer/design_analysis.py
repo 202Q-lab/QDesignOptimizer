@@ -44,6 +44,23 @@ from qdesignoptimizer.utils.names_parameters import (
 )
 
 
+def activate_eigenmode_design(renderer, design_name: str):
+    """Make ``design_name`` the active eigenmode design; return its pinfo.
+
+    When the design already exists in the Ansys project, qiskit-metal
+    reconnects the design but keeps the setup of the design active before
+    it, so a study would solve (and read the fields of) the wrong design.
+    Partitioned studies take turns in one project, so connect the setup
+    of the design now active (its first setup: the last design's setup
+    name may not exist in it).
+    """
+    renderer.activate_ansys_design(design_name, "eigenmode")
+    pinfo = renderer.pinfo
+    pinfo.setup_name = None
+    pinfo.connect_setup()
+    return pinfo
+
+
 class _ComGeometryModeler:
     """3D-modeler operations issued on the COM Ansys session (single-window path).
 
@@ -327,9 +344,9 @@ class DesignAnalysis:
         self.minimization_results: list[dict] = []
 
         self.renderer.start()
-        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
-
-        self.pinfo = self.renderer.pinfo
+        self.pinfo = activate_eigenmode_design(
+            self.renderer, self.mini_study.design_name
+        )
         self.setup = self.pinfo.setup
         self.setup.n_modes = len(self.mini_study.modes)
         self.setup.passes = self.mini_study.nbr_passes

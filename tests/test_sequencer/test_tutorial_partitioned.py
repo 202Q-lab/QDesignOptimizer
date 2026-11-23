@@ -52,6 +52,10 @@ def test_each_partition_tunes_only_its_own_targets(tmp_path):
         }
         ids = project.add_sequence(catalog.sequence("tune_partitioned"))
         assert len(ids) == 9  # three rounds of the three partitions
+        # Round 3 may fail to converge partition by partition: each needs
+        # rounds 1 and 2, not the other round-3 studies.
+        for job_id in ids[6:]:
+            assert set(project.job(job_id).needs) == set(ids[:6])
         for job_id in ids[:3]:
             assert project.problems(job_id, deep=True) == []
 

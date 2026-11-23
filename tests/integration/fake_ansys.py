@@ -302,6 +302,9 @@ class FakePinfo(_Recorder):
         self.design = FakeHfssDesign(session)
         self.dissipative: dict = {}
 
+    def connect_setup(self):
+        """Keeps the one fake setup (a real pinfo connects the active design's)."""
+
     def validate_junction_info(self):
         self._log("hfss.pinfo.validate_junction_info")
 

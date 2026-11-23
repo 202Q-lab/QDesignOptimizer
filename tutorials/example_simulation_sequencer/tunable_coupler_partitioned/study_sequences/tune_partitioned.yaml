@@ -22,7 +22,10 @@ studies:
 - {study: Q2.readout, checks: []}
 - {study: C.coupler, checks: []}
 # Round 3: each partition must converge; one that does not leaves its
-# values unwritten, and the others still run.
+# values unwritten, and the others still run: they need rounds 1 and 2
+# (entries 1-6), not each other.
 - {study: Q1.readout, checks: [converged], on_failure: continue}
-- {study: Q2.readout, checks: [converged], on_failure: continue}
-- {study: C.coupler, checks: [converged], on_failure: continue}
+- {study: Q2.readout, checks: [converged], on_failure: continue,
+   needs: [1, 2, 3, 4, 5, 6]}
+- {study: C.coupler, checks: [converged], on_failure: continue,
+   needs: [1, 2, 3, 4, 5, 6]}
