@@ -256,6 +256,32 @@ def sources_text(store: Path) -> dict[str, str]:
     return out
 
 
+def readme_summary(path: Path) -> tuple[str, str]:
+    """``(heading, first paragraph)`` of a README: its ``# `` heading and
+    the paragraph after it; ("", "") for no file."""
+    try:
+        text = Path(path).read_text("utf-8")
+    except OSError:
+        return "", ""
+    heading, lines = "", text.splitlines()
+    paragraph: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not heading and stripped.startswith("# "):
+            heading = stripped[2:].strip()
+            continue
+        if not stripped:
+            if paragraph:
+                break
+            continue
+        if stripped.startswith(("#", "|", "```", "- ", "* ", ">")):
+            if paragraph:
+                break
+            continue
+        paragraph.append(stripped)
+    return heading, " ".join(paragraph)
+
+
 class SwitchableStore:
     """The store a backend reads and writes: the project's, or a
     campaign's (``engine/campaign.py``).
@@ -281,6 +307,34 @@ class SwitchableStore:
     def project_root(self) -> Path:
         """The project's folder (``campaigns/`` is in it)."""
         raise NotImplementedError
+
+    def report_design(self, campaign: str = "") -> dict[str, Any]:
+        """The design as it stands, for a report (``engine.report``):
+        ``{"name", "purpose", "variables"}``.
+
+        ``name`` and ``purpose`` are the heading and first paragraph of
+        the project's ``README.md`` ("" without one). ``variables``: one
+        ``{"name", "value", "edited", "written_by"}`` per value of the
+        store (``campaign``'s, or the project's), ``written_by`` the
+        latest write-back's record in ``design_variables.meta.json``
+        ({} for a value no study wrote), ``edited`` when the value is no
+        longer what it wrote.
+        """
+        name, purpose = readme_summary(self.project_root / "README.md")
+        store = self.store_for(campaign)
+        meta = read_meta(store)
+        variables = []
+        for key, value in read_json(store).items():
+            latest = ((meta.get(key) or {}).get("latest")) or {}
+            variables.append(
+                {
+                    "name": key,
+                    "value": value,
+                    "edited": bool(latest) and latest.get("value") != value,
+                    "written_by": latest,
+                }
+            )
+        return {"name": name, "purpose": purpose, "variables": variables}
 
     def store_for(self, campaign: str = "") -> Path:
         """The store of campaign ``campaign`` ("" for the project)."""

@@ -156,6 +156,9 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
           overflow: auto; white-space: pre-wrap; }
 /* A report's wide tables scroll sideways on their own, not the page. */
 .qs-report table { display: block; max-width: 100%; overflow-x: auto; }
+/* The design's picture fits the column; a side note in a table is small. */
+.qs-report img { max-width: 100%; height: auto; }
+.qs-report td em { color: #6b7380; font-size: 11px; }
 .qs-field { margin: 6px 0; }
 .qs-field label { display: block; font-size: 12px; color: #607d8b; }
 .qs-field textarea { width: 100%; font-family: Consolas, monospace;

@@ -79,6 +79,27 @@ def transmon_frequency_for_josephson_energy(
     ) - anharmonicity
 
 
+def squid_frequency_range(
+    max_freq: float, anharmonicity: float, asymmetry: float
+) -> tuple[float, float]:
+    """The frequencies (Hz) a SQUID transmon can be tuned over.
+
+    At zero flux the SQUID's Ej is its junctions' sum and the transmon is
+    at ``max_freq``; at half a flux quantum Ej drops to ``asymmetry``
+    (``d = |Ej1 - Ej2| / (Ej1 + Ej2)``) times that. The low end is the
+    same rescaling as ``transmon_frequency_for_josephson_energy``, never
+    below 0 (a symmetric SQUID tunes all the way down; the transmon
+    formula itself no longer holds once Ej is near Ec there, so the low
+    end is an estimate).
+    """
+    _positive(max_freq, "highest frequency")
+    _positive(anharmonicity, "anharmonicity")
+    if not 0 <= asymmetry <= 1:
+        raise ValueError(f"a SQUID's asymmetry is from 0 to 1, not {asymmetry}")
+    low = (max_freq + anharmonicity) * math.sqrt(asymmetry) - anharmonicity
+    return max(low, 0.0), max_freq
+
+
 _MEASURED = re.compile(r"^\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s*(\S*)\s*$")
 _ENERGY = {"hz": 1.0, "khz": 1e3, "mhz": 1e6, "ghz": 1e9}
 _RESISTANCE = {"ohm": 1.0, "kohm": 1e3, "mohm": 1e6, "ω": 1.0, "kω": 1e3}

@@ -49,6 +49,7 @@ tr, img { break-inside: avoid; }
 th, td { border: 1px solid #bbb; padding: 2px 5px; text-align: left;
          vertical-align: top; }
 th { background: #eee; }
+td em { color: #6b7380; font-size: 7pt; }
 code { font-family: Consolas, Menlo, monospace; font-size: 8.5pt;
        background: #f3f3f3; padding: 0 2px; }
 pre { background: #f3f3f3; padding: 6px; white-space: pre-wrap; font-size: 8pt; }

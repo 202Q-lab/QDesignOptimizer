@@ -108,7 +108,7 @@ def test_the_command_line_writes_a_report_and_keeps_fabrication(project, capsys)
     ref = str(project.root / "sequencer.py")
     assert cli.main([ref, "report", "--fab", "qubit_1=9kOhm", "--show", "full"]) == 0
     out, err = capsys.readouterr()
-    assert "# Simulation report" in out and "written to" in err
+    assert "Simulation report" in out and "written to" in err
     assert rp.load_fabrication(project) == {"qubit_1": "9kOhm"}
     assert cli.main([ref, "report", "--fab", "qubit_1=", "--show", "none"]) == 0
     assert rp.load_fabrication(project) == {}
@@ -153,7 +153,7 @@ def test_a_qubit_row_with_its_fabricated_junction(tmp_path):
     made = qdo_report.table([_qdo_run(tmp_path)], {"qubit_1": "9 kOhm"})
     (row,) = made["rows"]
     cell = dict(zip(made["columns"], row))
-    assert cell["Qubit"] == "qubit_1" and cell["Readout"] == "resonator_1"
+    assert cell["Element"] == "qubit_1" and cell["Readout"] == "resonator_1"
     assert cell["f01 sim (GHz)"] == "4.0550"
     assert cell["f01 target (GHz)"] == "4.0000"
     assert cell["α (MHz)"] == "214.0"
@@ -219,18 +219,18 @@ def test_a_run_reports_only_the_qubits_it_tunes(tmp_path):
     )
     (cell,) = _cells(qdo_report.table([run], {}))
     # the coupler is in the model only to load qubit 1
-    assert cell["Qubit"] == "qubit_1"
+    assert cell["Element"] == "qubit_1"
 
 
 def test_a_cross_kerr_target_does_not_make_the_partner_tuned(tmp_path):
     run = _partition_run(tmp_path, ["coupler_freq", "coupler_to_qubit_1_nonlin"])
-    assert [c["Qubit"] for c in _cells(qdo_report.table([run], {}))] == ["coupler"]
+    assert [c["Element"] for c in _cells(qdo_report.table([run], {}))] == ["coupler"]
 
 
 def test_a_run_without_mode_targets_reports_every_qubit(tmp_path):
     run = _partition_run(tmp_path, [])
     cells = _cells(qdo_report.table([run], {}))
-    assert [c["Qubit"] for c in cells] == ["coupler", "qubit_1"]
+    assert [c["Element"] for c in cells] == ["coupler", "qubit_1"]
 
 
 def test_the_readout_is_the_linear_mode_whatever_its_name(tmp_path):
@@ -252,10 +252,10 @@ def test_a_sequence_step_names_its_study_and_step(tmp_path):
     run["task"] = "Q1.readout"
     run["sequence"] = {"id": "s001", "name": "tune", "entry": 4}
     (cell,) = _cells(qdo_report.table([run], {}))
-    assert cell["Study"] == "Q1.readout · s001 step 4"
+    assert cell["From study"] == "Q1.readout · s001 step 4"
     run["sequence"] = {}
     (cell,) = _cells(qdo_report.table([run], {}))
-    assert cell["Study"] == "Q1.readout"
+    assert cell["From study"] == "Q1.readout"
 
 
 def test_a_rerun_of_a_step_says_so(tmp_path):
@@ -267,11 +267,11 @@ def test_a_rerun_of_a_step_says_so(tmp_path):
         requeued_from="s001-tune-q1_readout_2026-11-23T13-56-09_failed",
     )
     (cell,) = _cells(qdo_report.table([run], {}))
-    assert cell["Study"] == "Q1.readout · s001 step 4, rerun 2"
+    assert cell["From study"] == "Q1.readout · s001 step 4, rerun 2"
     # a study's own name may end in _r2: only a requeued copy is a rerun
     run["requeued_from"] = ""
     (cell,) = _cells(qdo_report.table([run], {}))
-    assert cell["Study"] == "Q1.readout · s001 step 4"
+    assert cell["From study"] == "Q1.readout · s001 step 4"
 
 
 def test_values_read_with_their_units():

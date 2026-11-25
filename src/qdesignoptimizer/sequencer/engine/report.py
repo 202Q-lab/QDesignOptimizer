@@ -27,6 +27,17 @@ The last two, with the targets and what each study wrote back, make the
 full report's study flow (``flow``): which study ran which simulation to
 tune what, and which study started from the values another wrote.
 
+A report is about the design first: what a backend gives with these
+hooks (QDO and the fake backends do, from the store):
+
+* ``report_design(campaign)``: ``{"name", "purpose", "variables"}``,
+  the design's name and purpose (its project's README) and every
+  design variable as it stands, with the write-back that set it;
+* ``report_design_picture(campaign, title)``: ``{"png": <base64>,
+  "caption"}``, the whole design drawn.
+
+Then the backend's table, then the studies that got there.
+
 The written report is also printed to PDF (``report.pdf``,
 ``report_brief.pdf``) where a Chromium browser is found: see ``pdf``.
 
@@ -37,6 +48,7 @@ uses it.
 
 from __future__ import annotations
 
+import base64
 import re
 import shutil
 import time
@@ -53,6 +65,9 @@ from .job import parse_completed
 FABRICATION_FILE = "fabrication.yaml"
 REPORTS = "reports"
 FLOW_PNG = "study_flow.png"
+DESIGN_PNG = "design.png"
+#: The backend's table's picture (its ``picture``): where the modes sit.
+TABLE_PNG = "frequencies.png"
 FLOW_TEXT = (
     "Each card is a study, in the order they ran. Its header's colour is "
     "the kind of simulation, with its runs, passes and iterations; the "
@@ -287,9 +302,189 @@ def tsv_table(columns: list[str], rows: list[list[Any]]) -> str:
     return "\n".join("\t".join(cell(v) for v in line) for line in [columns, *rows])
 
 
-def brief(runs: list[dict], made: dict | None = None) -> str:
-    """One line per study: where it ended against its targets."""
-    lines = [_header(runs), ""]
+def designs(runs: list[dict]) -> list[dict]:
+    """The designs the runs tuned, one per store (a project's, or a
+    campaign's), in the order of the runs: the backend's
+    ``report_design`` (``{"name", "purpose", "variables"}``) with
+    ``"project"`` and ``"campaign"``. A backend without the hook, or
+    whose hook fails, has none."""
+    out: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for run in runs:
+        key = (run["project"], run.get("campaign") or "")
+        if key in seen:
+            continue
+        seen.add(key)
+        hook = getattr(run["_backend"], "report_design", None)
+        if hook is None:
+            continue
+        try:
+            made = dict(hook(key[1]) or {})
+        except Exception:  # noqa: BLE001 -- the report goes on without
+            continue
+        out.append(
+            {
+                **made,
+                "project": key[0],
+                "campaign": key[1],
+                "_backend": run["_backend"],
+            }
+        )
+    return out
+
+
+def design_picture_name(n: int) -> str:
+    """The file of the ``n``-th design's picture (from 0) in a written
+    report's folder."""
+    return DESIGN_PNG if n == 0 else f"design_{n + 1}.png"
+
+
+def design_title(design: dict) -> str:
+    """A design's name: its README heading, else its project's."""
+    return design.get("name") or design["project"] + (
+        f" ({design['campaign']})" if design.get("campaign") else ""
+    )
+
+
+def variables_table(design: dict) -> tuple[list[str], list[list[str]]]:
+    """The design's variables: each value as it stands, what a study
+    tuned it for and how close that came, and (in italics, a side note)
+    which study wrote it. Tuned ones first, by what they tune."""
+    columns = [
+        "Design variable",
+        "Value",
+        "Tuned for",
+        "Target",
+        "Reached when set",
+        "Set by",
+    ]
+    backend = design.get("_backend")
+    tuned: list[tuple] = []
+    fixed: list[tuple] = []
+    for variable in design.get("variables") or []:
+        latest = variable.get("written_by") or {}
+        goals = [g for g in latest.get("target") or [] if isinstance(g, dict)]
+        row = [
+            _short_name(variable["name"]),
+            _quantity(variable.get("value")),
+            ", ".join(str(g.get("parameter", "")) for g in goals),
+            ", ".join(
+                _backend_value(backend, g.get("parameter", ""), g.get("target"))
+                for g in goals
+            ),
+            ", ".join(
+                _backend_value(backend, g.get("parameter", ""), g.get("achieved"))
+                + (
+                    f" ({_off(g.get('achieved'), g.get('target'))})"
+                    if _off(g.get("achieved"), g.get("target"))
+                    else ""
+                )
+                + (" ✗" if g.get("within_tolerance") is False else "")
+                for g in goals
+            ),
+            _set_by(variable),
+        ]
+        (tuned if latest else fixed).append((row[2], row[0], row))
+    rows = [r for *_, r in sorted(tuned)] + [r for *_, r in sorted(fixed)]
+    return columns, rows
+
+
+def _design_lines(
+    design: dict,
+    runs: list[dict],
+    top: str,
+    image: str | None = None,
+    after_purpose: list[str] | None = None,
+) -> list[str]:
+    """A design's head: its name (heading ``top``), when and of which
+    studies, its picture, its purpose, ``after_purpose`` (the picture of
+    where the modes sit), and its variables."""
+    sub = top + "#"
+    lines = [f"{top} {design_title(design)}", ""]
+    own = [
+        r
+        for r in runs
+        if (r["project"], r.get("campaign") or "")
+        == (design["project"], design.get("campaign") or "")
+    ]
+    lines.append(
+        f"Simulation report · {time.strftime('%Y-%m-%d %H:%M')} · "
+        f"{len(own)} {'study' if len(own) == 1 else 'studies'} · "
+        + design["project"]
+        + (f" · campaign {design['campaign']}" if design.get("campaign") else "")
+    )
+    if image:
+        lines += ["", f"![{design_title(design)}]({_link(image)})"]
+        if design.get("caption"):
+            lines += ["", f"*{design['caption']}*"]
+    if design.get("purpose"):
+        lines += ["", design["purpose"]]
+    lines += after_purpose or []
+    columns, rows = variables_table(design)
+    if rows:
+        lines += [
+            "",
+            f"{sub} Design variables",
+            "",
+            "Each value as it stands in "
+            + (
+                f"campaign {design['campaign']}'s"
+                if design.get("campaign")
+                else "the project's"
+            )
+            + " design variables file, the target the study that wrote it "
+            "tuned it for, and what that study reached in its last "
+            "simulation (✗: outside the target's tolerance; a later study "
+            "of another part may have moved it since).",
+            "",
+            markdown_table(columns, rows),
+        ]
+    return lines
+
+
+def _head(runs, found, made, top_images: dict[int, str] | None) -> tuple[list, str]:
+    """The report's head (each design, then the backend's table) and
+    the heading level of the sections after it."""
+    images = top_images or {}
+    picture = _table_picture_lines(made, "##")
+    if len(found) == 1:
+        lines = _design_lines(found[0], runs, "#", images.get(0), picture)
+        level = "##"
+    elif found:
+        lines = [_header(runs)] + picture
+        for n, design in enumerate(found):
+            lines += [""] + _design_lines(design, runs, "##", images.get(n))
+        level = "##"
+    else:
+        lines, level = [_header(runs)] + picture, "##"
+    if made:
+        lines += ["", f"{level} {made.get('title') or 'Table'}", "", _table_md(made)]
+    return lines, level
+
+
+def _table_picture_lines(made: dict | None, level: str) -> list[str]:
+    """The backend table's picture (where the modes sit), as a section."""
+    if not made or not made.get("picture_src"):
+        return []
+    title = made.get("picture_title") or "Picture"
+    lines = ["", f"{level} {title}", "", f"![{title}]({_link(made['picture_src'])})"]
+    if (made.get("picture") or {}).get("caption"):
+        lines += ["", f"*{made['picture']['caption']}*"]
+    return lines
+
+
+def brief(
+    runs: list[dict],
+    made: dict | None = None,
+    found: list[dict] | None = None,
+    images: dict[int, str] | None = None,
+) -> str:
+    """The design and its results (``designs``, or ``found``; the
+    picture of the ``n``-th at ``images[n]``), the backend's table, then
+    one line per study: where it ended against its targets."""
+    found = designs(runs) if found is None else found
+    lines, level = _head(runs, found, made, images)
+    lines += ["", f"{level} Studies", ""]
     rows = []
     for run in runs:
         rows.append(
@@ -304,8 +499,6 @@ def brief(runs: list[dict], made: dict | None = None) -> str:
     lines.append(
         markdown_table(["Study", "Started", "Status", "Result", "Written"], rows)
     )
-    if made:
-        lines += ["", f"## {made.get('title') or 'Table'}", "", _table_md(made)]
     return "\n".join(lines) + "\n"
 
 
@@ -315,18 +508,24 @@ def full(
     pictures: bool = True,
     flow: bool = True,
     flow_image: str | None = None,
+    found: list[dict] | None = None,
+    images: dict[int, str] | None = None,
 ) -> str:
-    """Every study in full: what it was, every target per iteration,
-    the design variables it ran with and suggests, its checks, and its
-    pictures (``pictures``; their paths as the runs have them).
-
-    First, with ``flow``, the study flow (``flow.graph``): as a Mermaid
-    diagram, after the picture ``flow_image`` links to when given."""
-    lines = [_header(runs)]
-    if made:
-        lines += ["", f"## {made.get('title') or 'Table'}", "", _table_md(made)]
+    """The design and its results first (as ``brief``), then the
+    studies that got there: with ``flow``, the study flow
+    (``flow.graph``, as a Mermaid diagram after the picture
+    ``flow_image`` links to when given), then every study in full: what
+    it was, every target per iteration, the design variables it ran
+    with and suggests, its checks, and its pictures (``pictures``; their
+    paths as the runs have them)."""
+    found = designs(runs) if found is None else found
+    lines, level = _head(runs, found, made, images)
+    sub = level + "#"
+    if runs:
+        lines += ["", f"{level} Studies", ""]
+        lines.append("How the design got here: the studies, in the order they ran.")
     if flow and runs:
-        lines += ["", "## Study flow", "", FLOW_TEXT]
+        lines += ["", f"{sub} Study flow", "", FLOW_TEXT]
         if flow_image:
             lines += ["", f"![Study flow]({_link(flow_image)})"]
         graph = fl.graph(runs)
@@ -334,7 +533,7 @@ def full(
         if graph["left_out"]:
             lines += ["", f"*{fl.left_out_text(graph)}*"]
     for run in runs:
-        lines += ["", f"## {run['id']}", ""]
+        lines += ["", f"{sub} {run['id']}", ""]
         facts = [
             ("Study", run["task"]),
             ("Subject", run["subject"]),
@@ -367,7 +566,7 @@ def full(
         ]
         lines += [f"- **{name}:** {value}" for name, value in facts if value]
         if run["targets"]:
-            lines += ["", "### Targets", ""]
+            lines += ["", f"{sub}# Targets", ""]
             rows = []
             for t in run["targets"]:
                 values = [v for v in t.get("values") or []]
@@ -387,7 +586,7 @@ def full(
                     ["Parameter", "Target", "Reached", "Off", "Per iteration"], rows
                 )
             )
-            lines += ["", "### Design variables", ""]
+            lines += ["", f"{sub}# Design variables", ""]
             rows = []
             for t in run["targets"]:
                 design = [v for v in t.get("design_values") or [] if v is not None]
@@ -405,7 +604,7 @@ def full(
                 markdown_table(["Design variable", "First", "Final", "Written"], rows)
             )
         elif run["outputs"]:
-            lines += ["", "### Results", ""]
+            lines += ["", f"{sub}# Results", ""]
             lines.append(
                 markdown_table(
                     ["Parameter", "Value"],
@@ -413,7 +612,7 @@ def full(
                 )
             )
         if run["checks"]:
-            lines += ["", "### Checks", ""]
+            lines += ["", f"{sub}# Checks", ""]
             lines += [
                 f"- {name}: {'ok' if (c or {}).get('ok') else 'failed'}"
                 + (
@@ -424,7 +623,7 @@ def full(
                 for name, c in run["checks"].items()
             ]
         if pictures and run.get("pictures"):
-            lines += ["", "### Pictures"]
+            lines += ["", f"{sub}# Pictures"]
             for picture in run["pictures"]:
                 lines += [
                     "",
@@ -439,11 +638,24 @@ def full(
 
 def write(project, runs: list[dict], made: dict | None) -> Path:
     """Write the brief and full reports (Markdown, and PDF where a browser
-    prints them), the study flow's picture (``study_flow.png``) and the
-    table into ``out/reports/<now>/``; the folder."""
+    prints them), the picture of each design (``design.png``, see
+    ``design_picture_name``), the study flow's picture
+    (``study_flow.png``) and the table into ``out/reports/<now>/``; the
+    folder."""
     folder = Path(project.out) / REPORTS / time.strftime("%Y-%m-%dT%H-%M-%S")
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / "report_brief.md").write_text(brief(runs, made), encoding="utf-8")
+    found = designs(runs)
+    if made and save_table_picture(made, folder / TABLE_PNG):
+        made["picture_src"] = TABLE_PNG
+    images = {}
+    for n, design in enumerate(found):
+        caption = _save_design_picture(design, folder / design_picture_name(n))
+        if caption is not None:
+            images[n] = design_picture_name(n)
+            design["caption"] = caption
+    (folder / "report_brief.md").write_text(
+        brief(runs, made, found, images), encoding="utf-8"
+    )
     image = None
     if runs:
         try:
@@ -451,11 +663,19 @@ def write(project, runs: list[dict], made: dict | None) -> Path:
         except Exception:  # noqa: BLE001 -- the Mermaid diagram stays
             image = None
     (folder / "report.md").write_text(
-        full(_copy_pictures(runs, folder), made, flow_image=image),
+        full(
+            _copy_pictures(runs, folder),
+            made,
+            flow_image=image,
+            found=found,
+            images=images,
+        ),
         encoding="utf-8",
     )
     if made:
-        (folder / "table.md").write_text(_table_md(made) + "\n", encoding="utf-8")
+        (folder / "table.md").write_text(
+            _table_md(made, flat=True) + "\n", encoding="utf-8"
+        )
         (folder / "table.tsv").write_text(
             tsv_table(made["columns"], made["rows"]) + "\n", encoding="utf-8"
         )
@@ -523,6 +743,79 @@ def copied_path(run: dict, picture: dict) -> Path:
     return Path("pictures") / Path(run["folder"]).name / name
 
 
+def save_table_picture(made: dict, path: Path) -> bool:
+    """Save the backend table's picture (``made["picture"]``, a base64
+    PNG) to ``path``; whether there was one."""
+    picture = made.get("picture") or {}
+    if not picture.get("png"):
+        return False
+    try:
+        path.write_bytes(base64.b64decode(picture["png"]))
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def _save_design_picture(design: dict, path: Path) -> str | None:
+    """The backend's picture of the whole design (``report_design_picture``)
+    saved to ``path``; its caption, or None without one."""
+    hook = getattr(design["_backend"], "report_design_picture", None)
+    if hook is None:
+        return None
+    try:
+        picture = hook(design.get("campaign") or "", design_title(design))
+        if not picture:
+            return None
+        path.write_bytes(base64.b64decode(picture["png"]))
+    except Exception:  # noqa: BLE001 -- the report goes on without
+        return None
+    return str(picture.get("caption") or "")
+
+
+_QUANTITY = re.compile(r"^\s*([-+]?[0-9.]+(?:[eE][-+]?\d+)?)\s*([A-Za-zµΩ]*)\s*$")
+
+
+def _quantity(value: Any) -> str:
+    """A stored value, read: ``"17.293636761726173 nH"`` -> ``17.294 nH``."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return f"{value:.5g}"
+    found = _QUANTITY.match(str(value))
+    if not found:
+        return str(value)
+    number, unit = found.groups()
+    # a no-break space: the unit stays with its number in a narrow column
+    return f"{float(number):.5g}" + (f"\u00a0{unit}" if unit else "")
+
+
+def _short_name(name: str) -> str:
+    """A design variable as the report names it: QDO's ``design_var_``
+    left off."""
+    return name[len("design_var_") :] if name.startswith("design_var_") else name
+
+
+def _set_by(variable: dict) -> str:
+    """Which study wrote a value, and when, as a side note (italics)."""
+    latest = variable.get("written_by") or {}
+    if not latest:
+        return "*fixed: no study tunes it*"
+    who = latest.get("task") or latest.get("study") or ""
+    if latest.get("sequence"):
+        who += f" · {latest['sequence']}"
+    if not who and latest.get("promoted_from"):
+        who = f"promoted from campaign {latest['promoted_from']}"
+    when = str(latest.get("written") or "")[5:16]
+    note = ", ".join(p for p in (who, when) if p)
+    if variable.get("edited"):
+        note = f"edited since; {note}"
+    return f"*{note}*" if note else ""
+
+
+def _backend_value(backend, parameter: str, value: Any) -> str:
+    if value is None:
+        return ""
+    return _value({"_backend": backend}, parameter, value)
+
+
 def _link(path: Any) -> str:
     """A Markdown link target: forward slashes, spaces escaped."""
     return Path(path).as_posix().replace(" ", "%20")
@@ -537,9 +830,27 @@ def _header(runs: list[dict]) -> str:
     )
 
 
-def _table_md(made: dict) -> str:
-    out = markdown_table(made["columns"], made["rows"])
+def _table_md(made: dict, flat: bool = False) -> str:
+    """The backend's table in Markdown, its ``aside`` columns in italics
+    (a side note: the PDF prints them small): its ``display`` form where
+    it has one (grouped for reading), unless ``flat`` (a row per item,
+    for pasting)."""
     notes = made.get("notes") or []
+    if made.get("display") and not flat:
+        made = made["display"]
+    aside = {
+        made["columns"].index(c)
+        for c in made.get("aside") or []
+        if c in made["columns"]
+    }
+    rows = [
+        [
+            f"*{v}*" if n in aside and v not in (None, "") else v
+            for n, v in enumerate(row)
+        ]
+        for row in made["rows"]
+    ]
+    out = markdown_table(made["columns"], rows)
     return out + ("\n\n" + "\n".join(f"- {n}" for n in notes) if notes else "")
 
 

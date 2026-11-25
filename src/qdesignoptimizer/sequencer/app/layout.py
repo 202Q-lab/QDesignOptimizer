@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from typing import Any
 
@@ -1891,6 +1892,15 @@ def report_view(data: dict) -> Any:
     )
 
 
+def _split_at_studies(text: str) -> tuple[str, str]:
+    """A full report cut after its "Studies" heading and the line under
+    it: (the design, its results and that heading; each study)."""
+    found = re.search(r"^#{1,3} Studies\n\n[^\n]*\n", text, re.M)
+    if found is None:
+        return text, ""
+    return text[: found.end()], text[found.end() :]
+
+
 def _pdf_link(href: str | None) -> list[Any]:
     """The written report's PDF, opened in a new tab ([] without one)."""
     if not href:
@@ -1970,14 +1980,18 @@ def report_output(made: dict, kind: str) -> Any:
         dcc.Markdown(text, className="qs-report"),
     ]
     if kind == "full" and made.get("flow"):
-        # Above the studies, as in the written report.
-        parts[-1:-1] = [
+        # After the design and its results, at the head of the studies,
+        # as in the written report.
+        head, studies = _split_at_studies(text)
+        parts[-1:] = [
+            dcc.Markdown(head, className="qs-report"),
             html.H4("Study flow", style={"margin": "12px 0 4px"}),
             html.Div(FLOW_TEXT, className="qs-small"),
             html.Img(
                 src=made["flow"],
                 style={"maxWidth": "100%", "border": "1px solid #ddd"},
             ),
+            dcc.Markdown(studies, className="qs-report"),
         ]
     if kind == "full" and made.get("pictures"):
         parts.append(html.H4("Pictures", style={"margin": "12px 0 4px"}))

@@ -1636,6 +1636,51 @@ class QDOBackend(SwitchableStore):
 
         return qdo_report.ran_with(Path(folder))
 
+    def report_design_picture(
+        self, campaign: str = "", title: str = ""
+    ) -> dict[str, Any] | None:
+        """The whole chip, built with the store's design variables
+        (``campaign``'s, or the project's): ``{"png": <base64>,
+        "caption"}``, titled ``title``; None when the project has no
+        ``design()`` hook.
+
+        Raises:
+            Exception: Whatever building or drawing the design raised.
+        """
+        from . import qdo_preview
+
+        build = getattr(self.project, "design", None)
+        if build is None:
+            return None
+        values = self.store_values(campaign or None)
+        files: list[Any] = getattr(self.project, "design_files", lambda: [])()
+        # Kept until the store or a design file changes: a report after
+        # another draws the same chip.
+        key = (
+            campaign,
+            title,
+            json.dumps(values, sort_keys=True, default=str),
+            tuple(
+                (str(p), Path(p).stat().st_mtime_ns) for p in files if Path(p).exists()
+            ),
+        )
+        kept = self.__dict__.get("_design_picture")
+        if kept is not None and kept[0] == key:
+            return dict(kept[1])
+        if inspect.signature(build).parameters:
+            design = build(values)
+        else:
+            design = build()
+        picture = qdo_preview.render_metal(design, title or "the whole chip")
+        picture["caption"] = (
+            "The final device as qiskit-metal renders it, built with the "
+            "design variables as they stand"
+            + (f" in campaign {campaign}" if campaign else "")
+            + "."
+        )
+        self._design_picture = (key, picture)
+        return dict(picture)
+
     def report_value(self, parameter: str, value: Any) -> str:
         """A parameter's value with its unit."""
         from . import qdo_report
@@ -1643,10 +1688,18 @@ class QDOBackend(SwitchableStore):
         return qdo_report.value(parameter, value)
 
     def report_table(self, runs: list[dict], fabrication: dict) -> dict:
-        """A row per qubit: simulated, and as fabricated."""
-        from . import qdo_report
+        """A row per qubit and coupler: simulated, and as fabricated, with
+        each mode's kind and tuning range from the project's
+        ``modes.yaml`` (``qdo_modes``)."""
+        from . import qdo_modes, qdo_report
 
-        return qdo_report.table(runs, fabrication)
+        try:
+            modes = qdo_modes.load(self.project_root)
+        except (ValueError, OSError) as exc:
+            made = qdo_report.table(runs, fabrication)
+            made["notes"] = [f"Not read: {exc}"] + list(made.get("notes") or [])
+            return made
+        return qdo_report.table(runs, fabrication, modes)
 
     def describe(self, folder: Path, job) -> dict[str, Any]:
         from . import qdo_files as qf

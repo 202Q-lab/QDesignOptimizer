@@ -229,6 +229,7 @@ def render(
     whole: bool = False,
     labels: bool = False,
     pins: list[dict] | None = None,
+    tight: bool = False,
 ) -> dict[str, Any]:
     """One run's picture, as a base64 PNG with a caption.
 
@@ -244,6 +245,8 @@ def render(
         labels: Name each component at its centre (the included ones
             in bold).
         pins: Pins to mark, ``qdo_pins.markers``'s dicts.
+        tight: Crop the picture to what is drawn (a wide chip leaves
+            the square figure mostly empty).
 
     Returns:
         ``{"png": <base64>, "caption": str, "components": [...],
@@ -490,7 +493,10 @@ def render(
     )
     fig.tight_layout()
     buffer = io.BytesIO()
-    fig.savefig(buffer, format="png")
+    if tight:
+        fig.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0.08)
+    else:
+        fig.savefig(buffer, format="png")
     plt.close(fig)
     caption = (
         f"{len(present)} component(s): {', '.join(present) or 'none'}; "
@@ -505,6 +511,31 @@ def render(
         "missing": missing,
         "bridges": len(bridged),
     }
+
+
+def render_metal(design, title: str = "") -> dict[str, str]:
+    """The whole design as qiskit-metal draws it (its own matplotlib
+    renderer, ``QMplRenderer``, as its GUI shows a design): ``{"png":
+    <base64>}``, cropped to the components (the die can be much larger)."""
+    from matplotlib.figure import Figure
+    from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
+
+    renderer = QMplRenderer(design)
+    renderer.options.chip_outline = False
+    figure = Figure(figsize=(10, 4), dpi=200)
+    axes = figure.add_subplot()
+    renderer.render(axes)
+    axes.set_aspect("equal")
+    axes.autoscale()
+    axes.margins(0.02)
+    axes.set_xlabel("x (mm)", fontsize=8)
+    axes.set_ylabel("y (mm)", fontsize=8)
+    axes.tick_params(labelsize=7)
+    if title:
+        axes.set_title(title, fontsize=10)
+    buffer = io.BytesIO()
+    figure.savefig(buffer, format="png", bbox_inches="tight", pad_inches=0.08)
+    return {"png": base64.b64encode(buffer.getvalue()).decode("ascii")}
 
 
 def unbridged_note(design, names: list[str]) -> str | None:

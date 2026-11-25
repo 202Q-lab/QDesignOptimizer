@@ -1709,12 +1709,23 @@ class Bridge:
         def url(relative) -> str:
             return f"{REPORT_URL}/{token}/{Path(relative).as_posix()}"
 
+        # The design's picture by its URL: a Markdown image cannot load a
+        # file from disk here.
+        found = rp.designs(chosen)
+        images = {
+            n: url(rp.design_picture_name(n))
+            for n in range(len(found))
+            if (folder / rp.design_picture_name(n)).is_file()
+        }
+        if made and made.get("picture_src"):
+            made["picture_src"] = url(rp.TABLE_PNG)
         return {
-            "brief": rp.brief(chosen, made),
-            # The GUI shows the pictures itself (below the text): a
-            # Markdown image cannot load a file from disk there.
+            "brief": rp.brief(chosen, made, found, images),
+            # The GUI shows the study pictures itself (below the text).
             # The study flow too: shown as the written report's picture.
-            "full": rp.full(chosen, made, pictures=False, flow=False),
+            "full": rp.full(
+                chosen, made, pictures=False, flow=False, found=found, images=images
+            ),
             "flow": url(rp.FLOW_PNG) if (folder / rp.FLOW_PNG).is_file() else "",
             "pictures": [
                 {

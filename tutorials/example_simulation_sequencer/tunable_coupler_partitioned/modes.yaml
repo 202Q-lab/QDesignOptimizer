@@ -1,0 +1,14 @@
+# What kind of element each mode is, and the frequencies it can take:
+# drawn as a band in the report's frequency picture.
+#   kind:      transmon (the default for a mode with a junction), squid,
+#              ats, linc or resonator
+#   asymmetry: a squid's |Ej1 - Ej2| / (Ej1 + Ej2); its band runs from
+#              half a flux quantum up to zero flux (0: down to 0 Hz)
+#   range:     [low, high] in GHz, any kind: the band as given (an ATS's
+#              or a LINC's, or one measured)
+#
+# The design models the coupler's SQUID as one junction: its Lj is the
+# SQUID's at zero flux, so its simulated frequency is the top of its band.
+coupler_1to2:
+  kind: squid
+  asymmetry: 0
