@@ -1,0 +1,33 @@
+# A qubit's T1 limit from its charge line, from a capacitance study.
+# One study per subsystem: Q1.qubit_charge_line, Q2.qubit_charge_line.
+class: qdesignoptimizer.design_analysis_types:MiniStudy
+args:
+  qiskit_component_names: ["name_qubit_{n}_", "name_charge_line_{n}_"]
+  port_list: []
+  open_pins: []
+  modes: ["qubit_{n}"]
+  jj_setup: {}
+  design_name: "qubit_charge_line_{n}"
+  adjustment_rate: 1
+  run_capacitance_studies_only: true
+  nbr_passes: 7
+  delta_f: 0.03
+  capacitance_matrix_studies:
+  - class: qdesignoptimizer.sim_capacitance_matrix:ModeDecayIntoChargeLineStudy
+    args:
+      mode: "qubit_{n}"
+      mode_freq_GHz: "=p['qubit_{n}_freq'] / 1e9"
+      # Names of the conductors in the Ansys model list.
+      mode_capacitance_name: ["pad_bot_name_qubit_{n}_", "pad_top_name_qubit_{n}_"]
+      charge_line_capacitance_name: "trace_name_charge_line_{n}_"
+      charge_line_impedance_Ohm: 50
+      qiskit_component_names: ["name_qubit_{n}_", "name_charge_line_{n}_"]
+      open_pins:
+      - ["name_qubit_{n}_", readout]
+      - ["name_qubit_{n}_", coupler]
+      - ["name_charge_line_{n}_", start]
+      - ["name_charge_line_{n}_", end]
+      ground_plane_capacitance_name: ground_main_plane
+      nbr_passes: 8
+      # No wire bonds in the capacitance model, as in the tutorial notebook.
+      render_qiskit_metal_kwargs: {capacitance_or_surface_p_ratio: true}

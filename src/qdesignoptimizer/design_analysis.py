@@ -28,6 +28,7 @@ from qdesignoptimizer.sim_capacitance_matrix import (
     CapacitanceMatrixStudy,
     ModeDecayStudy,
     ResonatorDecayIntoWaveguideStudy,
+    save_ansys_picture,
 )
 from qdesignoptimizer.sim_plot_progress import plot_progress  # type: ignore
 from qdesignoptimizer.utils.names_parameters import (
@@ -41,6 +42,23 @@ from qdesignoptimizer.utils.names_parameters import (
     param_nonlin,
     param_participation_ratio,
 )
+
+
+def activate_eigenmode_design(renderer, design_name: str):
+    """Make ``design_name`` the active eigenmode design; return its pinfo.
+
+    When the design already exists in the Ansys project, qiskit-metal
+    reconnects the design but keeps the setup of the design active before
+    it, so a study would solve (and read the fields of) the wrong design.
+    Partitioned studies take turns in one project, so connect the setup
+    of the design now active (its first setup: the last design's setup
+    name may not exist in it).
+    """
+    renderer.activate_ansys_design(design_name, "eigenmode")
+    pinfo = renderer.pinfo
+    pinfo.setup_name = None
+    pinfo.connect_setup()
+    return pinfo
 
 
 class _ComGeometryModeler:
@@ -170,7 +188,10 @@ class _ComGeometryModeler:
                 [
                     "NAME:Geometry3DAttributeTab",
                     ["NAME:PropServers", *servers],
-                    ["NAME:ChangedProps", ["NAME:Material", "Value:=", f'"{material}"']],
+                    [
+                        "NAME:ChangedProps",
+                        ["NAME:Material", "Value:=", f'"{material}"'],
+                    ],
                 ],
             ]
         )
@@ -242,10 +263,18 @@ class DesignAnalysis:
         plot_settings (dict): Configuration for progress visualization plots.
         meshing_map (List[MeshingMap]): Custom mesh refinement configurations for specific components.
         minimization_tol (float): tolerance used to terminate the solution of an optimization step.
+        ansys_pictures (str, optional): A folder: every render in Ansys saves a picture of the
+            model there, ``hfss_<iteration>.png`` for the eigenmode model and
+            ``q3d_<study>_<iteration>.png`` for each capacitance study. None (the default) saves
+            none, unless ``DesignAnalysis.ansys_pictures_default`` names a folder.
         is_part_of_partitioned_optimization (bool): Whether the optimization is a partition of part of
         a larger system. True: will disable automatic checks for which modes are required.
 
     """
+
+    #: The folder for Ansys pictures when a DesignAnalysis is not given one (see
+    #: ``ansys_pictures``); the simulation sequencer sets it while a study runs.
+    ansys_pictures_default: Optional[str] = None
 
     def __init__(
         self,
@@ -258,7 +287,9 @@ class DesignAnalysis:
         meshing_map: Optional[List[MeshingMap]] = None,
         minimization_tol: float = 1e-12,
         is_part_of_partitioned_optimization: bool = False,
+        ansys_pictures: Optional[str] = None,
     ):
+        self.ansys_pictures = ansys_pictures or DesignAnalysis.ansys_pictures_default
         self.design_analysis_version = qdesignoptimizer.__version__
         self.state = (
             state  # the system_optimized_params will be synced with the injected state
@@ -313,9 +344,9 @@ class DesignAnalysis:
         self.minimization_results: list[dict] = []
 
         self.renderer.start()
-        self.renderer.activate_ansys_design(self.mini_study.design_name, "eigenmode")
-
-        self.pinfo = self.renderer.pinfo
+        self.pinfo = activate_eigenmode_design(
+            self.renderer, self.mini_study.design_name
+        )
         self.setup = self.pinfo.setup
         self.setup.n_modes = len(self.mini_study.modes)
         self.setup.passes = self.mini_study.nbr_passes
@@ -561,6 +592,10 @@ class DesignAnalysis:
                     RefineInside=True,
                 )
 
+        save_ansys_picture(
+            self.renderer, self.ansys_picture_path(f"hfss_{self._iteration()}")
+        )
+
         # run eigenmode analysis
         self.setup.analyze()
         eig_results = self.eig_solver.get_frequencies()
@@ -643,9 +678,7 @@ class DesignAnalysis:
             self._geom.clone(obj)
             cloned_polygon_name.append(obj + "2")
         self._geom.unite(cloned_polygon_name, False)
-        self._geom.create_group(
-            cloned_polygon_name, group_name="metal_substrate"
-        )
+        self._geom.create_group(cloned_polygon_name, group_name="metal_substrate")
 
         # metal-air
         cloned_polygon_name = []
@@ -681,7 +714,7 @@ class DesignAnalysis:
                 interface_props = getattr(
                     self.mini_study.surface_properties.interfaces, interface_name
                 )
-                for obj_name in (self._geom.get_objects_in_group(interface_name) or []):
+                for obj_name in self._geom.get_objects_in_group(interface_name) or []:
                     self.pinfo.dissipative["dielectric_surfaces"][obj_name] = asdict(
                         interface_props
                     )
@@ -749,9 +782,9 @@ class DesignAnalysis:
 
         for mode in self.mini_study.modes:
             for jj_idx, junction in enumerate(self.jj_setups_to_include_in_epr):
-                self.system_optimized_params[param_participation_ratio(mode, junction)] = (
-                    participation_ratio.iloc[mode_idx[mode], jj_idx]
-                )
+                self.system_optimized_params[
+                    param_participation_ratio(mode, junction)
+                ] = participation_ratio.iloc[mode_idx[mode], jj_idx]
 
     def _update_optimized_params_capacitance_simulation(
         self,
@@ -866,8 +899,16 @@ class DesignAnalysis:
             for capacitance_study in self.mini_study.capacitance_matrix_studies:
                 capacitance_study.set_render_qiskit_metal(self.render_qiskit_metal)
                 log.info("Simulating capacitance matrix study.")
-                capacitance_matrix = capacitance_study.simulate_capacitance_matrix(
-                    self.design
+                picture = self.ansys_picture_path(
+                    f"q3d_{len(iteration_result['capacitance_matrix']) + 1}"
+                    f"_{self._iteration()}"
+                )
+                capacitance_matrix = (
+                    capacitance_study.simulate_capacitance_matrix(
+                        self.design, picture=picture
+                    )
+                    if picture
+                    else capacitance_study.simulate_capacitance_matrix(self.design)
                 )
                 log.info("CAPACITANCE MATRIX\n%s", capacitance_matrix.to_string())
                 self._update_optimized_params_capacitance_simulation(
@@ -977,6 +1018,17 @@ class DesignAnalysis:
 
         return None
 
+    def _iteration(self) -> int:
+        """The number of the iteration being simulated (1 for the first)."""
+        return len(self.optimization_results) + 1
+
+    def ansys_picture_path(self, name: str) -> Optional[str]:
+        """Where the Ansys picture ``name`` goes (None: no pictures kept)."""
+        if not self.ansys_pictures:
+            return None
+        os.makedirs(self.ansys_pictures, exist_ok=True)
+        return os.path.join(self.ansys_pictures, f"{name}.png")
+
     def screenshot(self, gui, run=None):
         """Take and save a screenshot of the current qiskit-metal design.
 
@@ -988,7 +1040,7 @@ class DesignAnalysis:
         try:
             gui.autoscale()
             gui.screenshot(name=name, display=False)
-        except Exception as error:  
+        except Exception as error:
             log.warning("Failed to save screenshot to %s: %s", name, error)
 
     def _get_dielectric_p_ratio(self):

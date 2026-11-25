@@ -1,0 +1,53 @@
+# The project's opt targets. Each has a name, unique in the project, and
+# {n} is a subsystem's value, as in the ministudies.
+#
+# A study takes every target whose modes are all modes of its MiniStudy
+# and switches on the ones its kind of simulation produces: by parameter
+# (kappa, charge_line_limited_t1 and capacitance in a capacitance study,
+# the rest in an eigenmode solve), or as "simulation:" says. The others are
+# written into the study with "active: false", one flag to flip.
+#
+# tolerance: how close the last iteration must come for the "converged"
+# check -- relative, or {abs: ...} in the parameter's unit.
+targets:
+- name: "Q{n}_qubit_freq"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_qubit_freq_via_lj
+  args:
+    qubit: "qubit_{n}"
+  tolerance: {abs: 20.0e+6}   # Hz
+- name: "Q{n}_qubit_anharmonicity"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_qubit_anharmonicity_via_capacitance_width
+  args:
+    qubit: "qubit_{n}"
+    design_var_constraint: {larger_than: 1um, smaller_than: 900um}
+  tolerance: 0.05
+- name: "Q{n}_resonator_freq"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_freq_via_length
+  args:
+    resonator: "resonator_{n}"
+  tolerance: {abs: 10.0e+6}   # Hz
+- name: "Q{n}_chi"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_qub_chi_via_coupl_length
+  args:
+    qubit: "qubit_{n}"
+    resonator: "resonator_{n}"
+  tolerance: 0.1
+
+# The same linewidth, tuned in two kinds of study. The eigenmode solve
+# reads it from the feedline ports' Q, the capacitance study from the
+# coupling capacitance; each study switches on the one it produces.
+- name: "Q{n}_resonator_kappa"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_kappa_via_coupl_length
+  args:
+    resonator: "resonator_{n}"
+    resonator_coupled_identifier: tee
+    design_var_constraint: {larger_than: 1um, smaller_than: 1500um}
+  tolerance: 0.1
+- name: "Q{n}_resonator_kappa_eigenmode"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_kappa_via_coupl_length
+  args:
+    resonator: "resonator_{n}"
+    resonator_coupled_identifier: tee
+    design_var_constraint: {larger_than: 1um, smaller_than: 1500um}
+  simulation: eigenmode
+  tolerance: 0.1

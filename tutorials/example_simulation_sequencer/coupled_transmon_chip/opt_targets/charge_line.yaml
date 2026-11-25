@@ -1,0 +1,11 @@
+# A target written out field by field, without a QDO helper: prop_to is an
+# expression of p['<parameter>'] and v['<design variable>'].
+targets:
+- name: "Q{n}_charge_line_t1"
+  target_param_type: charge_line_limited_t1
+  involved_modes: ["qubit_{n}"]
+  design_var: "design_var_cl_pos_x_qubit_{n}"
+  design_var_constraint: {larger_than: -1000um, smaller_than: -5um}
+  prop_to: "-v['design_var_cl_pos_x_qubit_{n}'] ** 3"
+  independent_target: true
+  tolerance: 0.2

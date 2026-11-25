@@ -8,4 +8,6 @@ User Guide
 
    quickstart
    tutorials
+   sequencer
+   sequencer_demo
    videos

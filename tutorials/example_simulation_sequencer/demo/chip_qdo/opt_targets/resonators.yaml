@@ -1,0 +1,19 @@
+# The opt targets of the chip, one pair per resonator: {subject} is the
+# resonator a study is made for (R1, R2). Each has a name, unique in the
+# project. A study takes the targets whose modes are all modes of its
+# MiniStudy -- here both of its resonator -- and switches on the one its
+# simulation can produce: the frequency in an eigenmode study, the
+# linewidth in a capacitance study. The other is kept in the study with
+# "active: false".
+targets:
+- name: "{subject}_freq"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_freq_via_length
+  args:
+    resonator: "resonator_{subject}"
+  tolerance: {abs: 5.0e+6}   # Hz
+- name: "{subject}_kappa"
+  helper: qdesignoptimizer.utils.optimization_targets:get_opt_target_res_kappa_via_coupl_length
+  args:
+    resonator: "resonator_{subject}"
+    resonator_coupled_identifier: tee
+  tolerance: 0.01            # relative

@@ -1,5 +1,6 @@
 """Study classes for capacitance matrix based simulations."""
 
+import os
 from abc import ABC, abstractmethod
 from typing import Callable, List, Literal, Optional, Union
 
@@ -11,7 +12,83 @@ from qdesignoptimizer.estimation.classical_model_decay_into_charge_line import (
     calculate_t1_limit_floating_lumped_mode_decay_into_chargeline,
     calculate_t1_limit_grounded_lumped_mode_decay_into_chargeline,
 )
+from qdesignoptimizer.logger import log
 from qdesignoptimizer.utils.names_parameters import CHARGE_LINE_LIMITED_T1, KAPPA
+
+#: The size of a saved Ansys picture, in pixels. Not 0 x 0 ("the window's
+#: size", pyEPR's and qiskit-metal's ``save_screenshot``): with that, AEDT
+#: 2022 R2 run from a script crashes (RPC error) and takes the simulation
+#: with it.
+ANSYS_PICTURE_SIZE = (1600, 1000)
+
+
+def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
+    """Save a picture of the model as an Ansys renderer drew it, from above,
+    framed on the drawn metal (the substrate and its ground plane left out).
+
+    Never raises: Ansys's image export fails now and then (a COM error), and a
+    missing picture must not fail the simulation.
+
+    Args:
+        renderer: A qiskit-metal Ansys renderer (HFSS or Q3D), connected.
+        path (str, optional): The .png file; None saves nothing.
+
+    Returns:
+        The path when the picture was saved, else None.
+    """
+    if not path:
+        return None
+    try:
+        modeler = renderer.modeler._modeler  # pylint: disable=protected-access
+        try:
+            modeler.FitAll()
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass  # the view as it is, then
+        width, height = ANSYS_PICTURE_SIZE
+        # Ansys frames the picture on the objects selected: the components,
+        # not the chip around them (all of it when there is nothing else).
+        selections = ",".join(_drawn_objects(renderer, modeler))
+        modeler.ExportModelImageToFile(
+            str(path),
+            width,
+            height,
+            [
+                "NAME:SaveImageParams",
+                "ShowAxis:=",
+                "False",  # drawn over the components; the corner triad stays
+                "ShowGrid:=",
+                "False",
+                "ShowRuler:=",
+                "True",
+                "ShowRegion:=",
+                "Default",
+                "Selections:=",
+                selections,
+                "Orientation:=",
+                "top",  # the chip seen from above
+            ],
+        )
+    except Exception as error:  # pylint: disable=broad-exception-caught
+        log.warning("No Ansys picture saved to %s: %s", path, error)
+        return None
+    return path if os.path.exists(path) else None
+
+
+def _drawn_objects(renderer, modeler) -> List[str]:
+    """The model's objects but the chips' substrates (named after the chip),
+    their ground planes (``ground_<chip>_plane``) and an air region."""
+    try:
+        chips = set(renderer.design.chips)
+    except Exception:  # pylint: disable=broad-exception-caught
+        chips = {"main"}
+    around = chips | {f"ground_{chip}_plane" for chip in chips} | {"Region"}
+    names: List[str] = []
+    for group in ("Solids", "Sheets", "Lines"):
+        try:
+            names += [str(n) for n in modeler.GetObjectsInGroup(group)]
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass  # an empty group, or none of that kind
+    return [n for n in names if n not in around]
 
 
 class CapacitanceMatrixStudy:
@@ -95,11 +172,14 @@ class CapacitanceMatrixStudy:
     def simulate_capacitance_matrix(
         self,
         design: QDesign,
+        picture: Optional[str] = None,
     ):
         """Run the capacitance matrix simulation for the specified design.
 
         Args:
             design (QDesign): The Qiskit Metal design to simulate.
+            picture (str, optional): A .png file: a picture of the model as rendered in
+                Q3D is saved there. None saves none.
 
         Returns:
             pandas.DataFrame: The simulated capacitance matrix in femtofarads (fF).
@@ -121,6 +201,7 @@ class CapacitanceMatrixStudy:
         lom_analysis.sim.run(
             components=self.qiskit_component_names, open_terminations=self.open_pins
         )
+        save_ansys_picture(lom_analysis.sim.renderer, picture)
         self.capacitance_matrix_fF = lom_analysis.sim.capacitance_matrix
         return self.capacitance_matrix_fF
 
