@@ -23,7 +23,7 @@ from __future__ import annotations
 import base64
 import io
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 import yaml
 
@@ -227,6 +227,130 @@ def picture(lanes: list[dict], title: str = "") -> dict[str, str] | None:
             "band is the range a tunable mode can take (modes.yaml)."
         ),
     }
+
+
+#: The editor's columns (the GUI's report pane): range in GHz.
+EDITOR_COLUMNS = ["mode", "kind", "asymmetry", "low", "high"]
+
+_HEADER = """\
+# What kind of element each mode is, and the frequencies it can take:
+# drawn as a band in the report's frequency picture.
+#   kind:      transmon (the default for a mode with a junction), squid,
+#              ats, linc or resonator
+#   asymmetry: a squid's |Ej1 - Ej2| / (Ej1 + Ej2); its band runs from
+#              half a flux quantum up to zero flux (0: down to 0 Hz)
+#   range:     [low, high] in GHz, any kind: the band as given (an ATS's
+#              or a LINC's, or one measured)
+"""
+
+
+def editor(project_root: Path, found: dict[str, str]) -> dict:
+    """The rows to edit: every mode in ``modes.yaml`` and every one in
+    ``found`` (``{mode: its kind when not given}``), ``{"rows": [{"mode",
+    "kind", "asymmetry", "low", "high"}], "kinds": {kind: what it is},
+    "file", "problem"}``; ``problem`` says why the file did not read
+    (its modes are then left out)."""
+    problem = ""
+    try:
+        given = load(project_root)
+    except ValueError as exc:
+        given, problem = {}, str(exc)
+    rows = []
+    for mode in sorted(set(given) | set(found)):
+        entry = given.get(mode) or {}
+        low, high = entry.get("range") or (None, None)
+        asymmetry = entry.get("asymmetry")
+        rows.append(
+            {
+                "mode": mode,
+                "kind": entry.get("kind") or found.get(mode) or "transmon",
+                "asymmetry": "" if asymmetry is None else asymmetry,
+                "low": "" if low is None else round(low / 1e9, 6),
+                "high": "" if high is None else round(high / 1e9, 6),
+            }
+        )
+    return {
+        "rows": rows,
+        "kinds": {kind: text for kind, (text, _) in KINDS.items()},
+        "file": str(Path(project_root) / MODES_FILE),
+        "problem": problem,
+    }
+
+
+def save(project_root: Path, rows: list[dict]) -> Path:
+    """Write ``modes.yaml`` from the editor's rows, keeping the file's
+    comments at its top and any other key a mode has there.
+
+    Raises:
+        ValueError: For an unknown kind, a number that does not read, an
+            asymmetry outside [0, 1] or half a range, naming the mode.
+    """
+    path = Path(project_root) / MODES_FILE
+    try:
+        text = path.read_text("utf-8")
+    except FileNotFoundError:
+        text = ""
+    try:
+        raw = yaml.safe_load(text) or {}
+    except yaml.YAMLError:
+        raw = {}
+    raw = raw if isinstance(raw, dict) else {}
+    out: dict[str, dict] = {}
+    for row in rows:
+        mode = str(row.get("mode") or "").strip()
+        if not mode:
+            continue
+        kind = str(row.get("kind") or "transmon").strip().lower()
+        if kind not in KINDS:
+            raise ValueError(f"{mode}: kind {kind!r} is none of {sorted(KINDS)}")
+        previous = raw.get(mode)
+        entry: dict[str, Any] = {"kind": kind}
+        entry.update(
+            (k, v)
+            for k, v in (previous if isinstance(previous, dict) else {}).items()
+            if k not in ("kind", "asymmetry", "range")
+        )
+        asymmetry = _editor_number(mode, "asymmetry", row.get("asymmetry"))
+        if asymmetry is not None:
+            if not 0 <= asymmetry <= 1:
+                raise ValueError(f"{mode}: asymmetry {asymmetry} is not in [0, 1]")
+            entry["asymmetry"] = asymmetry
+        low = _editor_number(mode, "low", row.get("low"))
+        high = _editor_number(mode, "high", row.get("high"))
+        if (low is None) != (high is None):
+            raise ValueError(f"{mode}: give both ends of the range, or neither")
+        if low is not None and high is not None:
+            entry["range"] = [min(low, high), max(low, high)]
+        out[mode] = entry
+    header = []
+    for line in text.splitlines():
+        if line.strip() and not line.lstrip().startswith("#"):
+            break
+        header.append(line)
+    while header and not header[-1].strip():
+        header.pop()
+    head = "\n".join(header) + "\n" if header else _HEADER
+    path.write_text(
+        head
+        + (
+            yaml.safe_dump(
+                dict(sorted(out.items())), sort_keys=False, default_flow_style=None
+            )
+            if out
+            else ""
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _editor_number(mode: str, what: str, value) -> float | None:
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{mode}: {what} {value!r} is not a number") from None
 
 
 def _any_frequency(lane: dict) -> bool:

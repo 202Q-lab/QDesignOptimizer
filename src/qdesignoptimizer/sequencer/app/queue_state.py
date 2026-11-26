@@ -1666,23 +1666,61 @@ class Bridge:
         runs = rp.completed_runs(self.workspace)
         target = self._project_for(project)
         fabrication = rp.load_fabrication(target)
+        chosen = rp.default_selection(runs)
         return {
             "runs": runs,
-            "chosen": rp.default_selection(runs),
+            "chosen": chosen,
             "fabrication": "\n".join(f"{k}: {v}" for k, v in fabrication.items()),
             "fabrication_file": str(rp.fabrication_path(target)),
+            "modes": self._report_modes(target, chosen),
         }
 
+    def _report_modes(self, target, keys: list[str]) -> dict | None:
+        """The project's modes to edit (its backend's ``report_modes``,
+        with the modes its runs among ``keys`` name), or None.
+
+        Each run as far as naming its modes needs: its outputs and its
+        targets, not the rest a report reads (``collect`` loads each
+        study's own code, seconds for each the first time)."""
+        hook = getattr(target.backend, "report_modes", None)
+        if hook is None:
+            return None
+        targets = getattr(target.backend, "report_targets", None)
+        runs = []
+        for key in keys:
+            try:
+                project, local = self.workspace.locate(key)
+            except QueueError:
+                continue
+            if project is not target:
+                continue
+            folder = project.queue.completed_dir / local
+            # Plain data: the backend may be in a worker process.
+            runs.append(
+                {
+                    "folder": str(folder),
+                    "outputs": st.result_of(folder).get("outputs") or {},
+                    "targets": (targets(folder) or []) if targets else [],
+                }
+            )
+        return hook(runs)
+
     def make_report(
-        self, keys: list[str], fabrication_text: str, project: str = ""
+        self,
+        keys: list[str],
+        fabrication_text: str,
+        project: str = "",
+        modes: list[dict] | None = None,
     ) -> dict[str, Any]:
         """Report on the runs ``keys``, with what fabrication gave (kept in
-        the project's ``fabrication.yaml``): ``{"brief", "full",
-        "table_md", "table_tsv", "folder"}``.
+        the project's ``fabrication.yaml``) and, when given, the ``modes``
+        as edited (the backend's ``save_report_modes``: the project's
+        ``modes.yaml``): ``{"brief", "full", "table_md", "table_tsv",
+        "folder"}``.
 
         Raises:
-            GuiError: For no run chosen, or a fabrication line that does
-                not read.
+            GuiError: For no run chosen, or a fabrication line or a mode
+                that does not read.
         """
         from ..engine import report as rp
 
@@ -1696,6 +1734,12 @@ class Bridge:
             raise GuiError(str(exc)) from exc
         if fabrication != rp.load_fabrication(target):
             rp.save_fabrication(target, fabrication)
+        saver = getattr(target.backend, "save_report_modes", None)
+        if modes is not None and saver is not None:
+            try:
+                saver([dict(row) for row in modes])
+            except ValueError as exc:
+                raise GuiError(f"modes: {exc}") from exc
         made = rp.table(chosen, rp.load_fabrication(target))
         folder = rp.write(target, chosen, made)
         # The pictures are the written report's copies, loaded by the

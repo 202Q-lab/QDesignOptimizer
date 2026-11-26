@@ -79,7 +79,7 @@ def table(
 
     ``rows`` are flat, a row per element (the paste for Notion);
     ``display`` is the report's table: a group of rows per element, each
-    quantity numbered and the ones it follows from named (``← ①``).
+    quantity a row.
     ``picture`` is where every mode's target sits (``qdo_modes.picture``).
 
     A run that tunes some modes reports only those: the others are in its
@@ -267,7 +267,6 @@ def _flat_row(e: dict) -> list:
 #: The report's table (``display``): a group of rows per element.
 DISPLAY_COLUMNS = [
     "Element",
-    "#",
     "Quantity",
     "Simulated",
     "Target",
@@ -275,13 +274,12 @@ DISPLAY_COLUMNS = [
     "Δ fab − sim",
     "From study",
 ]
-_CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"
 
 
 def _display(elements: list[dict]) -> dict:
-    """Each element's quantities as rows, numbered, each naming the
-    numbers it follows from: the junction (①) sets Ej (② ← ①), Ej the
-    frequency (③ ← ②), the frequency the range a tunable one can take."""
+    """Each element's quantities as rows: the junction, Ej, the
+    frequency, the anharmonicity, the range a tunable one can take, and
+    its readout."""
     rows = []
     for e in elements:
         delta_ej = (
@@ -297,87 +295,68 @@ def _display(elements: list[dict]) -> dict:
         readout = e["readout"]
         quantities = [
             (
-                "lj",
                 "Junction Lj",
                 _unit(e["lj"], 1e-9, 2, "nH"),
                 "",
                 e["measured"],
                 "",
-                [],
             ),
             (
-                "ej",
                 "Ej",
                 _unit(e["ej"], 1e9, 3, "GHz"),
                 "",
                 _unit(e["ej_fab"], 1e9, 3, "GHz"),
                 delta_ej,
-                ["lj"],
             ),
             (
-                "f01",
                 "f01" + (" at zero flux" if e["kind"] == "squid" else ""),
                 _unit(e["f01"], 1e9, 4, "GHz"),
                 _unit(e["f01_target"], 1e9, 4, "GHz"),
                 _unit(e["f01_fab"], 1e9, 4, "GHz"),
                 delta_f,
-                ["ej"],
             ),
             (
-                "alpha",
                 "Anharmonicity |α|",
                 _unit(e["alpha"], 1e6, 1, "MHz"),
                 _unit(e["alpha_target"], 1e6, 1, "MHz"),
                 "",
                 "",
-                [],
             ),
             (
-                "band",
                 "Tuning range",
                 _band_text(e["band"], " GHz"),
                 "",
                 _band_text(e["band_fab"], " GHz"),
                 "",
-                ["f01"] if e["kind"] == "squid" else [],
             ),
             (
-                "fr",
                 f"Readout {readout} f",
                 _unit(e["fr"], 1e9, 4, "GHz"),
                 _unit(e["fr_target"], 1e9, 4, "GHz"),
                 "",
                 "",
-                [],
             ),
             (
-                "kappa",
                 f"Readout {readout} κ",
                 _unit(e["kappa"], 1e6, 3, "MHz"),
                 _unit(e["kappa_target"], 1e6, 3, "MHz"),
                 "",
                 "",
-                [],
             ),
             (
-                "chi",
                 f"χ with {readout}",
                 _unit(e["chi"], 1e6, 3, "MHz"),
                 _unit(e["chi_target"], 1e6, 3, "MHz"),
                 "",
                 "",
-                [],
             ),
         ]
-        shown = [q for q in quantities if any(q[2:5])]
-        number = {q[0]: _CIRCLED[n % len(_CIRCLED)] for n, q in enumerate(shown)}
-        for n, (key, label, sim, target, fab, delta, needs) in enumerate(shown):
-            follows = " ".join(number[k] for k in needs if k in number)
+        shown = [q for q in quantities if any(q[1:4])]
+        for n, (label, sim, target, fab, delta) in enumerate(shown):
             rows.append(
                 [
                     f"**{e['mode']}** ({e['kind']})" if n == 0 else "",
-                    number[key],
-                    label + (f" ← {follows}" if follows else ""),
+                    label,
                     sim,
                     target,
                     fab,
@@ -420,6 +399,31 @@ def _latest_per_qubit(found: list[tuple]) -> list:
         if qubit not in best or rank > best[qubit][0]:
             best[qubit] = (rank, row)
     return [best[q][1] for q in sorted(best)]
+
+
+def modes_in(runs: list[dict]) -> dict[str, str]:
+    """Every mode the runs simulated or have a frequency target on, with
+    its kind when ``modes.yaml`` does not give one: a transmon if the
+    design has a junction for it (an Lj), else a resonator."""
+    from qdesignoptimizer.utils.names_design_variables import design_var_lj
+
+    found: dict[str, str] = {}
+    for run in runs:
+        outputs = run.get("outputs") or {}
+        started = ran_with(run["folder"])
+        names = [k[: -len("_freq")] for k in outputs if k.endswith("_freq")]
+        names += [
+            k[: -len("_freq")]
+            for k in _parameter_targets(run["folder"])
+            if k.endswith("_freq")
+        ]
+        for mode in names:
+            lj = design_var_lj(mode)
+            if (run.get("targets") and _last_design(run, lj)) or lj in started:
+                found[mode] = "transmon"
+            else:
+                found.setdefault(mode, "resonator")
+    return found
 
 
 def tuned_modes(run: dict, modes: list[str]) -> list[str]:

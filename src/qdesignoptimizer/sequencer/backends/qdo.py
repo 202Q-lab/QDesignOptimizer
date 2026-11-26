@@ -1701,6 +1701,23 @@ class QDOBackend(SwitchableStore):
             return made
         return qdo_report.table(runs, fabrication, modes)
 
+    def report_modes(self, runs: list[dict]) -> dict:
+        """The project's ``modes.yaml`` to edit, with every mode these
+        runs simulated or target (``qdo_modes.editor``)."""
+        from . import qdo_modes, qdo_report
+
+        return qdo_modes.editor(self.project_root, qdo_report.modes_in(runs))
+
+    def save_report_modes(self, rows: list[dict]) -> str:
+        """Write the project's ``modes.yaml`` from the edited rows.
+
+        Raises:
+            ValueError: For a row that does not read (``qdo_modes.save``).
+        """
+        from . import qdo_modes
+
+        return str(qdo_modes.save(self.project_root, rows))
+
     def describe(self, folder: Path, job) -> dict[str, Any]:
         from . import qdo_files as qf
 

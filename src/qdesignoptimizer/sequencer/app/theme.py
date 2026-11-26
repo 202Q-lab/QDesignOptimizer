@@ -180,4 +180,11 @@ body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0;
             font-size: 13px; }
 .qs-mono { font-family: Consolas, monospace; font-size: 12px; }
 .qs-scroll { max-height: 380px; overflow: auto; }
+/* Making a report takes a while: a wheel turns until it is there. */
+.qs-busy { display: flex; align-items: center; gap: 10px; padding: 12px 0;
+           color: #455a64; font-size: 13px; }
+.qs-spinner { width: 22px; height: 22px; border-radius: 50%;
+              border: 3px solid #cfd8dc; border-top-color: #1565c0;
+              animation: qs-spin 0.9s linear infinite; flex: none; }
+@keyframes qs-spin { to { transform: rotate(360deg); } }
 """

@@ -1,11 +1,14 @@
 """Standardized naming conventions for design variables in qubit/resonator/coupler systems."""
 
-from typing import Literal, Union
+from __future__ import annotations
 
-from qiskit_metal.designs.design_planar import DesignPlanar
+from typing import TYPE_CHECKING, Literal
 
 from qdesignoptimizer.utils.names_parameters import DesignVariable, Mode
 from qdesignoptimizer.utils.names_qiskit_components import name_mode
+
+if TYPE_CHECKING:  # a name is a string: no need to load qiskit-metal for it
+    from qiskit_metal.designs.design_planar import DesignPlanar
 
 
 def add_design_variables_to_design(
@@ -25,6 +28,7 @@ def add_design_variables_to_design(
 def design_var_(identifier: str) -> DesignVariable:
     """Create standardized variable name for component with identifier."""
     return f"design_var_{identifier}"
+
 
 def design_var_length(identifier: str) -> DesignVariable:
     """Create standardized variable name for component length."""
@@ -57,12 +61,12 @@ def design_var_cj(identifier: str) -> DesignVariable:
     return f"design_var_cj_{identifier}"
 
 
-def design_var_cl_pos_x(identifier: Union[str, int]) -> DesignVariable:
+def design_var_cl_pos_x(identifier: str | int) -> DesignVariable:
     """Create standardized variable name for charge line x-position."""
     return f"design_var_cl_pos_x_{identifier}"
 
 
-def design_var_cl_pos_y(identifier: Union[str, int]) -> DesignVariable:
+def design_var_cl_pos_y(identifier: str | int) -> DesignVariable:
     """Create standardized variable name for charge line y-position."""
     return f"design_var_cl_pos_y_{identifier}"
 

@@ -360,6 +360,19 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         return list(latest or [])
 
     @app.callback(
+        Output("report-modes", "data"),
+        Input("btn-report-add-mode", "n_clicks"),
+        State("report-modes", "data"),
+        prevent_initial_call=True,
+    )
+    def _add_report_mode(n, rows):
+        if not n or rows is None:
+            raise PreventUpdate
+        return list(rows) + [
+            {"mode": "", "kind": "transmon", "asymmetry": "", "low": "", "high": ""}
+        ]
+
+    @app.callback(
         Output("report-out", "children"),
         Output("message", "data", allow_duplicate=True),
         Input("btn-make-report", "n_clicks"),
@@ -367,9 +380,10 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         State("report-fab", "value"),
         State("report-kind", "value"),
         State("new-project", "value"),
+        State("report-modes", "data"),
         prevent_initial_call=True,
     )
-    def _make_report(n, keys, fabrication, kind, project):
+    def _make_report(n, keys, fabrication, kind, project, modes):
         if not n:
             raise PreventUpdate
         try:
@@ -377,6 +391,7 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
                 list(keys or []),
                 fabrication or "",
                 "" if bridge.workspace.single else (project or ""),
+                modes=None if modes is None else list(modes),
             )
         except GuiError as exc:
             return no_update, _msg(str(exc), False)

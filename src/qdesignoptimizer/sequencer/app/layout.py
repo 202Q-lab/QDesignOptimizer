@@ -8,7 +8,7 @@ import uuid
 from typing import Any
 
 import yaml
-from dash import dcc, html
+from dash import dash_table, dcc, html
 
 from ..engine.report import FLOW_TEXT
 from . import form_layout, forms, theme
@@ -384,8 +384,14 @@ def _editor_area() -> Any:
             html.Div(id="details-problems"),
             # Only redrawn when something is picked: the first study after
             # a start takes seconds (the worker imports the backend), and
-            # the old one must not look like the new one.
-            dcc.Loading(html.Div(id="details"), type="dot", delay_show=300),
+            # the old one must not look like the new one. Not while a
+            # callback inside the pane works (a report has its own wheel).
+            dcc.Loading(
+                html.Div(id="details"),
+                type="dot",
+                delay_show=300,
+                target_components={"details": "children"},  # type: ignore[arg-type]
+            ),
             dcc.Loading(html.Div(id="validate-view"), type="dot"),
             dcc.Loading(html.Div(id="preview-view"), type="dot"),
             html.Pre(id="inspect", className="qs-pre", style={"display": "none"}),
@@ -1868,6 +1874,7 @@ def report_view(data: dict) -> Any:
                 className="qs-input",
                 style={"width": "100%", "height": "70px", "fontFamily": "monospace"},
             ),
+            *report_modes_editor(data.get("modes")),
             html.Div(
                 className="qs-bar",
                 children=[
@@ -1887,9 +1894,100 @@ def report_view(data: dict) -> Any:
                     ),
                 ],
             ),
-            html.Div(id="report-out"),
+            # A report takes up to a minute (the device is built for its
+            # picture): a wheel turns meanwhile.
+            dcc.Loading(
+                html.Div(id="report-out"),
+                custom_spinner=html.Div(
+                    [
+                        html.Div(className="qs-spinner"),
+                        html.Span(
+                            "Making the report: building the device for its "
+                            "picture takes up to a minute."
+                        ),
+                    ],
+                    className="qs-busy",
+                ),
+                overlay_style={"visibility": "visible"},
+            ),
         ]
     )
+
+
+def report_modes_editor(modes: dict | None) -> list:
+    """The project's modes to edit: each one's kind, a SQUID's asymmetry
+    and the range it can be tuned over (GHz), saved to its modes file
+    when a report is made. Nothing to see for a backend without modes."""
+    if modes is None:
+        # what the report's callbacks read, empty
+        return [
+            dcc.Store(id="report-modes", data=None),
+            html.Button(id="btn-report-add-mode", style={"display": "none"}),
+        ]
+    kinds = modes.get("kinds") or {}
+    number = {"type": "numeric"}
+    return [
+        html.H4("Modes", style={"margin": "12px 0 4px"}),
+        html.Div(
+            "What each mode is and the range it can be tuned over, drawn as a "
+            "band in the frequency picture. A SQUID's range follows from its "
+            "asymmetry |Ej1 − Ej2| / (Ej1 + Ej2) (0: down to 0 Hz); an ATS's "
+            "or a LINC's, give low and high. A range given wins. Kept in "
+            f"{modes.get('file', 'modes.yaml')}.",
+            className="qs-small",
+        ),
+        *(
+            [html.Div(modes["problem"], className="qs-problems")]
+            if modes.get("problem")
+            else []
+        ),
+        dash_table.DataTable(  # type: ignore[attr-defined]
+            id="report-modes",
+            data=modes.get("rows") or [],
+            columns=[
+                {"name": "Mode", "id": "mode"},
+                {"name": "Kind", "id": "kind", "presentation": "dropdown"},
+                {"name": "Asymmetry", "id": "asymmetry", **number},
+                {"name": "Low (GHz)", "id": "low", **number},
+                {"name": "High (GHz)", "id": "high", **number},
+            ],
+            editable=True,
+            row_deletable=True,
+            dropdown={
+                "kind": {
+                    "options": [{"label": kind, "value": kind} for kind in kinds],
+                    "clearable": False,
+                }
+            },
+            tooltip_header={
+                "asymmetry": "a SQUID's |Ej1 − Ej2| / (Ej1 + Ej2)",
+                "low": "the band as given, any kind",
+            },
+            css=[
+                {"selector": ".Select-menu-outer", "rule": "display: block !important"}
+            ],
+            # no scroll box of its own: it would clip the kind's menu
+            style_cell={
+                "fontSize": "13px",
+                "padding": "2px 6px",
+                "textAlign": "left",
+                "fontFamily": "inherit",
+                "minWidth": "70px",
+            },
+            style_cell_conditional=[
+                {"if": {"column_id": "kind"}, "width": "110px"},
+            ],
+            style_header={"fontWeight": "bold", "background": "#eceff1"},
+        ),
+        html.Div(
+            html.Button(
+                "Add mode",
+                id="btn-report-add-mode",
+                className="qs-btn qs-btn-small",
+            ),
+            className="qs-bar",
+        ),
+    ]
 
 
 def _split_at_studies(text: str) -> tuple[str, str]:
