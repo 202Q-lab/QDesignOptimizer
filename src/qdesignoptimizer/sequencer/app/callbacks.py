@@ -75,6 +75,19 @@ def register_callbacks(app: Dash, bridge: Bridge) -> None:
         return layout.section_titles(snap or {})
 
     @app.callback(
+        Output("title-running", "children"),
+        Output("running-table", "children"),
+        Input("snapshot", "data"),
+        Input("selected", "data"),
+    )
+    def _running(snap, selected):
+        snap = snap or {}
+        return (
+            layout.running_title(snap),
+            layout.completed_table(snap, selected, running=True),
+        )
+
+    @app.callback(
         Output("queue-table", "children"),
         Output("held-table", "children"),
         Output("completed-table", "children"),

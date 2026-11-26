@@ -411,3 +411,25 @@ def test_independent_chains_get_their_own_colours():
     colours = [{c for *_, c in m["nodes"]} for m in marks]
     assert colours == [{FIRST}, {SECOND}, {FIRST}, {SECOND}, set(), {FIRST}]
     assert lanes == 2  # the chains overlap, so they cannot share a lane
+
+
+def test_a_running_study_is_shown_as_running_not_completed(bridge, monkeypatch):
+    bridge.add("task", "A.calibrate")
+    bridge.add("task", "B.measure")
+    Runner(bridge.project).run()
+    folder = sorted(bridge.project.queue.completed_dir.iterdir())[0]
+    result = json.loads((folder / "result.json").read_text(encoding="utf-8"))
+    (folder / "result.json").write_text(
+        json.dumps({**result, "status": st.RUNNING}), encoding="utf-8"
+    )
+    monkeypatch.setattr(st.RunnerState, "alive", lambda self, out: True)
+    snap = bridge.snapshot()
+    assert [r["status"] for r in snap["running"]] == [st.RUNNING]
+    assert [r["status"] for r in snap["completed"]] == ["done"]
+    assert layout.running_title(snap) == "Running (1)"
+    shown = str(layout.completed_table(snap, None, running=True))
+    assert "Requeue" not in shown and snap["running"][0]["id"] in shown
+    assert "Requeue" in str(layout.completed_table(snap, None))
+    assert "Nothing is running." in str(
+        layout.completed_table({"running": []}, None, running=True)
+    )

@@ -720,6 +720,10 @@ class Bridge:
                     "added_by": res.get("added_by", ""),
                 }
             )
+        # A study's folder is in completed/ from its start: until it ends,
+        # it is shown as running, not among the completed.
+        running = [c for c in completed if c["status"] in (st.RUNNING, st.COMMITTING)]
+        completed = [c for c in completed if c not in running]
         problems = []
         for name, project in workspace.projects.items():
             for problem in getattr(project.backend, "catalog_problems", []) or []:
@@ -778,6 +782,7 @@ class Bridge:
             },
             "rows": rows,
             "held": held,
+            "running": running,
             "completed": completed,
             "runner": {
                 "status": (

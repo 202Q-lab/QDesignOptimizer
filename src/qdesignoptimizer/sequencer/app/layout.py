@@ -136,6 +136,8 @@ def _queue_area() -> Any:
                 ],
             ),
             html.Div(id="queue-jump", className="qs-jump"),
+            html.H3("Running", id="title-running", className="qs-h"),
+            html.Div(id="running-table"),
             html.H3("Queue", id="title-queue", className="qs-h"),
             html.Div(id="queue-table"),
             html.Div(
@@ -786,9 +788,15 @@ def held_table(snap: dict, selected: dict | None) -> Any:
     return html.Table(className="qs-table", children=[html.Tbody(body)])
 
 
-def completed_table(snap: dict, selected: dict | None) -> Any:
-    """The latest completed studies, newest first."""
-    rows = snap.get("completed") or []
+def running_title(snap: dict) -> str:
+    """The Running section's title, with its count."""
+    return f"Running ({len(snap.get('running') or [])})"
+
+
+def completed_table(snap: dict, selected: dict | None, running: bool = False) -> Any:
+    """The latest completed studies, newest first; with ``running``, the
+    studies still running (no Requeue: they have not ended)."""
+    rows = snap.get("running" if running else "completed") or []
     multi = bool(snap.get("multi"))
     picked = (
         (selected or {}).get("key")
@@ -827,7 +835,9 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
                         n_clicks=0,
                     ),
                     html.Td(
-                        html.Button(
+                        []
+                        if running
+                        else html.Button(
                             "Requeue",
                             id={"type": "requeue", "index": row["name"]},
                             className="qs-btn qs-btn-small",
@@ -841,7 +851,7 @@ def completed_table(snap: dict, selected: dict | None) -> Any:
         body = [
             html.Tr(
                 html.Td(
-                    "Nothing has run yet.",
+                    "Nothing is running." if running else "Nothing has run yet.",
                     colSpan=5 if multi else 4,
                     className="qs-muted",
                 )
@@ -875,6 +885,8 @@ def section_titles(snap: dict) -> tuple:
         f"Completed ({counts[2]})",
     )
     jump: list[Any] = []
+    if snap.get("running"):
+        jump.append(html.A(running_title(snap), href="#title-running"))
     for title, target in zip(titles, ("title-queue", "title-hold", "title-completed")):
         if jump:
             jump.append(" \u00b7 ")
