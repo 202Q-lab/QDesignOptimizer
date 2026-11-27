@@ -684,6 +684,16 @@ class QDOBackend(SwitchableStore):
             texts, {**store, **variables}, {**known_values, **params}
         )
 
+    def _design_stamp(self) -> tuple:
+        """The design files as they are now (path, mtime, size): the
+        built design is kept while this stays the same."""
+        files: list[Any] = getattr(self.project, "design_files", lambda: [])()
+        return tuple(
+            (str(p), Path(p).stat().st_mtime_ns, Path(p).stat().st_size)
+            for p in files
+            if Path(p).exists()
+        )
+
     def design_names(self) -> dict[str, set[str]] | None:
         """``{component: {pin, ...}}`` of the built design, or None when
         the project has no ``design()`` hook.
@@ -697,12 +707,7 @@ class QDOBackend(SwitchableStore):
         build = getattr(self.project, "design", None)
         if build is None:
             return None
-        files: list[Any] = getattr(self.project, "design_files", lambda: [])()
-        stamp = tuple(
-            (str(p), Path(p).stat().st_mtime_ns, Path(p).stat().st_size)
-            for p in files
-            if Path(p).exists()
-        )
+        stamp = self._design_stamp()
         cached = getattr(self, "_design_cache", None)
         if cached is not None and cached[0] == stamp:
             return cached[2]
@@ -782,6 +787,13 @@ class QDOBackend(SwitchableStore):
 
         if name != MINISTUDY or not isinstance(data, dict):
             return []
+        extra = data.get("extra")
+        deliberate = sorted(
+            qdo_pins.pin_key(*pin)
+            for pin in qdo_pins.pairs(
+                extra.get(qdo_pins.DELIBERATE) if isinstance(extra, dict) else None
+            )
+        )
         out = []
         for run in qdo_pins.runs(data):
             args: Any = data
@@ -802,6 +814,8 @@ class QDOBackend(SwitchableStore):
                     "solver": run["solver"],
                     "note": run["note"],
                     "fields": fields,
+                    # the MiniStudy's own open cuts meant open (HFSS only)
+                    "deliberate": deliberate if run["solver"] == "hfss" else [],
                 }
             )
         return out
@@ -916,10 +930,14 @@ class QDOBackend(SwitchableStore):
         Without this a misspelt component reaches Ansys, which fails on
         it -- or, for a pin, silently renders a different circuit.
         """
+        from . import qdo_pins
+
         try:
             names = self.design_names()
         except Exception as exc:  # noqa: BLE001 -- reported, not raised
-            return [f"{_NO_DESIGN} to check names: " f"{type(exc).__name__}: {exc}"]
+            return [
+                f"cannot build the design to check names: {type(exc).__name__}: {exc}"
+            ]
         if names is None:
             return []
         problems: list[str] = []
@@ -952,6 +970,7 @@ class QDOBackend(SwitchableStore):
         pins(getattr(study, "port_list", None), "port_list")
         pins(getattr(study, "open_pins", None), "open_pins")
         pins(getattr(study, "grounded_pins", None), "grounded_pins")
+        pins(getattr(study, qdo_pins.DELIBERATE, None), f"extra: {qdo_pins.DELIBERATE}")
         for n, cap in enumerate(
             getattr(study, "capacitance_matrix_studies", None) or [], 1
         ):
@@ -960,6 +979,13 @@ class QDOBackend(SwitchableStore):
                 component(name, where)
             pins(getattr(cap, "open_pins", None), where)
         return problems
+
+    def _design_built(self) -> bool:
+        """Whether the design is built and kept (``design_names``): a
+        design that failed is not cached, so this is not asked of it
+        twice in one check -- the caller asks after the name check."""
+        cached = getattr(self, "_design_cache", None)
+        return cached is not None and self._design_stamp() == cached[0]
 
     def _cut_problems(self, study) -> list[str]:
         """Cuts the HFSS model leaves open (``qdo_pins.open_cuts``): a
@@ -1017,10 +1043,8 @@ class QDOBackend(SwitchableStore):
                 problems.append(f"{MINISTUDY} does not build a MiniStudy")
                 study = None
             else:
-                named = self._name_problems(study)
-                problems.extend(named)
-                if not any(p.startswith(_NO_DESIGN) for p in named):
-                    # (a design that did not build is not built again)
+                problems.extend(self._name_problems(study))
+                if self._design_built():
                     problems.extend(self._cut_problems(study))
         except Exception as exc:  # noqa: BLE001
             problems.append(f"{MINISTUDY}: {type(exc).__name__}: {exc}")
@@ -2239,8 +2263,6 @@ _NO_TARGETS_LIST = (
 #: A study with no target switched on only simulates: it tunes nothing,
 #: writes nothing back and is not judged converged.
 SIMULATION_ONLY = "simulation only"
-#: How the name check says the design did not build.
-_NO_DESIGN = "cannot build the design"
 
 
 def _targets_of(data) -> list | None:

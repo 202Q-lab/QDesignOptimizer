@@ -51,8 +51,9 @@ def pin_key(component: str, pin: str) -> str:
 def inventory(design) -> list[dict[str, Any]]:
     """Every component of the design: its ``name``, ``class`` and
     ``pins``, each pin with the component it is ``joined`` to ("" when
-    loose). Sorted by name."""
-    partners = {key: others[0] for key, others in _partners(design).items()}
+    loose) and all its ``partners`` (a net may join more than two).
+    Sorted by name."""
+    partners = _partners(design)
     out = []
     for name in sorted(design.components, key=str):
         component = design.components[name]
@@ -63,7 +64,8 @@ def inventory(design) -> list[dict[str, Any]]:
                 "pins": [
                     {
                         "name": str(pin),
-                        "joined": partners.get((str(name), str(pin)), ""),
+                        "joined": (partners.get((str(name), str(pin))) or [""])[0],
+                        "partners": partners.get((str(name), str(pin)), []),
                     }
                     for pin in (getattr(component, "pins", None) or {})
                 ],
@@ -98,7 +100,9 @@ def _partners(design) -> dict[tuple[str, str], list[str]]:
 DELIBERATE = "deliberate_open_cuts"
 
 
-def _pairs(entries: Any) -> set[tuple[str, str]]:
+def pairs(entries: Any) -> set[tuple[str, str]]:
+    """The ``(component, pin)`` pairs of a pin list (``open_pins``,
+    ``port_list``, ...), anything else in it skipped."""
     return {
         (str(e[0]), str(e[1]))
         for e in entries or []
@@ -121,7 +125,7 @@ def open_cuts(
     ends in the port; one in ``deliberate`` is open on purpose."""
     included = {str(c) for c in components or []}
     partners = _partners(design)
-    skip = _pairs(ports) | _pairs(deliberate)
+    skip = pairs(ports) | pairs(deliberate)
     out = []
     for entry in opened or []:
         if not isinstance(entry, (list, tuple)) or len(entry) < 2:

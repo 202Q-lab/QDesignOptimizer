@@ -2732,12 +2732,24 @@ def pins_summary(components: list[dict], sel: dict, study: dict) -> Any:
             className="qs-small",
         ),
     ]
-    joined = {
-        f"{c['name']}/{p['name']}": p.get("joined") or ""
+    # every component each pin meets (a net may join more than two)
+    partners = {
+        f"{c['name']}/{p['name']}": p.get("partners")
+        or ([p["joined"]] if p.get("joined") else [])
         for c in components
         for p in c["pins"]
     }
-    cuts = [k for k in opened if joined.get(k)]
+    included = set(chosen)
+    deliberate = set(study.get("deliberate") or [])
+    cuts = sorted(
+        k
+        for k, v in (sel.get("states") or {}).items()
+        if v
+        and v[0] == "open"
+        and k.split("/")[0] in included
+        and k not in deliberate
+        and any(o not in included for o in partners.get(k, []))
+    )
     if cuts and study.get("solver") == "hfss":
         parts.append(
             html.Div(

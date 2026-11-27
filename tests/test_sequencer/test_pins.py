@@ -313,3 +313,60 @@ def test_the_pin_picker_warns_of_an_open_cut_in_hfss():
     hfss = str(layout.pins_summary(INVENTORY, sel, {"solver": "hfss", "fields": {}}))
     q3d = str(layout.pins_summary(INVENTORY, sel, {"solver": "q3d", "fields": {}}))
     assert "open cut(s): line_in/end" in hfss and "open cut" not in q3d
+
+
+def test_the_picker_spares_a_deliberate_cut_and_sees_every_partner():
+    sel = {"components": ["line_in"], "states": {"line_in/end": ["open", 50]}}
+    meant = {"solver": "hfss", "fields": {}, "deliberate": ["line_in/end"]}
+    assert "open cut" not in str(layout.pins_summary(INVENTORY, sel, meant))
+    # a net of three: the first partner included, another not -- still a cut
+    three = [
+        {
+            "name": "line_in",
+            "class": "RouteStraight",
+            "pins": [
+                {"name": "end", "joined": "open_b", "partners": ["open_b", "tap"]},
+            ],
+        }
+    ]
+    sel = {
+        "components": ["line_in", "open_b"],
+        "states": {"line_in/end": ["open", 50]},
+    }
+    page = str(layout.pins_summary(three, sel, {"solver": "hfss", "fields": {}}))
+    assert "open cut(s): line_in/end" in page
+
+
+def test_a_deliberate_cut_is_name_checked_and_shown_to_the_picker(tiny):
+    project, _ = tiny
+    project.backend.project.design = _chip
+    job_id = project.add("X.freq")
+    path = project.queue.folder(job_id) / "ministudy.yaml"
+    data = yaml.safe_load(path.read_text("utf-8").replace("res_x", "line_in"))
+    data["extra"] = {
+        **(data.get("extra") or {}),
+        "deliberate_open_cuts": [["line_in", "edn"]],
+    }
+    path.write_text(yaml.safe_dump(data), "utf-8")
+    problems = project.problems(job_id, deep=True)
+    assert any(
+        "extra: deliberate_open_cuts" in p and "has no pin 'edn'" in p for p in problems
+    )
+    (study,) = project.backend.form_studies("ministudy.yaml", data)
+    assert study["deliberate"] == ["line_in/edn"]
+
+
+def test_a_design_that_does_not_build_is_built_once_per_check(tiny):
+    project, _ = tiny
+    calls = []
+
+    def broken():
+        calls.append(1)
+        raise RuntimeError("no chip today")
+
+    project.backend.project.design = broken
+    job_id = project.add("X.freq")
+    calls.clear()
+    problems = project.problems(job_id, deep=True)
+    assert any("cannot build the design" in p for p in problems)
+    assert len(calls) == 1
