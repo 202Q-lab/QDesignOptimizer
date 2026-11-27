@@ -21,10 +21,16 @@ from qdesignoptimizer.utils.names_parameters import CHARGE_LINE_LIMITED_T1, KAPP
 #: with it.
 ANSYS_PICTURE_SIZE = (1600, 1000)
 
+#: The ground plane's colour in a saved picture. Ansys draws it nearly in
+#: the substrate's colour, so the gaps cut into it hardly show; darker,
+#: they show as the substrate through it. Put back after the picture.
+GROUND_PICTURE_COLOUR = (150, 150, 150)
+
 
 def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
-    """Save a picture of the model as an Ansys renderer drew it, from above,
-    framed on the drawn metal (the substrate and its ground plane left out).
+    """Save a picture of the model as an Ansys renderer drew it, from above:
+    the drawn metal and the ground plane (in grey, its gaps showing), the
+    substrate and the box around the chip left out.
 
     Never raises: Ansys's image export fails now and then (a COM error), and a
     missing picture must not fail the simulation.
@@ -45,50 +51,109 @@ def save_ansys_picture(renderer, path: Optional[str]) -> Optional[str]:
         except Exception:  # pylint: disable=broad-exception-caught
             pass  # the view as it is, then
         width, height = ANSYS_PICTURE_SIZE
-        # Ansys frames the picture on the objects selected: the components,
-        # not the chip around them (all of it when there is nothing else).
-        selections = ",".join(_drawn_objects(renderer, modeler))
-        modeler.ExportModelImageToFile(
-            str(path),
-            width,
-            height,
-            [
-                "NAME:SaveImageParams",
-                "ShowAxis:=",
-                "False",  # drawn over the components; the corner triad stays
-                "ShowGrid:=",
-                "False",
-                "ShowRuler:=",
-                "True",
-                "ShowRegion:=",
-                "Default",
-                "Selections:=",
-                selections,
-                "Orientation:=",
-                "top",  # the chip seen from above
-            ],
-        )
+        # Ansys draws, and frames the picture on, only the objects selected:
+        # the components and the ground plane with its gaps, not the
+        # substrate or the box around the chip.
+        grounds = _ground_planes(renderer, modeler)
+        selections = ",".join(_drawn_objects(renderer, modeler) + grounds)
+        before = {name: _colour_of(modeler, name) for name in grounds}
+        for name in grounds:
+            _set_colour(modeler, name, GROUND_PICTURE_COLOUR)
+        try:
+            modeler.ExportModelImageToFile(
+                str(path),
+                width,
+                height,
+                [
+                    "NAME:SaveImageParams",
+                    "ShowAxis:=",
+                    "False",  # drawn over the components; the corner triad stays
+                    "ShowGrid:=",
+                    "False",
+                    "ShowRuler:=",
+                    "True",
+                    "ShowRegion:=",
+                    "Default",
+                    "Selections:=",
+                    selections,
+                    "Orientation:=",
+                    "top",  # the chip seen from above
+                ],
+            )
+        finally:
+            for name, colour in before.items():
+                if colour is not None:
+                    _set_colour(modeler, name, colour)
     except Exception as error:  # pylint: disable=broad-exception-caught
         log.warning("No Ansys picture saved to %s: %s", path, error)
         return None
     return path if os.path.exists(path) else None
 
 
-def _drawn_objects(renderer, modeler) -> List[str]:
-    """The model's objects but the chips' substrates (named after the chip),
-    their ground planes (``ground_<chip>_plane``) and an air region."""
+def _chips(renderer) -> set:
     try:
-        chips = set(renderer.design.chips)
+        return set(renderer.design.chips)
     except Exception:  # pylint: disable=broad-exception-caught
-        chips = {"main"}
-    around = chips | {f"ground_{chip}_plane" for chip in chips} | {"Region"}
+        return {"main"}
+
+
+def _model_objects(modeler) -> List[str]:
     names: List[str] = []
     for group in ("Solids", "Sheets", "Lines"):
         try:
             names += [str(n) for n in modeler.GetObjectsInGroup(group)]
         except Exception:  # pylint: disable=broad-exception-caught
             pass  # an empty group, or none of that kind
-    return [n for n in names if n not in around]
+    return names
+
+
+def _drawn_objects(renderer, modeler) -> List[str]:
+    """The model's objects but the chips' substrates (named after the chip),
+    their ground planes (``ground_<chip>_plane``) and an air region."""
+    chips = _chips(renderer)
+    around = chips | {f"ground_{chip}_plane" for chip in chips} | {"Region"}
+    return [n for n in _model_objects(modeler) if n not in around]
+
+
+def _ground_planes(renderer, modeler) -> List[str]:
+    """The chips' ground planes in the model."""
+    grounds = {f"ground_{chip}_plane" for chip in _chips(renderer)}
+    return [n for n in _model_objects(modeler) if n in grounds]
+
+
+def _colour_of(modeler, name: str) -> Optional[tuple]:
+    """An object's colour, ``(r, g, b)``; None when Ansys does not say.
+
+    AEDT gives it as one number, red in the lowest byte (``'9416591'``),
+    or as ``(r g b)``."""
+    try:
+        text = str(modeler.GetPropertyValue("Geometry3DAttributeTab", name, "Color"))
+        parts = text.strip().strip("()").split()
+        if len(parts) == 1:
+            value = int(parts[0])
+            return (value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF)
+        r, g, b = (int(x) for x in parts)
+        return (r, g, b)
+    except Exception:  # pylint: disable=broad-exception-caught
+        return None
+
+
+def _set_colour(modeler, name: str, colour: tuple) -> None:
+    """Colour one object; a failure leaves it as it was."""
+    r, g, b = colour
+    try:
+        modeler.ChangeProperty(
+            [
+                "NAME:AllTabs",
+                [
+                    "NAME:Geometry3DAttributeTab",
+                    ["NAME:PropServers", name],
+                    ["NAME:ChangedProps", ["NAME:Color", "R:=", r, "G:=", g, "B:=", b]],
+                ],
+            ]
+        )
+    except Exception as error:  # pylint: disable=broad-exception-caught
+        log.warning("Could not colour %s in Ansys: %s", name, error)
 
 
 class CapacitanceMatrixStudy:

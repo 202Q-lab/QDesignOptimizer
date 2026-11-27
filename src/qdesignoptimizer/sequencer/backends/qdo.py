@@ -41,6 +41,11 @@ off.
 ``{abs: ...}``) against the last iteration; a project's ``converged``
 hook, when it has one, judges the targets that set none.
 
+**Simulation only**: a study whose ``opt_targets.yaml`` switches no
+target on (``targets: []``) runs its MiniStudy and records what it
+measured; it tunes nothing, writes nothing back and is not judged (a
+``converged`` check on it fails, rather than vouch for nothing).
+
 Solver settings (passes, ``delta_f``, mesh) are written in the
 MiniStudy, and the sequencer has no setting of its own that overrides
 them. What a project's ``solve`` does with them is the project's.
@@ -639,16 +644,10 @@ class QDOBackend(SwitchableStore):
                 problems.append(f"{name} is not valid YAML: {exc}")
         if TARGETS in texts:
             # Plain YAML, so checked on every pass rather than only in the
-            # deep check: a study made from scratch starts with none, and
-            # launching it must not wait for a design build to say so.
-            from . import qdo_files as qf
-
-            entries = _targets_of(texts.get(TARGETS))
-            if not isinstance(entries, list) or not qf.active_targets(entries):
-                problems.append(
-                    f"{TARGETS} lists no targets"
-                    + (" that are switched on" if entries else "")
-                )
+            # deep check. No target switched on is a simulation-only
+            # study, not a problem; a file with no targets: list is.
+            if not isinstance(_targets_of(texts.get(TARGETS)), list):
+                problems.append(_NO_TARGETS_LIST)
         store = self.store_values()
         variables = self._partial(folder / VARIABLES, problems, json_file=True)
         unknown = sorted(set(variables) - set(store))
@@ -988,11 +987,10 @@ class QDOBackend(SwitchableStore):
         produced = study_parameters(study) if study is not None else None
         switched_on: list = []
         entries = _targets_of(texts.get(TARGETS))
-        if not isinstance(entries, list) or not qf.active_targets(entries):
-            return problems + [
-                f"{TARGETS} lists no targets"
-                + (" that are switched on" if entries else "")
-            ]
+        if not isinstance(entries, list):
+            return problems + [_NO_TARGETS_LIST]
+        if not qf.active_targets(entries):
+            return problems  # simulation only: nothing to tune or judge
         for n, entry in enumerate(entries, 1):
             if not qf.is_active(entry):
                 continue  # kept in the file, not used
@@ -1438,6 +1436,22 @@ class QDOBackend(SwitchableStore):
         results = getattr(analysis, "optimization_results", []) or []
         measured = results[-1].get("system_optimized_params") or {} if results else {}
         outputs = {k: v for k, v in measured.items() if v is not None}
+        if not targets:
+            # Simulation only: what it measured, nothing tuned, judged or
+            # written back.
+            outputs.update(
+                simulation_only=True,
+                unjudged=[],
+                iterations_in_final_analysis=len(results),
+                converged=None,
+                off_target=[],
+            )
+            return StepResult(
+                outputs=outputs,
+                updates={},
+                files=kept,
+                message=_measured_line(measured),
+            )
         # A target's own tolerance decides; the project's hook, when it
         # has one, speaks for the targets that set none.
         hook = getattr(self.project, "converged", None)
@@ -1536,6 +1550,11 @@ class QDOBackend(SwitchableStore):
         if name == "converged":
             if result.outputs.get("converged"):
                 return CheckResult(True)
+            if result.outputs.get("simulation_only"):
+                # Passing would vouch for a judgement nobody made.
+                return CheckResult(
+                    False, f"{SIMULATION_ONLY}: the study has no target to judge"
+                )
             off = result.outputs.get("off_target") or []
             unjudged = result.outputs.get("unjudged") or []
             parts = []
@@ -2080,6 +2099,20 @@ def _deviation_line(
     return ", ".join(parts)
 
 
+def _measured_line(measured: dict) -> str:
+    """A simulation-only study's line: ``simulation only:`` and what it
+    measured, frequencies in GHz, the rest as numbers."""
+    parts = []
+    for name, value in sorted(measured.items()):
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        if name.endswith("_freq"):
+            parts.append(f"{name} {value / 1e9:.4f} GHz")
+        else:
+            parts.append(f"{name} {value:.4g}")
+    return f"{SIMULATION_ONLY}: " + (", ".join(parts) or "nothing measured")
+
+
 def _targets_by_variable(qf, entries) -> dict[str, list]:
     """The built OptTargets of a study's file, by their design variable;
     an entry that does not build is left out (it did not run either)."""
@@ -2156,6 +2189,16 @@ def _target_parameter(target) -> str | None:
         return param(modes[0], kind)
     except Exception:  # noqa: BLE001
         return None
+
+
+_NO_TARGETS_LIST = (
+    f"{TARGETS} lists no targets: it is not a mapping with a targets: list "
+    f"(targets: [] for a study that only simulates)"
+)
+
+#: A study with no target switched on only simulates: it tunes nothing,
+#: writes nothing back and is not judged converged.
+SIMULATION_ONLY = "simulation only"
 
 
 def _targets_of(data) -> list | None:

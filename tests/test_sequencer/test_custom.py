@@ -57,7 +57,8 @@ def test_a_study_from_scratch_is_filled_in_saved_as_templates_and_run(qdo):
     ministudy = _file(bridge, study, "ministudy.yaml")
     assert ministudy["data"]["args"]["qiskit_component_names"] == []
     assert ministudy["data"]["args"]["capacitance_matrix_studies"] is None
-    assert any("lists no targets" in p for p in bridge._problems(study))
+    # No target yet: a simulation-only study, not a problem.
+    assert not any("lists no targets" in p for p in bridge._problems(study))
 
     # The MiniStudy's own fields, then a chained study from its class.
     path = lambda *p: forms.key(("args",) + p)  # noqa: E731

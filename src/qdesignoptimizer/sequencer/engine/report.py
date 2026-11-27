@@ -875,6 +875,8 @@ def _worst_line(run: dict) -> str:
 
 
 def _outputs_line(run: dict) -> str:
+    if run["outputs"].get("simulation_only") and run["message"]:
+        return run["message"]  # "simulation only: what it measured"
     return (
         "; ".join(
             f"{k} {_value(run, k, v)}" for k, v in sorted(run["outputs"].items())

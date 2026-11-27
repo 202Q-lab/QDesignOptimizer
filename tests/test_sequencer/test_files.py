@@ -117,6 +117,14 @@ def test_to_file_data_goes_through_the_yaml_text():
     assert back.ports == [["c", "pin", 50]]  # the documented tuple->list
 
 
+def test_a_set_is_written_sorted_and_read_back_as_a_list():
+    """Found on PBC V10: its studies name their components as a set."""
+    obj = Outer({"b", "c", "a"}, Inner("m"), [])
+    data = qf.to_file_data(obj)
+    assert data["args"]["names"] == ["a", "b", "c"]
+    assert qf.load_object(data).names == ["a", "b", "c"]
+
+
 @pytest.mark.parametrize(
     "ref",
     [

@@ -153,3 +153,34 @@ def test_the_modes_found_in_runs(tmp_path):
     found = qdo_report.modes_in([run])
     assert found["qubit_1"] == "transmon"
     assert found["resonator_9"] == found["resonator_1"] == "resonator"
+
+
+def test_a_row_is_shaded_by_its_role_its_type_unless_given(tmp_path):
+    (tmp_path / "modes.yaml").write_text(
+        "resonator_RF1: {kind: resonator, role: Filter}\n", "utf-8"
+    )
+    modes = qdo_modes.load(tmp_path)
+    assert qdo_modes.role_of(modes, "resonator_RF1") == "filter"
+    assert qdo_modes.role_of(modes, "resonator_RO1") == "resonator"
+    assert qdo_modes.role_of(modes, "qubit_1") == "qubit"
+    assert qdo_modes.role_of(modes, "cavity") == "cavity"
+    (tmp_path / "modes.yaml").write_text("q: {role: 3}\n", "utf-8")
+    with pytest.raises(ValueError, match="role"):
+        qdo_modes.load(tmp_path)
+    # an unusual role still gets a shade of its own
+    lanes = [
+        {"mode": m, "role": r, "target": 5e9}
+        for m, r in (("qubit_1", "qubit"), ("x_1", "mystery"), ("y_1", "other"))
+    ]
+    shades = qdo_modes._shades([lane["role"] for lane in lanes])
+    assert len(set(shades.values())) == 3
+    assert qdo_modes.picture(lanes)["png"]
+
+
+def test_the_editor_keeps_a_role(tmp_path):
+    (tmp_path / "modes.yaml").write_text(
+        "resonator_RF1: {kind: resonator, role: filter}\n", "utf-8"
+    )
+    rows = qdo_modes.editor(tmp_path, {})["rows"]
+    qdo_modes.save(tmp_path, rows)
+    assert qdo_modes.load(tmp_path)["resonator_RF1"]["role"] == "filter"

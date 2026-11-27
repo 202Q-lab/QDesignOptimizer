@@ -40,6 +40,19 @@ class _Modeler:
             "Solids": ["main"],
             "Sheets": ["cross_Q1", "connector_Q1", "ground_main_plane"],
         }
+        self.colours = {"ground_main_plane": (143, 175, 143)}
+        self.ground_at_export = []
+
+    def GetPropertyValue(self, tab, name, prop):  # noqa: N802 -- Ansys's name
+        # AEDT 2022 R2 gives one number, red in the lowest byte.
+        r, g, b = self.colours[name]
+        return str(r | g << 8 | b << 16)
+
+    def ChangeProperty(self, args):  # noqa: N802 -- Ansys's name
+        tab = args[1]
+        name = tab[1][1]
+        colour = tab[2][1]
+        self.colours[name] = (colour[2], colour[4], colour[6])
 
     def GetObjectsInGroup(self, group):  # noqa: N802 -- Ansys's name
         if group not in self.groups:
@@ -52,6 +65,7 @@ class _Modeler:
     def ExportModelImageToFile(self, path, width, height, params):  # noqa: N802
         self.sizes.append((width, height))
         self.selections.append(params[params.index("Selections:=") + 1])
+        self.ground_at_export.append(self.colours.get("ground_main_plane"))
         if self.fail:
             raise RuntimeError("The remote procedure call failed.")
         Path(path).write_bytes(PNG)
@@ -65,7 +79,7 @@ class _Renderer:
         self.design = SimpleNamespace(chips={"main": {}})
 
 
-def test_an_ansys_picture_is_saved_framed_on_the_drawn_metal(tmp_path):
+def test_an_ansys_picture_shows_the_drawn_metal_and_the_ground(tmp_path):
     renderer = _Renderer()
     path = str(tmp_path / "hfss_1.png")
     assert save_ansys_picture(renderer, path) == path
@@ -73,9 +87,21 @@ def test_an_ansys_picture_is_saved_framed_on_the_drawn_metal(tmp_path):
     assert modeler.fitted == 1 and Path(path).read_bytes() == PNG
     # Never 0 x 0 (the window's size): that crashes AEDT run from a script.
     assert modeler.sizes and all(w > 0 and h > 0 for w, h in modeler.sizes)
-    # Framed on the components, not the 4 mm substrate around them.
-    assert modeler.selections == ["cross_Q1,connector_Q1"]
+    # Ansys draws only what is selected: the components and the ground
+    # plane with its gaps, not the substrate or the box around the chip.
+    assert modeler.selections == ["cross_Q1,connector_Q1,ground_main_plane"]
     assert save_ansys_picture(renderer, None) is None
+
+
+def test_the_ground_plane_is_darker_in_the_picture_and_put_back(tmp_path):
+    from qdesignoptimizer.sim_capacitance_matrix import GROUND_PICTURE_COLOUR
+
+    for fail in (False, True):
+        renderer = _Renderer(fail=fail)
+        save_ansys_picture(renderer, str(tmp_path / "x.png"))
+        modeler = renderer.modeler._modeler
+        assert modeler.ground_at_export == [GROUND_PICTURE_COLOUR]
+        assert modeler.colours["ground_main_plane"] == (143, 175, 143)
 
 
 def test_a_model_of_only_the_chip_is_pictured_whole(tmp_path):
@@ -83,6 +109,18 @@ def test_a_model_of_only_the_chip_is_pictured_whole(tmp_path):
     renderer.modeler._modeler.groups = {"Solids": ["main"]}
     assert save_ansys_picture(renderer, str(tmp_path / "x.png"))
     assert renderer.modeler._modeler.selections == [""]
+
+
+def test_a_colour_reads_in_either_form_ansys_gives():
+    from qdesignoptimizer.sim_capacitance_matrix import _colour_of
+
+    def says(text):
+        return SimpleNamespace(GetPropertyValue=lambda *a: text)
+
+    assert _colour_of(says("9416591"), "g") == (143, 175, 143)
+    assert _colour_of(says("13482682"), "s") == (186, 186, 205)
+    assert _colour_of(says("(10 20 30)"), "x") == (10, 20, 30)
+    assert _colour_of(says("blue"), "x") is None
 
 
 def test_a_failing_ansys_export_does_not_fail_the_simulation(tmp_path):

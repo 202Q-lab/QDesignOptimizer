@@ -189,6 +189,12 @@ def encode(value: Any, where: str = "value") -> Any:
         return str(value)
     if isinstance(value, (list, tuple)):
         return [encode(v, f"{where}[{i}]") for i, v in enumerate(value)]
+    if isinstance(value, (set, frozenset)):
+        # YAML has no set: written sorted, so the file does not change
+        # from run to run, and read back as a list.
+        return [
+            encode(v, f"{where}[{i}]") for i, v in enumerate(sorted(value, key=str))
+        ]
     if isinstance(value, dict):
         out = {}
         for key, item in value.items():
@@ -436,9 +442,10 @@ def to_file_data(obj: Any) -> dict:
     """``dump_object``, checked through the YAML text itself.
 
     The data is written to YAML, read back, rebuilt and dumped again;
-    anything that does not survive that trip is refused. Tuples are the
-    one known normalisation: YAML has no tuple, so they come back as
-    lists (QDO only unpacks and indexes its pin and port tuples).
+    anything that does not survive that trip is refused. Tuples and sets
+    are the known normalisations: YAML has neither, so they come back as
+    lists (QDO only unpacks and indexes its pin and port tuples, and
+    iterates its component names, which a project may give as a set).
 
     Raises:
         CodecError: If the YAML round trip changes anything.

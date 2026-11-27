@@ -217,6 +217,7 @@ def table(
             {
                 "mode": mode,
                 "kind": kind,
+                "role": qdo_modes.role_of(modes, mode),
                 "target": targets.get(mode),
                 "simulated": (simulated.get(mode) or (None, None))[1],
                 "fabricated": element.get("f01_fab"),

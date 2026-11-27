@@ -10,6 +10,9 @@ mode's target sits.
       asymmetry: 0     # squid: |Ej1 - Ej2| / (Ej1 + Ej2), 0 if not given
     qubit_1:
       range: [3.9, 4.4]  # GHz, any kind: the band as given
+    resonator_RF1:
+      role: filter     # the row's shade in the picture; by default the
+                       # mode's type, its name up to the first "_"
 
 A squid's band is worked out from its frequency at zero flux (simulated,
 or from the junctions fabricated) down to half a flux quantum, where its
@@ -83,6 +86,11 @@ def load(project_root: Path) -> dict[str, dict]:
                 f"{MODES_FILE}: {name}: kind {kind!r} is none of {sorted(KINDS)}"
             )
         entry["kind"] = kind
+        if "role" in entry:
+            role = entry["role"]
+            if not isinstance(role, str) or not role.strip():
+                raise ValueError(f"{MODES_FILE}: {name}: role is a word, e.g. filter")
+            entry["role"] = role.strip().lower()
         if "range" in entry:
             band = entry["range"]
             if (
@@ -98,6 +106,30 @@ def load(project_root: Path) -> dict[str, dict]:
 
 def kind_of(modes: dict[str, dict], mode: str, default: str = "transmon") -> str:
     return (modes.get(mode) or {}).get("kind") or default
+
+
+def role_of(modes: dict[str, dict], mode: str) -> str:
+    """What the mode is for, which shades its row in the picture: its
+    ``role`` in modes.yaml, or its type -- QDO names a mode
+    ``<type>_<identifier>`` (qubit, cavity, resonator, coupler)."""
+    return (modes.get(mode) or {}).get("role") or str(mode).split("_")[0].lower()
+
+
+#: Row shades for the usual roles; any other role takes the next of
+#: ``_SPARE_SHADES``.
+ROLE_SHADES = {
+    "qubit": "#e3f2fd",
+    "cavity": "#e8f5e9",
+    "resonator": "#fff8e1",
+    "filter": "#fbe9e7",
+    "coupler": "#f3e5f5",
+}
+_SPARE_SHADES = ["#e0f7fa", "#f1f8e9", "#fce4ec", "#ede7f6", "#eceff1"]
+
+
+def _shades(roles: list[str]) -> dict[str, str]:
+    spare = iter(_SPARE_SHADES * (len(roles) // len(_SPARE_SHADES) + 1))
+    return {r: ROLE_SHADES.get(r) or next(spare) for r in roles}
 
 
 def band(
@@ -127,7 +159,13 @@ def picture(lanes: list[dict], title: str = "") -> dict[str, str] | None:
     figure = Figure(figsize=(7.5, 0.42 * len(lanes) + 1.3), dpi=150)
     axes = figure.add_subplot()
     ghz = 1e-9
+    roles = list(dict.fromkeys(lane["role"] for lane in lanes if lane.get("role")))
+    shades = _shades(roles)
     for y, lane in enumerate(lanes):
+        if lane.get("role"):
+            axes.axhspan(
+                y - 0.5, y + 0.5, color=shades[lane["role"]], linewidth=0, zorder=0
+            )
         for key, colour, alpha in (
             ("band", "#5c6bc0", 0.22),
             ("band_fab", "#ef6c00", 0.18),
@@ -174,7 +212,7 @@ def picture(lanes: list[dict], title: str = "") -> dict[str, str] | None:
         ],
         fontsize=8,
     )
-    axes.set_ylim(-0.7, len(lanes) - 0.3)
+    axes.set_ylim(-0.5, len(lanes) - 0.5)
     axes.set_xlabel("Frequency (GHz)", fontsize=8)
     axes.tick_params(axis="x", labelsize=8)
     axes.grid(axis="x", color="#eceff1")
@@ -204,11 +242,15 @@ def picture(lanes: list[dict], title: str = "") -> dict[str, str] | None:
         )
         if any(lane.get(key) for lane in lanes)
     ]
+    # The row shades in the order the rows run, top down.
+    shown += [
+        (Patch(facecolor=shades[r], edgecolor="#b0bec5"), r) for r in reversed(roles)
+    ]
     axes.legend(
         [h for h, _ in shown],
         [label for _, label in shown],
         fontsize=7,
-        ncol=len(shown),
+        ncol=min(len(shown), 5),
         loc="lower center",
         bbox_to_anchor=(0.5, 1.0),
         frameon=False,
@@ -241,6 +283,8 @@ _HEADER = """\
 #              half a flux quantum up to zero flux (0: down to 0 Hz)
 #   range:     [low, high] in GHz, any kind: the band as given (an ATS's
 #              or a LINC's, or one measured)
+#   role:      the shade of its row, e.g. filter; by default the mode's
+#              type (qubit, cavity, resonator, coupler)
 """
 
 

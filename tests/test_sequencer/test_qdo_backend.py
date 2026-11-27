@@ -212,6 +212,35 @@ def test_a_run_writes_back_only_what_a_target_tunes(tiny):
     assert written == ran_params
 
 
+def test_a_study_with_no_target_only_simulates(tiny):
+    qdo_project, project = tiny
+    job_id = project.add("X.freq", save=True)
+    project.queue.write_file(job_id, "opt_targets.yaml", "targets: []\n")
+    assert project.problems(job_id, deep=True) == []
+    before = qdo_project.design_variables_file.read_text()
+    assert Runner(project).run().status == st.FINISHED
+    (done,) = project.queue.completed()
+    rec = json.loads((done / "result.json").read_text("utf-8"))
+    assert rec["status"] == "done"
+    assert rec["message"].startswith("simulation only: resonator_x_freq ")
+    assert rec["outputs"]["simulation_only"] is True
+    # nothing tuned, nothing written back
+    assert not rec["committed"]
+    assert qdo_project.design_variables_file.read_text() == before
+    _, targets, *_ = qdo_project.solved[0]
+    assert targets == []
+
+
+def test_a_converged_check_on_a_simulation_only_study_fails(tiny):
+    _, project = tiny
+    job_id = project.add("X.freq", checks=["converged"], on_failure="continue")
+    project.queue.write_file(job_id, "opt_targets.yaml", "targets: []\n")
+    Runner(project).run()
+    (done,) = project.queue.completed()
+    rec = json.loads((done / "result.json").read_text("utf-8"))
+    assert rec["status"] == "failed" and "no target to judge" in rec["message"]
+
+
 def test_the_rebuilt_objects_are_what_ran(tiny):
     qdo_project, project = tiny
     project.add("X.freq")
