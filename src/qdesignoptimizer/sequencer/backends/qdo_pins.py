@@ -17,6 +17,18 @@ A pin of an included component ends in one of three ways:
 A pin joined (in the design's netlist) to another included component is
 neither: it is a connection inside the model, and is not listed.
 
+A pin joined to a component the run leaves out is a **cut**: the line
+goes on in the chip but not in the model. In the HFSS model a cut must
+end grounded or in a port, never open -- an open end where the chip has
+a line moves the modes (``open_cuts``; the deep study check refuses
+it). An end the chip itself has (a pin joined to nothing) keeps
+whatever the study gives it. A capacitance (Q3D) study opens cuts on
+purpose: grounded, a conductor would join ground. A study that means an
+open cut says so in its file::
+
+    extra:
+      deliberate_open_cuts: [[component, pin]]
+
 Imports nothing heavy at module scope.
 """
 
@@ -40,23 +52,7 @@ def inventory(design) -> list[dict[str, Any]]:
     """Every component of the design: its ``name``, ``class`` and
     ``pins``, each pin with the component it is ``joined`` to ("" when
     loose). Sorted by name."""
-    names_by_id = {
-        getattr(component, "id", name): str(name)
-        for name, component in design.components.items()
-    }
-    partners: dict[tuple[str, str], str] = {}
-    table = getattr(design, "net_info", None)
-    if table is not None and len(table):
-        nets: dict[Any, list[tuple[str, str]]] = {}
-        for row in table.itertuples(index=False):
-            owner = names_by_id.get(row.component_id)
-            if owner is not None:
-                nets.setdefault(row.net_id, []).append((owner, str(row.pin_name)))
-        for ends in nets.values():
-            for owner, pin in ends:
-                others = [o for o, _ in ends if o != owner]
-                if others:
-                    partners[(owner, pin)] = others[0]
+    partners = {key: others[0] for key, others in _partners(design).items()}
     out = []
     for name in sorted(design.components, key=str):
         component = design.components[name]
@@ -73,6 +69,69 @@ def inventory(design) -> list[dict[str, Any]]:
                 ],
             }
         )
+    return out
+
+
+def _partners(design) -> dict[tuple[str, str], list[str]]:
+    """Per joined pin ``(component, pin)``: every other component on its
+    net in the design's netlist."""
+    names_by_id = {
+        getattr(component, "id", name): str(name)
+        for name, component in design.components.items()
+    }
+    partners: dict[tuple[str, str], list[str]] = {}
+    table = getattr(design, "net_info", None)
+    if table is not None and len(table):
+        nets: dict[Any, list[tuple[str, str]]] = {}
+        for row in table.itertuples(index=False):
+            owner = names_by_id.get(row.component_id)
+            if owner is not None:
+                nets.setdefault(row.net_id, []).append((owner, str(row.pin_name)))
+        for ends in nets.values():
+            for owner, pin in ends:
+                others = [o for o, _ in ends if o != owner]
+                if others:
+                    partners[(owner, pin)] = others
+    return partners
+
+
+DELIBERATE = "deliberate_open_cuts"
+
+
+def _pairs(entries: Any) -> set[tuple[str, str]]:
+    return {
+        (str(e[0]), str(e[1]))
+        for e in entries or []
+        if isinstance(e, (list, tuple)) and len(e) >= 2
+    }
+
+
+def open_cuts(
+    design,
+    components: list[str],
+    opened: Any,
+    ports: Any = None,
+    deliberate: Any = None,
+) -> list[tuple[str, str, list[str]]]:
+    """The cuts a run leaves open: each pin in ``opened`` (its
+    ``open_pins``) whose component is in ``components`` and that the
+    chip joins to a component the run leaves out -- ``(component, pin,
+    the components left out)``. A pin joined to nothing is an end the
+    chip has, and may be open; one also in ``ports`` (its ``port_list``)
+    ends in the port; one in ``deliberate`` is open on purpose."""
+    included = {str(c) for c in components or []}
+    partners = _partners(design)
+    skip = _pairs(ports) | _pairs(deliberate)
+    out = []
+    for entry in opened or []:
+        if not isinstance(entry, (list, tuple)) or len(entry) < 2:
+            continue
+        key = (str(entry[0]), str(entry[1]))
+        if key[0] not in included or key in skip:
+            continue
+        missing = [o for o in partners.get(key, []) if o not in included]
+        if missing:
+            out.append((key[0], key[1], missing))
     return out
 
 

@@ -243,3 +243,73 @@ def test_a_capacitance_study_is_its_own_study_without_ports(tiny):
     assert studies[1]["path"] == ["args", "capacitance_matrix_studies", 0]
     assert set(studies[1]["fields"]) == {"components", "open"}
     assert project.backend.form_studies("opt_targets.yaml", MINISTUDY) == []
+
+
+def test_a_cut_left_open_is_found_and_an_end_inside_is_not():
+    from types import SimpleNamespace
+
+    design = _chip()
+    # line_in's end joins open_b, which the run leaves out: a cut
+    assert qdo_pins.open_cuts(design, ["line_in"], [["line_in", "end"]]) == [
+        ("line_in", "end", ["open_b"])
+    ]
+    # with open_b included the pin is a joint inside the model, not a cut
+    assert qdo_pins.open_cuts(design, ["line_in", "open_b"], [["line_in", "end"]]) == []
+    # a pin of a component the run does not include is not its business
+    assert qdo_pins.open_cuts(design, ["line_in"], [["line_out", "start"]]) == []
+    # a pin that is also a port ends in the port; a deliberate one is meant
+    assert (
+        qdo_pins.open_cuts(
+            design, ["line_in"], [["line_in", "end"]], ports=[["line_in", "end", 50]]
+        )
+        == []
+    )
+    assert (
+        qdo_pins.open_cuts(
+            design, ["line_in"], [["line_in", "end"]], deliberate=[["line_in", "end"]]
+        )
+        == []
+    )
+    # a loose pin in a real netlist is an end of the chip: it may be open
+    from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
+
+    OpenToGround(design, "open_e", options=dict(pos_x="5mm", pos_y="5mm"))
+    assert qdo_pins.open_cuts(design, ["open_e"], [["open_e", "open"]]) == []
+    # a design with no netlist joins nothing: every pin is an end of the chip
+    bare = SimpleNamespace(components={"res": SimpleNamespace(pins={"end": {}})})
+    assert qdo_pins.open_cuts(bare, ["res"], [["res", "end"]]) == []
+
+
+def test_the_deep_check_refuses_a_cut_left_open(tiny):
+    project, _ = tiny
+    project.backend.project.design = _chip
+    job_id = project.add("X.freq")
+    path = project.queue.folder(job_id) / "ministudy.yaml"
+    text = path.read_text("utf-8").replace("res_x", "line_in")
+    path.write_text(text, "utf-8")
+    assert not any("cut left open" in p for p in project.problems(job_id, deep=True))
+    path.write_text(
+        text.replace("open_pins: []", "open_pins: [[line_in, end]]"), "utf-8"
+    )
+    (problem,) = (p for p in project.problems(job_id, deep=True) if "cut" in p)
+    assert "line_in/end is a cut left open" in problem and "open_b" in problem
+    # a capacitance-only study opens cuts on purpose (Q3D): not refused
+    data = yaml.safe_load(path.read_text("utf-8"))
+    data["args"]["run_capacitance_studies_only"] = True
+    path.write_text(yaml.safe_dump(data), "utf-8")
+    assert not any("cut" in p for p in project.problems(job_id, deep=True))
+    # one meant open is listed as deliberate, and passes
+    data["args"]["run_capacitance_studies_only"] = False
+    data["extra"] = {
+        **(data.get("extra") or {}),
+        "deliberate_open_cuts": [["line_in", "end"]],
+    }
+    path.write_text(yaml.safe_dump(data), "utf-8")
+    assert not any("cut" in p for p in project.problems(job_id, deep=True))
+
+
+def test_the_pin_picker_warns_of_an_open_cut_in_hfss():
+    sel = {"components": ["line_in"], "states": {"line_in/end": ["open", 50]}}
+    hfss = str(layout.pins_summary(INVENTORY, sel, {"solver": "hfss", "fields": {}}))
+    q3d = str(layout.pins_summary(INVENTORY, sel, {"solver": "q3d", "fields": {}}))
+    assert "open cut(s): line_in/end" in hfss and "open cut" not in q3d

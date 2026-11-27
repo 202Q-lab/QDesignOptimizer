@@ -304,6 +304,14 @@ Open a queued study in the GUI:
     endcap. Port is a lumped port, 50 Ohm unless you change it, and HFSS
     only. A pin joined to another included component is a connection
     inside the model, so it has no choice.
+  - A pin joined to a component the study leaves out is a **cut**: the
+    chip goes on there. In the HFSS model a cut must be short or a port,
+    because an open end where the chip has a line moves the modes. The
+    picker warns about an open cut, and the study check refuses one. If
+    you mean it, list it in the file under
+    `extra: {deliberate_open_cuts: [[component, pin]]}`. A capacitance
+    study opens cuts on purpose, so it is not checked: a grounded
+    conductor would merge with ground.
   - **Draw this study** shows the choice before it is saved, in two
     pictures. The first is the study's components over the rest of the
     chip in grey, with every pin marked. The second is the whole chip,

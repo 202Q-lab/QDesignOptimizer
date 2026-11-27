@@ -2732,6 +2732,22 @@ def pins_summary(components: list[dict], sel: dict, study: dict) -> Any:
             className="qs-small",
         ),
     ]
+    joined = {
+        f"{c['name']}/{p['name']}": p.get("joined") or ""
+        for c in components
+        for p in c["pins"]
+    }
+    cuts = [k for k in opened if joined.get(k)]
+    if cuts and study.get("solver") == "hfss":
+        parts.append(
+            html.Div(
+                f"open cut(s): {', '.join(cuts)} -- the chip goes on there. "
+                "In HFSS a cut ends grounded or in a port; the study check "
+                "refuses an open one unless the file lists it under extra: "
+                "deliberate_open_cuts",
+                className="qs-problems",
+            )
+        )
     if study.get("note"):
         parts.append(html.Div(study["note"], className="qs-problems"))
     fields = study.get("fields") or {}

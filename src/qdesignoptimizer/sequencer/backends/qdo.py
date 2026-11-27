@@ -919,10 +919,7 @@ class QDOBackend(SwitchableStore):
         try:
             names = self.design_names()
         except Exception as exc:  # noqa: BLE001 -- reported, not raised
-            return [
-                f"cannot build the design to check names: "
-                f"{type(exc).__name__}: {exc}"
-            ]
+            return [f"{_NO_DESIGN} to check names: " f"{type(exc).__name__}: {exc}"]
         if names is None:
             return []
         problems: list[str] = []
@@ -964,6 +961,45 @@ class QDOBackend(SwitchableStore):
             pins(getattr(cap, "open_pins", None), where)
         return problems
 
+    def _cut_problems(self, study) -> list[str]:
+        """Cuts the HFSS model leaves open (``qdo_pins.open_cuts``): a
+        line the chip continues into a component the study leaves out
+        must end grounded or in a port, not open, or the modes move.
+        Ends the chip has are as the study sets them.
+
+        HFSS only: a capacitance (Q3D) study opens a cut on purpose --
+        grounded, the conductor would join ground and have no
+        capacitance of its own. A pin the study lists under ``extra:
+        deliberate_open_cuts`` is open on purpose too.
+        """
+        from . import qdo_pins
+
+        if not getattr(study, "modes", None) or getattr(
+            study, "run_capacitance_studies_only", False
+        ):
+            return []  # no HFSS model is solved
+        try:
+            design = self.built_design()
+        except Exception:  # noqa: BLE001 -- the name check reports it
+            return []
+        if design is None:
+            return []
+        return [
+            f"{MINISTUDY}: open_pins: {comp}/{pin} is a cut left open -- "
+            f"the chip joins it to {', '.join(missing)}, which this study "
+            f"leaves out. Ground it (take it out of open_pins) or make it "
+            f"a 50 Ohm port; only ends the chip has may be open in HFSS. "
+            f"If it is meant, list it under extra: "
+            f"{qdo_pins.DELIBERATE}: [[{comp}, {pin}]]"
+            for comp, pin, missing in qdo_pins.open_cuts(
+                design,
+                getattr(study, "qiskit_component_names", None) or [],
+                getattr(study, "open_pins", None),
+                getattr(study, "port_list", None),
+                getattr(study, qdo_pins.DELIBERATE, None),
+            )
+        ]
+
     def _deep_problems(
         self, texts: dict, variables: dict, params: dict | None = None
     ) -> list[str]:
@@ -981,7 +1017,11 @@ class QDOBackend(SwitchableStore):
                 problems.append(f"{MINISTUDY} does not build a MiniStudy")
                 study = None
             else:
-                problems.extend(self._name_problems(study))
+                named = self._name_problems(study)
+                problems.extend(named)
+                if not any(p.startswith(_NO_DESIGN) for p in named):
+                    # (a design that did not build is not built again)
+                    problems.extend(self._cut_problems(study))
         except Exception as exc:  # noqa: BLE001
             problems.append(f"{MINISTUDY}: {type(exc).__name__}: {exc}")
         produced = study_parameters(study) if study is not None else None
@@ -2199,6 +2239,8 @@ _NO_TARGETS_LIST = (
 #: A study with no target switched on only simulates: it tunes nothing,
 #: writes nothing back and is not judged converged.
 SIMULATION_ONLY = "simulation only"
+#: How the name check says the design did not build.
+_NO_DESIGN = "cannot build the design"
 
 
 def _targets_of(data) -> list | None:
